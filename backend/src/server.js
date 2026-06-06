@@ -1,0 +1,43 @@
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import http from 'http';
+import { Server } from 'socket.io';
+import authRoutes from './routes/auth.js';
+import { roomManager } from './RoomManager.js';
+import { setupGameSocket } from './sockets/gameSocket.js';
+
+const app = express();
+const server = http.createServer(app);
+
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+const PORT = process.env.PORT || 4000;
+const HOST = process.env.HOST || '0.0.0.0';
+
+app.use(cors({
+  origin: CLIENT_URL,
+  credentials: true
+}));
+app.use(express.json());
+
+app.use('/api/auth', authRoutes);
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', game: 'dominó online', rooms: roomManager.rooms.size });
+});
+
+const io = new Server(server, {
+  cors: {
+    origin: CLIENT_URL,
+    methods: ['GET', 'POST']
+  }
+});
+
+roomManager.setIO(io);
+setupGameSocket(io, roomManager);
+
+server.listen(PORT, HOST, () => {
+  const address = server.address();
+  const url = typeof address === 'string' ? address : `http://${address.address}:${address.port}`;
+  console.log(`🎲 Servidor de dominó corriendo en ${url}`);
+});
