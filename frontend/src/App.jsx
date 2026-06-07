@@ -19,8 +19,8 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-      <Route path="/game" element={<PrivateRoute><Game /></PrivateRoute>} />
-      <Route path="/game/:roomCode" element={<PrivateRoute><Game /></PrivateRoute>} />
+      <Route path="/game" element={<Game />} />
+      <Route path="/game/:roomCode" element={<Game />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

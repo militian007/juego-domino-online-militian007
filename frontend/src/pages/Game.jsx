@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
 import Board from '../components/game/Board.jsx';
 import Hand from '../components/game/Hand.jsx';
@@ -13,6 +13,7 @@ import { connectSocket } from '../services/socket.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const AUTO_START_MODES = ['1v1bot'];
+const GUEST_ALLOWED_MODES = ['1v1bot'];
 
 export default function Game() {
   const params = useParams();
@@ -20,7 +21,8 @@ export default function Game() {
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode') || '1v1';
   const joinParam = searchParams.get('join');
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
   const [socket, setSocket] = useState(null);
   const [gameState, setGameState] = useState(null);
@@ -32,6 +34,24 @@ export default function Game() {
   const [lastAction, setLastAction] = useState(null);
 
   useEffect(() => {
+    if (loading) return;
+    if (!user && !GUEST_ALLOWED_MODES.includes(mode)) {
+      navigate('/login', { replace: true, state: { from: `/game?mode=${mode}` } });
+      return;
+    }
+    if (!user) return;
+    if (urlRoomCode) {
+      const stored = localStorage.getItem('token');
+      if (!stored) {
+        navigate('/login', { replace: true, state: { from: `/game/${urlRoomCode}` } });
+      }
+    }
+  }, [user, loading, mode, urlRoomCode, navigate]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user && !GUEST_ALLOWED_MODES.includes(mode)) return;
+    if (urlRoomCode && !user) return;
     const s = connectSocket();
     setSocket(s);
     setError('');

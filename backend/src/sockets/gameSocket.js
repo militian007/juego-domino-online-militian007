@@ -2,14 +2,22 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
+const GUEST_NAME = 'Invitado';
+
 export function setupGameSocket(io, roomManager) {
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
-    if (!token) return next(new Error('Sin token'));
+    if (!token) {
+      socket.userId = `guest-${socket.id}`;
+      socket.username = GUEST_NAME;
+      socket.isGuest = true;
+      return next();
+    }
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
       socket.userId = decoded.id;
       socket.username = decoded.username;
+      socket.isGuest = false;
       next();
     } catch (err) {
       const reason = err?.name === 'TokenExpiredError' ? 'expirado' : 'inválido';
@@ -22,9 +30,13 @@ export function setupGameSocket(io, roomManager) {
   });
 
   io.on('connection', (socket) => {
-    console.log(`🎮 ${socket.username} conectado (${socket.id})`);
+    const tag = socket.isGuest ? 'invitado' : 'usuario';
+    console.log(`🎮 ${socket.username} (${tag}) conectado (${socket.id})`);
 
     socket.on('room:create', ({ mode }, callback) => {
+      if (socket.isGuest && mode !== '1v1bot') {
+        return callback?.({ ok: false, error: 'Necesitas registrarte para jugar en línea' });
+      }
       try {
         const room = roomManager.createRoom({
           mode,
@@ -42,6 +54,9 @@ export function setupGameSocket(io, roomManager) {
     });
 
     socket.on('room:join', ({ code }, callback) => {
+      if (socket.isGuest) {
+        return callback?.({ ok: false, error: 'Necesitas registrarte para unirte a una partida' });
+      }
       const result = roomManager.joinRoom(code, {
         userId: socket.userId,
         username: socket.username,

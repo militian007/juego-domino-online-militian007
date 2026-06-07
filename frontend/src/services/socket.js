@@ -4,22 +4,25 @@ const SOCKET_URL = import.meta.env.VITE_API_URL || '/';
 
 let socket = null;
 
-export const connectSocket = () => {
+export const connectSocket = (tokenOverride) => {
   if (socket && socket.connected) return socket;
   if (socket) {
     socket.disconnect();
     socket = null;
   }
 
-  const token = localStorage.getItem('token');
-  socket = io(SOCKET_URL, {
+  const token = tokenOverride !== undefined ? tokenOverride : localStorage.getItem('token');
+  const opts = {
     autoConnect: true,
     transports: ['websocket', 'polling'],
-    auth: { token: token || '' },
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000
-  });
+  };
+  if (token) {
+    opts.auth = { token };
+  }
+  socket = io(SOCKET_URL, opts);
 
   socket.on('connect', () => {
     console.log('🟢 Socket conectado:', socket.id);
