@@ -252,6 +252,7 @@ export default function Board({ board, ends, boardShape = 'l' }) {
                 tile={tile}
                 orientation={pos.orientation}
                 size="sm"
+                isNewest={isNewest}
               />
             </div>
           );

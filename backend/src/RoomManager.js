@@ -106,6 +106,14 @@ export class RoomManager {
       const current = room.game.getCurrentPlayer();
       if (!current.isBot) break;
 
+      // Esperar antes de realizar la jugada (tiempo de "pensamiento" del bot)
+      await this._sleep(3000);
+
+      // Verificar que el juego sigue activo y sigue siendo el turno del bot después de dormir
+      if (room.game.status !== 'playing' || room.game.getCurrentPlayer()?.id !== current.id) {
+        break;
+      }
+
       const validMoves = room.game.getValidMoves(current.id);
       if (validMoves.length > 0) {
         const bot = new Bot(room.game, current.id);
@@ -125,7 +133,6 @@ export class RoomManager {
       }
 
       this.broadcastState(room);
-      await this._sleep(2500);
     }
   }
 

@@ -34,7 +34,8 @@ export default function Tile({
   dim = false,
   size = 'md',
   onClick,
-  className = ''
+  className = '',
+  isNewest = false
 }) {
   if (!tile) return null;
   const [a, b] = tile;
@@ -49,8 +50,12 @@ export default function Tile({
   const sizeClasses = orientation === 'horizontal' ? d.w : d.wv;
   const pipsSize = size === 'sm' ? 'sm' : 'lg';
 
+  const borderClass = isNewest 
+    ? 'border-domino-accent ring-2 ring-domino-accent/30 tile-newest z-10' 
+    : 'border-domino-dark';
+
   const baseClasses =
-    'bg-domino-cream border-2 border-domino-dark rounded shadow-md transition select-none';
+    `bg-domino-cream border-2 ${borderClass} rounded shadow-md transition select-none`;
 
   const interactiveClasses = onClick
     ? 'cursor-pointer hover:shadow-lg active:scale-95'
