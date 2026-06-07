@@ -116,19 +116,27 @@ export default function Game() {
     };
   }, [mode, joinParam]);
 
-  const myPlayer = useMemo(() => {
-    if (!gameState) return null;
-    return gameState.players.find((p) => p.id === user?.id);
-  }, [gameState, user]);
+  const myPlayerId = useMemo(() => {
+    if (user?.id) return user.id;
+    const me = gameState?.players?.find((p) => !p.isBot);
+    return me?.id;
+  }, [user, gameState]);
 
-  const myTurn = gameState?.currentPlayerId === user?.id;
-  const isHost = lobby?.players.find((p) => p.isHost)?.id === user?.id;
+  const myPlayer = useMemo(() => {
+    if (!gameState || !myPlayerId) return null;
+    return gameState.players.find((p) => p.id === myPlayerId);
+  }, [gameState, myPlayerId]);
+
+  const myTurn = gameState?.currentPlayerId && myPlayerId
+    ? gameState.currentPlayerId === myPlayerId
+    : false;
+  const isHost = lobby?.players.find((p) => p.isHost)?.id === myPlayerId;
   const isAutoStart = AUTO_START_MODES.includes(mode);
 
   const opponents = useMemo(() => {
-    if (!gameState) return [];
-    return gameState.players.filter((p) => p.id !== user?.id);
-  }, [gameState, user]);
+    if (!gameState || !myPlayerId) return [];
+    return gameState.players.filter((p) => p.id !== myPlayerId);
+  }, [gameState, myPlayerId]);
 
   const validIndices = useMemo(() => {
     if (!gameState?.validMoves) return [];
