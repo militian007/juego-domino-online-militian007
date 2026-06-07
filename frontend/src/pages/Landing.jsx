@@ -36,18 +36,23 @@ const MODES = [
   }
 ];
 
-function Hotspot({ area, onClick, label }) {
-  return (
-    <button
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-      className="absolute z-10 group focus:outline-none rounded-full"
-      style={{ left: area.left, top: area.top, width: area.width, height: area.height }}
-    >
-      <span className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity duration-200 ring-2 ring-domino-accent/80 bg-domino-accent/10" />
-    </button>
-  );
+function GoldButton({ children, onClick, size = 'md', as: As = 'button', to, variant = 'solid' }) {
+  const base = 'inline-flex items-center justify-center font-bold tracking-[0.2em] rounded-full transition-all duration-200 whitespace-nowrap';
+  const sizes = {
+    sm: 'px-4 py-1.5 text-xs sm:text-sm',
+    md: 'px-6 py-2.5 text-sm sm:text-base',
+    lg: 'px-8 py-3 text-base sm:text-lg'
+  };
+  const variants = {
+    solid: 'bg-gradient-to-b from-domino-accent-bright to-domino-accent text-domino-dark shadow-lg shadow-amber-500/30 hover:from-amber-300 hover:to-amber-500 hover:-translate-y-0.5',
+    outline: 'border-2 border-domino-accent/80 text-domino-accent hover:bg-domino-accent hover:text-domino-dark bg-black/30 backdrop-blur-sm'
+  };
+  const cls = `${base} ${sizes[size]} ${variants[variant]}`;
+
+  if (As === Link) {
+    return <Link to={to} className={cls}>{children}</Link>;
+  }
+  return <button onClick={onClick} className={cls}>{children}</button>;
 }
 
 function ModeCard({ mode, onSelect }) {
@@ -194,7 +199,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-domino-dark text-domino-cream">
+    <div className="relative w-full min-h-screen overflow-hidden bg-domino-dark text-domino-cream">
       <img
         src="/hero-table.png"
         alt="Mesa de dominó"
@@ -202,40 +207,73 @@ export default function Landing() {
         draggable="false"
       />
 
-      <Hotspot
-        area={{ left: '78.5%', top: '4%', width: '12.5%', height: '11%' }}
-        onClick={() => navigate('/login')}
-        label="Login"
-      />
-      <Hotspot
-        area={{ left: '91.5%', top: '4%', width: '8%', height: '11%' }}
-        onClick={() => setModalOpen(true)}
-        label="Jugar"
-      />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-black/40 pointer-events-none" />
 
-      <Hotspot
-        area={{ left: '57%', top: '60%', width: '14%', height: '11%' }}
-        onClick={() => goToMode('1v1')}
-        label="1 vs 1"
-      />
-      <Hotspot
-        area={{ left: '72%', top: '60%', width: '14%', height: '11%' }}
-        onClick={() => goToMode('2v2')}
-        label="2 vs 2"
-      />
+      <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-5 sm:px-10 py-4 sm:py-6">
+        <div className="font-serif text-3xl sm:text-4xl font-semibold tracking-[0.25em] text-domino-cream/95 drop-shadow-lg">
+          D<span className="text-domino-cream/50">.T</span>
+        </div>
+        <div className="flex items-center gap-2 sm:gap-3">
+          {!user && (
+            <GoldButton as={Link} to="/login" variant="outline" size="sm">
+              LOGIN
+            </GoldButton>
+          )}
+          <GoldButton onClick={() => setModalOpen(true)} size="sm">
+            JUGAR
+          </GoldButton>
+          {user && (
+            <button
+              onClick={handleLogout}
+              className="text-domino-cream/80 hover:text-domino-cream text-xs sm:text-sm tracking-wider px-2"
+            >
+              Salir
+            </button>
+          )}
+        </div>
+      </header>
 
-      <Hotspot
-        area={{ left: '2%', top: '91%', width: '8%', height: '7%' }}
-        onClick={goMenu}
-        label="Menú"
-      />
-      <Hotspot
-        area={{ left: '10%', top: '91%', width: '8%', height: '7%' }}
-        onClick={handleLogout}
-        label="Salir"
-      />
+      <main className="relative z-10 min-h-screen flex items-center">
+        <div className="w-full max-w-6xl mx-auto px-5 sm:px-10 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+          <div className="hidden md:block" />
 
-      <div className="absolute bottom-[2.5%] right-[2%] z-20 flex items-center gap-2 bg-black/70 backdrop-blur-sm border border-domino-accent/40 rounded-full px-3 sm:px-4 py-1.5 shadow-lg">
+          <div className="flex flex-col items-center md:items-start text-center md:text-left">
+            <p className="text-domino-accent text-xs sm:text-sm tracking-[0.4em] mb-3 sm:mb-4 font-sans drop-shadow">
+              CLUB PRIVADO · DOMINÓ
+            </p>
+            <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight drop-shadow-lg">
+              <span className="text-domino-cream">Domina el arte</span>
+              <br />
+              <span className="text-domino-accent text-shadow-gold italic">del domino</span>
+            </h1>
+            <p className="mt-4 sm:mt-5 text-domino-cream/90 text-sm sm:text-base max-w-md leading-relaxed drop-shadow">
+              Únete a la mesa, afina tu estrategia y compite con los mejores jugadores.
+            </p>
+
+            <div className="mt-6 sm:mt-8 flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-4">
+              <GoldButton onClick={() => goToMode('1v1')} size="lg">
+                1 VS 1
+              </GoldButton>
+              <GoldButton onClick={() => goToMode('2v2')} size="lg">
+                2 VS 2
+              </GoldButton>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {user && (
+        <div className="absolute bottom-3 sm:bottom-5 left-4 sm:left-6 z-20 flex items-center gap-4 text-domino-cream/90 text-xs sm:text-sm drop-shadow">
+          <button onClick={goMenu} className="hover:text-domino-accent transition tracking-wider">
+            Menu
+          </button>
+          <button onClick={handleLogout} className="hover:text-domino-accent transition tracking-wider">
+            Salir
+          </button>
+        </div>
+      )}
+
+      <div className="absolute bottom-3 sm:bottom-5 right-4 sm:right-6 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-sm border border-domino-accent/40 rounded-full px-3 sm:px-4 py-1.5 shadow-lg">
         <span className="relative flex h-2.5 w-2.5">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
