@@ -67,6 +67,10 @@ io.on('connection', (socket) => {
   });
 });
 
+import { initDatabase } from './config/database.js';
+
+await initDatabase();
+
 server.listen(PORT, HOST, () => {
   const address = server.address();
   const url = typeof address === 'string' ? address : `http://${address.address}:${address.port}`;

@@ -28,18 +28,18 @@ export const register = async (req, res) => {
       return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
     }
 
-    const existedByUsername = User.findByUsername(username);
+    const existedByUsername = await User.findByUsername(username);
     if (existedByUsername) {
       return res.status(400).json({ error: 'Ese usuario ya existe' });
     }
 
-    const existedByEmail = User.findByEmail(email);
+    const existedByEmail = await User.findByEmail(email);
     if (existedByEmail) {
       return res.status(400).json({ error: 'Ese email ya está registrado' });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = User.create({ username, email, passwordHash });
+    const user = await User.create({ username, email, passwordHash });
     const token = generateToken(user);
 
     res.status(201).json({
@@ -66,7 +66,7 @@ export const login = async (req, res) => {
       return res.status(400).json({ error: 'Usuario y contraseña son obligatorios' });
     }
 
-    const user = User.findByUsername(username);
+    const user = await User.findByUsername(username);
     if (!user) {
       return res.status(400).json({ error: 'Usuario o contraseña incorrectos' });
     }
@@ -94,8 +94,13 @@ export const login = async (req, res) => {
   }
 };
 
-export const me = (req, res) => {
-  const user = User.findById(req.userId);
-  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-  res.json({ user });
+export const me = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    res.json({ user });
+  } catch (err) {
+    console.error('Error en me:', err);
+    res.status(500).json({ error: 'Error en el servidor' });
+  }
 };
