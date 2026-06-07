@@ -222,7 +222,10 @@ export default function Board({ board, ends, boardShape = 'l' }) {
   return (
     <div
       ref={containerRef}
-      className="w-full h-full min-h-[260px] sm:min-h-[380px] relative overflow-hidden"
+      className="w-full h-full min-h-[260px] sm:min-h-[380px] relative overflow-hidden bg-cover bg-center rounded-xl border border-slate-700 shadow-2xl"
+      style={{
+        backgroundImage: 'url("/mesa-de-juego.webp")'
+      }}
     >
       <div
         style={{
