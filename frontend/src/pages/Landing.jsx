@@ -238,10 +238,9 @@ export default function Landing() {
           <p className="text-domino-accent text-xs sm:text-sm tracking-[0.4em] mb-3 sm:mb-4 font-sans drop-shadow">
             CLUB PRIVADO · DOMINÓ
           </p>
-          <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold leading-[1.02] tracking-tight drop-shadow-2xl">
-            <span className="text-domino-cream">Domina el arte</span>
-            <br />
-            <span className="text-domino-accent text-shadow-gold italic">del domino</span>
+          <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold leading-[1.05] tracking-tight drop-shadow-2xl">
+            <span className="block text-domino-cream">Domina el arte</span>
+            <span className="block text-domino-accent">del domino</span>
           </h1>
           <p className="mt-5 sm:mt-6 text-domino-cream/90 text-sm sm:text-base leading-relaxed drop-shadow max-w-sm">
             Únete a la mesa, afina tu estrategia y compite con los mejores jugadores.
