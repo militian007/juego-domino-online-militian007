@@ -19,7 +19,11 @@ function Pips({ value, size = 'sm' }) {
         const show = positions.some(([px, py]) => px === x && py === y);
         return (
           <div key={i} className="flex items-center justify-center">
-            {show && <div className={`rounded-full bg-domino-dark ${dotSize}`} />}
+            {show && (
+              <div
+                className={`rounded-full bg-gradient-to-br from-[#f5cf5c] via-[#d4af37] to-[#aa8010] shadow-[inset_0_1px_1px_rgba(255,255,255,0.45),_0_1px_2px_rgba(0,0,0,0.8)] ${dotSize}`}
+              />
+            )}
           </div>
         );
       })}
@@ -51,11 +55,11 @@ export default function Tile({
   const pipsSize = size === 'sm' ? 'sm' : 'lg';
 
   const borderClass = isNewest 
-    ? 'border-domino-accent ring-2 ring-domino-accent/30 tile-newest z-10' 
-    : 'border-domino-dark';
+    ? 'border-domino-accent ring-2 ring-domino-accent/40 tile-newest z-10 shadow-[0_0_15px_rgba(212,175,55,0.95)]' 
+    : 'border-domino-accent';
 
   const baseClasses =
-    `bg-domino-cream border-2 ${borderClass} rounded shadow-md transition select-none`;
+    `bg-gradient-to-br from-[#1e1e1e] via-[#121212] to-[#0a0a0a] border-2 ${borderClass} rounded shadow-[inset_0_0_5px_rgba(212,175,55,0.35),_0_4px_8px_rgba(0,0,0,0.5)] transition select-none`;
 
   const interactiveClasses = onClick
     ? 'cursor-pointer hover:shadow-lg active:scale-95'
@@ -67,7 +71,7 @@ export default function Tile({
   return (
     <div
       onClick={onClick}
-      className={`${baseClasses} ${sizeClasses} ${interactiveClasses} ${stateClasses} ${dimClasses} ${className}`}
+      className={`${baseClasses} ${sizeClasses} ${interactiveClasses} ${stateClasses} ${dimClasses} relative ${className}`}
     >
       <div
         className={`w-full h-full flex ${orientation === 'horizontal' ? 'flex-row' : 'flex-col'}`}
@@ -75,7 +79,7 @@ export default function Tile({
         <div
           className={`flex-1 relative ${
             orientation === 'horizontal' ? 'border-r-2' : 'border-b-2'
-          } border-domino-dark`}
+          } border-domino-accent/70`}
         >
           <Pips value={a} size={pipsSize} />
         </div>
@@ -83,6 +87,8 @@ export default function Tile({
           <Pips value={b} size={pipsSize} />
         </div>
       </div>
+      {/* Pin central de metal (Spinner) */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-[#f5cf5c] via-[#d4af37] to-[#aa8010] shadow-[0_1px_2px_rgba(0,0,0,0.6)] z-20" />
     </div>
   );
 }
