@@ -100,12 +100,20 @@ export function setupGameSocket(io, roomManager) {
     socket.on('game:play', async ({ code, tileIndex, side }, callback) => {
       const room = roomManager.rooms.get(code);
       if (!room?.game) return callback?.({ ok: false, error: 'No hay juego' });
-      const result = room.game.playTile(socket.userId, tileIndex, side);
+      
+      // Delay human move so it doesn't appear too instantly
+      await roomManager._sleep(1500);
+      
+      // Re-verify that the room and game are still active after the sleep
+      const activeRoom = roomManager.rooms.get(code);
+      if (!activeRoom?.game) return callback?.({ ok: false, error: 'No hay juego' });
+      
+      const result = activeRoom.game.playTile(socket.userId, tileIndex, side);
       if (!result.ok) return callback?.(result);
-      roomManager.broadcastState(room);
+      roomManager.broadcastState(activeRoom);
       callback?.(result);
-      if (room.game.status === 'playing') {
-        await roomManager.playBotTurns(room);
+      if (activeRoom.game.status === 'playing') {
+        await roomManager.playBotTurns(activeRoom);
       }
     });
 

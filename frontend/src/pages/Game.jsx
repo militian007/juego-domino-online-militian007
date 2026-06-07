@@ -32,6 +32,8 @@ export default function Game() {
   const [error, setError] = useState('');
   const [actualRoomCode, setActualRoomCode] = useState(urlRoomCode || null);
   const [lastAction, setLastAction] = useState(null);
+  const [isPlacing, setIsPlacing] = useState(false);
+
 
   useEffect(() => {
     if (loading) return;
@@ -70,6 +72,7 @@ export default function Game() {
       setSelectedTile(null);
       setShowSidePicker(false);
       setError('');
+      setIsPlacing(false);
     };
     const onConnectError = (err) => {
       const msg = err?.message || '';
@@ -151,7 +154,7 @@ export default function Game() {
   }, [gameState]);
 
   const handleTileClick = (index) => {
-    if (!myTurn || !gameState) return;
+    if (!myTurn || !gameState || isPlacing) return;
     const movesForTile = gameState.validMoves.filter((m) => m.index === index);
     if (movesForTile.length === 0) return;
     if (movesForTile.length === 1 || !gameState.ends) {
@@ -163,26 +166,38 @@ export default function Game() {
   };
 
   const playTile = (tileIndex, side) => {
-    if (!socket || !actualRoomCode) return;
+    if (!socket || !actualRoomCode || isPlacing) return;
     setError('');
+    setIsPlacing(true);
     socket.emit('game:play', { code: actualRoomCode, tileIndex, side }, (res) => {
-      if (!res.ok) setError(res.error);
+      if (!res.ok) {
+        setError(res.error);
+        setIsPlacing(false);
+      }
     });
   };
 
   const handlePass = () => {
-    if (!socket || !actualRoomCode) return;
+    if (!socket || !actualRoomCode || isPlacing) return;
     setError('');
+    setIsPlacing(true);
     socket.emit('game:pass', { code: actualRoomCode }, (res) => {
-      if (!res.ok) setError(res.error);
+      if (!res.ok) {
+        setError(res.error);
+        setIsPlacing(false);
+      }
     });
   };
 
   const handleDraw = () => {
-    if (!socket || !actualRoomCode) return;
+    if (!socket || !actualRoomCode || isPlacing) return;
     setError('');
+    setIsPlacing(true);
     socket.emit('game:draw', { code: actualRoomCode }, (res) => {
-      if (!res.ok) setError(res.error);
+      if (!res.ok) {
+        setError(res.error);
+        setIsPlacing(false);
+      }
     });
   };
 
@@ -436,7 +451,7 @@ export default function Game() {
                   validIndices={validIndices}
                   selectedIndex={selectedTile?.index}
                   onSelect={handleTileClick}
-                  canPlay={myTurn}
+                  canPlay={myTurn && !isPlacing}
                 />
 
                 {myTurn && gameState.canPlay && (

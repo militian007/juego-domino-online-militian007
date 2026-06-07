@@ -53,7 +53,7 @@ export default function Tile({
     : '';
 
   const stateClasses = selected ? 'ring-4 ring-domino-accent -translate-y-2' : '';
-  const dimClasses = dim ? 'opacity-40' : '';
+  const dimClasses = dim ? 'opacity-60 brightness-50' : '';
 
   // Dynamic inline style for image sizing, centering and rotation.
   // In horizontal mode, the image fills the container.

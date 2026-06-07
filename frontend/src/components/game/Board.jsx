@@ -210,8 +210,10 @@ export default function Board({ board, ends, boardShape = 'l' }) {
   const offsetX = -minX + PADDING;
   const offsetY = -minY + PADDING;
 
-  const scaleX = size.width > 0 ? size.width / naturalWidth : 1;
-  const scaleY = size.height > 0 ? size.height / naturalHeight : 1;
+  // Restrict scaling area to keep tiles within the green felt region of the table image,
+  // excluding the brown wood border frame (approx 9% border on sides, 11% top/bottom).
+  const scaleX = size.width > 0 ? (size.width * 0.82) / naturalWidth : 1;
+  const scaleY = size.height > 0 ? (size.height * 0.72) / naturalHeight : 1;
   const scale = Math.min(scaleX, scaleY, 1);
 
   const scaledWidth = naturalWidth * scale;
