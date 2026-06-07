@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
 import Board from '../components/game/Board.jsx';
@@ -48,6 +48,8 @@ export default function Game() {
     }
   }, [user, loading, mode, urlRoomCode, navigate]);
 
+  const roomInitRef = useRef(false);
+
   useEffect(() => {
     if (loading) return;
     if (!user && !GUEST_ALLOWED_MODES.includes(mode)) return;
@@ -75,13 +77,16 @@ export default function Game() {
         setError('Tu sesión expiró o es inválida. Inicia sesión nuevamente.');
         return;
       }
-      setError(`Error de conexión: ${msg}`);
+      setError(`Conectando al servidor... (puede tardar 30-50s si está dormido)`);
     };
     const onConnect = () => {
+      if (roomInitRef.current) return;
+      roomInitRef.current = true;
       if (joinParam) {
         s.emit('room:join', { code: joinParam }, (res) => {
           if (!res?.ok) {
             setError(res?.error || 'No se pudo unir a la sala');
+            roomInitRef.current = false;
             return;
           }
           if (res.room?.code) setActualRoomCode(res.room.code);
@@ -90,6 +95,7 @@ export default function Game() {
         s.emit('room:create', { mode }, (res) => {
           if (!res?.ok) {
             setError(res?.error || 'No se pudo crear la sala');
+            roomInitRef.current = false;
             return;
           }
           if (res.code) setActualRoomCode(res.code);
@@ -113,8 +119,9 @@ export default function Game() {
       s.off('game:state', onGameState);
       s.off('connect', onConnect);
       s.off('connect_error', onConnectError);
+      roomInitRef.current = false;
     };
-  }, [mode, joinParam]);
+  }, [mode, joinParam, loading, user, urlRoomCode, navigate]);
 
   const myPlayerId = useMemo(() => {
     if (user?.id) return user.id;

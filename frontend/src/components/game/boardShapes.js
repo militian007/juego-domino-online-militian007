@@ -9,9 +9,9 @@ function shapeL(i) {
 }
 
 function shapeCruz(i) {
-  const seg = Math.floor(i / 8);
-  const inSeg = i % 8;
-  if (inSeg < 6) return HORIZ;
+  const seg = Math.floor(i / 9);
+  const inSeg = i % 9;
+  if (inSeg < 8) return HORIZ;
   return VERT;
 }
 
