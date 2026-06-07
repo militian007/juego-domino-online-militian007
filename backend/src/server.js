@@ -20,6 +20,10 @@ app.use(cors({
 }));
 app.use(express.json());
 
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', service: 'domino-backend' });
+});
+
 app.use('/api/auth', authRoutes);
 
 app.get('/api/health', (req, res) => {
