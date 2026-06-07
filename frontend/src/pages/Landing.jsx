@@ -234,10 +234,8 @@ export default function Landing() {
       </header>
 
       <main className="relative z-10 min-h-screen flex items-center">
-        <div className="w-full max-w-6xl mx-auto px-5 sm:px-10 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-          <div className="hidden md:block" />
-
-          <div className="flex flex-col items-center md:items-start text-center md:text-left">
+        <div className="w-full max-w-7xl mx-auto px-5 sm:px-10 flex justify-center md:justify-end">
+          <div className="flex flex-col items-center md:items-start text-center md:text-left max-w-xl md:mr-[2%] lg:mr-[5%]">
             <p className="text-domino-accent text-xs sm:text-sm tracking-[0.4em] mb-3 sm:mb-4 font-sans drop-shadow">
               CLUB PRIVADO · DOMINÓ
             </p>
