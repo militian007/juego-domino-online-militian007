@@ -240,7 +240,7 @@ export default function Landing() {
           </p>
           <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight drop-shadow-2xl">
             <span className="block text-domino-cream whitespace-nowrap">Domina el arte</span>
-            <span className="block text-domino-accent -ml-4 sm:-ml-6 md:-ml-10 lg:-ml-14">del domino</span>
+            <span className="block text-domino-accent pl-2 sm:pl-4 md:pl-8 lg:pl-12">del domino</span>
           </h1>
           <p className="mt-5 sm:mt-6 text-domino-cream/90 text-sm sm:text-base leading-relaxed drop-shadow max-w-sm">
             Únete a la mesa, afina tu estrategia y compite con los mejores jugadores.
