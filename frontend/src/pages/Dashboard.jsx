@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -37,6 +37,14 @@ export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [roomCode, setRoomCode] = useState('');
+  const [searchParams] = useSearchParams();
+  const initialMode = searchParams.get('mode');
+
+  useEffect(() => {
+    if (!initialMode) return;
+    if (!MODES.some((m) => m.id === initialMode)) return;
+    navigate(`/game?mode=${initialMode}`, { replace: true });
+  }, [initialMode, navigate]);
 
   const startGame = (mode) => {
     navigate(`/game?mode=${mode.id}`);
