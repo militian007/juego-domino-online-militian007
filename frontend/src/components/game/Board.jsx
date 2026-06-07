@@ -210,10 +210,16 @@ export default function Board({ board, ends, boardShape = 'l' }) {
   const offsetX = -minX + PADDING;
   const offsetY = -minY + PADDING;
 
-  // Restrict scaling area to keep tiles within the green felt region of the table image,
-  // excluding the brown leather frame (approx 3.5% border on sides, 7% top/bottom in the cropped image).
-  const scaleX = size.width > 0 ? (size.width * 0.92) / naturalWidth : 1;
-  const scaleY = size.height > 0 ? (size.height * 0.82) / naturalHeight : 1;
+  // Calculate safety margins for the inner green felt area by subtracting the brown border size
+  // and some extra padding so that the tiles never overlap or touch the border.
+  const borderSize = size.width > 640 ? 16 : 12;
+  const paddingSafety = 16;
+  const totalOffset = (borderSize + paddingSafety) * 2;
+  const safeWidth = size.width - totalOffset;
+  const safeHeight = size.height - totalOffset;
+
+  const scaleX = safeWidth > 0 ? safeWidth / naturalWidth : 1;
+  const scaleY = safeHeight > 0 ? safeHeight / naturalHeight : 1;
   const scale = Math.min(scaleX, scaleY, 1);
 
   const scaledWidth = naturalWidth * scale;
@@ -224,9 +230,10 @@ export default function Board({ board, ends, boardShape = 'l' }) {
   return (
     <div
       ref={containerRef}
-      className="w-full h-full min-h-[260px] sm:min-h-[380px] relative overflow-hidden bg-cover bg-center rounded-xl border border-slate-700 shadow-2xl"
+      className="w-full h-full min-h-[260px] sm:min-h-[380px] relative overflow-hidden bg-cover bg-center rounded-xl border-[12px] sm:border-[16px] border-[#3e251c] ring-2 ring-amber-500/20 ring-inset shadow-2xl"
       style={{
-        backgroundImage: 'url("/mesa-de-juego.webp")'
+        backgroundImage: 'url("/mesa-de-juego.webp")',
+        boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.8), 0 10px 25px rgba(0, 0, 0, 0.5)'
       }}
     >
       <div
