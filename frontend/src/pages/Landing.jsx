@@ -234,25 +234,27 @@ export default function Landing() {
       </header>
 
       <main className="relative z-10 min-h-screen flex items-center">
-        <div className="w-full max-w-7xl mx-auto px-5 sm:px-10 flex justify-center md:justify-end">
-          <div className="flex flex-col items-center md:items-start text-center md:text-left max-w-xl md:mr-[2%] lg:mr-[5%]">
+        <div className="w-full max-w-[1600px] mx-auto px-5 sm:px-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+          <div className="hidden md:block md:col-span-8" />
+
+          <div className="md:col-span-4 flex flex-col items-center md:items-start text-center md:text-left max-w-md">
             <p className="text-domino-accent text-xs sm:text-sm tracking-[0.4em] mb-3 sm:mb-4 font-sans drop-shadow">
               CLUB PRIVADO · DOMINÓ
             </p>
-            <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight drop-shadow-lg">
+            <h1 className="font-serif text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-semibold leading-[1.05] tracking-tight drop-shadow-lg">
               <span className="text-domino-cream">Domina el arte</span>
               <br />
               <span className="text-domino-accent text-shadow-gold italic">del domino</span>
             </h1>
-            <p className="mt-4 sm:mt-5 text-domino-cream/90 text-sm sm:text-base max-w-md leading-relaxed drop-shadow">
+            <p className="mt-4 sm:mt-5 text-domino-cream/90 text-xs sm:text-sm leading-relaxed drop-shadow">
               Únete a la mesa, afina tu estrategia y compite con los mejores jugadores.
             </p>
 
-            <div className="mt-6 sm:mt-8 flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-4">
-              <GoldButton onClick={() => goToMode('1v1')} size="lg">
+            <div className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center md:justify-start gap-3">
+              <GoldButton onClick={() => goToMode('1v1')} size="sm">
                 1 VS 1
               </GoldButton>
-              <GoldButton onClick={() => goToMode('2v2')} size="lg">
+              <GoldButton onClick={() => goToMode('2v2')} size="sm">
                 2 VS 2
               </GoldButton>
             </div>
