@@ -390,7 +390,7 @@ Render duerme tras 15 min, primer hit tarda 30-50s. El frontend en Vercel ya tie
 
 ## 16. TODOs / Próximos Pasos (ideas, no confirmadas)
 
-- [ ] **REHACER tablero** (delegado a otra IA — usuario insatisfecho con el actual)
+- [x] **REHACER tablero** (Completado y optimizado con algoritmo de doble cadena estable y alineación exacta)
 - [ ] Implementar revancha después de partida terminada
 - [ ] Sistema de ranking/ELO
 - [ ] Chat en sala
@@ -398,7 +398,7 @@ Render duerme tras 15 min, primer hit tarda 30-50s. El frontend en Vercel ya tie
 - [ ] Sonidos de fichas al jugarse
 - [ ] Versión mobile-first de Game.jsx (todavía tiene elementos apretados en mobile)
 - [ ] Modal de "rondas" o "tranque" cuando nadie puede jugar
-- [ ] Persistir DB en Render con disco persistente (actualmente efímero)
+- [ ] **Configurar DATABASE_URL en Render (Supabase/Neon)** (Código migrado a PostgreSQL por la IA, listo para conectar)
 - [ ] Dominó doble 9 (actualmente doble 6)
 - [ ] Refactor del Bot.js (está funcional pero podría ser más competitivo)
 
