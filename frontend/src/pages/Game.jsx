@@ -387,7 +387,7 @@ export default function Game() {
                 )}
               </div>
 
-              <div className="card p-3 sm:p-4 min-h-[320px] sm:min-h-[440px] relative">
+              <div className="rounded-xl p-3 sm:p-4 min-h-[320px] sm:min-h-[440px] relative bg-felt-inset shadow-inner border border-domino-accent/20">
                 <Board board={gameState.board} ends={gameState.ends} />
                 {lastAction && myTurn && (
                   <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/70 text-slate-200 text-xs sm:text-sm px-3 py-1.5 rounded-full border border-slate-700">

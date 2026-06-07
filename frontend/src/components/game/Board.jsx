@@ -88,7 +88,7 @@ export default function Board({ board, ends }) {
     return (
       <div
         ref={containerRef}
-        className="w-full h-full min-h-[260px] sm:min-h-[380px] flex items-center justify-center text-slate-500 italic text-sm sm:text-base"
+        className="w-full h-full min-h-[260px] sm:min-h-[380px] flex items-center justify-center text-domino-cream/60 italic text-sm sm:text-base"
       >
         El tablero está vacío. Toca una ficha para empezar.
       </div>
