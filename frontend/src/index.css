@@ -55,4 +55,25 @@
   .border-gold-glow-hover:hover {
     box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.8), 0 12px 40px rgba(212, 175, 55, 0.2);
   }
+  @keyframes tile-place {
+    0% {
+      transform: scale(0.3) rotate(-15deg);
+      opacity: 0;
+      filter: brightness(2) drop-shadow(0 0 12px rgba(212, 175, 55, 0.9));
+    }
+    60% {
+      transform: scale(1.15) rotate(3deg);
+      opacity: 1;
+      filter: brightness(1.4) drop-shadow(0 0 8px rgba(212, 175, 55, 0.6));
+    }
+    100% {
+      transform: scale(1) rotate(0);
+      opacity: 1;
+      filter: brightness(1) drop-shadow(0 0 0 rgba(212, 175, 55, 0));
+    }
+  }
+  .tile-placed {
+    animation: tile-place 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 10;
+  }
 }

@@ -89,6 +89,9 @@ export class RoomManager {
       }
     }
 
+    const shapes = ['l', 'cruz', 'cuadrado', 't', 's'];
+    room.boardShape = shapes[Math.floor(Math.random() * shapes.length)];
+
     room.game = new DominoGame({
       roomCode: room.code,
       mode: room.mode,
@@ -122,7 +125,7 @@ export class RoomManager {
       }
 
       this.broadcastState(room);
-      await this._sleep(800);
+      await this._sleep(1200);
     }
   }
 
@@ -135,6 +138,7 @@ export class RoomManager {
     room.players.forEach((p) => {
       if (p.isBot || !p.socketId) return;
       const state = room.game.getStateForPlayer(p.id);
+      state.boardShape = room.boardShape;
       this.io.to(p.socketId).emit('game:state', state);
     });
   }

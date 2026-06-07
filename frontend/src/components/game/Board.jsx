@@ -1,9 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
 import Tile from './Tile.jsx';
+import { TILE_W, TILE_H, getShapeById } from './boardShapes.js';
 
-const TILE_W = 64;
-const TILE_H = 32;
-const TILES_PER_DIRECTION = 6;
 const PADDING = 16;
 
 function getTileDims(orientation) {
@@ -12,32 +10,33 @@ function getTileDims(orientation) {
     : { w: TILE_H, h: TILE_W };
 }
 
-function calculateLayout(board) {
+function calculateLayout(board, shapeFn) {
   const positions = [];
   let chainEndX = 0;
   let chainEndY = TILE_H / 2;
-  let dir = 0;
-  const dirPattern = [0, 1, 0, 1];
-  let turnCount = 0;
   let prevDir = -1;
   let isFirstInDirection = true;
+  let turnCount = 0;
+  const dirPattern = [0, 1, 0, 1];
 
   for (let i = 0; i < board.length; i++) {
     const tile = board[i].tile;
     const isDouble = tile[0] === tile[1];
+    const requestedDir = shapeFn(i);
 
-    if (isFirstInDirection && prevDir !== -1 && prevDir !== dir) {
+    let dir = requestedDir;
+    let turnAtIndex = false;
+
+    if (prevDir !== -1 && prevDir !== dir) {
       if (prevDir === 0 && dir === 1) {
         chainEndY += TILE_H / 2;
       } else if (prevDir === 1 && dir === 0) {
         chainEndX += TILE_H / 2;
       }
+      turnAtIndex = true;
     }
 
-    let px;
-    let py;
-    let orient;
-
+    let px, py, orient;
     if (dir === 0) {
       orient = isDouble ? 'vertical' : 'horizontal';
       px = chainEndX;
@@ -47,27 +46,20 @@ function calculateLayout(board) {
       orient = isDouble ? 'horizontal' : 'vertical';
       px = isDouble ? chainEndX - TILE_W / 2 : chainEndX - TILE_H / 2;
       py = chainEndY;
-      chainEndY += isDouble ? TILE_H : TILE_W;
+      chainEndY += isDouble ? TILE_W : TILE_H;
     }
 
     positions.push({ x: px, y: py, orientation: orient });
-
-    if ((i + 1) % TILES_PER_DIRECTION === 0 && i < board.length - 1) {
-      turnCount++;
-      prevDir = dir;
-      dir = dirPattern[turnCount % 4];
-      isFirstInDirection = true;
-    } else {
-      isFirstInDirection = false;
-    }
+    prevDir = dir;
   }
 
   return positions;
 }
 
-export default function Board({ board, ends }) {
+export default function Board({ board, ends, boardShape = 'l' }) {
   const containerRef = useRef(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
+  const prevBoardLenRef = useRef(0);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -79,10 +71,18 @@ export default function Board({ board, ends }) {
     return () => observer.disconnect();
   }, []);
 
+  const shape = getShapeById(boardShape);
+
   const positions = useMemo(
-    () => (board && board.length > 0 ? calculateLayout(board) : []),
-    [board]
+    () => (board && board.length > 0 ? calculateLayout(board, shape.fn) : []),
+    [board, shape]
   );
+
+  const lastIndex = (board?.length || 0) - 1;
+
+  useEffect(() => {
+    prevBoardLenRef.current = board?.length || 0;
+  }, [board?.length]);
 
   if (!board || board.length === 0) {
     return (
@@ -90,7 +90,11 @@ export default function Board({ board, ends }) {
         ref={containerRef}
         className="w-full h-full min-h-[260px] sm:min-h-[380px] flex items-center justify-center text-domino-cream/60 italic text-sm sm:text-base"
       >
-        El tablero está vacío. Toca una ficha para empezar.
+        <div className="text-center">
+          <div className="text-domino-accent/50 text-4xl mb-2 font-serif">{shape.icon}</div>
+          <div>Figura: {shape.name}</div>
+          <div className="text-xs mt-1 opacity-60">El tablero está vacío. Toca una ficha para empezar.</div>
+        </div>
       </div>
     );
   }
@@ -139,13 +143,15 @@ export default function Board({ board, ends }) {
       >
         {positions.map((pos, i) => {
           const tile = board[i].tile;
+          const isNewest = i === lastIndex;
           return (
             <div
               key={i}
-              className="absolute"
+              className={`absolute ${isNewest ? 'tile-placed' : ''}`}
               style={{
                 left: `${pos.x + offsetX}px`,
-                top: `${pos.y + offsetY}px`
+                top: `${pos.y + offsetY}px`,
+                animationDelay: isNewest ? '0ms' : '0ms'
               }}
             >
               <Tile
