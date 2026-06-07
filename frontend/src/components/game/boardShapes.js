@@ -4,23 +4,14 @@ export const TILE_H = 32;
 const HORIZ = 0;
 const VERT = 1;
 
-function chunk(arr, n) {
-  const out = [];
-  for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
-  return out;
-}
-
 function shapeL(i) {
-  if (i < 8) return HORIZ;
-  return VERT;
+  return i < 8 ? HORIZ : VERT;
 }
 
 function shapeCruz(i) {
-  const segment = Math.floor(i / 4);
-  const inSeg = i % 4;
-  if (segment % 4 === 0) return HORIZ;
-  if (segment % 4 === 1) return VERT;
-  if (segment % 4 === 2) return HORIZ;
+  const seg = Math.floor(i / 8);
+  const inSeg = i % 8;
+  if (inSeg < 6) return HORIZ;
   return VERT;
 }
 
@@ -33,13 +24,16 @@ function shapeCuadrado(i) {
 }
 
 function shapeT(i) {
-  if (i < 8) return HORIZ;
+  const seg = Math.floor(i / 9);
+  const inSeg = i % 9;
+  if (inSeg < 5) return HORIZ;
   return VERT;
 }
 
 function shapeS(i) {
-  const segment = Math.floor(i / 5);
-  if (segment % 2 === 0) return HORIZ;
+  const seg = Math.floor(i / 5);
+  const inSeg = i % 5;
+  if (inSeg < 3) return HORIZ;
   return VERT;
 }
 

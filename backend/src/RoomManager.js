@@ -125,7 +125,7 @@ export class RoomManager {
       }
 
       this.broadcastState(room);
-      await this._sleep(1200);
+      await this._sleep(1800);
     }
   }
 
