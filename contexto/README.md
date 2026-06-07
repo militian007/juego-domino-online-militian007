@@ -17,6 +17,8 @@ Inspirado en el dominó venezolano. La identidad visual apunta a "club privado" 
 **Owner / dev principal:** mili (alias `militian007` en GitHub).
 **Repo:** https://github.com/militian007/juego-domino-online-militian007
 
+> **Nota importante (2026-06-07):** El usuario está **insatisfecho con el diseño actual del tablero** ("sigue horrible"). Va a pedirle a otra IA que lo rehaga. **NO tocar `frontend/src/components/game/Board.jsx` ni `boardShapes.js`** sin entender primero qué se intentó y por qué no le gustó. Ver §17.
+
 ---
 
 ## 2. URLs y Deploy
@@ -58,6 +60,7 @@ Inspirado en el dominó venezolano. La identidad visual apunta a "club privado" 
 - **Tailwind 3.4** con paleta custom (`domino.*`)
 - **Axios** para REST
 - **Google Fonts**: Cormorant Garamond (serif) + Inter (sans)
+- **`vercel.json`** en la raíz de `frontend/` para SPA rewrite (sin esto, refresh de cualquier ruta da 404)
 
 ### Deploy
 - **Vercel** para frontend (build automático)
@@ -72,7 +75,7 @@ juego de domino online/
 ├── backend/
 │   ├── src/
 │   │   ├── server.js                    # Entry point + presence tracking
-│   │   ├── RoomManager.js               # CRUD de salas, broadcast
+│   │   ├── RoomManager.js               # CRUD de salas, broadcast, bot delay
 │   │   ├── config/database.js           # SQLite init + schema
 │   │   ├── controllers/authController.js
 │   │   ├── middleware/auth.js
@@ -92,22 +95,24 @@ juego de domino online/
 │   │   ├── banner-berkana.png
 │   │   ├── banner-publicidad.png
 │   │   └── favicon.svg
+│   ├── vercel.json                      # ⭐ SPA rewrite (refresh fix)
 │   ├── src/
 │   │   ├── main.jsx
 │   │   ├── App.jsx                      # Rutas (sin PrivateRoute en /game)
-│   │   ├── index.css                    # Tailwind + .bg-felt + .bg-felt-inset + .text-shadow-gold
+│   │   ├── index.css                    # Tailwind + .bg-felt + .bg-felt-inset + .tile-placed animation
 │   │   ├── pages/
 │   │   │   ├── Landing.jsx              # ⭐ HERO IMAGE + botones reales + contador en vivo
 │   │   │   ├── Login.jsx                # Respeta state.from para deep-link
 │   │   │   ├── Register.jsx             # Idem Login
 │   │   │   ├── Dashboard.jsx            # Auto-arranca si viene ?mode=
-│   │   │   └── Game.jsx                 # Socket, tablero, mano, oponentes
+│   │   │   └── Game.jsx                 # Socket, tablero, mano, oponentes (con reconnect ref)
 │   │   ├── components/
 │   │   │   ├── Navbar.jsx
 │   │   │   ├── AdSidebar.jsx
 │   │   │   ├── TopBanner.jsx
 │   │   │   └── game/
-│   │   │       ├── Board.jsx            # Tablero con auto-scale + .bg-felt-inset
+│   │   │       ├── Board.jsx            # ⚠️ Tablero con shape functions
+│   │   │       ├── boardShapes.js       # ⚠️ 5 shapes (L, Escalera, Cuesta, Gancho, Serpiente)
 │   │   │       ├── Hand.jsx             # Mano del jugador
 │   │   │       ├── OpponentHand.jsx
 │   │   │       ├── PlayerInfo.jsx
@@ -163,6 +168,7 @@ domino.crimson:    #8b1a2b   (errores, no usado en Landing)
 - `.text-shadow-gold` → `text-shadow: 0 0 30px rgba(212, 175, 55, 0.4)`
 - `.border-gold-glow` → box-shadow dorado
 - `.border-gold-glow-hover` → hover dorado más intenso
+- `.tile-placed` → `@keyframes tile-place` (pop-in scale 0.3→1.15→1, rotate -15→3→0, drop-shadow dorado, 550ms cubic-bezier)
 
 ### Componentes (`@layer components`)
 - `.btn-primary` → botón dorado sólido
@@ -228,7 +234,7 @@ Token JWT guardado en `localStorage` con key `token`. User en `localStorage` con
 ### Servidor → Cliente
 - `presence:count` `{ total, loggedIn, guests }` → emitido en cada connect/disconnect
 - `lobby:update` `room` → cambios en lobby (player join/leave)
-- `game:state` `state` → estado completo del juego (board, hands, turn, etc.)
+- `game:state` `state` → estado completo del juego (board, hands, turn, **boardShape**)
 - `game:action` → acción de un jugador (feedback visual)
 
 ---
@@ -275,32 +281,63 @@ Ruta: `%APPDATA%/domino-online/data.db` (en Windows). En Render es un filesystem
 
 ---
 
-## 11. Cambios Recientes (historial de commits)
+## 11. Formas del Tablero (5 shapes)
 
+**⚠️ Estado actual:** El usuario está **insatisfecho con el diseño del tablero** y va a pedirle a otra IA que lo rehaga. Ver §17 para el historial completo de lo que se intentó.
+
+Implementación actual en `frontend/src/components/game/boardShapes.js` y `backend/src/RoomManager.js`:
+
+```js
+// SHAPES array - IDs que el backend manda al cliente
+['l', 'escalera', 'cuesta', 'gancho', 'serpiente']
 ```
-50097dc  feat: mesa de juego con fondo de fieltro verde realista
-264fb08  feat: alinea la d de 'del' bajo la o de 'Domina'
-8f54331  fix: bug md:text-2xl, agranda contenedor, 'Domina el arte' en 1 linea
-ea76202  feat: titulo en 2 lineas limpias sin italica
-0718998  feat: contenido un poco mas al centro (pr 6-8%)
-e14beea  feat: contenido pegado al borde derecho
-e9cd215  feat: enunciado y botones mas grandes, posicion derecha con absolute
-fc5b57c  feat: empuja contenido al 67% del ancho para no tapar piezas
-31ca5dd  feat: Landing mueve titulo y botones hacia la derecha
-7b665fb  feat: Landing con imagen vacia + botones reales
-82510b7  feat: Landing con ORO.png + 6 hotspots + contador en vivo
-bbc28f5  feat: Dashboard auto-arranca partida si viene ?mode=
-e3423fe  feat: Landing con imagen real, hotspots clickeables, conteo en vivo
-8698c6c  feat: 1v1bot sin registro, modal de modo en Landing, redir por deep-link
-1eb88e5  Landing elegante con serif, fieltro y dorado
-9318e26  ...
-4fe97e2  fix: agregar ruta / al backend para health check de Render
-d6a8d75  ...
-```
+
+| ID | Nombre | Patrón | Visual esperado |
+|----|--------|--------|-----------------|
+| `l` | L (Esquina) | 14H + 14V | Esquina de 90° |
+| `escalera` | Escalera | 3H+1V × 7 | Escalera uniforme bajando |
+| `cuesta` | Cuesta | 4H+1V+2H+1V+4H+1V+2H+1V+4H+1V+2H+1V+4H+1V (28) | Colina con bajadas irregulares |
+| `gancho` | Gancho | 8H+6V+8H+6V | Zigzag con 2 bajadas grandes |
+| `serpiente` | Serpiente | 2H+1V+3H+1V+2H+1V+3H+1V+2H+1V+3H+1V+2H+1V+3H+1V+1H (28) | Onda corta repetida |
+
+**Limitación fundamental:** En dominó, una cadena simple solo puede girar 90° y solo en una dirección (no ramifica). Los nombres son **aspiracionales** — ninguna forma puede ser realmente una Cruz (+) o Cuadrado (□) o T con doble brazo porque requieren branching.
+
+**Animación de placement** (`index.css`):
+- Solo el **último tile** colocado recibe la clase `.tile-placed`
+- Animación: scale 0.3→1.15→1, rotate -15°→3°→0°, opacity 0→1, drop-shadow dorado
+- Duración: 550ms `cubic-bezier(0.34, 1.56, 0.64, 1)`
+
+**Bot pacing** (`backend/src/RoomManager.js`):
+- `await this._sleep(2500)` entre jugadas del bot (configurable)
+- Historial: 800 → 1200 → 1800 → **2500** (actual)
+- El usuario lo quiere aún más lento si la próxima IA refactorea esto
 
 ---
 
-## 12. Cómo Correrlo en Local
+## 12. Cambios Recientes (historial de commits)
+
+```
+c92eab7  fix: backend usa los nuevos shape IDs (l, escalera, cuesta, gancho, serpiente)
+18cb8dd  redesign: 5 formas honestamente distintas (L, Escalera, Cuesta, Gancho, Serpiente)
+75b0c1c  fix: reconnect no duplica salas, Cruz mas horizontal, bot 2.5s
+57fd0d0  fix: vercel.json SPA rewrite, 5 shapes, bot 1.8s
+c51146c  fix: myPlayerId para guests (fallback a socket.userId, no user.id)
+b0451c6  docs: contexto/ folder con README.md
+264fb08  feat: alinea la d de 'del' bajo la o de 'Domina'
+8f54331  fix: bug md:text-2xl, agranda contenedor
+50097dc  feat: mesa de juego con fondo de fieltro verde realista
+df26a07  feat: 5 board shapes + animacion + bot 1.2s
+e3423fe  feat: Landing con imagen real, hotspots clickeables, conteo en vivo
+b2b8783  feat: presence tracking (N jugadores en linea)
+8698c6c  feat: 1v1bot sin registro, modal de modo en Landing, redir por deep-link
+9318e26  ... más viejo
+```
+
+**Último deploy:** commit `c92eab7` (2026-06-07)
+
+---
+
+## 13. Cómo Correrlo en Local
 
 ### Backend
 ```bash
@@ -326,7 +363,7 @@ Render duerme tras 15 min, primer hit tarda 30-50s. El frontend en Vercel ya tie
 
 ---
 
-## 13. Convenciones y Reglas del Proyecto
+## 14. Convenciones y Reglas del Proyecto
 
 1. **NO commitear** `node_modules`, `.env`, `data.db`, archivos en `captures/` (excepto README)
 2. **NO editar** `frontend/public/hero-table.png` (es la imagen de fondo de la Landing)
@@ -335,10 +372,11 @@ Render duerme tras 15 min, primer hit tarda 30-50s. El frontend en Vercel ya tie
 5. **Comentar solo si es estrictamente necesario** (regla del dev: código limpio sin comentarios innecesarios)
 6. **NO usar emojis en el código** salvo que el usuario lo pida explícitamente
 7. **Hot reload**: Vercel tarda ~30s en redesplegar, Render ~30-50s en cold start
+8. **NO commitear cambios sin haberlos visto en localhost** (el usuario prueba en producción directo, así que mejor previsualizar)
 
 ---
 
-## 14. Reglas de UX que el usuario (mili) ya estableció
+## 15. Reglas de UX que el usuario (mili) ya estableció
 
 - **"No em hagas trabajar doble"**: hacer TODO lo posible de mi lado, evitar pedirle clicks innecesarios al usuario
 - **"Si vas a poner algo encima de otra cosa, que se tape bien"**: cualquier overlay tiene que cubrir bien lo de abajo
@@ -346,15 +384,17 @@ Render duerme tras 15 min, primer hit tarda 30-50s. El frontend en Vercel ya tie
 - **"Quiero ver cómo se ve"**: prefiere iteración visual rápida a explicación teórica
 - **Mensajes cortos**: respuestas concisas, sin floritura
 - **Ajustes finos**: prefiere que le dé los valores exactos (clases de Tailwind) para que pueda tocar él mismo si quiere
+- **"Sigue horrible / no me gusta"**: el feedback es honesto y rápido. Si algo no le gusta, lo dice y pasa a otra cosa. No pedirle que lo siga mirando si ya dijo que no.
 
 ---
 
-## 15. TODOs / Próximos Pasos (ideas, no confirmadas)
+## 16. TODOs / Próximos Pasos (ideas, no confirmadas)
 
+- [ ] **REHACER tablero** (delegado a otra IA — usuario insatisfecho con el actual)
 - [ ] Implementar revancha después de partida terminada
 - [ ] Sistema de ranking/ELO
 - [ ] Chat en sala
-- [ ] Reconnect con token después de desconexión
+- [ ] Reconnect con token después de desconexión (mejorar el actual que solo evita duplicar rooms)
 - [ ] Sonidos de fichas al jugarse
 - [ ] Versión mobile-first de Game.jsx (todavía tiene elementos apretados en mobile)
 - [ ] Modal de "rondas" o "tranque" cuando nadie puede jugar
@@ -364,18 +404,64 @@ Render duerme tras 15 min, primer hit tarda 30-50s. El frontend en Vercel ya tie
 
 ---
 
-## 16. Si entrás a este proyecto por primera vez
+## 17. ⭐ HISTORIAL DEL TABLERO (por qué está así)
 
-1. **Leé este README entero** (5 min)
+**El usuario ODIA el aspecto actual del tablero.** Va a pedirle a otra IA que lo rehaga. Acá está todo lo que se intentó:
+
+### Intento 1: Shapes originales
+- L, T, Cruz, Cuadrado, Serpiente — todos con bajadas de 1 ficha
+- **Problema del usuario:** "se siguen viendo mal", "parecen escaleras"
+- Las 5 formas eran visualmente idénticas: cadena horizontal con bajadas de 1
+
+### Intento 2 (18cb8dd): Shapes rediseñados con bajadas más largas
+- L: 14H + 14V (esquina real)
+- Escalera: 3H+1V × 7 (escalera uniforme)
+- Cuesta: bajadas irregulares
+- Gancho: 8H+6V+8H+6V (zigzag)
+- Serpiente: 2H+1V+3H+1V... (onda)
+- **Problema del usuario:** "sigue horrible no haga mas nada se lo voy a pedir a otra ia"
+- Captura de pantalla mostraba la Serpiente con patrón 3-derecha→1-abajo→5-derecha→1-abajo→3-derecha (todavía parece escalera)
+
+### Conclusión
+El usuario quiere **otra solución** que no sea shapes. Posibles direcciones que la próxima IA debería explorar:
+1. **NO usar shapes predefinidos** — generar paths random por partida
+2. **Cambiar completamente el rendering** — no chain visual, sino grid de 4 lados con slots
+3. **Usar la imagen `hero-table.png` como fondo del tablero** (igual que en Landing) y colocar fichas sobre ella
+4. **Renderizar en 2D con posiciones explícitas** (`x, y`) en vez de `shape(i) → row/col`
+5. **Aceptar la limitación**: una cadena de dominó SOLO puede girar 90° en una dirección. La única forma de que se vea "distinta" es cambiando la longitud de los segmentos y el número de giros, no inventando formas imposibles (Cruz, T con doble brazo, Cuadrado)
+6. **Mostrar la cadena en formato "spiral"** (espiral cuadrada hacia adentro) usando ambos extremos de la cadena para hacer giros en direcciones opuestas
+
+### Archivos clave para que la próxima IA los lea
+- `frontend/src/components/game/Board.jsx` — recibe `board` (array de tiles con `index`, `rotation`, `end`) y `boardShape` (id)
+- `frontend/src/components/game/boardShapes.js` — define las 5 shape functions (NO las toques sin leer esto primero)
+- `frontend/src/components/game/Tile.jsx` — renderiza una ficha individual
+- `backend/src/RoomManager.js` línea ~92 — elige shape random: `const shapes = ['l', 'escalera', 'cuesta', 'gancho', 'serpiente'];`
+- `backend/src/RoomManager.js` línea ~141 — `state.boardShape = room.boardShape;` (incluye en el state)
+
+### Lo que SÍ gustó al usuario
+- Landing completa (imagen + título + botones + contador en vivo)
+- Deep-link desde Landing → Login → return
+- Guest mode para 1v1bot (sin registro)
+- Animación de placement de fichas (pop-in)
+- Bot lento (2500ms)
+- Reconnect fix (ya no se queda en "Preparando la partida...")
+
+---
+
+## 18. Si entrás a este proyecto por primera vez
+
+1. **Leé este README entero** (5 min) — prestá atención a §17 si vas a tocar el tablero
 2. **Corré `git log --oneline -20`** para ver el historial reciente
 3. **Mirá `frontend/src/pages/Landing.jsx`** para entender la estructura visual
 4. **Mirá `backend/src/sockets/gameSocket.js`** para entender el flujo de auth + salas
 5. **Probalo en producción**: `https://juego-domino-online-militian007.vercel.app`
-6. **Si vas a cambiar el diseño de la Landing**: las clases están en `Landing.jsx` líneas 200-250, el título está en el `<h1>` con `text-4xl sm:text-5xl md:text-6xl lg:text-7xl` y la imagen está en `frontend/public/hero-table.png`
-7. **Si vas a tocar el juego**: `frontend/src/components/game/` y `backend/src/game/`
+6. **Si vas a rehacer el tablero** (lo más probable que te pidan): NO usar la aproximación de `shape(i) → direction`. Considerá las 6 alternativas listadas en §17.
+7. **Si vas a cambiar el diseño de la Landing**: las clases están en `Landing.jsx` líneas 200-250, el título está en el `<h1>` con `text-4xl sm:text-5xl md:text-6xl lg:text-7xl` y la imagen está en `frontend/public/hero-table.png`
+8. **Si vas a tocar el juego**: `frontend/src/components/game/` y `backend/src/game/`
 
 ---
 
-**Última actualización:** 2026-06-06 (sesión de rediseño de Landing)
+**Última actualización:** 2026-06-07 (sesión de redesign de shapes + handover a otra IA)
 **Mantenedor:** mili (militian007)
 **Estado:** ✅ Producción funcionando, juego testeado 1v1 online y 1v1bot
+**⚠️ Pendiente:** Rehacer tablero (delegado a otra IA)
