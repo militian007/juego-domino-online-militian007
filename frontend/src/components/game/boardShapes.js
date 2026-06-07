@@ -5,44 +5,46 @@ const HORIZ = 0;
 const VERT = 1;
 
 function shapeL(i) {
-  return i < 8 ? HORIZ : VERT;
+  return i < 14 ? HORIZ : VERT;
 }
 
-function shapeCruz(i) {
-  const seg = Math.floor(i / 9);
-  const inSeg = i % 9;
-  if (inSeg < 8) return HORIZ;
+function shapeEscalera(i) {
+  return (i % 4) < 3 ? HORIZ : VERT;
+}
+
+function shapeCuesta(i) {
+  const segs = [4, 1, 2, 1, 4, 1, 2, 1, 4, 1, 2, 1, 4, 1];
+  let acc = 0;
+  for (let s = 0; s < segs.length; s++) {
+    acc += segs[s];
+    if (i < acc) return s % 2 === 0 ? HORIZ : VERT;
+  }
+  return HORIZ;
+}
+
+function shapeGancho(i) {
+  if (i < 8) return HORIZ;
+  if (i < 14) return VERT;
+  if (i < 22) return HORIZ;
   return VERT;
 }
 
-function shapeCuadrado(i) {
-  const side = 7;
-  if (i < side) return HORIZ;
-  if (i < side * 2) return VERT;
-  if (i < side * 3) return HORIZ;
-  return VERT;
-}
-
-function shapeT(i) {
-  const seg = Math.floor(i / 9);
-  const inSeg = i % 9;
-  if (inSeg < 5) return HORIZ;
-  return VERT;
-}
-
-function shapeS(i) {
-  const seg = Math.floor(i / 5);
-  const inSeg = i % 5;
-  if (inSeg < 3) return HORIZ;
-  return VERT;
+function shapeSerpiente(i) {
+  const segs = [2, 1, 3, 1, 2, 1, 3, 1, 2, 1, 3, 1, 2, 1, 3, 1, 1];
+  let acc = 0;
+  for (let s = 0; s < segs.length; s++) {
+    acc += segs[s];
+    if (i < acc) return s % 2 === 0 ? HORIZ : VERT;
+  }
+  return HORIZ;
 }
 
 export const SHAPES = [
   { id: 'l', name: 'L', icon: 'L', fn: shapeL },
-  { id: 'cruz', name: 'Cruz', icon: '+', fn: shapeCruz },
-  { id: 'cuadrado', name: 'Cuadrado', icon: '□', fn: shapeCuadrado },
-  { id: 't', name: 'T', icon: 'T', fn: shapeT },
-  { id: 's', name: 'Serpiente', icon: 'S', fn: shapeS }
+  { id: 'escalera', name: 'Escalera', icon: '⌐', fn: shapeEscalera },
+  { id: 'cuesta', name: 'Cuesta', icon: '◣', fn: shapeCuesta },
+  { id: 'gancho', name: 'Gancho', icon: '⌒', fn: shapeGancho },
+  { id: 'serpiente', name: 'Serpiente', icon: '∿', fn: shapeSerpiente }
 ];
 
 export function getShapeById(id) {
