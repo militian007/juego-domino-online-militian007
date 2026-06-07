@@ -234,13 +234,13 @@ export default function Landing() {
       </header>
 
       <main className="absolute inset-0 z-10 flex items-center justify-center md:justify-end pointer-events-none">
-        <div className="flex flex-col items-center md:items-start text-center md:text-left max-w-xl w-full md:w-auto px-5 md:pr-[6%] lg:pr-[8%] pointer-events-auto">
+        <div className="flex flex-col items-center md:items-start text-center md:text-left max-w-3xl w-full md:w-auto px-5 md:pr-[6%] lg:pr-[8%] pointer-events-auto">
           <p className="text-domino-accent text-xs sm:text-sm tracking-[0.4em] mb-3 sm:mb-4 font-sans drop-shadow">
             CLUB PRIVADO · DOMINÓ
           </p>
-          <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold leading-[1.05] tracking-tight drop-shadow-2xl">
-            <span className="block text-domino-cream">Domina el arte</span>
-            <span className="block text-domino-accent">del domino</span>
+          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight drop-shadow-2xl">
+            <span className="block text-domino-cream whitespace-nowrap">Domina el arte</span>
+            <span className="block text-domino-accent -ml-4 sm:-ml-6 md:-ml-10 lg:-ml-14">del domino</span>
           </h1>
           <p className="mt-5 sm:mt-6 text-domino-cream/90 text-sm sm:text-base leading-relaxed drop-shadow max-w-sm">
             Únete a la mesa, afina tu estrategia y compite con los mejores jugadores.
