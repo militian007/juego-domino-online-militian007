@@ -40,6 +40,33 @@ const io = new Server(server, {
 roomManager.setIO(io);
 setupGameSocket(io, roomManager);
 
+const presence = new Map();
+
+const broadcastPresence = () => {
+  const loggedIn = new Set();
+  for (const [, info] of presence) {
+    if (!info.isGuest) loggedIn.add(info.userId);
+  }
+  io.emit('presence:count', {
+    total: presence.size,
+    loggedIn: loggedIn.size,
+    guests: presence.size - loggedIn.size
+  });
+};
+
+io.on('connection', (socket) => {
+  const userId = socket.userId || `guest-${socket.id}`;
+  const username = socket.username || 'Invitado';
+  const isGuest = !!socket.isGuest;
+  presence.set(socket.id, { userId, username, isGuest });
+  broadcastPresence();
+
+  socket.on('disconnect', () => {
+    presence.delete(socket.id);
+    broadcastPresence();
+  });
+});
+
 server.listen(PORT, HOST, () => {
   const address = server.address();
   const url = typeof address === 'string' ? address : `http://${address.address}:${address.port}`;
