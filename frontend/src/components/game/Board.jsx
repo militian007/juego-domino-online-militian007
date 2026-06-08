@@ -18,7 +18,10 @@ function calculateLayout(board, boardShape) {
 
   // Centros de cada mitad de una ficha (H0 y H1)
   function getHalfCenter(tilePos, halfIndex) {
-    const { x, y, orientation } = tilePos;
+    const { x, y, orientation, isDouble } = tilePos;
+    if (isDouble) {
+      return { x, y };
+    }
     if (orientation === 'horizontal') {
       return halfIndex === 0 ? { x: x - H / 2, y } : { x: x + H / 2, y };
     } else {
@@ -27,7 +30,10 @@ function calculateLayout(board, boardShape) {
   }
 
   // Centro de la ficha a partir del centro de una mitad
-  function getTileCenterFromHalf(halfCenter, halfIndex, orientation) {
+  function getTileCenterFromHalf(halfCenter, halfIndex, orientation, isDouble) {
+    if (isDouble) {
+      return { x: halfCenter.x, y: halfCenter.y };
+    }
     if (orientation === 'horizontal') {
       return halfIndex === 0
         ? { x: halfCenter.x + H / 2, y: halfCenter.y }
@@ -47,7 +53,7 @@ function calculateLayout(board, boardShape) {
   const anchorDouble = anchorTile[0] === anchorTile[1];
   const anchorOrient = anchorDouble ? 'vertical' : 'horizontal';
 
-  positions[anchorIndex] = { x: 0, y: 0, orientation: anchorOrient };
+  positions[anchorIndex] = { x: 0, y: 0, orientation: anchorOrient, isDouble: anchorDouble };
 
   // Helper para obtener la dirección de avance según el tipo de figura
   function getPlacementDir(shape, chainSide, j) {
@@ -110,8 +116,8 @@ function calculateLayout(board, boardShape) {
     else if (dir === 'down') B_half.y += H;
     else if (dir === 'up') B_half.y -= H;
 
-    const B_pos = getTileCenterFromHalf(B_half, 0, orient);
-    positions[i] = { x: B_pos.x, y: B_pos.y, orientation: orient };
+    const B_pos = getTileCenterFromHalf(B_half, 0, orient, isDouble);
+    positions[i] = { x: B_pos.x, y: B_pos.y, orientation: orient, isDouble };
   }
 
   // Llenar cadena izquierda (hacia atrás)
@@ -138,8 +144,8 @@ function calculateLayout(board, boardShape) {
     else if (dir === 'down') B_half.y += H;
     else if (dir === 'up') B_half.y -= H;
 
-    const B_pos = getTileCenterFromHalf(B_half, 1, orient);
-    positions[i] = { x: B_pos.x, y: B_pos.y, orientation: orient };
+    const B_pos = getTileCenterFromHalf(B_half, 1, orient, isDouble);
+    positions[i] = { x: B_pos.x, y: B_pos.y, orientation: orient, isDouble };
   }
 
   // Convertir centros a esquina superior-izquierda para renderizar en HTML
