@@ -40,11 +40,11 @@ function shapeSerpiente(i) {
 }
 
 export const SHAPES = [
-  { id: 'l', name: 'L', icon: 'L', fn: shapeL },
-  { id: 'escalera', name: 'Escalera', icon: '⌐', fn: shapeEscalera },
-  { id: 'cuesta', name: 'Cuesta', icon: '◣', fn: shapeCuesta },
-  { id: 'gancho', name: 'Gancho', icon: '⌒', fn: shapeGancho },
-  { id: 'serpiente', name: 'Serpiente', icon: '∿', fn: shapeSerpiente }
+  { id: 'espiral', name: 'Espiral', icon: '🌀', fn: shapeL },
+  { id: 'serpiente', name: 'Serpiente', icon: '∿', fn: shapeSerpiente },
+  { id: 'bucle', name: 'Bucle Envolvente', icon: '⌒', fn: shapeGancho },
+  { id: 'zigzag', name: 'Zig-Zag Filas', icon: '⎓', fn: shapeEscalera },
+  { id: 'laberinto', name: 'Zig-Zag Columnas', icon: '⫴', fn: shapeCuesta }
 ];
 
 export function getShapeById(id) {
