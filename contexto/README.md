@@ -48,10 +48,10 @@ Inspirado en el dominó venezolano. La identidad visual apunta a "club privado" 
 - **Node.js 24.14.1** (Render default)
 - **Express 4.21** (HTTP REST)
 - **Socket.io 4.8** (tiempo real, juego)
-- **SQLite** vía `node:sqlite` (experimental, warning esperable en logs)
+- **PostgreSQL** (Supabase) en producción, conectado mediante un pooler de conexiones en IPv4 (clúster `aws-1-us-east-2`, puerto `6543`).
+- **SQLite** como base de datos local de desarrollo y fallback automático si se cae la conexión en la nube.
 - **JWT** (`jsonwebtoken`) para auth
 - **bcryptjs** para hashear passwords
-- DB persistente en disco: `%APPDATA%/domino-online/data.db`
 
 ### Frontend (`frontend/`)
 - **Vite 5.4** + **React 18.3**
@@ -239,18 +239,15 @@ Token JWT guardado en `localStorage` con key `token`. User en `localStorage` con
 
 ---
 
-## 9. Base de Datos (SQLite)
+## 9. Base de Datos (Supabase + Fallback SQLite)
 
-Tabla `users`:
-- `id` INTEGER PRIMARY KEY AUTOINCREMENT
-- `username` TEXT UNIQUE NOT NULL
-- `email` TEXT UNIQUE NOT NULL
-- `password_hash` TEXT NOT NULL
-- `games_played` INTEGER DEFAULT 0
-- `games_won` INTEGER DEFAULT 0
-- `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+El backend cuenta con una capa híbrida y resiliente configurada en [database.js](file:///c:/Users/JONAT/OneDrive/Desktop/mili/dev/juego%20de%20domino%20online/backend/src/config/database.js):
+- **Producción (Render + Supabase):** Se conecta a una base de datos PostgreSQL en Supabase. Cuenta con un latido (*heartbeat*) automático de pings cada 2 minutos para evitar que la conexión se duerma o cierre.
+- **Desarrollo Local y Fallback:** Si no se define `DATABASE_URL` o si la conexión a Supabase falla, el sistema hace fallback automáticamente a una base de datos SQLite local (`%APPDATA%/domino-online/data.db`), garantizando que el servidor nunca se caiga.
 
-Ruta: `%APPDATA%/domino-online/data.db` (en Windows). En Render es un filesystem efímero así que la DB se reinicia en cada deploy — está bien porque solo guarda users registrados, no hay datos críticos.
+Estructura de las tablas `users` y `game_history`:
+- **users:** `id` (Primary Key), `username` (Unique), `email` (Unique), `password_hash`, `games_played`, `games_won`, `created_at`.
+- **game_history:** `id` (Primary Key), `room_code`, `winner_team`, `team1_score`, `team2_score`, `mode`, `played_at`.
 
 ---
 
@@ -300,40 +297,31 @@ Implementación actual en `frontend/src/components/game/boardShapes.js` y `backe
 | `gancho` | Gancho | 8H+6V+8H+6V | Zigzag con 2 bajadas grandes |
 | `serpiente` | Serpiente | 2H+1V+3H+1V+2H+1V+3H+1V+2H+1V+3H+1V+2H+1V+3H+1V+1H (28) | Onda corta repetida |
 
-**Limitación fundamental:** En dominó, una cadena simple solo puede girar 90° y solo en una dirección (no ramifica). Los nombres son **aspiracionales** — ninguna forma puede ser realmente una Cruz (+) o Cuadrado (□) o T con doble brazo porque requieren branching.
-
 **Animación de placement** (`index.css`):
 - Solo el **último tile** colocado recibe la clase `.tile-placed`
 - Animación: scale 0.3→1.15→1, rotate -15°→3°→0°, opacity 0→1, drop-shadow dorado
 - Duración: 550ms `cubic-bezier(0.34, 1.56, 0.64, 1)`
-
-**Bot pacing** (`backend/src/RoomManager.js`):
-- `await this._sleep(2500)` entre jugadas del bot (configurable)
-- Historial: 800 → 1200 → 1800 → **2500** (actual)
-- El usuario lo quiere aún más lento si la próxima IA refactorea esto
 
 ---
 
 ## 12. Cambios Recientes (historial de commits)
 
 ```
-c92eab7  fix: backend usa los nuevos shape IDs (l, escalera, cuesta, gancho, serpiente)
-18cb8dd  redesign: 5 formas honestamente distintas (L, Escalera, Cuesta, Gancho, Serpiente)
-75b0c1c  fix: reconnect no duplica salas, Cruz mas horizontal, bot 2.5s
-57fd0d0  fix: vercel.json SPA rewrite, 5 shapes, bot 1.8s
-c51146c  fix: myPlayerId para guests (fallback a socket.userId, no user.id)
-b0451c6  docs: contexto/ folder con README.md
-264fb08  feat: alinea la d de 'del' bajo la o de 'Domina'
-8f54331  fix: bug md:text-2xl, agranda contenedor
-50097dc  feat: mesa de juego con fondo de fieltro verde realista
-df26a07  feat: 5 board shapes + animacion + bot 1.2s
-e3423fe  feat: Landing con imagen real, hotspots clickeables, conteo en vivo
-b2b8783  feat: presence tracking (N jugadores en linea)
-8698c6c  feat: 1v1bot sin registro, modal de modo en Landing, redir por deep-link
-9318e26  ... más viejo
+512b2b7  feat: Add database heartbeat ping and transparent SQLite fallback to prevent connection drops
+f764323  style: Remove CSS brown leather border, leaving 100% green felt background
+c824512  style: Use pure green felt background image and render brown leather border via CSS to ensure perfect aspect ratio framing
+ff176d9  style: Crop outer wood floor from table background image and adjust board safety margins
+7bb2938  feat: Add human placement delay, adjust unplayable tile dim brightness, and restrict board scale area to green felt
+ab543bf  feat: Use high-res image slices for domino tiles on board and hand with accurate rotations
+7d9a06c  feat: set board background image and deploy high-res sliced tiles and html viewer
+0e29117  style: premium black and gold domino tiles design matching the landing page
+6bc017c  feat: adjust bot turn delay order and add visual gold glow to newest tile
+b53f764  docs: update TODO list with board fix completed and database configuration pending
+d5085c6  feat: migrate database layer to support PostgreSQL on Render/Supabase
+893badf  fix: domino layout positioning and stability
 ```
 
-**Último deploy:** commit `c92eab7` (2026-06-07)
+**Último deploy:** commit `512b2b7` (2026-06-08)
 
 ---
 
@@ -398,7 +386,7 @@ Render duerme tras 15 min, primer hit tarda 30-50s. El frontend en Vercel ya tie
 - [ ] Sonidos de fichas al jugarse
 - [ ] Versión mobile-first de Game.jsx (todavía tiene elementos apretados en mobile)
 - [ ] Modal de "rondas" o "tranque" cuando nadie puede jugar
-- [ ] **Configurar DATABASE_URL en Render (Supabase/Neon)** (Código migrado a PostgreSQL por la IA, listo para conectar)
+- [x] **Configurar DATABASE_URL en Render (Supabase/Neon)** (Migrado exitosamente a Supabase PostgreSQL en producción con clúster aws-1)
 - [ ] Dominó doble 9 (actualmente doble 6)
 - [ ] Refactor del Bot.js (está funcional pero podría ser más competitivo)
 
@@ -461,7 +449,7 @@ El usuario quiere **otra solución** que no sea shapes. Posibles direcciones que
 
 ---
 
-**Última actualización:** 2026-06-07 (sesión de redesign de shapes + handover a otra IA)
+**Última actualización:** 2026-06-08 (Migración a Supabase completada con éxito)
 **Mantenedor:** mili (militian007)
-**Estado:** ✅ Producción funcionando, juego testeado 1v1 online y 1v1bot
-**⚠️ Pendiente:** Rehacer tablero (delegado a otra IA)
+**Estado:** ✅ Producción conectada a Supabase PostgreSQL y funcionando, juego testeado con persistencia permanente.
+**⚠️ Pendiente:** Ajustes del juego y UI.
