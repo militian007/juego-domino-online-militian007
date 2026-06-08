@@ -89,7 +89,7 @@ export class RoomManager {
       }
     }
 
-    const shapes = ['l', 'escalera', 'cuesta', 'gancho', 'serpiente'];
+    const shapes = ['espiral', 'serpiente', 'bucle', 'zigzag', 'laberinto'];
     room.boardShape = shapes[Math.floor(Math.random() * shapes.length)];
 
     room.game = new DominoGame({
