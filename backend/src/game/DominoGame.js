@@ -7,6 +7,8 @@ import {
   WINNING_SCORE
 } from './Tile.js';
 
+export const GRID_SIZE = 20;
+
 export const MODE_CONFIG = {
   '1v1': { humans: 2, bots: 0, totalPlayers: 2, teams: false, hasPool: true, label: '1 vs 1' },
   '1v1bot': { humans: 1, bots: 1, totalPlayers: 2, teams: false, hasPool: true, label: '1 vs 1 (con bot)' },
@@ -178,14 +180,175 @@ export class DominoGame {
     });
   }
 
-  canPlay(playerId, tileIndex, side) {
-    const moves = this.getValidMoves(playerId);
-    return moves.some(
-      (m) => m.index === tileIndex && (m.side === side || m.side === 'first')
-    );
+  getValidPlacementsForTile(tile, side) {
+    const placements = [];
+
+    // Si el tablero está vacío
+    if (this.board.length === 0) {
+      if (side !== 'first') return [];
+      const cx = Math.floor(GRID_SIZE / 2);
+      const cy = Math.floor(GRID_SIZE / 2);
+
+      // Opción 1: Horizontal
+      placements.push({
+        tile: [tile[0], tile[1]],
+        x: cx,
+        y: cy,
+        x2: cx + 1,
+        y2: cy,
+        orientation: 'horizontal',
+        side: 'first'
+      });
+
+      // Opción 2: Vertical
+      placements.push({
+        tile: [tile[0], tile[1]],
+        x: cx,
+        y: cy,
+        x2: cx,
+        y2: cy + 1,
+        orientation: 'vertical',
+        side: 'first'
+      });
+
+      return placements;
+    }
+
+    // Obtener celda del extremo correspondiente
+    let ex = 0;
+    let ey = 0;
+    let ev = 0;
+
+    if (side === 'left') {
+      const firstTile = this.board[0];
+      ex = firstTile.x;
+      ey = firstTile.y;
+      ev = firstTile.tile[0];
+    } else if (side === 'right') {
+      const lastTile = this.board[this.board.length - 1];
+      ex = lastTile.x2;
+      ey = lastTile.y2;
+      ev = lastTile.tile[1];
+    } else {
+      return [];
+    }
+
+    // Validar que la ficha encaje con el valor del extremo
+    if (tile[0] !== ev && tile[1] !== ev) return [];
+
+    const connVal = ev;
+    const outerVal = (tile[0] === ev) ? tile[1] : tile[0];
+
+    // Recopilar todas las celdas ocupadas
+    const occupied = new Set();
+    for (const t of this.board) {
+      occupied.add(`${t.x},${t.y}`);
+      occupied.add(`${t.x2},${t.y2}`);
+    }
+
+    const adjacentDirs = [
+      { dx: -1, dy: 0 }, // Izquierda
+      { dx: 1, dy: 0 },  // Derecha
+      { dx: 0, dy: -1 }, // Arriba
+      { dx: 0, dy: 1 }   // Abajo
+    ];
+
+    // Para cada celda adyacente al extremo libre
+    for (const dir1 of adjacentDirs) {
+      const cx = ex + dir1.dx;
+      const cy = ey + dir1.dy;
+
+      if (cx < 0 || cx >= GRID_SIZE || cy < 0 || cy >= GRID_SIZE) continue;
+      if (occupied.has(`${cx},${cy}`)) continue;
+
+      // cx, cy es un lugar libre para poner la mitad de conexión (connVal)
+      // Ahora buscamos un lugar libre adyacente a (cx, cy) para la mitad exterior (outerVal)
+      for (const dir2 of adjacentDirs) {
+        const cx2 = cx + dir2.dx;
+        const cy2 = cy + dir2.dy;
+
+        // No puede ser la celda origen de la conexión (ex, ey)
+        if (cx2 === ex && cy2 === ey) continue;
+        if (cx2 < 0 || cx2 >= GRID_SIZE || cy2 < 0 || cy2 >= GRID_SIZE) continue;
+        if (occupied.has(`${cx2},${cy2}`)) continue;
+
+        // Colocación válida encontrada
+        if (side === 'left') {
+          placements.push({
+            tile: [outerVal, connVal],
+            x: cx2,
+            y: cy2,
+            x2: cx,
+            y2: cy,
+            orientation: (cy === cy2) ? 'horizontal' : 'vertical',
+            side
+          });
+        } else {
+          placements.push({
+            tile: [connVal, outerVal],
+            x: cx,
+            y: cy,
+            x2: cx2,
+            y2: cy2,
+            orientation: (cy === cy2) ? 'horizontal' : 'vertical',
+            side
+          });
+        }
+      }
+    }
+
+    // Deduplicar posiciones físicas idénticas (para fichas dobles)
+    const seen = new Set();
+    const uniquePlacements = [];
+    for (const p of placements) {
+      const minX = Math.min(p.x, p.x2);
+      const minY = Math.min(p.y, p.y2);
+      const key = `${minX},${minY},${p.orientation}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniquePlacements.push(p);
+      }
+    }
+
+    return uniquePlacements;
   }
 
-  playTile(playerId, tileIndex, side = null) {
+  chooseBotPlacement(placements, side) {
+    if (!placements || placements.length === 0) return null;
+
+    // Si hay suficientes fichas en el tablero, intentar continuar en línea recta
+    if (this.board.length >= 1) {
+      const endTile = (side === 'left') ? this.board[0] : this.board[this.board.length - 1];
+      let dx = 0, dy = 0;
+      if (side === 'left') {
+        dx = endTile.x - endTile.x2;
+        dy = endTile.y - endTile.y2;
+      } else {
+        dx = endTile.x2 - endTile.x;
+        dy = endTile.y2 - endTile.y;
+      }
+
+      // Coordenadas objetivo en línea recta
+      const ex = (side === 'left') ? endTile.x : endTile.x2;
+      const ey = (side === 'left') ? endTile.y : endTile.y2;
+      const targetCx = ex + dx;
+      const targetCy = ey + dy;
+      const targetCx2 = targetCx + dx;
+      const targetCy2 = targetCy + dy;
+
+      const straightOpt = placements.find(p => 
+        (side === 'left' 
+          ? (p.x === targetCx2 && p.y === targetCy2 && p.x2 === targetCx && p.y2 === targetCy)
+          : (p.x === targetCx && p.y === targetCy && p.x2 === targetCx2 && p.y2 === targetCy2))
+      );
+      if (straightOpt) return straightOpt;
+    }
+
+    // Si no es posible ir recto (o es la primera ficha), elegir la primera opción
+    return placements[0];
+  }
+
+  playTile(playerId, tileIndex, side = null, x = null, y = null, x2 = null, y2 = null, orientation = null) {
     if (this.status !== 'playing') {
       return { ok: false, error: 'La partida no está activa' };
     }
@@ -210,16 +373,46 @@ export class DominoGame {
     }
 
     const tile = move.tile;
+    const placements = this.getValidPlacementsForTile(tile, move.side);
+    if (placements.length === 0) {
+      return { ok: false, error: 'La colocación física de la ficha está bloqueada' };
+    }
+
+    let px = x;
+    let py = y;
+    let px2 = x2;
+    let py2 = y2;
+    let porient = orientation;
+
+    if (px === null || py === null) {
+      const chosen = this.chooseBotPlacement(placements, move.side);
+      px = chosen.x;
+      py = chosen.y;
+      px2 = chosen.x2;
+      py2 = chosen.y2;
+      porient = chosen.orientation;
+    } else {
+      const isValidCoord = placements.some(p => 
+        p.x === px && p.y === py && p.x2 === px2 && p.y2 === py2 && p.orientation === porient
+      );
+      if (!isValidCoord) {
+        return { ok: false, error: 'Coordenadas de colocación inválidas o colisión en la cuadrícula' };
+      }
+    }
+
     const hand = this.hands[playerId];
     this.hands[playerId] = hand.filter((_, i) => i !== tileIndex);
 
-    this._placeTile(tile, move.side);
+    const chosenPlacement = placements.find(p => p.x === px && p.y === py && p.x2 === px2 && p.y2 === py2);
+    const finalTile = chosenPlacement ? chosenPlacement.tile : tile;
+
+    this._placeTile(finalTile, move.side, px, py, px2, py2, porient);
     this.passes = 0;
     this.drawsThisTurn = 0;
-    this.lastAction = { type: 'play', playerId, tile };
+    this.lastAction = { type: 'play', playerId, tile: finalTile };
 
     if (this.bots[playerId]) {
-      this._recordPlayedTile(tile);
+      this._recordPlayedTile(finalTile);
     }
 
     if (this.hands[playerId].length === 0) {
@@ -286,32 +479,18 @@ export class DominoGame {
     return { ok: true };
   }
 
-  _placeTile(tile, side) {
-    if (!this.ends) {
-      this.board.push({ tile, side: 'first' });
-      this.ends = { left: tile[0], right: tile[1] };
-      return;
-    }
-
+  _placeTile(tile, side, x, y, x2, y2, orientation) {
+    const placedItem = { tile, side, x, y, x2, y2, orientation };
     if (side === 'left') {
-      if (tile[0] === this.ends.left) {
-        this.board.unshift({ tile: [tile[1], tile[0]], side });
-        this.ends.left = tile[1];
-      } else if (tile[1] === this.ends.left) {
-        this.board.unshift({ tile, side });
-        this.ends.left = tile[0];
-      }
-    } else if (side === 'right') {
-      if (tile[1] === this.ends.right) {
-        this.board.push({ tile: [tile[1], tile[0]], side });
-        this.ends.right = tile[0];
-      } else if (tile[0] === this.ends.right) {
-        this.board.push({ tile, side });
+      this.board.unshift(placedItem);
+      this.ends.left = tile[0];
+    } else {
+      this.board.push(placedItem);
+      if (side === 'first') {
+        this.ends = { left: tile[0], right: tile[1] };
+      } else {
         this.ends.right = tile[1];
       }
-    } else if (side === 'first') {
-      this.board.push({ tile, side });
-      this.ends = { left: tile[0], right: tile[1] };
     }
   }
 

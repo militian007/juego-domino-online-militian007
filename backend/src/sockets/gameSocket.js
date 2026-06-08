@@ -97,7 +97,7 @@ export function setupGameSocket(io, roomManager) {
       await roomManager.playBotTurns(room);
     });
 
-    socket.on('game:play', async ({ code, tileIndex, side }, callback) => {
+    socket.on('game:play', async ({ code, tileIndex, side, x, y, x2, y2, orientation }, callback) => {
       const room = roomManager.rooms.get(code);
       if (!room?.game) return callback?.({ ok: false, error: 'No hay juego' });
       
@@ -108,7 +108,7 @@ export function setupGameSocket(io, roomManager) {
       const activeRoom = roomManager.rooms.get(code);
       if (!activeRoom?.game) return callback?.({ ok: false, error: 'No hay juego' });
       
-      const result = activeRoom.game.playTile(socket.userId, tileIndex, side);
+      const result = activeRoom.game.playTile(socket.userId, tileIndex, side, x, y, x2, y2, orientation);
       if (!result.ok) return callback?.(result);
       roomManager.broadcastState(activeRoom);
       callback?.(result);

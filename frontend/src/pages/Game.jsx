@@ -172,19 +172,27 @@ export default function Game() {
     if (!myTurn || !gameState || isPlacing) return;
     const movesForTile = gameState.validMoves.filter((m) => m.index === index);
     if (movesForTile.length === 0) return;
-    if (movesForTile.length === 1 || !gameState.ends) {
-      playTile(index, movesForTile[0].side);
+    
+    if (selectedTile && selectedTile.index === index) {
+      setSelectedTile(null);
     } else {
       setSelectedTile({ index, tile: gameState.myHand[index] });
-      setShowSidePicker(true);
     }
   };
 
-  const playTile = (tileIndex, side) => {
+  const playTile = (tileIndex, side, placement = null) => {
     if (!socket || !actualRoomCode || isPlacing) return;
     setError('');
     setIsPlacing(true);
-    socket.emit('game:play', { code: actualRoomCode, tileIndex, side }, (res) => {
+    const payload = { code: actualRoomCode, tileIndex, side };
+    if (placement) {
+      payload.x = placement.x;
+      payload.y = placement.y;
+      payload.x2 = placement.x2;
+      payload.y2 = placement.y2;
+      payload.orientation = placement.orientation;
+    }
+    socket.emit('game:play', payload, (res) => {
       if (!res.ok) {
         setError(res.error);
         setIsPlacing(false);
@@ -433,7 +441,16 @@ export default function Game() {
               </div>
 
               <div className="rounded-xl p-3 sm:p-4 min-h-[320px] sm:min-h-[440px] relative bg-felt-inset shadow-inner border border-domino-accent/20">
-                <Board board={gameState.board} ends={gameState.ends} boardShape={gameState.boardShape} />
+                <Board
+                  board={gameState.board}
+                  ends={gameState.ends}
+                  selectedTile={selectedTile}
+                  onPlayTile={(side, placement) => {
+                    playTile(selectedTile.index, side, placement);
+                  }}
+                  myTurn={myTurn}
+                  lastAction={gameState.lastAction}
+                />
                 {lastAction && myTurn && (
                   <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/70 text-slate-200 text-xs sm:text-sm px-3 py-1.5 rounded-full border border-slate-700">
                     {lastAction}
@@ -625,21 +642,7 @@ export default function Game() {
           </div>
         )}
 
-        {showSidePicker && selectedTile && gameState.ends && (
-          <SidePicker
-            tile={selectedTile.tile}
-            leftEnd={gameState.ends.left}
-            rightEnd={gameState.ends.right}
-            onSelect={(side) => {
-              setShowSidePicker(false);
-              playTile(selectedTile.index, side);
-            }}
-            onCancel={() => {
-              setShowSidePicker(false);
-              setSelectedTile(null);
-            }}
-          />
-        )}
+
       </div>
     </div>
   );

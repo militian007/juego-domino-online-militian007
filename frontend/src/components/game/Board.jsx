@@ -1,335 +1,375 @@
-import { useMemo, useRef, useState, useEffect } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import Tile from './Tile.jsx';
-import { TILE_W, TILE_H, getShapeById } from './boardShapes.js';
 
-const PADDING = 16;
+const GRID_SIZE = 20;
+const CELL_SIZE = 32;
 
-function getTileDims(orientation) {
-  return orientation === 'horizontal'
-    ? { w: TILE_W, h: TILE_H }
-    : { w: TILE_H, h: TILE_W };
-}
-
-function calculateLayout(board, boardShape) {
-  if (!board || board.length === 0) return [];
-
-  const H = TILE_H; // 32
-  const W = TILE_W; // 64
-
-  // Centros de cada mitad de una ficha (H0 y H1)
-  function getHalfCenter(tilePos, halfIndex, dir) {
-    const { x, y, orientation, isDouble } = tilePos;
-    if (isDouble) {
-      if (orientation === 'horizontal') {
-        if (dir === 'down' || dir === 'up') return { x, y };
-      } else {
-        if (dir === 'right' || dir === 'left') return { x, y };
-      }
-    }
-    if (orientation === 'horizontal') {
-      return halfIndex === 0 ? { x: x - H / 2, y } : { x: x + H / 2, y };
-    } else {
-      return halfIndex === 0 ? { x, y: y - H / 2 } : { x, y: y + H / 2 };
-    }
-  }
-
-  // Centro de la ficha a partir del centro de una mitad
-  function getTileCenterFromHalf(halfCenter, halfIndex, orientation, isDouble, dir) {
-    if (isDouble) {
-      if (orientation === 'horizontal') {
-        if (dir === 'down' || dir === 'up') return { x: halfCenter.x, y: halfCenter.y };
-      } else {
-        if (dir === 'right' || dir === 'left') return { x: halfCenter.x, y: halfCenter.y };
-      }
-    }
-    if (orientation === 'horizontal') {
-      return halfIndex === 0
-        ? { x: halfCenter.x + H / 2, y: halfCenter.y }
-        : { x: halfCenter.x - H / 2, y: halfCenter.y };
-    } else {
-      return halfIndex === 0
-        ? { x: halfCenter.x, y: halfCenter.y + H / 2 }
-        : { x: halfCenter.x, y: halfCenter.y - H / 2 };
-    }
-  }
-
-  let anchorIndex = board.findIndex((item) => item.side === 'first');
-  if (anchorIndex === -1) anchorIndex = 0;
-
-  const positions = new Array(board.length);
-  const anchorTile = board[anchorIndex].tile;
-  const anchorDouble = anchorTile[0] === anchorTile[1];
-  const anchorOrient = anchorDouble ? 'vertical' : 'horizontal';
-
-  positions[anchorIndex] = { x: 0, y: 0, orientation: anchorOrient, isDouble: anchorDouble };
-
-  // Helper para obtener la dirección de avance según el tipo de figura
-  function getPlacementDir(shape, chainSide, j) {
-    if (shape === 'espiral') {
-      if (chainSide === 'right') {
-        const segs = [
-          { dir: 'right', len: 4 },
-          { dir: 'down', len: 3 },
-          { dir: 'left', len: 8 },
-          { dir: 'up', len: 7 },
-          { dir: 'right', len: 12 },
-          { dir: 'down', len: 11 }
-        ];
-        let acc = 0;
-        for (const seg of segs) {
-          acc += seg.len;
-          if (j <= acc) return seg.dir;
-        }
-        return 'right';
-      } else {
-        const segs = [
-          { dir: 'left', len: 4 },
-          { dir: 'up', len: 5 },
-          { dir: 'right', len: 8 },
-          { dir: 'down', len: 9 },
-          { dir: 'left', len: 12 },
-          { dir: 'up', len: 13 }
-        ];
-        let acc = 0;
-        for (const seg of segs) {
-          acc += seg.len;
-          if (j <= acc) return seg.dir;
-        }
-        return 'left';
-      }
-    } else if (shape === 'serpiente') {
-      if (chainSide === 'right') {
-        if (j <= 3) return 'right';
-        const cycleIndex = (j - 4) % 20;
-        if (cycleIndex < 3) return 'up';
-        if (cycleIndex < 10) return 'left';
-        if (cycleIndex < 13) return 'up';
-        return 'right';
-      } else {
-        if (j <= 3) return 'left';
-        const cycleIndex = (j - 4) % 20;
-        if (cycleIndex < 3) return 'down';
-        if (cycleIndex < 10) return 'right';
-        if (cycleIndex < 13) return 'down';
-        return 'left';
-      }
-    } else if (shape === 'bucle') {
-      if (chainSide === 'right') {
-        if (j <= 4) return 'right';
-        if (j <= 7) return 'down';
-        if (j <= 16) return 'left';
-        if (j <= 22) return 'up';
-        if (j <= 31) return 'right';
-        return 'down';
-      } else {
-        if (j <= 4) return 'left';
-        if (j <= 7) return 'up';
-        if (j <= 16) return 'right';
-        if (j <= 22) return 'down';
-        if (j <= 31) return 'left';
-        return 'up';
-      }
-    } else if (shape === 'zigzag') {
-      if (chainSide === 'right') {
-        if (j <= 4) return 'right';
-        if (j <= 6) return 'up';
-        return 'left';
-      } else {
-        if (j <= 4) return 'left';
-        if (j <= 6) return 'down';
-        return 'right';
-      }
-    } else if (shape === 'laberinto') {
-      if (chainSide === 'right') {
-        if (j <= 4) return 'down';
-        if (j <= 6) return 'right';
-        return 'up';
-      } else {
-        if (j <= 4) return 'up';
-        if (j <= 6) return 'left';
-        return 'down';
-      }
-    }
-    return chainSide === 'right' ? 'right' : 'left';
-  }
-
-  // Llenar cadena derecha (hacia adelante)
-  for (let i = anchorIndex + 1; i < board.length; i++) {
-    const tile = board[i].tile;
-    const isDouble = tile[0] === tile[1];
-    const prevPos = positions[i - 1];
-    const j = i - anchorIndex;
-    const dir = getPlacementDir(boardShape, 'right', j);
-
-    let orient =
-      dir === 'right' || dir === 'left'
-        ? isDouble
-          ? 'vertical'
-          : 'horizontal'
-        : isDouble
-        ? 'horizontal'
-        : 'vertical';
-
-    const A_halfIndex = (dir === 'right' || dir === 'down') ? 1 : 0;
-    const B_halfIndex = (dir === 'right' || dir === 'down') ? 0 : 1;
-
-    const A_half = getHalfCenter(prevPos, A_halfIndex, dir);
-    let B_half = { x: A_half.x, y: A_half.y };
-    if (dir === 'right') B_half.x += H;
-    else if (dir === 'left') B_half.x -= H;
-    else if (dir === 'down') B_half.y += H;
-    else if (dir === 'up') B_half.y -= H;
-
-    const B_pos = getTileCenterFromHalf(B_half, B_halfIndex, orient, isDouble, dir);
-    positions[i] = { x: B_pos.x, y: B_pos.y, orientation: orient, isDouble };
-  }
-
-  // Llenar cadena izquierda (hacia atrás)
-  for (let i = anchorIndex - 1; i >= 0; i--) {
-    const tile = board[i].tile;
-    const isDouble = tile[0] === tile[1];
-    const nextPos = positions[i + 1];
-    const j = anchorIndex - i;
-    const dir = getPlacementDir(boardShape, 'left', j);
-
-    let orient =
-      dir === 'right' || dir === 'left'
-        ? isDouble
-          ? 'vertical'
-          : 'horizontal'
-        : isDouble
-        ? 'horizontal'
-        : 'vertical';
-
-    const A_halfIndex = (dir === 'right' || dir === 'down') ? 1 : 0;
-    const B_halfIndex = (dir === 'right' || dir === 'down') ? 0 : 1;
-
-    const A_half = getHalfCenter(nextPos, A_halfIndex, dir);
-    let B_half = { x: A_half.x, y: A_half.y };
-    if (dir === 'right') B_half.x += H;
-    else if (dir === 'left') B_half.x -= H;
-    else if (dir === 'down') B_half.y += H;
-    else if (dir === 'up') B_half.y -= H;
-
-    const B_pos = getTileCenterFromHalf(B_half, B_halfIndex, orient, isDouble, dir);
-    positions[i] = { x: B_pos.x, y: B_pos.y, orientation: orient, isDouble };
-  }
-
-  // Convertir centros a esquina superior-izquierda para renderizar en HTML
-  return positions.map((pos) => {
-    return pos.orientation === 'horizontal'
-      ? { x: pos.x - W / 2, y: pos.y - H / 2, orientation: 'horizontal' }
-      : { x: pos.x - H / 2, y: pos.y - W / 2, orientation: 'vertical' };
-  });
-}
-
-export default function Board({ board, ends, boardShape = 'l' }) {
-  const containerRef = useRef(null);
-  const [size, setSize] = useState({ width: 0, height: 0 });
-  const prevBoardLenRef = useRef(0);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      const { width, height } = entries[0].contentRect;
-      setSize({ width, height });
+function getValidPlacementsForTile(board, tile, side) {
+  const placements = [];
+  if (!board || board.length === 0) {
+    if (side !== 'first') return [];
+    const cx = Math.floor(GRID_SIZE / 2);
+    const cy = Math.floor(GRID_SIZE / 2);
+    placements.push({
+      tile: [tile[0], tile[1]],
+      x: cx,
+      y: cy,
+      x2: cx + 1,
+      y2: cy,
+      orientation: 'horizontal',
+      side: 'first'
     });
-    observer.observe(containerRef.current);
-    return () => observer.disconnect();
+    placements.push({
+      tile: [tile[0], tile[1]],
+      x: cx,
+      y: cy,
+      x2: cx,
+      y2: cy + 1,
+      orientation: 'vertical',
+      side: 'first'
+    });
+    return placements;
+  }
+
+  let ex = 0;
+  let ey = 0;
+  let ev = 0;
+
+  if (side === 'left') {
+    const firstTile = board[0];
+    ex = firstTile.x;
+    ey = firstTile.y;
+    ev = firstTile.tile[0];
+  } else if (side === 'right') {
+    const lastTile = board[board.length - 1];
+    ex = lastTile.x2;
+    ey = lastTile.y2;
+    ev = lastTile.tile[1];
+  } else {
+    return [];
+  }
+
+  if (tile[0] !== ev && tile[1] !== ev) return [];
+
+  const connVal = ev;
+  const outerVal = (tile[0] === ev) ? tile[1] : tile[0];
+
+  const occupied = new Set();
+  for (const t of board) {
+    occupied.add(`${t.x},${t.y}`);
+    occupied.add(`${t.x2},${t.y2}`);
+  }
+
+  const adjacentDirs = [
+    { dx: -1, dy: 0 },
+    { dx: 1, dy: 0 },
+    { dx: 0, dy: -1 },
+    { dx: 0, dy: 1 }
+  ];
+
+  for (const dir1 of adjacentDirs) {
+    const cx = ex + dir1.dx;
+    const cy = ey + dir1.dy;
+
+    if (cx < 0 || cx >= GRID_SIZE || cy < 0 || cy >= GRID_SIZE) continue;
+    if (occupied.has(`${cx},${cy}`)) continue;
+
+    for (const dir2 of adjacentDirs) {
+      const cx2 = cx + dir2.dx;
+      const cy2 = cy + dir2.dy;
+
+      if (cx2 === ex && cy2 === ey) continue;
+      if (cx2 < 0 || cx2 >= GRID_SIZE || cy2 < 0 || cy2 >= GRID_SIZE) continue;
+      if (occupied.has(`${cx2},${cy2}`)) continue;
+
+      if (side === 'left') {
+        placements.push({
+          tile: [outerVal, connVal],
+          x: cx2,
+          y: cy2,
+          x2: cx,
+          y2: cy,
+          orientation: (cy === cy2) ? 'horizontal' : 'vertical',
+          side
+        });
+      } else {
+        placements.push({
+          tile: [connVal, outerVal],
+          x: cx,
+          y: cy,
+          x2: cx2,
+          y2: cy2,
+          orientation: (cy === cy2) ? 'horizontal' : 'vertical',
+          side
+        });
+      }
+    }
+  }
+
+  const seen = new Set();
+  const uniquePlacements = [];
+  for (const p of placements) {
+    const minX = Math.min(p.x, p.x2);
+    const minY = Math.min(p.y, p.y2);
+    const key = `${minX},${minY},${p.orientation}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniquePlacements.push(p);
+    }
+  }
+
+  return uniquePlacements;
+}
+
+export default function Board({
+  board,
+  ends,
+  selectedTile = null,
+  onPlayTile = null,
+  myTurn = false,
+  lastAction = null
+}) {
+  const containerRef = useRef(null);
+
+  // Calcular fantasmas disponibles para la ficha seleccionada
+  const ghostPlacements = useMemo(() => {
+    if (!myTurn || !selectedTile || !selectedTile.tile) return [];
+    
+    // Si el tablero está vacío, se juega en el extremo 'first'
+    if (!board || board.length === 0) {
+      return getValidPlacementsForTile(board, selectedTile.tile, 'first');
+    }
+
+    // Si no está vacío, ver qué extremos encajan
+    const placements = [];
+    const leftPlacements = getValidPlacementsForTile(board, selectedTile.tile, 'left');
+    const rightPlacements = getValidPlacementsForTile(board, selectedTile.tile, 'right');
+    
+    placements.push(...leftPlacements);
+    placements.push(...rightPlacements);
+    
+    return placements;
+  }, [board, selectedTile, myTurn]);
+
+  // Centrar el tablero inicialmente en el primer renderizado
+  useEffect(() => {
+    if (containerRef.current) {
+      const containerWidth = containerRef.current.clientWidth;
+      const containerHeight = containerRef.current.clientHeight;
+      containerRef.current.scrollLeft = (GRID_SIZE * CELL_SIZE - containerWidth) / 2;
+      containerRef.current.scrollTop = (GRID_SIZE * CELL_SIZE - containerHeight) / 2;
+    }
   }, []);
 
-  const shape = getShapeById(boardShape);
-
-  const positions = useMemo(
-    () => (board && board.length > 0 ? calculateLayout(board, boardShape) : []),
-    [board, boardShape]
-  );
-
-  const lastIndex = (board?.length || 0) - 1;
-
+  // Autocentrado inteligente hacia la última pieza jugada
   useEffect(() => {
-    prevBoardLenRef.current = board?.length || 0;
-  }, [board?.length]);
+    if (board && board.length > 0 && containerRef.current) {
+      // Encontrar la ficha más nueva
+      let lastTile = board[board.length - 1]; // por defecto al final
+      
+      if (lastAction && lastAction.type === 'play' && lastAction.tile) {
+        const matchingTile = board.find((pos, idx) => 
+          (idx === 0 || idx === board.length - 1) &&
+          ((pos.tile[0] === lastAction.tile[0] && pos.tile[1] === lastAction.tile[1]) ||
+           (pos.tile[0] === lastAction.tile[1] && pos.tile[1] === lastAction.tile[0]))
+        );
+        if (matchingTile) {
+          lastTile = matchingTile;
+        }
+      }
+
+      const containerWidth = containerRef.current.clientWidth;
+      const containerHeight = containerRef.current.clientHeight;
+      const tileLeft = Math.min(lastTile.x, lastTile.x2) * CELL_SIZE;
+      const tileTop = Math.min(lastTile.y, lastTile.y2) * CELL_SIZE;
+
+      containerRef.current.scrollTo({
+        left: tileLeft - containerWidth / 2 + CELL_SIZE,
+        top: tileTop - containerHeight / 2 + CELL_SIZE / 2,
+        behavior: 'smooth'
+      });
+    }
+  }, [board, lastAction]);
 
   if (!board || board.length === 0) {
     return (
       <div
         ref={containerRef}
-        className="w-full h-full min-h-[260px] sm:min-h-[380px] flex items-center justify-center text-domino-cream/60 italic text-sm sm:text-base"
+        className="w-full h-full min-h-[300px] sm:min-h-[420px] relative overflow-auto rounded-xl border border-slate-700 shadow-2xl"
+        style={{
+          backgroundImage: 'url("/mesa-de-juego.webp")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
       >
-        <div className="text-center">
-          <div className="text-domino-accent/50 text-4xl mb-2 font-serif">{shape.icon}</div>
-          <div>Figura: {shape.name}</div>
-          <div className="text-xs mt-1 opacity-60">El tablero está vacío. Toca una ficha para empezar.</div>
+        {/* Renderizar área del grid transparente encima */}
+        <div 
+          className="relative"
+          style={{
+            width: `${GRID_SIZE * CELL_SIZE}px`,
+            height: `${GRID_SIZE * CELL_SIZE}px`,
+          }}
+        >
+          {/* Si es mi turno y tengo una ficha seleccionada, mostrar los fantasmas en el centro */}
+          {ghostPlacements.map((opt, idx) => {
+            const outerX = (opt.side === 'right') ? opt.x2 : opt.x;
+            const outerY = (opt.side === 'right') ? opt.y2 : opt.y;
+            const tileLeft = Math.min(opt.x, opt.x2) * CELL_SIZE;
+            const tileTop = Math.min(opt.y, opt.y2) * CELL_SIZE;
+            const tileWidth = opt.orientation === 'horizontal' ? CELL_SIZE * 2 : CELL_SIZE;
+            const tileHeight = opt.orientation === 'horizontal' ? CELL_SIZE : CELL_SIZE * 2;
+
+            return (
+              <div
+                key={`ghost-${idx}`}
+                className="absolute group z-20"
+                style={{
+                  left: `${tileLeft}px`,
+                  top: `${tileTop}px`,
+                  width: `${tileWidth}px`,
+                  height: `${tileHeight}px`,
+                  pointerEvents: 'none'
+                }}
+              >
+                {/* Contorno punteado completo */}
+                <div className="absolute inset-0 border-2 border-dashed border-domino-accent/40 bg-domino-accent/5 rounded group-hover:border-domino-accent/80 group-hover:bg-domino-accent/15 transition-all duration-200 shadow-[0_0_8px_rgba(212,175,55,0.1)] group-hover:shadow-[0_0_12px_rgba(212,175,55,0.3)]" />
+                
+                {/* Botón "+" en la celda exterior */}
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPlayTile && onPlayTile(opt.side, opt);
+                  }}
+                  className="absolute border border-domino-accent bg-domino-dark/95 text-domino-accent cursor-pointer hover:bg-domino-accent hover:text-domino-dark rounded flex items-center justify-center shadow-[0_0_6px_rgba(212,175,55,0.3)] hover:scale-110 active:scale-95 transition-all duration-150 pointer-events-auto"
+                  style={{
+                    left: `${(outerX - Math.min(opt.x, opt.x2)) * CELL_SIZE + 4}px`,
+                    top: `${(outerY - Math.min(opt.y, opt.y2)) * CELL_SIZE + 4}px`,
+                    width: `${CELL_SIZE - 8}px`,
+                    height: `${CELL_SIZE - 8}px`
+                  }}
+                >
+                  <span className="font-bold text-sm select-none">+</span>
+                </div>
+              </div>
+            );
+          })}
+
+          <div className="absolute inset-0 flex items-center justify-center text-domino-cream/60 italic text-sm sm:text-base pointer-events-none">
+            <div className="text-center p-6 bg-slate-900/60 backdrop-blur-sm rounded-xl border border-slate-700/50 max-w-xs">
+              <div className="text-domino-accent/50 text-4xl mb-2 font-serif">🀫</div>
+              <div>El tablero está vacío</div>
+              <div className="text-xs mt-1 opacity-70">
+                {myTurn 
+                  ? 'Selecciona una ficha de tu mano y haz clic en el centro para iniciar la partida.' 
+                  : 'Esperando que comience la ronda...'}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  positions.forEach((pos) => {
-    const { w, h } = getTileDims(pos.orientation);
-    minX = Math.min(minX, pos.x);
-    minY = Math.min(minY, pos.y);
-    maxX = Math.max(maxX, pos.x + w);
-    maxY = Math.max(maxY, pos.y + h);
-  });
-
-  const naturalWidth = maxX - minX + PADDING * 2;
-  const naturalHeight = maxY - minY + PADDING * 2;
-  const offsetX = -minX + PADDING;
-  const offsetY = -minY + PADDING;
-
-  const scaleX = size.width > 0 ? size.width / naturalWidth : 1;
-  const scaleY = size.height > 0 ? size.height / naturalHeight : 1;
-  const scale = Math.min(scaleX, scaleY, 1);
-
-  const scaledWidth = naturalWidth * scale;
-  const scaledHeight = naturalHeight * scale;
-  const centerX = size.width > 0 ? (size.width - scaledWidth) / 2 : 0;
-  const centerY = size.height > 0 ? (size.height - scaledHeight) / 2 : 0;
-
   return (
     <div
       ref={containerRef}
-      className="w-full h-full min-h-[260px] sm:min-h-[380px] relative overflow-hidden bg-cover bg-center rounded-xl border border-slate-700 shadow-2xl"
+      className="w-full h-full min-h-[300px] sm:min-h-[420px] relative overflow-auto rounded-xl border border-slate-700 shadow-2xl select-none"
       style={{
-        backgroundImage: 'url("/mesa-de-juego.webp")'
+        backgroundImage: 'url("/mesa-de-juego.webp")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
       }}
     >
+      {/* Contenedor del Grid */}
       <div
+        className="relative"
         style={{
-          position: 'absolute',
-          left: `${centerX}px`,
-          top: `${centerY}px`,
-          width: `${naturalWidth}px`,
-          height: `${naturalHeight}px`,
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left'
+          width: `${GRID_SIZE * CELL_SIZE}px`,
+          height: `${GRID_SIZE * CELL_SIZE}px`,
+          backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)',
+          backgroundSize: `${CELL_SIZE}px ${CELL_SIZE}px`
         }}
       >
-        {positions.map((pos, i) => {
-          const tile = board[i].tile;
-          const isNewest = i === lastIndex;
+        {/* Renderizar Fichas Colocadas */}
+        {board.map((pos, i) => {
+          const tile = pos.tile;
+          
+          // Detectar si es la ficha más nueva
+          const isNewest = lastAction && lastAction.type === 'play' && 
+            ((lastAction.tile[0] === tile[0] && lastAction.tile[1] === tile[1]) ||
+             (lastAction.tile[0] === tile[1] && lastAction.tile[1] === tile[0])) &&
+            (i === 0 || i === board.length - 1);
+
+          // Normalizar el orden de las mitades para pasarlo a Tile.jsx:
+          // Tile.jsx requiere [min, max] y rota 0/180/90/270.
+          // Si es horizontal: el valor en el menor X debe estar en el índice 0.
+          // Si es vertical: el valor en el menor Y debe estar en el índice 0.
+          const displayTile = pos.orientation === 'horizontal'
+            ? (pos.x < pos.x2 ? [tile[0], tile[1]] : [tile[1], tile[0]])
+            : (pos.y < pos.y2 ? [tile[0], tile[1]] : [tile[1], tile[0]]);
+
+          const left = Math.min(pos.x, pos.x2) * CELL_SIZE;
+          const top = Math.min(pos.y, pos.y2) * CELL_SIZE;
+
           return (
             <div
-              key={i}
-              className={`absolute ${isNewest ? 'tile-placed' : ''}`}
+              key={`tile-${i}`}
+              className={`absolute ${isNewest ? 'tile-placed z-10' : ''}`}
               style={{
-                left: `${pos.x + offsetX}px`,
-                top: `${pos.y + offsetY}px`,
-                animationDelay: isNewest ? '0ms' : '0ms'
+                left: `${left}px`,
+                top: `${top}px`,
               }}
             >
               <Tile
-                tile={tile}
+                tile={displayTile}
                 orientation={pos.orientation}
                 size="sm"
                 isNewest={isNewest}
               />
+            </div>
+          );
+        })}
+
+        {/* Renderizar Siluetas Fantasmas (Ghost Placements) */}
+        {ghostPlacements.map((opt, idx) => {
+          const outerX = (opt.side === 'right') ? opt.x2 : opt.x;
+          const outerY = (opt.side === 'right') ? opt.y2 : opt.y;
+          const tileLeft = Math.min(opt.x, opt.x2) * CELL_SIZE;
+          const tileTop = Math.min(opt.y, opt.y2) * CELL_SIZE;
+          const tileWidth = opt.orientation === 'horizontal' ? CELL_SIZE * 2 : CELL_SIZE;
+          const tileHeight = opt.orientation === 'horizontal' ? CELL_SIZE : CELL_SIZE * 2;
+
+          return (
+            <div
+              key={`ghost-${idx}`}
+              className="absolute group z-20"
+              style={{
+                left: `${tileLeft}px`,
+                top: `${tileTop}px`,
+                width: `${tileWidth}px`,
+                height: `${tileHeight}px`,
+                pointerEvents: 'none'
+              }}
+            >
+              {/* Contorno punteado completo */}
+              <div className="absolute inset-0 border-2 border-dashed border-domino-accent/40 bg-domino-accent/5 rounded group-hover:border-domino-accent/80 group-hover:bg-domino-accent/15 transition-all duration-200 shadow-[0_0_8px_rgba(212,175,55,0.1)] group-hover:shadow-[0_0_12px_rgba(212,175,55,0.3)] animate-pulse" />
+              
+              {/* Botón "+" en la celda exterior */}
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPlayTile && onPlayTile(opt.side, opt);
+                }}
+                className="absolute border border-domino-accent bg-domino-dark/95 text-domino-accent cursor-pointer hover:bg-domino-accent hover:text-domino-dark rounded flex items-center justify-center shadow-[0_0_6px_rgba(212,175,55,0.3)] hover:scale-110 active:scale-95 transition-all duration-150 pointer-events-auto"
+                style={{
+                  left: `${(outerX - Math.min(opt.x, opt.x2)) * CELL_SIZE + 4}px`,
+                  top: `${(outerY - Math.min(opt.y, opt.y2)) * CELL_SIZE + 4}px`,
+                  width: `${CELL_SIZE - 8}px`,
+                  height: `${CELL_SIZE - 8}px`
+                }}
+              >
+                <span className="font-bold text-sm select-none">+</span>
+              </div>
             </div>
           );
         })}

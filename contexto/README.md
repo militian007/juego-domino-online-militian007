@@ -367,26 +367,14 @@ Render duerme tras 15 min, primer hit tarda 30-50s. El frontend en Vercel ya tie
 
 ---
 
-## 15. Reglas de UX que el usuario (mili) ya estableció
+## 15.## 16. TODOs / Próximos Pasos (ideas, no confirmadas)
 
-- **"No em hagas trabajar doble"**: hacer TODO lo posible de mi lado, evitar pedirle clicks innecesarios al usuario
-- **"Si vas a poner algo encima de otra cosa, que se tape bien"**: cualquier overlay tiene que cubrir bien lo de abajo
-- **"No quiero que dañes la imagen"**: las imágenes de referencia son sagradas, solo se superponen elementos React encima
-- **"Quiero ver cómo se ve"**: prefiere iteración visual rápida a explicación teórica
-- **Mensajes cortos**: respuestas concisas, sin floritura
-- **Ajustes finos**: prefiere que le dé los valores exactos (clases de Tailwind) para que pueda tocar él mismo si quiere
-- **"Sigue horrible / no me gusta"**: el feedback es honesto y rápido. Si algo no le gusta, lo dice y pasa a otra cosa. No pedirle que lo siga mirando si ya dijo que no.
-
----
-
-## 16. TODOs / Próximos Pasos (ideas, no confirmadas)
-
-- [x] **REHACER tablero** (Completado y optimizado con algoritmo de doble cadena estable y alineación exacta)
+- [x] **REHACER tablero** (Completado y optimizado con algoritmo de cuadrícula interactiva de 20x20)
 - [ ] Implementar revancha después de partida terminada
 - [ ] Sistema de ranking/ELO
 - [ ] Chat en sala
 - [ ] Reconnect con token después de desconexión (mejorar el actual que solo evita duplicar rooms)
-- [ ] Sonidos de fichas al jugarse
+- [x] Sonidos de fichas al jugarse
 - [ ] Versión mobile-first de Game.jsx (todavía tiene elementos apretados en mobile)
 - [ ] Modal de "rondas" o "tranque" cuando nadie puede jugar
 - [x] **Configurar DATABASE_URL en Render (Supabase/Neon)** (Migrado exitosamente a Supabase PostgreSQL en producción con clúster aws-1)
@@ -397,62 +385,39 @@ Render duerme tras 15 min, primer hit tarda 30-50s. El frontend en Vercel ya tie
 
 ## 17. ⭐ HISTORIAL DEL TABLERO (por qué está así)
 
-**El usuario ODIA el aspecto actual del tablero.** Va a pedirle a otra IA que lo rehaga. Acá está todo lo que se intentó:
-
-### Intento 1: Shapes originales
-- L, T, Cruz, Cuadrado, Serpiente — todos con bajadas de 1 ficha
-- **Problema del usuario:** "se siguen viendo mal", "parecen escaleras"
-- Las 5 formas eran visualmente idénticas: cadena horizontal con bajadas de 1
-
-### Intento 2 (18cb8dd): Shapes rediseñados con bajadas más largas
-- L: 14H + 14V (esquina real)
-- Escalera: 3H+1V × 7 (escalera uniforme)
-- Cuesta: bajadas irregulares
-- Gancho: 8H+6V+8H+6V (zigzag)
-- Serpiente: 2H+1V+3H+1V... (onda)
-- **Problema del usuario:** "sigue horrible no haga mas nada se lo voy a pedir a otra ia"
-- Captura de pantalla mostraba la Serpiente con patrón 3-derecha→1-abajo→5-derecha→1-abajo→3-derecha (todavía parece escalera)
-
-### Conclusión
-El usuario quiere **otra solución** que no sea shapes. Posibles direcciones que la próxima IA debería explorar:
-1. **NO usar shapes predefinidos** — generar paths random por partida
-2. **Cambiar completamente el rendering** — no chain visual, sino grid de 4 lados con slots
-3. **Usar la imagen `hero-table.png` como fondo del tablero** (igual que en Landing) y colocar fichas sobre ella
-4. **Renderizar en 2D con posiciones explícitas** (`x, y`) en vez de `shape(i) → row/col`
-5. **Aceptar la limitación**: una cadena de dominó SOLO puede girar 90° en una dirección. La única forma de que se vea "distinta" es cambiando la longitud de los segmentos y el número de giros, no inventando formas imposibles (Cruz, T con doble brazo, Cuadrado)
-6. **Mostrar la cadena en formato "spiral"** (espiral cuadrada hacia adentro) usando ambos extremos de la cadena para hacer giros en direcciones opuestas
-
-### Archivos clave para que la próxima IA los lea
-- `frontend/src/components/game/Board.jsx` — recibe `board` (array de tiles con `index`, `rotation`, `end`) y `boardShape` (id)
-- `frontend/src/components/game/boardShapes.js` — define las 5 shape functions (NO las toques sin leer esto primero)
-- `frontend/src/components/game/Tile.jsx` — renderiza una ficha individual
-- `backend/src/RoomManager.js` línea ~92 — elige shape random: `const shapes = ['l', 'escalera', 'cuesta', 'gancho', 'serpiente'];`
-- `backend/src/RoomManager.js` línea ~141 — `state.boardShape = room.boardShape;` (incluye en el state)
-
-### Lo que SÍ gustó al usuario
-- Landing completa (imagen + título + botones + contador en vivo)
-- Deep-link desde Landing → Login → return
-- Guest mode para 1v1bot (sin registro)
-- Animación de placement de fichas (pop-in)
-- Bot lento (2500ms)
-- Reconnect fix (ya no se queda en "Preparando la partida...")
+El usuario quería mayor control y visualización exacta de las fichas sin que se escalaran a tamaños pequeños. Por esta razón, se descartó el sistema de figuras fijas (`serpiente`, `zigzag`, etc.) e implementamos una **Mesa Cuadriculada Interactiva de 20x20**:
+- Las piezas se quedan a escala real fija (100% de su tamaño legible).
+- Al seleccionar una ficha de la mano, se muestran siluetas doradas con el botón **"+"** en el extremo exterior de cada opción de colocación.
+- El usuario hace clic en el extremo que prefiera, lo cual especifica su rotación y dirección con precisión de forma inequívoca.
+- La cámara sigue el juego automáticamente con desplazamientos suaves (`smooth scrolling`).
 
 ---
 
 ## 18. Si entrás a este proyecto por primera vez
 
-1. **Leé este README entero** (5 min) — prestá atención a §17 si vas a tocar el tablero
-2. **Corré `git log --oneline -20`** para ver el historial reciente
-3. **Mirá `frontend/src/pages/Landing.jsx`** para entender la estructura visual
-4. **Mirá `backend/src/sockets/gameSocket.js`** para entender el flujo de auth + salas
-5. **Probalo en producción**: `https://juego-domino-online-militian007.vercel.app`
-6. **Si vas a rehacer el tablero** (lo más probable que te pidan): NO usar la aproximación de `shape(i) → direction`. Considerá las 6 alternativas listadas en §17.
-7. **Si vas a cambiar el diseño de la Landing**: las clases están en `Landing.jsx` líneas 200-250, el título está en el `<h1>` con `text-4xl sm:text-5xl md:text-6xl lg:text-7xl` y la imagen está en `frontend/public/hero-table.png`
-8. **Si vas a tocar el juego**: `frontend/src/components/game/` y `backend/src/game/`
+1. **Leé este README entero** (5 min).
+2. **Corré `git log --oneline -20`** para ver el historial reciente.
+3. **Mirá `frontend/src/pages/Landing.jsx`** para entender la estructura visual.
+4. **Mirá `backend/src/sockets/gameSocket.js`** y `backend/src/game/DominoGame.js` para la lógica del grid de 20x20.
+5. **Si vas a tocar el juego**: `frontend/src/components/game/` y `backend/src/game/`.
 
 ---
 
-**Última actualización:** 2026-06-08 (Migración a Supabase completada con éxito)
+## 19. Rediseño del Tablero a Cuadrícula Interactiva (Grid 20x20) — 2026-06-08
+
+### Características Clave:
+1. **Posicionamiento Basado en Coordenadas**:
+   - Cada pieza en `board` almacena sus coordenadas de cuadrícula `x, y` (valor de la mitad 0) y `x2, y2` (valor de la mitad 1), más su `orientation` (`'horizontal'` o `'vertical'`).
+   - Las coordenadas de colocación se calculan dinámicamente y se validan en el servidor (`DominoGame.js`) para evitar colisiones y superposiciones.
+2. **Bot Inteligente en Grid**:
+   - El bot prefiere colocar las piezas en línea recta con respecto a la dirección de flujo de la cadena previa. Si se encuentra bloqueado o cerca de los bordes del grid de 20x20, gira de manera automática hacia cualquier otra dirección libre.
+3. **Colocación Inequívoca y Sin Solapamientos**:
+   - Las siluetas fantasma renderizan la visualización del dominó, pero el botón interactivo de click `"+"` se posiciona estrictamente en la celda exterior libre de cada opción.
+   - Esto previene cualquier solapamiento en la celda de conexión, permitiendo al usuario decidir exactamente si desea colocar la ficha de forma horizontal o vertical.
+4. **Cámara de Autocentrado**:
+   - `Board.jsx` centra automáticamente la visualización del tablero en la última ficha jugada tras cada colocación mediante un deslizamiento animado suave (`smooth scroll`).
+
+**Última actualización:** 2026-06-08 (Refactorización a Tablero Cuadriculado 20x20 e Interactividad Inequívoca)
 **Mantenedor:** mili (militian007)
-**Estado:** ✅ Producción conectada a Supabase PostgreSQL y funcionando, juego testeado con persistencia permanente.
-**⚠️ Pendiente:** Ajustes del juego y UI.
+**Estado:** ✅ Servidor y frontend actualizados y probados con éxito localmente.
+
