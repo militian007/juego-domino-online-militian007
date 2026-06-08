@@ -285,8 +285,7 @@ export default function Board({ board, ends, boardShape = 'l' }) {
 
   const scaleX = size.width > 0 ? size.width / naturalWidth : 1;
   const scaleY = size.height > 0 ? size.height / naturalHeight : 1;
-  const minAllowedScale = size.width > 500 ? 0.85 : 0.7;
-  const scale = Math.max(minAllowedScale, Math.min(scaleX, scaleY, 1));
+  const scale = Math.min(scaleX, scaleY, 1);
 
   const scaledWidth = naturalWidth * scale;
   const scaledHeight = naturalHeight * scale;
