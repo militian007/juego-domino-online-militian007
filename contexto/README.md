@@ -417,7 +417,12 @@ El usuario quería mayor control y visualización exacta de las fichas sin que s
 4. **Cámara de Autocentrado**:
    - `Board.jsx` centra automáticamente la visualización del tablero en la última ficha jugada tras cada colocación mediante un deslizamiento animado suave (`smooth scroll`).
 
-**Última actualización:** 2026-06-08 (Refactorización a Tablero Cuadriculado 20x20 e Interactividad Inequívoca)
+5. **Ajuste de Dimensiones de la Mesa**:
+   - Se limitó el ancho máximo de la mesa de juego (`Board.jsx`) a `640px` (`max-w-[640px]`) y el contenedor de la tarjeta padre en el frontend (`Game.jsx`) a `672px` (`max-w-[672px]`) para encajar exactamente con las 20x20 cuadrículas (640x640px de espacio interior).
+   - Esto evita que la mesa se estire en pantallas anchas y muestre espacios vacíos a los lados de la cuadrícula. En móviles, se mantiene al 100% de la pantalla con scroll horizontal.
+
+**Última actualización:** 2026-06-08 (Refactorización a Tablero Cuadriculado 20x20, Interactividad Inequívoca y Ajuste de Dimensiones Exactas de Mesa)
 **Mantenedor:** mili (militian007)
 **Estado:** ✅ Servidor y frontend actualizados y probados con éxito localmente.
+
 

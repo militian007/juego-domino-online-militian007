@@ -440,7 +440,7 @@ export default function Game() {
                 )}
               </div>
 
-              <div className="rounded-xl p-3 sm:p-4 min-h-[320px] sm:min-h-[440px] relative bg-felt-inset shadow-inner border border-domino-accent/20">
+              <div className="rounded-xl p-3 sm:p-4 min-h-[320px] sm:min-h-[440px] relative bg-felt-inset shadow-inner border border-domino-accent/20 max-w-[672px] mx-auto w-full">
                 <Board
                   board={gameState.board}
                   ends={gameState.ends}
