@@ -11,6 +11,7 @@ import AdSidebar from '../components/AdSidebar.jsx';
 import TopBanner from '../components/TopBanner.jsx';
 import { connectSocket } from '../services/socket.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { playTileSound, playDrawSound } from '../utils/soundEffects.js';
 
 const AUTO_START_MODES = ['1v1bot'];
 const GUEST_ALLOWED_MODES = ['1v1bot'];
@@ -66,7 +67,21 @@ export default function Game() {
       if (state.started) setLobby(null);
     };
     const onGameState = (state) => {
-      setGameState(state);
+      setGameState((prev) => {
+        if (prev && state) {
+          const prevBoardLen = prev.board?.length || 0;
+          const newBoardLen = state.board?.length || 0;
+          const prevPool = prev.poolCount ?? 0;
+          const newPool = state.poolCount ?? 0;
+
+          if (newBoardLen > prevBoardLen) {
+            playTileSound();
+          } else if (newPool < prevPool) {
+            playDrawSound();
+          }
+        }
+        return state;
+      });
       setActualRoomCode(state.roomCode);
       setLobby(null);
       setSelectedTile(null);
