@@ -26,8 +26,10 @@ Inspirado en el dominó venezolano. La identidad visual apunta a "club privado" 
 | Servicio | URL | Plataforma |
 |---|---|---|
 | Frontend (producción) | `https://juego-domino-online-militian007.vercel.app` | Vercel (auto-deploy desde `main`) |
-| Backend (producción) | `https://domino-backend-51mn.onrender.com` | Render free tier ⚠️ duerme tras 15 min idle (~30-50s cold start) |
+| Backend (producción) | `https://domino-backend-51mn.onrender.com` | Render free tier (con auto-ping keep-alive ⚡) |
 | Repo | `https://github.com/militian007/juego-domino-online-militian007` | GitHub |
+
+> 🤖 **Keep-Alive en Render:** Se implementó una rutina en `server.js` que detecta la variable `RENDER_EXTERNAL_URL` de Render y realiza un auto-ping HTTP (`/api/health`) cada 13 minutos una vez el servidor está activo. Esto evita que Render ponga la instancia gratuita a dormir por inactividad.
 
 > ⚠️ **Cuidado:** el sufijo del backend es **`51mn`**, NO `81mn`. Si ves `81mn` en código viejo, es bug. La URL correcta es `domino-backend-51mn.onrender.com`.
 
@@ -307,6 +309,7 @@ Implementación actual en `frontend/src/components/game/boardShapes.js` y `backe
 ## 12. Cambios Recientes (historial de commits)
 
 ```
+44e9504  feat: add Render self-ping keep-alive routine to prevent service from sleeping
 512b2b7  feat: Add database heartbeat ping and transparent SQLite fallback to prevent connection drops
 f764323  style: Remove CSS brown leather border, leaving 100% green felt background
 c824512  style: Use pure green felt background image and render brown leather border via CSS to ensure perfect aspect ratio framing
@@ -321,7 +324,7 @@ d5085c6  feat: migrate database layer to support PostgreSQL on Render/Supabase
 893badf  fix: domino layout positioning and stability
 ```
 
-**Último deploy:** commit `512b2b7` (2026-06-08)
+**Último deploy:** commit `44e9504` (2026-06-08)
 
 ---
 

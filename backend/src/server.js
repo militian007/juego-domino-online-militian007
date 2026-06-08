@@ -76,3 +76,35 @@ server.listen(PORT, HOST, () => {
   const url = typeof address === 'string' ? address : `http://${address.address}:${address.port}`;
   console.log(`🎲 Servidor de dominó corriendo en ${url}`);
 });
+
+// Evitar que el servidor de Render se duerma haciendo un auto-ping cada 13 minutos
+const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
+if (RENDER_URL) {
+  console.log(`🤖 Auto-ping de Render activado para: ${RENDER_URL}`);
+  
+  // Ping inicial de calentamiento a los 10 segundos del arranque
+  setTimeout(async () => {
+    try {
+      const response = await fetch(`${RENDER_URL}/api/health`);
+      if (response.ok) {
+        console.log('🤖 Self-ping inicial de Render exitoso');
+      } else {
+        console.warn(`🤖 Self-ping inicial de Render retornó status: ${response.status}`);
+      }
+    } catch (error) {
+      console.warn('🤖 Error en self-ping inicial de Render:', error.message);
+    }
+  }, 10000);
+
+  // Intervalo recurrente cada 13 minutos (Render free tier se apaga tras 15 minutos idle)
+  setInterval(async () => {
+    try {
+      const response = await fetch(`${RENDER_URL}/api/health`);
+      if (response.ok) {
+        console.log('🤖 Self-ping periódico de Render exitoso');
+      }
+    } catch (error) {
+      console.error('❌ Error en self-ping periódico de Render:', error.message);
+    }
+  }, 13 * 60 * 1000);
+}
