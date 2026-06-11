@@ -305,12 +305,13 @@ function getValidPlacementsForTile(board, tile, side) {
       // REGLA NUEVA: Si el doble horizontal queda en la fila superior (0) o inferior (19), habilitamos imanes a los lados (horizontal)
       const isAtBorder = (ey === 0 || ey === GRID_SIZE - 1);
       if (isAtBorder) {
+        const maxX = Math.max(endTile.x, endTile.x2);
         if (side === 'left') {
           addPlacementCandidate({
             tile: [outerVal, connVal],
-            x: ex - 2,
+            x: minX - 2,
             y: ey,
-            x2: ex - 1,
+            x2: minX - 1,
             y2: ey,
             orientation: 'horizontal',
             side
@@ -318,9 +319,9 @@ function getValidPlacementsForTile(board, tile, side) {
         } else {
           addPlacementCandidate({
             tile: [connVal, outerVal],
-            x: ex + 1,
+            x: maxX + 1,
             y: ey,
-            x2: ex + 2,
+            x2: maxX + 2,
             y2: ey,
             orientation: 'horizontal',
             side
@@ -358,13 +359,14 @@ function getValidPlacementsForTile(board, tile, side) {
       // REGLA NUEVA: Si el doble vertical queda en la columna izquierda (0) o derecha (19), habilitamos imanes a los lados (vertical)
       const isAtBorder = (ex === 0 || ex === GRID_SIZE - 1);
       if (isAtBorder) {
+        const maxY = Math.max(endTile.y, endTile.y2);
         if (side === 'left') {
           addPlacementCandidate({
             tile: [outerVal, connVal],
             x: ex,
-            y: ey - 2,
+            y: minY - 2,
             x2: ex,
-            y2: ey - 1,
+            y2: minY - 1,
             orientation: 'vertical',
             side
           });
@@ -372,9 +374,9 @@ function getValidPlacementsForTile(board, tile, side) {
           addPlacementCandidate({
             tile: [connVal, outerVal],
             x: ex,
-            y: ey + 1,
+            y: maxY + 1,
             x2: ex,
-            y2: ey + 2,
+            y2: maxY + 2,
             orientation: 'vertical',
             side
           });
