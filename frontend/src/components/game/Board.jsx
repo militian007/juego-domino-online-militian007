@@ -151,7 +151,22 @@ function getValidPlacementsForTile(board, tile, side) {
     const maxY = Math.max(p.y, p.y2);
 
     // 1. Grid boundary check
-    if (minX < 1 || maxX >= GRID_SIZE - 1 || minY < 1 || maxY >= GRID_SIZE - 1) return;
+    let isWithinBounds = true;
+    if (minX < 1 || maxX >= GRID_SIZE - 1) {
+      if (minX < 0 || maxX >= GRID_SIZE) {
+        isWithinBounds = false; // Fuera del tablero absoluto
+      } else if (p.orientation !== 'vertical') {
+        isWithinBounds = false; // No se permiten horizontales en los bordes izquierdo/derecho
+      }
+    }
+    if (minY < 1 || maxY >= GRID_SIZE - 1) {
+      if (minY < 0 || maxY >= GRID_SIZE) {
+        isWithinBounds = false; // Fuera del tablero absoluto
+      } else if (p.orientation !== 'horizontal') {
+        isWithinBounds = false; // No se permiten verticales en los bordes superior/inferior
+      }
+    }
+    if (!isWithinBounds) return;
     // 2. Collision check
     if (occupied.has(`${p.x},${p.y}`) || occupied.has(`${p.x2},${p.y2}`)) return;
 
@@ -196,9 +211,27 @@ function getValidPlacementsForTile(board, tile, side) {
     const top = minY * CELL_SIZE + offset.y;
 
     // 3. Visual boundary check
-    if (left < CELL_SIZE || (left + tileWidth) > ((GRID_SIZE - 1) * CELL_SIZE) || top < CELL_SIZE || (top + tileHeight) > ((GRID_SIZE - 1) * CELL_SIZE)) {
-      return; // Rejects placements that would render outside the visual board area
+    let isVisualWithinBounds = true;
+    const leftBorder = CELL_SIZE;
+    const rightBorder = (GRID_SIZE - 1) * CELL_SIZE;
+    const topBorder = CELL_SIZE;
+    const bottomBorder = (GRID_SIZE - 1) * CELL_SIZE;
+
+    if (left < leftBorder || (left + tileWidth) > rightBorder) {
+      if (left < 0 || (left + tileWidth) > (GRID_SIZE * CELL_SIZE)) {
+        isVisualWithinBounds = false;
+      } else if (p.orientation !== 'vertical') {
+        isVisualWithinBounds = false;
+      }
     }
+    if (top < topBorder || (top + tileHeight) > bottomBorder) {
+      if (top < 0 || (top + tileHeight) > (GRID_SIZE * CELL_SIZE)) {
+        isVisualWithinBounds = false;
+      } else if (p.orientation !== 'horizontal') {
+        isVisualWithinBounds = false;
+      }
+    }
+    if (!isVisualWithinBounds) return;
 
     // 4. Visual collision check with all existing tiles on the board
     if (board && board.length > 0) {
@@ -268,6 +301,32 @@ function getValidPlacementsForTile(board, tile, side) {
           side
         });
       }
+
+      // REGLA NUEVA: Si el doble horizontal queda en la fila superior (0) o inferior (19), habilitamos imanes a los lados (horizontal)
+      const isAtBorder = (ey === 0 || ey === GRID_SIZE - 1);
+      if (isAtBorder) {
+        if (side === 'left') {
+          addPlacementCandidate({
+            tile: [outerVal, connVal],
+            x: ex - 2,
+            y: ey,
+            x2: ex - 1,
+            y2: ey,
+            orientation: 'horizontal',
+            side
+          });
+        } else {
+          addPlacementCandidate({
+            tile: [connVal, outerVal],
+            x: ex + 1,
+            y: ey,
+            x2: ex + 2,
+            y2: ey,
+            orientation: 'horizontal',
+            side
+          });
+        }
+      }
     } else {
       // Doble vertical: nueva ficha es horizontal (izquierda para left, derecha para right)
       // Usar Math.min(endTile.y, endTile.y2) para que ambas opciones (Izquierda y Derecha) estén en la misma fila (alineadas al medio)
@@ -294,6 +353,32 @@ function getValidPlacementsForTile(board, tile, side) {
           orientation: 'horizontal',
           side
         });
+      }
+
+      // REGLA NUEVA: Si el doble vertical queda en la columna izquierda (0) o derecha (19), habilitamos imanes a los lados (vertical)
+      const isAtBorder = (ex === 0 || ex === GRID_SIZE - 1);
+      if (isAtBorder) {
+        if (side === 'left') {
+          addPlacementCandidate({
+            tile: [outerVal, connVal],
+            x: ex,
+            y: ey - 2,
+            x2: ex,
+            y2: ey - 1,
+            orientation: 'vertical',
+            side
+          });
+        } else {
+          addPlacementCandidate({
+            tile: [connVal, outerVal],
+            x: ex,
+            y: ey + 1,
+            x2: ex,
+            y2: ey + 2,
+            orientation: 'vertical',
+            side
+          });
+        }
       }
     }
   } else {
