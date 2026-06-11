@@ -239,15 +239,13 @@ export class DominoGame {
           handAfter: hand.filter((_, i) => i !== index)
         });
       }
-      if (this.ends.right !== this.ends.left) {
-        if (tile[0] === this.ends.right || tile[1] === this.ends.right) {
-          moves.push({
-            tile,
-            index,
-            side: 'right',
-            handAfter: hand.filter((_, i) => i !== index)
-          });
-        }
+      if (tile[0] === this.ends.right || tile[1] === this.ends.right) {
+        moves.push({
+          tile,
+          index,
+          side: 'right',
+          handAfter: hand.filter((_, i) => i !== index)
+        });
       }
     });
 
