@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import Tile from './Tile.jsx';
 
-const GRID_SIZE = 80;
+const GRID_SIZE = 24;
 const CELL_SIZE = 32;
 
 const getCenter = (t) => {
@@ -762,7 +762,7 @@ export default function Board({
     return (
       <div
         ref={containerRef}
-        className="w-full max-w-[640px] mx-auto h-full min-h-[300px] sm:min-h-[420px] relative overflow-auto rounded-xl border border-slate-700 shadow-2xl bg-felt-inset"
+        className="w-full max-w-[640px] mx-auto h-full min-h-[300px] sm:min-h-[420px] relative overflow-auto rounded-xl border border-slate-700 shadow-2xl bg-felt-inset no-scrollbar"
         style={{
           backgroundImage: 'url("/mesa-de-juego.webp")',
           backgroundSize: 'cover',
@@ -794,7 +794,7 @@ export default function Board({
   return (
     <div
       ref={containerRef}
-      className="w-full max-w-[640px] mx-auto h-full min-h-[300px] sm:min-h-[420px] relative overflow-auto rounded-xl border border-slate-700 shadow-2xl select-none bg-felt-inset"
+      className="w-full max-w-[640px] mx-auto h-full min-h-[300px] sm:min-h-[420px] relative overflow-auto rounded-xl border border-slate-700 shadow-2xl select-none bg-felt-inset no-scrollbar"
       style={{
         backgroundImage: 'url("/mesa-de-juego.webp")',
         backgroundSize: 'cover',
