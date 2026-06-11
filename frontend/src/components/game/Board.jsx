@@ -198,7 +198,7 @@ function getValidPlacementsForTile(board, tile, side) {
   return uniquePlacements;
 }
 
-// Centrar ficha normal si se acopla a un doble perpendicular
+// Centrar ficha normal si pertenece a un segmento acoplado a un doble perpendicular
 function getVisualCoords(pos, idx, board) {
   const left = Math.min(pos.x, pos.x2) * CELL_SIZE;
   const top = Math.min(pos.y, pos.y2) * CELL_SIZE;
@@ -208,28 +208,46 @@ function getVisualCoords(pos, idx, board) {
   const isDouble = pos.tile[0] === pos.tile[1];
   if (isDouble) return { left, top };
 
-  const neighbors = [];
-  if (idx > 0) neighbors.push(board[idx - 1]);
-  if (idx < board.length - 1) neighbors.push(board[idx + 1]);
+  // Buscar la doble de referencia perpendicular a la que este segmento de igual orientación está acoplado
+  let refDouble = null;
 
-  for (const n of neighbors) {
-    const neighborIsDouble = n.tile[0] === n.tile[1];
-    if (neighborIsDouble && n.orientation !== pos.orientation) {
-      if (pos.orientation === 'vertical' && n.orientation === 'horizontal') {
-        const doubleLeft = Math.min(n.x, n.x2) * CELL_SIZE;
-        return { left: doubleLeft + 16, top };
+  // Buscar hacia la izquierda del tablero
+  for (let i = idx - 1; i >= 0; i--) {
+    if (board[i].orientation !== pos.orientation) {
+      if (board[i].tile[0] === board[i].tile[1]) {
+        refDouble = board[i];
       }
-      if (pos.orientation === 'horizontal' && n.orientation === 'vertical') {
-        const doubleTop = Math.min(n.y, n.y2) * CELL_SIZE;
-        return { left, top: doubleTop + 16 };
+      break;
+    }
+  }
+
+  // Si no se encontró hacia la izquierda, buscar hacia la derecha del tablero
+  if (!refDouble) {
+    for (let i = idx + 1; i < board.length; i++) {
+      if (board[i].orientation !== pos.orientation) {
+        if (board[i].tile[0] === board[i].tile[1]) {
+          refDouble = board[i];
+        }
+        break;
       }
+    }
+  }
+
+  if (refDouble) {
+    if (pos.orientation === 'vertical' && refDouble.orientation === 'horizontal') {
+      const doubleLeft = Math.min(refDouble.x, refDouble.x2) * CELL_SIZE;
+      return { left: doubleLeft + 16, top };
+    }
+    if (pos.orientation === 'horizontal' && refDouble.orientation === 'vertical') {
+      const doubleTop = Math.min(refDouble.y, refDouble.y2) * CELL_SIZE;
+      return { left, top: doubleTop + 16 };
     }
   }
 
   return { left, top };
 }
 
-// Centrar ficha fantasma normal si se acopla a un doble perpendicular
+// Centrar ficha fantasma normal si pertenece a un segmento acoplado a un doble perpendicular
 function getGhostVisualCoords(opt, board) {
   const left = Math.min(opt.x, opt.x2) * CELL_SIZE;
   const top = Math.min(opt.y, opt.y2) * CELL_SIZE;
@@ -239,17 +257,37 @@ function getGhostVisualCoords(opt, board) {
   const isDouble = opt.tile[0] === opt.tile[1];
   if (isDouble) return { left, top };
 
-  const neighbor = opt.side === 'left' ? board[0] : board[board.length - 1];
-  if (!neighbor) return { left, top };
+  // Encontrar la doble de referencia para el extremo por el que nos estamos acoplando
+  let refDouble = null;
+  if (opt.side === 'left') {
+    // Si nos acoplamos por la izquierda (inicio del tablero), buscamos a partir del primer elemento hacia la derecha
+    for (let i = 0; i < board.length; i++) {
+      if (board[i].orientation !== opt.orientation) {
+        if (board[i].tile[0] === board[i].tile[1]) {
+          refDouble = board[i];
+        }
+        break;
+      }
+    }
+  } else {
+    // Si nos acoplamos por la derecha (fin del tablero), buscamos a partir del último elemento hacia la izquierda
+    for (let i = board.length - 1; i >= 0; i--) {
+      if (board[i].orientation !== opt.orientation) {
+        if (board[i].tile[0] === board[i].tile[1]) {
+          refDouble = board[i];
+        }
+        break;
+      }
+    }
+  }
 
-  const neighborIsDouble = neighbor.tile[0] === neighbor.tile[1];
-  if (neighborIsDouble && neighbor.orientation !== opt.orientation) {
-    if (opt.orientation === 'vertical' && neighbor.orientation === 'horizontal') {
-      const doubleLeft = Math.min(neighbor.x, neighbor.x2) * CELL_SIZE;
+  if (refDouble) {
+    if (opt.orientation === 'vertical' && refDouble.orientation === 'horizontal') {
+      const doubleLeft = Math.min(refDouble.x, refDouble.x2) * CELL_SIZE;
       return { left: doubleLeft + 16, top };
     }
-    if (opt.orientation === 'horizontal' && neighbor.orientation === 'vertical') {
-      const doubleTop = Math.min(neighbor.y, neighbor.y2) * CELL_SIZE;
+    if (opt.orientation === 'horizontal' && refDouble.orientation === 'vertical') {
+      const doubleTop = Math.min(refDouble.y, refDouble.y2) * CELL_SIZE;
       return { left, top: doubleTop + 16 };
     }
   }

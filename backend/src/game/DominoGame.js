@@ -227,14 +227,9 @@ export class DominoGame {
       ev = endTile.tile[0];
     } else if (side === 'right') {
       endTile = this.board[this.board.length - 1];
-      ex = lastTile ? lastTile.x2 : endTile.x2; // fallback por seguridad
-      ey = lastTile ? lastTile.y2 : endTile.y2;
-      // Usar directamente lastTile o endTile de forma consistente
-      const rightTile = this.board[this.board.length - 1];
-      ex = rightTile.x2;
-      ey = rightTile.y2;
-      ev = rightTile.tile[1];
-      endTile = rightTile;
+      ex = endTile.x2;
+      ey = endTile.y2;
+      ev = endTile.tile[1];
     } else {
       return [];
     }
