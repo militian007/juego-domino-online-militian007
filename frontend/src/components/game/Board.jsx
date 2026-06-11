@@ -133,32 +133,84 @@ function getValidPlacementsForTile(board, tile, side) {
       }
     }
   } else {
-    if (endTile.orientation === 'horizontal') {
-      // Ficha horizontal: continuar horizontalmente
-      if (side === 'left') {
-        addPlacementCandidate({
-          tile: [outerVal, connVal],
-          x: ex - 2,
-          y: ey,
-          x2: ex - 1,
-          y2: ey,
-          orientation: 'horizontal',
-          side
-        });
+    // El extremo es una ficha NORMAL.
+    const tileIsDouble = tile[0] === tile[1];
+    if (tileIsDouble) {
+      // La nueva ficha es un DOBLE: se coloca perpendicular, centrada en el extremo
+      if (endTile.orientation === 'horizontal') {
+        // El doble debe ser vertical
+        if (side === 'left') {
+          addPlacementCandidate({
+            tile: [connVal, connVal],
+            x: ex - 1,
+            y: ey - 1,
+            x2: ex - 1,
+            y2: ey,
+            orientation: 'vertical',
+            side
+          });
+        } else {
+          addPlacementCandidate({
+            tile: [connVal, connVal],
+            x: ex + 1,
+            y: ey - 1,
+            x2: ex + 1,
+            y2: ey,
+            orientation: 'vertical',
+            side
+          });
+        }
       } else {
-        addPlacementCandidate({
-          tile: [connVal, outerVal],
-          x: ex + 1,
-          y: ey,
-          x2: ex + 2,
-          y2: ey,
-          orientation: 'horizontal',
-          side
-        });
+        // El doble debe ser horizontal
+        if (side === 'left') {
+          addPlacementCandidate({
+            tile: [connVal, connVal],
+            x: ex - 1,
+            y: ey - 1,
+            x2: ex,
+            y2: ey - 1,
+            orientation: 'horizontal',
+            side
+          });
+        } else {
+          addPlacementCandidate({
+            tile: [connVal, connVal],
+            x: ex - 1,
+            y: ey + 1,
+            x2: ex,
+            y2: ey + 1,
+            orientation: 'horizontal',
+            side
+          });
+        }
       }
     } else {
-      // Ficha vertical: continuar verticalmente
-      if (side === 'left') {
+      // La nueva ficha es NORMAL (no es doble). Puede colocarse en 3 direcciones:
+      if (endTile.orientation === 'horizontal') {
+        // 1. Recto (horizontal)
+        if (side === 'left') {
+          addPlacementCandidate({
+            tile: [outerVal, connVal],
+            x: ex - 2,
+            y: ey,
+            x2: ex - 1,
+            y2: ey,
+            orientation: 'horizontal',
+            side
+          });
+        } else {
+          addPlacementCandidate({
+            tile: [connVal, outerVal],
+            x: ex + 1,
+            y: ey,
+            x2: ex + 2,
+            y2: ey,
+            orientation: 'horizontal',
+            side
+          });
+        }
+
+        // 2. Giro arriba (vertical)
         addPlacementCandidate({
           tile: [outerVal, connVal],
           x: ex,
@@ -168,7 +220,8 @@ function getValidPlacementsForTile(board, tile, side) {
           orientation: 'vertical',
           side
         });
-      } else {
+
+        // 3. Giro abajo (vertical)
         addPlacementCandidate({
           tile: [connVal, outerVal],
           x: ex,
@@ -176,6 +229,52 @@ function getValidPlacementsForTile(board, tile, side) {
           x2: ex,
           y2: ey + 2,
           orientation: 'vertical',
+          side
+        });
+      } else {
+        // El extremo es vertical
+        // 1. Recto (vertical)
+        if (side === 'left') {
+          addPlacementCandidate({
+            tile: [outerVal, connVal],
+            x: ex,
+            y: ey - 2,
+            x2: ex,
+            y2: ey - 1,
+            orientation: 'vertical',
+            side
+          });
+        } else {
+          addPlacementCandidate({
+            tile: [connVal, outerVal],
+            x: ex,
+            y: ey + 1,
+            x2: ex,
+            y2: ey + 2,
+            orientation: 'vertical',
+            side
+          });
+        }
+
+        // 2. Giro izquierda (horizontal)
+        addPlacementCandidate({
+          tile: [outerVal, connVal],
+          x: ex - 2,
+          y: ey,
+          x2: ex - 1,
+          y2: ey,
+          orientation: 'horizontal',
+          side
+        });
+
+        // 3. Giro derecha (horizontal)
+        addPlacementCandidate({
+          tile: [connVal, outerVal],
+          x: ex + 1,
+          y: ey,
+          x2: ex + 2,
+          y2: ey,
+          orientation: 'horizontal',
           side
         });
       }

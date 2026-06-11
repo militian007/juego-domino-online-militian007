@@ -283,6 +283,81 @@ console.log('\nTEST 12: Determinación de salida por doble más alto en 1v1');
   }
 }
 
+console.log('\nTEST 13: Lógica de giros (3 colocaciones para ficha normal)');
+{
+  const game = new DominoGame({
+    roomCode: 'TTURN',
+    mode: '1v1',
+    players: [
+      { id: 'p1', username: 'A', isBot: false },
+      { id: 'p2', username: 'B', isBot: false }
+    ]
+  });
+  // Colocar una ficha inicial horizontal
+  game.board = [{
+    tile: [5, 4],
+    side: 'first',
+    x: 10,
+    y: 10,
+    x2: 11,
+    y2: 10,
+    orientation: 'horizontal'
+  }];
+  game.ends = { left: 5, right: 4 };
+
+  // Intentar colocar la ficha [4, 3] en el extremo derecho (valor 4)
+  const placements = game.getValidPlacementsForTile([4, 3], 'right');
+  
+  // Debe haber exactamente 3 opciones:
+  // 1. Recto (horizontal derecho): x: 12, y: 10, x2: 13, y2: 10
+  // 2. Giro arriba (vertical arriba): x: 11, y: 8, x2: 11, y2: 9
+  // 3. Giro abajo (vertical abajo): x: 11, y: 11, x2: 11, y2: 12
+  assert(placements.length === 3, 'Tiene exactamente 3 opciones de colocación');
+  
+  const straight = placements.find(p => p.orientation === 'horizontal');
+  assert(straight && straight.x === 12 && straight.y === 10 && straight.x2 === 13 && straight.y2 === 10, 'Opción recta horizontal es correcta');
+
+  const up = placements.find(p => p.orientation === 'vertical' && p.y === 8);
+  assert(up && up.x === 11 && up.y === 8 && up.x2 === 11 && up.y2 === 9, 'Opción giro arriba vertical es correcta');
+
+  const down = placements.find(p => p.orientation === 'vertical' && p.y === 11);
+  assert(down && down.x === 11 && down.y === 11 && down.x2 === 11 && down.y2 === 12, 'Opción giro abajo vertical es correcta');
+}
+
+console.log('\nTEST 14: Colocación de ficha doble perpendicular');
+{
+  const game = new DominoGame({
+    roomCode: 'TDOUBLE',
+    mode: '1v1',
+    players: [
+      { id: 'p1', username: 'A', isBot: false },
+      { id: 'p2', username: 'B', isBot: false }
+    ]
+  });
+  // Colocar una ficha inicial horizontal
+  game.board = [{
+    tile: [5, 4],
+    side: 'first',
+    x: 10,
+    y: 10,
+    x2: 11,
+    y2: 10,
+    orientation: 'horizontal'
+  }];
+  game.ends = { left: 5, right: 4 };
+
+  // Intentar colocar la ficha doble [4, 4] en el extremo derecho (valor 4)
+  const placements = game.getValidPlacementsForTile([4, 4], 'right');
+
+  // Debe haber exactamente 1 opción (perpendicular vertical centrada):
+  // x: 12, y: 9, x2: 12, y2: 10
+  assert(placements.length === 1, 'Tiene exactamente 1 opción de colocación para el doble');
+  const dOpt = placements[0];
+  assert(dOpt.orientation === 'vertical', 'El doble es vertical');
+  assert(dOpt.x === 12 && dOpt.y === 9 && dOpt.x2 === 12 && dOpt.y2 === 10, 'La posición vertical del doble es correcta y centrada');
+}
+
 console.log(`\n${'='.repeat(40)}`);
 console.log(`Pasados: ${passed} | Fallados: ${failed}`);
 if (failed > 0) process.exit(1);
+
