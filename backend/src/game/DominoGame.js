@@ -273,83 +273,59 @@ export class DominoGame {
     if (endIsDouble) {
       // Si el extremo es un DOBLE, la nueva ficha debe colocarse perpendicular
       if (endTile.orientation === 'horizontal') {
-        // Doble horizontal: nueva ficha es vertical (arriba o abajo)
-        // Opción Arriba
-        addPlacementCandidate(side === 'left' ? {
-          tile: [outerVal, connVal],
-          x: ex,
-          y: ey - 2,
-          x2: ex,
-          y2: ey - 1,
-          orientation: 'vertical',
-          side
-        } : {
-          tile: [connVal, outerVal],
-          x: ex,
-          y: ey - 1,
-          x2: ex,
-          y2: ey - 2,
-          orientation: 'vertical',
-          side
-        });
-
-        // Opción Abajo
-        addPlacementCandidate(side === 'left' ? {
-          tile: [outerVal, connVal],
-          x: ex,
-          y: ey + 2,
-          x2: ex,
-          y2: ey + 1,
-          orientation: 'vertical',
-          side
-        } : {
-          tile: [connVal, outerVal],
-          x: ex,
-          y: ey + 1,
-          x2: ex,
-          y2: ey + 2,
-          orientation: 'vertical',
-          side
-        });
+        // Doble horizontal: nueva ficha es vertical (arriba para left, abajo para right)
+        // Usar Math.min(endTile.x, endTile.x2) para que ambas opciones (Arriba y Abajo) estén en la misma columna (alineadas al medio)
+        const minX = Math.min(endTile.x, endTile.x2);
+        if (side === 'left') {
+          // Opción Arriba
+          addPlacementCandidate({
+            tile: [outerVal, connVal],
+            x: minX,
+            y: ey - 2,
+            x2: minX,
+            y2: ey - 1,
+            orientation: 'vertical',
+            side
+          });
+        } else {
+          // Opción Abajo
+          addPlacementCandidate({
+            tile: [connVal, outerVal],
+            x: minX,
+            y: ey + 1,
+            x2: minX,
+            y2: ey + 2,
+            orientation: 'vertical',
+            side
+          });
+        }
       } else {
-        // Doble vertical: nueva ficha es horizontal (izquierda o derecha)
-        // Opción Izquierda
-        addPlacementCandidate(side === 'left' ? {
-          tile: [outerVal, connVal],
-          x: ex - 2,
-          y: ey,
-          x2: ex - 1,
-          y2: ey,
-          orientation: 'horizontal',
-          side
-        } : {
-          tile: [connVal, outerVal],
-          x: ex - 1,
-          y: ey,
-          x2: ex - 2,
-          y2: ey,
-          orientation: 'horizontal',
-          side
-        });
-
-        // Opción Derecha
-        addPlacementCandidate(side === 'left' ? {
-          tile: [outerVal, connVal],
-          x: ex + 2,
-          y: ey,
-          x2: ex + 1,
-          y2: ey,
-          orientation: 'horizontal',
-          side
-        } : {
-          tile: [connVal, outerVal],
-          x: ex + 1,
-          y: ey,
-          x2: ex + 2,
-          y2: ey,
-          orientation: 'horizontal',
-          side
-        });
+        // Doble vertical: nueva ficha es horizontal (izquierda para left, derecha para right)
+        // Usar Math.min(endTile.y, endTile.y2) para que ambas opciones (Izquierda y Derecha) estén en la misma fila (alineadas al medio)
+        const minY = Math.min(endTile.y, endTile.y2);
+        if (side === 'left') {
+          // Opción Izquierda
+          addPlacementCandidate({
+            tile: [outerVal, connVal],
+            x: ex - 2,
+            y: minY,
+            x2: ex - 1,
+            y2: minY,
+            orientation: 'horizontal',
+            side
+          });
+        } else {
+          // Opción Derecha
+          addPlacementCandidate({
+            tile: [connVal, outerVal],
+            x: ex + 1,
+            y: minY,
+            x2: ex + 2,
+            y2: minY,
+            orientation: 'horizontal',
+            side
+          });
+        }
       }
     } else {
       // Si el extremo es NORMAL, la nueva ficha debe colocarse en la misma orientación

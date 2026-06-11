@@ -78,83 +78,59 @@ function getValidPlacementsForTile(board, tile, side) {
 
   if (endIsDouble) {
     if (endTile.orientation === 'horizontal') {
-      // Doble horizontal: nueva ficha es vertical (arriba o abajo)
-      // Opción Arriba
-      addPlacementCandidate(side === 'left' ? {
-        tile: [outerVal, connVal],
-        x: ex,
-        y: ey - 2,
-        x2: ex,
-        y2: ey - 1,
-        orientation: 'vertical',
-        side
-      } : {
-        tile: [connVal, outerVal],
-        x: ex,
-        y: ey - 1,
-        x2: ex,
-        y2: ey - 2,
-        orientation: 'vertical',
-        side
-      });
-
-      // Opción Abajo
-      addPlacementCandidate(side === 'left' ? {
-        tile: [outerVal, connVal],
-        x: ex,
-        y: ey + 2,
-        x2: ex,
-        y2: ey + 1,
-        orientation: 'vertical',
-        side
-      } : {
-        tile: [connVal, outerVal],
-        x: ex,
-        y: ey + 1,
-        x2: ex,
-        y2: ey + 2,
-        orientation: 'vertical',
-        side
-      });
+      // Doble horizontal: nueva ficha es vertical (arriba para left, abajo para right)
+      // Usar Math.min(endTile.x, endTile.x2) para que ambas opciones (Arriba y Abajo) estén en la misma columna (alineadas al medio)
+      const minX = Math.min(endTile.x, endTile.x2);
+      if (side === 'left') {
+        // Opción Arriba
+        addPlacementCandidate({
+          tile: [outerVal, connVal],
+          x: minX,
+          y: ey - 2,
+          x2: minX,
+          y2: ey - 1,
+          orientation: 'vertical',
+          side
+        });
+      } else {
+        // Opción Abajo
+        addPlacementCandidate({
+          tile: [connVal, outerVal],
+          x: minX,
+          y: ey + 1,
+          x2: minX,
+          y2: ey + 2,
+          orientation: 'vertical',
+          side
+        });
+      }
     } else {
-      // Doble vertical: nueva ficha es horizontal (izquierda o derecha)
-      // Opción Izquierda
-      addPlacementCandidate(side === 'left' ? {
-        tile: [outerVal, connVal],
-        x: ex - 2,
-        y: ey,
-        x2: ex - 1,
-        y2: ey,
-        orientation: 'horizontal',
-        side
-      } : {
-        tile: [connVal, outerVal],
-        x: ex - 1,
-        y: ey,
-        x2: ex - 2,
-        y2: ey,
-        orientation: 'horizontal',
-        side
-      });
-
-      // Opción Derecha
-      addPlacementCandidate(side === 'left' ? {
-        tile: [outerVal, connVal],
-        x: ex + 2,
-        y: ey,
-        x2: ex + 1,
-        y2: ey,
-        orientation: 'horizontal',
-        side
-      } : {
-        tile: [connVal, outerVal],
-        x: ex + 1,
-        y: ey,
-        x2: ex + 2,
-        y2: ey,
-        orientation: 'horizontal',
-        side
-      });
+      // Doble vertical: nueva ficha es horizontal (izquierda para left, derecha para right)
+      // Usar Math.min(endTile.y, endTile.y2) para que ambas opciones (Izquierda y Derecha) estén en la misma fila (alineadas al medio)
+      const minY = Math.min(endTile.y, endTile.y2);
+      if (side === 'left') {
+        // Opción Izquierda
+        addPlacementCandidate({
+          tile: [outerVal, connVal],
+          x: ex - 2,
+          y: minY,
+          x2: ex - 1,
+          y2: minY,
+          orientation: 'horizontal',
+          side
+        });
+      } else {
+        // Opción Derecha
+        addPlacementCandidate({
+          tile: [connVal, outerVal],
+          x: ex + 1,
+          y: minY,
+          x2: ex + 2,
+          y2: minY,
+          orientation: 'horizontal',
+          side
+        });
+      }
     }
   } else {
     if (endTile.orientation === 'horizontal') {
@@ -220,6 +196,65 @@ function getValidPlacementsForTile(board, tile, side) {
   }
 
   return uniquePlacements;
+}
+
+// Centrar ficha normal si se acopla a un doble perpendicular
+function getVisualCoords(pos, idx, board) {
+  const left = Math.min(pos.x, pos.x2) * CELL_SIZE;
+  const top = Math.min(pos.y, pos.y2) * CELL_SIZE;
+
+  if (!board || board.length <= 1) return { left, top };
+
+  const isDouble = pos.tile[0] === pos.tile[1];
+  if (isDouble) return { left, top };
+
+  const neighbors = [];
+  if (idx > 0) neighbors.push(board[idx - 1]);
+  if (idx < board.length - 1) neighbors.push(board[idx + 1]);
+
+  for (const n of neighbors) {
+    const neighborIsDouble = n.tile[0] === n.tile[1];
+    if (neighborIsDouble && n.orientation !== pos.orientation) {
+      if (pos.orientation === 'vertical' && n.orientation === 'horizontal') {
+        const doubleLeft = Math.min(n.x, n.x2) * CELL_SIZE;
+        return { left: doubleLeft + 16, top };
+      }
+      if (pos.orientation === 'horizontal' && n.orientation === 'vertical') {
+        const doubleTop = Math.min(n.y, n.y2) * CELL_SIZE;
+        return { left, top: doubleTop + 16 };
+      }
+    }
+  }
+
+  return { left, top };
+}
+
+// Centrar ficha fantasma normal si se acopla a un doble perpendicular
+function getGhostVisualCoords(opt, board) {
+  const left = Math.min(opt.x, opt.x2) * CELL_SIZE;
+  const top = Math.min(opt.y, opt.y2) * CELL_SIZE;
+
+  if (!board || board.length === 0) return { left, top };
+
+  const isDouble = opt.tile[0] === opt.tile[1];
+  if (isDouble) return { left, top };
+
+  const neighbor = opt.side === 'left' ? board[0] : board[board.length - 1];
+  if (!neighbor) return { left, top };
+
+  const neighborIsDouble = neighbor.tile[0] === neighbor.tile[1];
+  if (neighborIsDouble && neighbor.orientation !== opt.orientation) {
+    if (opt.orientation === 'vertical' && neighbor.orientation === 'horizontal') {
+      const doubleLeft = Math.min(neighbor.x, neighbor.x2) * CELL_SIZE;
+      return { left: doubleLeft + 16, top };
+    }
+    if (opt.orientation === 'horizontal' && neighbor.orientation === 'vertical') {
+      const doubleTop = Math.min(neighbor.y, neighbor.y2) * CELL_SIZE;
+      return { left, top: doubleTop + 16 };
+    }
+  }
+
+  return { left, top };
 }
 
 export default function Board({
@@ -313,8 +348,7 @@ export default function Board({
     const threshold = 45; // 45 píxeles de umbral para imantación
 
     for (const opt of ghostPlacements) {
-      const tileLeft = Math.min(opt.x, opt.x2) * CELL_SIZE;
-      const tileTop = Math.min(opt.y, opt.y2) * CELL_SIZE;
+      const { left: tileLeft, top: tileTop } = getGhostVisualCoords(opt, board);
       const tileWidth = opt.orientation === 'horizontal' ? CELL_SIZE * 2 : CELL_SIZE;
       const tileHeight = opt.orientation === 'horizontal' ? CELL_SIZE : CELL_SIZE * 2;
 
@@ -333,7 +367,7 @@ export default function Board({
     } else {
       onSnapChange(false, null);
     }
-  }, [draggedTile, ghostPlacements, onSnapChange]);
+  }, [draggedTile, ghostPlacements, onSnapChange, board]);
 
   const renderGhostPlacements = () => {
     return ghostPlacements.map((opt, idx) => {
@@ -343,8 +377,7 @@ export default function Board({
         draggedTile.activePlacement.y === opt.y &&
         draggedTile.activePlacement.orientation === opt.orientation;
 
-      const tileLeft = Math.min(opt.x, opt.x2) * CELL_SIZE;
-      const tileTop = Math.min(opt.y, opt.y2) * CELL_SIZE;
+      const { left: tileLeft, top: tileTop } = getGhostVisualCoords(opt, board);
       const tileWidth = opt.orientation === 'horizontal' ? CELL_SIZE * 2 : CELL_SIZE;
       const tileHeight = opt.orientation === 'horizontal' ? CELL_SIZE : CELL_SIZE * 2;
 
@@ -474,8 +507,7 @@ export default function Board({
             ? (pos.x < pos.x2 ? [tile[0], tile[1]] : [tile[1], tile[0]])
             : (pos.y < pos.y2 ? [tile[0], tile[1]] : [tile[1], tile[0]]);
 
-          const left = Math.min(pos.x, pos.x2) * CELL_SIZE;
-          const top = Math.min(pos.y, pos.y2) * CELL_SIZE;
+          const { left, top } = getVisualCoords(pos, i, board);
 
           return (
             <div

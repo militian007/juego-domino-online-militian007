@@ -421,8 +421,15 @@ El usuario quería mayor control y visualización exacta de las fichas sin que s
    - Se limitó el ancho máximo de la mesa de juego (`Board.jsx`) a `640px` (`max-w-[640px]`) y el contenedor de la tarjeta padre en el frontend (`Game.jsx`) a `672px` (`max-w-[672px]`) para encajar exactamente con las 20x20 cuadrículas (640x640px de espacio interior).
    - Esto evita que la mesa se estire en pantallas anchas y muestre espacios vacíos a los lados de la cuadrícula. En móviles, se mantiene al 100% de la pantalla con scroll horizontal.
 
-**Última actualización:** 2026-06-08 (Refactorización a Tablero Cuadriculado 20x20, Interactividad Inequívoca y Ajuste de Dimensiones Exactas de Mesa)
+**Última actualización:** 2026-06-11 (Alineación Centrada e Imanes Únicos en el Medio de Fichas Dobles)
 **Mantenedor:** mili (militian007)
 **Estado:** ✅ Servidor y frontend actualizados y probados con éxito localmente.
 
+---
 
+## 20. Alineación Centrada de Fichas en Dobles Perpendiculares (2026-06-11)
+
+Corregimos el comportamiento de los imanes y la colocación física para fichas dobles ("damas") siguiendo la directriz exacta del usuario:
+1. **Unión Centrada en el Medio:** Cuando una ficha no-doble se conecta perpendicularmente a una ficha doble (sea horizontal o vertical), la ficha debe quedar colocada exactamente en el centro de la pieza doble (sobre la línea de división de sus dos mitades), no a la izquierda, ni a la derecha, ni arriba, ni abajo de manera descentrada.
+2. **Coordenadas Matemáticas Unificadas:** Ajustamos tanto el frontend (`Board.jsx`) como el backend (`DominoGame.js`) para que ambas opciones de imantación (Arriba/Abajo para dobles horizontales, Izquierda/Derecha para dobles verticales) utilicen exactamente la misma coordenada base (`Math.min` del doble) en el grid matemático en lugar de estar desfasadas por 1 celda. Esto alinea todo el resto de la cadena de dominó subsiguiente de forma recta y recta sin escalonamientos visuales.
+3. **Exactamente 2 Imanes:** Se redujeron los imanes en dobles a exactamente 2 (uno a cada lado del centro de la ficha) alineados perfectamente con la línea divisoria de la ficha, previniendo visualizaciones duplicadas o descentradas en los extremos.
