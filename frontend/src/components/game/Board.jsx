@@ -127,31 +127,38 @@ export default function Board({
   selectedTile = null,
   onPlayTile = null,
   myTurn = false,
-  lastAction = null
+  lastAction = null,
+  draggedTile = null,
+  onSnapChange = null
 }) {
   const containerRef = useRef(null);
 
-  // Calcular fantasmas disponibles para la ficha seleccionada
+  // Seleccionar la ficha activa para placements (arrastrando o seleccionada)
+  const activeTileForPlacements = useMemo(() => {
+    if (draggedTile) return draggedTile.tile;
+    if (selectedTile) return selectedTile.tile;
+    return null;
+  }, [draggedTile, selectedTile]);
+
+  // Calcular siluetas fantasmas disponibles
   const ghostPlacements = useMemo(() => {
-    if (!myTurn || !selectedTile || !selectedTile.tile) return [];
+    if (!myTurn || !activeTileForPlacements) return [];
     
-    // Si el tablero está vacío, se juega en el extremo 'first'
     if (!board || board.length === 0) {
-      return getValidPlacementsForTile(board, selectedTile.tile, 'first');
+      return getValidPlacementsForTile(board, activeTileForPlacements, 'first');
     }
 
-    // Si no está vacío, ver qué extremos encajan
     const placements = [];
-    const leftPlacements = getValidPlacementsForTile(board, selectedTile.tile, 'left');
-    const rightPlacements = getValidPlacementsForTile(board, selectedTile.tile, 'right');
+    const leftPlacements = getValidPlacementsForTile(board, activeTileForPlacements, 'left');
+    const rightPlacements = getValidPlacementsForTile(board, activeTileForPlacements, 'right');
     
     placements.push(...leftPlacements);
     placements.push(...rightPlacements);
     
     return placements;
-  }, [board, selectedTile, myTurn]);
+  }, [board, activeTileForPlacements, myTurn]);
 
-  // Centrar el tablero inicialmente en el primer renderizado
+  // Centrar el tablero inicialmente
   useEffect(() => {
     if (containerRef.current) {
       const containerWidth = containerRef.current.clientWidth;
@@ -161,21 +168,17 @@ export default function Board({
     }
   }, []);
 
-  // Autocentrado inteligente hacia la última pieza jugada
+  // Autocentrado hacia última pieza jugada
   useEffect(() => {
     if (board && board.length > 0 && containerRef.current) {
-      // Encontrar la ficha más nueva
-      let lastTile = board[board.length - 1]; // por defecto al final
-      
+      let lastTile = board[board.length - 1];
       if (lastAction && lastAction.type === 'play' && lastAction.tile) {
-        const matchingTile = board.find((pos, idx) => 
+        const matchingTile = board.find((pos, idx) =>
           (idx === 0 || idx === board.length - 1) &&
           ((pos.tile[0] === lastAction.tile[0] && pos.tile[1] === lastAction.tile[1]) ||
            (pos.tile[0] === lastAction.tile[1] && pos.tile[1] === lastAction.tile[0]))
         );
-        if (matchingTile) {
-          lastTile = matchingTile;
-        }
+        if (matchingTile) lastTile = matchingTile;
       }
 
       const containerWidth = containerRef.current.clientWidth;
@@ -191,6 +194,123 @@ export default function Board({
     }
   }, [board, lastAction]);
 
+  // Calcular y notificar snap en tiempo real
+  useEffect(() => {
+    if (!draggedTile || ghostPlacements.length === 0 || !onSnapChange) {
+      onSnapChange?.(false, null);
+      return;
+    }
+
+    if (!containerRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const localX = (draggedTile.currentX - rect.left) + containerRef.current.scrollLeft;
+    const localY = (draggedTile.currentY - rect.top) + containerRef.current.scrollTop;
+
+    let bestPlacement = null;
+    let minDistance = Infinity;
+    const threshold = 45; // 45 píxeles de umbral para imantación
+
+    for (const opt of ghostPlacements) {
+      const tileLeft = Math.min(opt.x, opt.x2) * CELL_SIZE;
+      const tileTop = Math.min(opt.y, opt.y2) * CELL_SIZE;
+      const tileWidth = opt.orientation === 'horizontal' ? CELL_SIZE * 2 : CELL_SIZE;
+      const tileHeight = opt.orientation === 'horizontal' ? CELL_SIZE : CELL_SIZE * 2;
+
+      const centerX = tileLeft + tileWidth / 2;
+      const centerY = tileTop + tileHeight / 2;
+
+      const dist = Math.hypot(localX - centerX, localY - centerY);
+      if (dist < minDistance && dist < threshold) {
+        minDistance = dist;
+        bestPlacement = opt;
+      }
+    }
+
+    if (bestPlacement) {
+      onSnapChange(true, bestPlacement);
+    } else {
+      onSnapChange(false, null);
+    }
+  }, [draggedTile, ghostPlacements, onSnapChange]);
+
+  const renderGhostPlacements = () => {
+    return ghostPlacements.map((opt, idx) => {
+      const isSnappedActive = draggedTile?.isSnapped &&
+        draggedTile?.activePlacement &&
+        draggedTile.activePlacement.x === opt.x &&
+        draggedTile.activePlacement.y === opt.y &&
+        draggedTile.activePlacement.orientation === opt.orientation;
+
+      const tileLeft = Math.min(opt.x, opt.x2) * CELL_SIZE;
+      const tileTop = Math.min(opt.y, opt.y2) * CELL_SIZE;
+      const tileWidth = opt.orientation === 'horizontal' ? CELL_SIZE * 2 : CELL_SIZE;
+      const tileHeight = opt.orientation === 'horizontal' ? CELL_SIZE : CELL_SIZE * 2;
+
+      const magnetLeft = tileWidth / 2 - 12;
+      const magnetTop = tileHeight / 2 - 12;
+
+      // Determinar qué tile mostrar de forma predictiva según el arrastre o la selección
+      const currentTile = draggedTile ? draggedTile.tile : (selectedTile ? selectedTile.tile : null);
+
+      const displayTile = currentTile
+        ? (opt.orientation === 'horizontal'
+            ? (opt.x < opt.x2 ? [currentTile[0], currentTile[1]] : [currentTile[1], currentTile[0]])
+            : (opt.y < opt.y2 ? [currentTile[0], currentTile[1]] : [currentTile[1], currentTile[0]]))
+        : null;
+
+      return (
+        <div
+          key={`ghost-${idx}`}
+          className="absolute z-20 group"
+          style={{
+            left: `${tileLeft}px`,
+            top: `${tileTop}px`,
+            width: `${tileWidth}px`,
+            height: `${tileHeight}px`,
+            pointerEvents: 'none'
+          }}
+        >
+          {/* Silueta punteada translúcida */}
+          <div className="absolute inset-0 border-2 border-dashed border-domino-accent/30 bg-domino-accent/5 rounded" />
+
+          {/* Vista previa de la ficha imantada */}
+          {isSnappedActive && displayTile && (
+            <div className="absolute inset-0 opacity-80 border border-domino-accent/40 rounded shadow-lg overflow-hidden scale-[0.98]">
+              <Tile
+                tile={displayTile}
+                orientation={opt.orientation}
+                size="sm"
+              />
+            </div>
+          )}
+
+          {/* Círculo interactivo del Imán (🧲) */}
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              onPlayTile && onPlayTile(opt.side, opt);
+            }}
+            className={`absolute rounded-full flex items-center justify-center text-[10px] font-bold shadow-lg select-none cursor-pointer transition-all duration-150 pointer-events-auto z-30 hover:scale-115 active:scale-90 ${
+              isSnappedActive
+                ? 'bg-domino-accent text-domino-dark border border-white shadow-amber-500/50 scale-125'
+                : 'bg-blue-600 hover:bg-blue-500 text-white border border-blue-400 shadow-blue-500/50 animate-pulse'
+            }`}
+            style={{
+              left: `${magnetLeft}px`,
+              top: `${magnetTop}px`,
+              width: '24px',
+              height: '24px'
+            }}
+            title="Imán de conexión"
+          >
+            🧲
+          </div>
+        </div>
+      );
+    });
+  };
+
   if (!board || board.length === 0) {
     return (
       <div
@@ -202,65 +322,19 @@ export default function Board({
           backgroundPosition: 'center'
         }}
       >
-        {/* Renderizar área del grid transparente encima */}
-        <div 
+        <div
           className="relative"
-          style={{
-            width: `${GRID_SIZE * CELL_SIZE}px`,
-            height: `${GRID_SIZE * CELL_SIZE}px`,
-          }}
+          style={{ width: `${GRID_SIZE * CELL_SIZE}px`, height: `${GRID_SIZE * CELL_SIZE}px` }}
         >
-          {/* Si es mi turno y tengo una ficha seleccionada, mostrar los fantasmas en el centro */}
-          {ghostPlacements.map((opt, idx) => {
-            const outerX = (opt.side === 'right') ? opt.x2 : opt.x;
-            const outerY = (opt.side === 'right') ? opt.y2 : opt.y;
-            const tileLeft = Math.min(opt.x, opt.x2) * CELL_SIZE;
-            const tileTop = Math.min(opt.y, opt.y2) * CELL_SIZE;
-            const tileWidth = opt.orientation === 'horizontal' ? CELL_SIZE * 2 : CELL_SIZE;
-            const tileHeight = opt.orientation === 'horizontal' ? CELL_SIZE : CELL_SIZE * 2;
-
-            return (
-              <div
-                key={`ghost-${idx}`}
-                className="absolute group z-20"
-                style={{
-                  left: `${tileLeft}px`,
-                  top: `${tileTop}px`,
-                  width: `${tileWidth}px`,
-                  height: `${tileHeight}px`,
-                  pointerEvents: 'none'
-                }}
-              >
-                {/* Contorno punteado completo */}
-                <div className="absolute inset-0 border-2 border-dashed border-domino-accent/40 bg-domino-accent/5 rounded group-hover:border-domino-accent/80 group-hover:bg-domino-accent/15 transition-all duration-200 shadow-[0_0_8px_rgba(212,175,55,0.1)] group-hover:shadow-[0_0_12px_rgba(212,175,55,0.3)]" />
-                
-                {/* Botón "+" en la celda exterior */}
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPlayTile && onPlayTile(opt.side, opt);
-                  }}
-                  className="absolute border border-domino-accent bg-domino-dark/95 text-domino-accent cursor-pointer hover:bg-domino-accent hover:text-domino-dark rounded flex items-center justify-center shadow-[0_0_6px_rgba(212,175,55,0.3)] hover:scale-110 active:scale-95 transition-all duration-150 pointer-events-auto"
-                  style={{
-                    left: `${(outerX - Math.min(opt.x, opt.x2)) * CELL_SIZE + 4}px`,
-                    top: `${(outerY - Math.min(opt.y, opt.y2)) * CELL_SIZE + 4}px`,
-                    width: `${CELL_SIZE - 8}px`,
-                    height: `${CELL_SIZE - 8}px`
-                  }}
-                >
-                  <span className="font-bold text-sm select-none">+</span>
-                </div>
-              </div>
-            );
-          })}
+          {renderGhostPlacements()}
 
           <div className="absolute inset-0 flex items-center justify-center text-domino-cream/60 italic text-sm sm:text-base pointer-events-none">
             <div className="text-center p-6 bg-slate-900/60 backdrop-blur-sm rounded-xl border border-slate-700/50 max-w-xs">
               <div className="text-domino-accent/50 text-4xl mb-2 font-serif">🀫</div>
               <div>El tablero está vacío</div>
               <div className="text-xs mt-1 opacity-70">
-                {myTurn 
-                  ? 'Selecciona una ficha de tu mano y haz clic en el centro para iniciar la partida.' 
+                {myTurn
+                  ? 'Arrastra una ficha válida de tu mano o haz clic en los imanes del centro para iniciar.'
                   : 'Esperando que comience la ronda...'}
               </div>
             </div>
@@ -280,7 +354,6 @@ export default function Board({
         backgroundPosition: 'center'
       }}
     >
-      {/* Contenedor del Grid */}
       <div
         className="relative"
         style={{
@@ -293,17 +366,11 @@ export default function Board({
         {/* Renderizar Fichas Colocadas */}
         {board.map((pos, i) => {
           const tile = pos.tile;
-          
-          // Detectar si es la ficha más nueva
-          const isNewest = lastAction && lastAction.type === 'play' && 
+          const isNewest = lastAction && lastAction.type === 'play' &&
             ((lastAction.tile[0] === tile[0] && lastAction.tile[1] === tile[1]) ||
              (lastAction.tile[0] === tile[1] && lastAction.tile[1] === tile[0])) &&
             (i === 0 || i === board.length - 1);
 
-          // Normalizar el orden de las mitades para pasarlo a Tile.jsx:
-          // Tile.jsx requiere [min, max] y rota 0/180/90/270.
-          // Si es horizontal: el valor en el menor X debe estar en el índice 0.
-          // Si es vertical: el valor en el menor Y debe estar en el índice 0.
           const displayTile = pos.orientation === 'horizontal'
             ? (pos.x < pos.x2 ? [tile[0], tile[1]] : [tile[1], tile[0]])
             : (pos.y < pos.y2 ? [tile[0], tile[1]] : [tile[1], tile[0]]);
@@ -315,10 +382,7 @@ export default function Board({
             <div
               key={`tile-${i}`}
               className={`absolute ${isNewest ? 'tile-placed z-10' : ''}`}
-              style={{
-                left: `${left}px`,
-                top: `${top}px`,
-              }}
+              style={{ left: `${left}px`, top: `${top}px` }}
             >
               <Tile
                 tile={displayTile}
@@ -330,49 +394,8 @@ export default function Board({
           );
         })}
 
-        {/* Renderizar Siluetas Fantasmas (Ghost Placements) */}
-        {ghostPlacements.map((opt, idx) => {
-          const outerX = (opt.side === 'right') ? opt.x2 : opt.x;
-          const outerY = (opt.side === 'right') ? opt.y2 : opt.y;
-          const tileLeft = Math.min(opt.x, opt.x2) * CELL_SIZE;
-          const tileTop = Math.min(opt.y, opt.y2) * CELL_SIZE;
-          const tileWidth = opt.orientation === 'horizontal' ? CELL_SIZE * 2 : CELL_SIZE;
-          const tileHeight = opt.orientation === 'horizontal' ? CELL_SIZE : CELL_SIZE * 2;
-
-          return (
-            <div
-              key={`ghost-${idx}`}
-              className="absolute group z-20"
-              style={{
-                left: `${tileLeft}px`,
-                top: `${tileTop}px`,
-                width: `${tileWidth}px`,
-                height: `${tileHeight}px`,
-                pointerEvents: 'none'
-              }}
-            >
-              {/* Contorno punteado completo */}
-              <div className="absolute inset-0 border-2 border-dashed border-domino-accent/40 bg-domino-accent/5 rounded group-hover:border-domino-accent/80 group-hover:bg-domino-accent/15 transition-all duration-200 shadow-[0_0_8px_rgba(212,175,55,0.1)] group-hover:shadow-[0_0_12px_rgba(212,175,55,0.3)] animate-pulse" />
-              
-              {/* Botón "+" en la celda exterior */}
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPlayTile && onPlayTile(opt.side, opt);
-                }}
-                className="absolute border border-domino-accent bg-domino-dark/95 text-domino-accent cursor-pointer hover:bg-domino-accent hover:text-domino-dark rounded flex items-center justify-center shadow-[0_0_6px_rgba(212,175,55,0.3)] hover:scale-110 active:scale-95 transition-all duration-150 pointer-events-auto"
-                style={{
-                  left: `${(outerX - Math.min(opt.x, opt.x2)) * CELL_SIZE + 4}px`,
-                  top: `${(outerY - Math.min(opt.y, opt.y2)) * CELL_SIZE + 4}px`,
-                  width: `${CELL_SIZE - 8}px`,
-                  height: `${CELL_SIZE - 8}px`
-                }}
-              >
-                <span className="font-bold text-sm select-none">+</span>
-              </div>
-            </div>
-          );
-        })}
+        {/* Renderizar Siluetas e Imanes */}
+        {renderGhostPlacements()}
       </div>
     </div>
   );

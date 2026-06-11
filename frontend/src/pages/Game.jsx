@@ -29,12 +29,59 @@ export default function Game() {
   const [gameState, setGameState] = useState(null);
   const [lobby, setLobby] = useState(null);
   const [selectedTile, setSelectedTile] = useState(null);
+  const [draggedTile, setDraggedTile] = useState(null); // { index, tile, currentX, currentY, isSnapped, activePlacement }
   const [showSidePicker, setShowSidePicker] = useState(false);
   const [error, setError] = useState('');
   const [actualRoomCode, setActualRoomCode] = useState(urlRoomCode || null);
   const [lastAction, setLastAction] = useState(null);
   const [isPlacing, setIsPlacing] = useState(false);
 
+  const handleDragStart = (index, tile, clientX, clientY) => {
+    setDraggedTile({
+      index,
+      tile,
+      currentX: clientX,
+      currentY: clientY,
+      isSnapped: false,
+      activePlacement: null
+    });
+    setSelectedTile({ index, tile });
+  };
+
+  const handleDragUpdate = (clientX, clientY) => {
+    setDraggedTile((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        currentX: clientX,
+        currentY: clientY
+      };
+    });
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTile((prev) => {
+      if (prev && prev.isSnapped && prev.activePlacement) {
+        playTile(prev.index, prev.activePlacement.side, prev.activePlacement);
+      }
+      return null;
+    });
+  };
+
+  const handleSnapChange = (isSnapped, activePlacement) => {
+    setDraggedTile((prev) => {
+      if (!prev) return null;
+      // Solo actualizar si realmente hubo un cambio para evitar re-renders infinitos
+      if (prev.isSnapped === isSnapped && prev.activePlacement === activePlacement) {
+        return prev;
+      }
+      return {
+        ...prev,
+        isSnapped,
+        activePlacement
+      };
+    });
+  };
 
   useEffect(() => {
     if (loading) return;
@@ -85,6 +132,7 @@ export default function Game() {
       setActualRoomCode(state.roomCode);
       setLobby(null);
       setSelectedTile(null);
+      setDraggingTile(null);
       setShowSidePicker(false);
       setError('');
       setIsPlacing(false);
@@ -168,8 +216,9 @@ export default function Game() {
     return gameState.validMoves.map((m) => m.index);
   }, [gameState]);
 
+
   const handleTileClick = (index) => {
-    if (!myTurn || !gameState || isPlacing) return;
+    if (!myTurn || !gameState || isPlacing || draggedTile) return;
     const movesForTile = gameState.validMoves.filter((m) => m.index === index);
     if (movesForTile.length === 0) return;
     
@@ -178,26 +227,6 @@ export default function Game() {
     } else {
       setSelectedTile({ index, tile: gameState.myHand[index] });
     }
-  };
-
-  const playTile = (tileIndex, side, placement = null) => {
-    if (!socket || !actualRoomCode || isPlacing) return;
-    setError('');
-    setIsPlacing(true);
-    const payload = { code: actualRoomCode, tileIndex, side };
-    if (placement) {
-      payload.x = placement.x;
-      payload.y = placement.y;
-      payload.x2 = placement.x2;
-      payload.y2 = placement.y2;
-      payload.orientation = placement.orientation;
-    }
-    socket.emit('game:play', payload, (res) => {
-      if (!res.ok) {
-        setError(res.error);
-        setIsPlacing(false);
-      }
-    });
   };
 
   const handlePass = () => {
@@ -446,10 +475,12 @@ export default function Game() {
                   ends={gameState.ends}
                   selectedTile={selectedTile}
                   onPlayTile={(side, placement) => {
-                    playTile(selectedTile.index, side, placement);
+                    if (selectedTile) playTile(selectedTile.index, side, placement);
                   }}
                   myTurn={myTurn}
                   lastAction={gameState.lastAction}
+                  draggedTile={draggedTile}
+                  onSnapChange={handleSnapChange}
                 />
                 {lastAction && myTurn && (
                   <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/70 text-slate-200 text-xs sm:text-sm px-3 py-1.5 rounded-full border border-slate-700">
@@ -483,12 +514,16 @@ export default function Game() {
                   validIndices={validIndices}
                   selectedIndex={selectedTile?.index}
                   onSelect={handleTileClick}
-                  canPlay={myTurn && !isPlacing}
+                  canPlay={myTurn && !isPlacing && !draggedTile}
+                  draggedTile={draggedTile}
+                  onDragStart={handleDragStart}
+                  onDragUpdate={handleDragUpdate}
+                  onDragEnd={handleDragEnd}
                 />
 
-                {myTurn && gameState.canPlay && (
+                {myTurn && gameState.canPlay && !draggedTile && (
                   <p className="text-center text-[10px] sm:text-xs text-slate-500 italic mt-2">
-                    Toca una ficha válida para jugarla
+                    Arrastra una ficha válida a la mesa
                   </p>
                 )}
 
@@ -511,7 +546,6 @@ export default function Game() {
                 )}
               </div>
             </div>
-          </div>
 
           <div className="hidden lg:block space-y-3">
             <div className="card p-3">
@@ -641,9 +675,8 @@ export default function Game() {
             </div>
           </div>
         )}
-
-
       </div>
+    </div>
     </div>
   );
 }

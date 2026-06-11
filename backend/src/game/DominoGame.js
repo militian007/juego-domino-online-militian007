@@ -182,6 +182,7 @@ export class DominoGame {
 
   getValidPlacementsForTile(tile, side) {
     const placements = [];
+    const isDouble = tile[0] === tile[1];
 
     // Si el tablero está vacío
     if (this.board.length === 0) {
@@ -218,17 +219,20 @@ export class DominoGame {
     let ex = 0;
     let ey = 0;
     let ev = 0;
+    let endTileOrientation = null;
 
     if (side === 'left') {
       const firstTile = this.board[0];
       ex = firstTile.x;
       ey = firstTile.y;
       ev = firstTile.tile[0];
+      endTileOrientation = firstTile.orientation;
     } else if (side === 'right') {
       const lastTile = this.board[this.board.length - 1];
       ex = lastTile.x2;
       ey = lastTile.y2;
       ev = lastTile.tile[1];
+      endTileOrientation = lastTile.orientation;
     } else {
       return [];
     }
@@ -272,6 +276,16 @@ export class DominoGame {
         if (cx2 < 0 || cx2 >= GRID_SIZE || cy2 < 0 || cy2 >= GRID_SIZE) continue;
         if (occupied.has(`${cx2},${cy2}`)) continue;
 
+        const placementOrientation = (cy === cy2) ? 'horizontal' : 'vertical';
+
+        // Si es doble: colocar PERPENDICULAR a la ficha final (en "T")
+        // Si NO es doble: colocar PARALELA a la ficha final (continuando la línea)
+        if (isDouble) {
+          if (placementOrientation === endTileOrientation) continue; // No permitir paralelo
+        } else {
+          if (placementOrientation !== endTileOrientation) continue; // Solo permitir paralelo
+        }
+
         // Colocación válida encontrada
         if (side === 'left') {
           placements.push({
@@ -280,7 +294,7 @@ export class DominoGame {
             y: cy2,
             x2: cx,
             y2: cy,
-            orientation: (cy === cy2) ? 'horizontal' : 'vertical',
+            orientation: placementOrientation,
             side
           });
         } else {
@@ -290,7 +304,7 @@ export class DominoGame {
             y: cy,
             x2: cx2,
             y2: cy2,
-            orientation: (cy === cy2) ? 'horizontal' : 'vertical',
+            orientation: placementOrientation,
             side
           });
         }
