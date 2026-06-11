@@ -317,9 +317,9 @@ function getValidPlacementsForTile(board, tile, side) {
           addPlacementCandidate({
             tile: [connVal, connVal],
             x: ex + 1,
-            y: ey - 1,
+            y: ey,
             x2: ex + 1,
-            y2: ey,
+            y2: ey - 1,
             orientation: 'vertical',
             side
           });
@@ -375,26 +375,50 @@ function getValidPlacementsForTile(board, tile, side) {
         }
 
         // 2. Giro arriba (vertical)
-        addPlacementCandidate({
-          tile: [outerVal, connVal],
-          x: ex,
-          y: ey - 2,
-          x2: ex,
-          y2: ey - 1,
-          orientation: 'vertical',
-          side
-        });
+        if (side === 'left') {
+          addPlacementCandidate({
+            tile: [outerVal, connVal],
+            x: ex,
+            y: ey - 2,
+            x2: ex,
+            y2: ey - 1,
+            orientation: 'vertical',
+            side
+          });
+        } else {
+          addPlacementCandidate({
+            tile: [connVal, outerVal],
+            x: ex,
+            y: ey - 1,
+            x2: ex,
+            y2: ey - 2,
+            orientation: 'vertical',
+            side
+          });
+        }
 
         // 3. Giro abajo (vertical)
-        addPlacementCandidate({
-          tile: [connVal, outerVal],
-          x: ex,
-          y: ey + 1,
-          x2: ex,
-          y2: ey + 2,
-          orientation: 'vertical',
-          side
-        });
+        if (side === 'left') {
+          addPlacementCandidate({
+            tile: [outerVal, connVal],
+            x: ex,
+            y: ey + 2,
+            x2: ex,
+            y2: ey + 1,
+            orientation: 'vertical',
+            side
+          });
+        } else {
+          addPlacementCandidate({
+            tile: [connVal, outerVal],
+            x: ex,
+            y: ey + 1,
+            x2: ex,
+            y2: ey + 2,
+            orientation: 'vertical',
+            side
+          });
+        }
       } else {
         // El extremo es vertical
         // 1. Recto (vertical)
@@ -421,26 +445,50 @@ function getValidPlacementsForTile(board, tile, side) {
         }
 
         // 2. Giro izquierda (horizontal)
-        addPlacementCandidate({
-          tile: [outerVal, connVal],
-          x: ex - 2,
-          y: ey,
-          x2: ex - 1,
-          y2: ey,
-          orientation: 'horizontal',
-          side
-        });
+        if (side === 'left') {
+          addPlacementCandidate({
+            tile: [outerVal, connVal],
+            x: ex - 2,
+            y: ey,
+            x2: ex - 1,
+            y2: ey,
+            orientation: 'horizontal',
+            side
+          });
+        } else {
+          addPlacementCandidate({
+            tile: [connVal, outerVal],
+            x: ex - 1,
+            y: ey,
+            x2: ex - 2,
+            y2: ey,
+            orientation: 'horizontal',
+            side
+          });
+        }
 
         // 3. Giro derecha (horizontal)
-        addPlacementCandidate({
-          tile: [connVal, outerVal],
-          x: ex + 1,
-          y: ey,
-          x2: ex + 2,
-          y2: ey,
-          orientation: 'horizontal',
-          side
-        });
+        if (side === 'left') {
+          addPlacementCandidate({
+            tile: [outerVal, connVal],
+            x: ex + 2,
+            y: ey,
+            x2: ex + 1,
+            y2: ey,
+            orientation: 'horizontal',
+            side
+          });
+        } else {
+          addPlacementCandidate({
+            tile: [connVal, outerVal],
+            x: ex + 1,
+            y: ey,
+            x2: ex + 2,
+            y2: ey,
+            orientation: 'horizontal',
+            side
+          });
+        }
       }
     }
   }

@@ -317,8 +317,8 @@ console.log('\nTEST 13: Lógica de giros (3 colocaciones para ficha normal)');
   const straight = placements.find(p => p.orientation === 'horizontal');
   assert(straight && straight.x === 12 && straight.y === 10 && straight.x2 === 13 && straight.y2 === 10, 'Opción recta horizontal es correcta');
 
-  const up = placements.find(p => p.orientation === 'vertical' && p.y === 8);
-  assert(up && up.x === 11 && up.y === 8 && up.x2 === 11 && up.y2 === 9, 'Opción giro arriba vertical es correcta');
+  const up = placements.find(p => p.orientation === 'vertical' && p.y === 9);
+  assert(up && up.x === 11 && up.y === 9 && up.x2 === 11 && up.y2 === 8, 'Opción giro arriba vertical es correcta');
 
   const down = placements.find(p => p.orientation === 'vertical' && p.y === 11);
   assert(down && down.x === 11 && down.y === 11 && down.x2 === 11 && down.y2 === 12, 'Opción giro abajo vertical es correcta');
@@ -350,11 +350,11 @@ console.log('\nTEST 14: Colocación de ficha doble perpendicular');
   const placements = game.getValidPlacementsForTile([4, 4], 'right');
 
   // Debe haber exactamente 1 opción (perpendicular vertical centrada):
-  // x: 12, y: 9, x2: 12, y2: 10
+  // x: 12, y: 10, x2: 12, y2: 9
   assert(placements.length === 1, 'Tiene exactamente 1 opción de colocación para el doble');
   const dOpt = placements[0];
   assert(dOpt.orientation === 'vertical', 'El doble es vertical');
-  assert(dOpt.x === 12 && dOpt.y === 9 && dOpt.x2 === 12 && dOpt.y2 === 10, 'La posición vertical del doble es correcta y centrada');
+  assert(dOpt.x === 12 && dOpt.y === 10 && dOpt.x2 === 12 && dOpt.y2 === 9, 'La posición vertical del doble es correcta y centrada');
 }
 
 console.log(`\n${'='.repeat(40)}`);
