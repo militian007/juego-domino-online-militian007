@@ -1,3 +1,4 @@
+// Trigger Vercel rebuild: 2026-06-11
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
