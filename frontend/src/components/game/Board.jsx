@@ -297,101 +297,134 @@ function getValidPlacementsForTile(board, tile, side) {
   return uniquePlacements;
 }
 
+const getCenter = (t) => {
+  const minX = Math.min(t.x, t.x2);
+  const minY = Math.min(t.y, t.y2);
+  if (t.orientation === 'horizontal') {
+    return { x: minX * CELL_SIZE + 32, y: minY * CELL_SIZE + 16 };
+  } else {
+    return { x: minX * CELL_SIZE + 16, y: minY * CELL_SIZE + 32 };
+  }
+};
+
+function computeBoardOffsets(board) {
+  if (!board || board.length === 0) return [];
+
+  const offsets = new Array(board.length);
+  const firstIdx = board.findIndex(t => t.side === 'first');
+  const startIdx = firstIdx !== -1 ? firstIdx : 0;
+
+  offsets[startIdx] = { x: 0, y: 0 };
+
+  // Propagar a la derecha
+  for (let i = startIdx + 1; i < board.length; i++) {
+    const prev = board[i - 1];
+    const curr = board[i];
+    const prevOffset = offsets[i - 1];
+    const prevIsDouble = prev.tile[0] === prev.tile[1];
+    const currIsDouble = curr.tile[0] === curr.tile[1];
+
+    if (prev.orientation !== curr.orientation && (prevIsDouble || currIsDouble)) {
+      const prevCenter = getCenter(prev);
+      const currCenter = getCenter(curr);
+      if (curr.orientation === 'horizontal') {
+        offsets[i] = {
+          x: prevOffset.x,
+          y: prevOffset.y + prevCenter.y - currCenter.y
+        };
+      } else {
+        offsets[i] = {
+          x: prevOffset.x + prevCenter.x - currCenter.x,
+          y: prevOffset.y
+        };
+      }
+    } else {
+      offsets[i] = { x: prevOffset.x, y: prevOffset.y };
+    }
+  }
+
+  // Propagar a la izquierda
+  for (let i = startIdx - 1; i >= 0; i--) {
+    const prev = board[i + 1];
+    const curr = board[i];
+    const prevOffset = offsets[i + 1];
+    const prevIsDouble = prev.tile[0] === prev.tile[1];
+    const currIsDouble = curr.tile[0] === curr.tile[1];
+
+    if (prev.orientation !== curr.orientation && (prevIsDouble || currIsDouble)) {
+      const prevCenter = getCenter(prev);
+      const currCenter = getCenter(curr);
+      if (curr.orientation === 'horizontal') {
+        offsets[i] = {
+          x: prevOffset.x,
+          y: prevOffset.y + prevCenter.y - currCenter.y
+        };
+      } else {
+        offsets[i] = {
+          x: prevOffset.x + prevCenter.x - currCenter.x,
+          y: prevOffset.y
+        };
+      }
+    } else {
+      offsets[i] = { x: prevOffset.x, y: prevOffset.y };
+    }
+  }
+
+  return offsets;
+}
+
 // Centrar ficha normal si pertenece a un segmento acoplado a un doble perpendicular
-function getVisualCoords(pos, idx, board) {
-  const left = Math.min(pos.x, pos.x2) * CELL_SIZE;
-  const top = Math.min(pos.y, pos.y2) * CELL_SIZE;
-
-  if (!board || board.length <= 1) return { left, top };
-
-  const isDouble = pos.tile[0] === pos.tile[1];
-  if (isDouble) return { left, top };
-
-  // Buscar la doble de referencia perpendicular a la que este segmento de igual orientación está acoplado
-  let refDouble = null;
-
-  // Buscar hacia la izquierda del tablero
-  for (let i = idx - 1; i >= 0; i--) {
-    if (board[i].orientation !== pos.orientation) {
-      if (board[i].tile[0] === board[i].tile[1]) {
-        refDouble = board[i];
-      }
-      break;
-    }
-  }
-
-  // Si no se encontró hacia la izquierda, buscar hacia la derecha del tablero
-  if (!refDouble) {
-    for (let i = idx + 1; i < board.length; i++) {
-      if (board[i].orientation !== pos.orientation) {
-        if (board[i].tile[0] === board[i].tile[1]) {
-          refDouble = board[i];
-        }
-        break;
-      }
-    }
-  }
-
-  if (refDouble) {
-    if (pos.orientation === 'vertical' && refDouble.orientation === 'horizontal') {
-      const doubleLeft = Math.min(refDouble.x, refDouble.x2) * CELL_SIZE;
-      return { left: doubleLeft + 16, top };
-    }
-    if (pos.orientation === 'horizontal' && refDouble.orientation === 'vertical') {
-      const doubleTop = Math.min(refDouble.y, refDouble.y2) * CELL_SIZE;
-      return { left, top: doubleTop + 16 };
-    }
-  }
-
+function getVisualCoords(pos, idx, boardOffsets) {
+  const offset = boardOffsets[idx] || { x: 0, y: 0 };
+  const left = Math.min(pos.x, pos.x2) * CELL_SIZE + offset.x;
+  const top = Math.min(pos.y, pos.y2) * CELL_SIZE + offset.y;
   return { left, top };
 }
 
 // Centrar ficha fantasma normal si pertenece a un segmento acoplado a un doble perpendicular
-function getGhostVisualCoords(opt, board) {
+function getGhostVisualCoords(opt, board, boardOffsets) {
   const left = Math.min(opt.x, opt.x2) * CELL_SIZE;
   const top = Math.min(opt.y, opt.y2) * CELL_SIZE;
 
-  if (!board || board.length === 0) return { left, top };
+  if (!board || board.length === 0 || !boardOffsets || boardOffsets.length === 0) {
+    return { left, top };
+  }
 
-  const isDouble = opt.tile[0] === opt.tile[1];
-  if (isDouble) return { left, top };
-
-  // Encontrar la doble de referencia para el extremo por el que nos estamos acoplando
-  let refDouble = null;
+  let offset = { x: 0, y: 0 };
+  let prev, prevOffset;
   if (opt.side === 'left') {
-    // Si nos acoplamos por la izquierda (inicio del tablero), buscamos a partir del primer elemento hacia la derecha
-    for (let i = 0; i < board.length; i++) {
-      if (board[i].orientation !== opt.orientation) {
-        if (board[i].tile[0] === board[i].tile[1]) {
-          refDouble = board[i];
-        }
-        break;
-      }
+    prev = board[0];
+    prevOffset = boardOffsets[0] || { x: 0, y: 0 };
+  } else {
+    prev = board[board.length - 1];
+    prevOffset = boardOffsets[board.length - 1] || { x: 0, y: 0 };
+  }
+
+  const prevIsDouble = prev.tile[0] === prev.tile[1];
+  const optIsDouble = opt.tile[0] === opt.tile[1];
+
+  if (prev.orientation !== opt.orientation && (prevIsDouble || optIsDouble)) {
+    const prevCenter = getCenter(prev);
+    const optCenter = getCenter(opt);
+    if (opt.orientation === 'horizontal') {
+      offset = {
+        x: prevOffset.x,
+        y: prevOffset.y + prevCenter.y - optCenter.y
+      };
+    } else {
+      offset = {
+        x: prevOffset.x + prevCenter.x - optCenter.x,
+        y: prevOffset.y
+      };
     }
   } else {
-    // Si nos acoplamos por la derecha (fin del tablero), buscamos a partir del último elemento hacia la izquierda
-    for (let i = board.length - 1; i >= 0; i--) {
-      if (board[i].orientation !== opt.orientation) {
-        if (board[i].tile[0] === board[i].tile[1]) {
-          refDouble = board[i];
-        }
-        break;
-      }
-    }
+    offset = { x: prevOffset.x, y: prevOffset.y };
   }
 
-  if (refDouble) {
-    if (opt.orientation === 'vertical' && refDouble.orientation === 'horizontal') {
-      const doubleLeft = Math.min(refDouble.x, refDouble.x2) * CELL_SIZE;
-      return { left: doubleLeft + 16, top };
-    }
-    if (opt.orientation === 'horizontal' && refDouble.orientation === 'vertical') {
-      const doubleTop = Math.min(refDouble.y, refDouble.y2) * CELL_SIZE;
-      return { left, top: doubleTop + 16 };
-    }
-  }
-
-  return { left, top };
+  return {
+    left: left + offset.x,
+    top: top + offset.y
+  };
 }
 
 export default function Board({
@@ -405,6 +438,10 @@ export default function Board({
   onSnapChange = null
 }) {
   const containerRef = useRef(null);
+
+  const boardOffsets = useMemo(() => {
+    return computeBoardOffsets(board);
+  }, [board]);
 
   // Seleccionar la ficha activa para placements (arrastrando o seleccionada)
   const activeTileForPlacements = useMemo(() => {
@@ -456,8 +493,8 @@ export default function Board({
 
       const containerWidth = containerRef.current.clientWidth;
       const containerHeight = containerRef.current.clientHeight;
-      const tileLeft = Math.min(lastTile.x, lastTile.x2) * CELL_SIZE;
-      const tileTop = Math.min(lastTile.y, lastTile.y2) * CELL_SIZE;
+      const lastTileIdx = board.indexOf(lastTile);
+      const { left: tileLeft, top: tileTop } = getVisualCoords(lastTile, lastTileIdx, boardOffsets);
 
       containerRef.current.scrollTo({
         left: tileLeft - containerWidth / 2 + CELL_SIZE,
@@ -465,7 +502,7 @@ export default function Board({
         behavior: 'smooth'
       });
     }
-  }, [board, lastAction]);
+  }, [board, lastAction, boardOffsets]);
 
   // Calcular y notificar snap en tiempo real
   useEffect(() => {
@@ -485,7 +522,7 @@ export default function Board({
     const threshold = 45; // 45 píxeles de umbral para imantación
 
     for (const opt of ghostPlacements) {
-      const { left: tileLeft, top: tileTop } = getGhostVisualCoords(opt, board);
+      const { left: tileLeft, top: tileTop } = getGhostVisualCoords(opt, board, boardOffsets);
       const tileWidth = opt.orientation === 'horizontal' ? CELL_SIZE * 2 : CELL_SIZE;
       const tileHeight = opt.orientation === 'horizontal' ? CELL_SIZE : CELL_SIZE * 2;
 
@@ -504,7 +541,7 @@ export default function Board({
     } else {
       onSnapChange(false, null);
     }
-  }, [draggedTile, ghostPlacements, onSnapChange, board]);
+  }, [draggedTile, ghostPlacements, onSnapChange, board, boardOffsets]);
 
   const renderGhostPlacements = () => {
     return ghostPlacements.map((opt, idx) => {
@@ -514,7 +551,7 @@ export default function Board({
         draggedTile.activePlacement.y === opt.y &&
         draggedTile.activePlacement.orientation === opt.orientation;
 
-      const { left: tileLeft, top: tileTop } = getGhostVisualCoords(opt, board);
+      const { left: tileLeft, top: tileTop } = getGhostVisualCoords(opt, board, boardOffsets);
       const tileWidth = opt.orientation === 'horizontal' ? CELL_SIZE * 2 : CELL_SIZE;
       const tileHeight = opt.orientation === 'horizontal' ? CELL_SIZE : CELL_SIZE * 2;
 
@@ -644,7 +681,7 @@ export default function Board({
             ? (pos.x < pos.x2 ? [tile[0], tile[1]] : [tile[1], tile[0]])
             : (pos.y < pos.y2 ? [tile[0], tile[1]] : [tile[1], tile[0]]);
 
-          const { left, top } = getVisualCoords(pos, i, board);
+          const { left, top } = getVisualCoords(pos, i, boardOffsets);
 
           return (
             <div
