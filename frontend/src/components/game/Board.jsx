@@ -34,17 +34,19 @@ function getValidPlacementsForTile(board, tile, side) {
   let ex = 0;
   let ey = 0;
   let ev = 0;
+  let endTile = null;
 
   if (side === 'left') {
-    const firstTile = board[0];
-    ex = firstTile.x;
-    ey = firstTile.y;
-    ev = firstTile.tile[0];
+    endTile = board[0];
+    ex = endTile.x;
+    ey = endTile.y;
+    ev = endTile.tile[0];
   } else if (side === 'right') {
-    const lastTile = board[board.length - 1];
-    ex = lastTile.x2;
-    ey = lastTile.y2;
-    ev = lastTile.tile[1];
+    const rightTile = board[board.length - 1];
+    ex = rightTile.x2;
+    ey = rightTile.y2;
+    ev = rightTile.tile[1];
+    endTile = rightTile;
   } else {
     return [];
   }
@@ -60,52 +62,151 @@ function getValidPlacementsForTile(board, tile, side) {
     occupied.add(`${t.x2},${t.y2}`);
   }
 
-  const adjacentDirs = [
-    { dx: -1, dy: 0 },
-    { dx: 1, dy: 0 },
-    { dx: 0, dy: -1 },
-    { dx: 0, dy: 1 }
-  ];
+  const endIsDouble = endTile.tile[0] === endTile.tile[1];
 
-  for (const dir1 of adjacentDirs) {
-    const cx = ex + dir1.dx;
-    const cy = ey + dir1.dy;
+  const addPlacementCandidate = (p) => {
+    const minX = Math.min(p.x, p.x2);
+    const minY = Math.min(p.y, p.y2);
+    const maxX = Math.max(p.x, p.x2);
+    const maxY = Math.max(p.y, p.y2);
 
-    if (cx < 0 || cx >= GRID_SIZE || cy < 0 || cy >= GRID_SIZE) continue;
-    if (occupied.has(`${cx},${cy}`)) continue;
+    if (minX < 0 || maxX >= GRID_SIZE || minY < 0 || maxY >= GRID_SIZE) return;
+    if (occupied.has(`${p.x},${p.y}`) || occupied.has(`${p.x2},${p.y2}`)) return;
 
-    for (const dir2 of adjacentDirs) {
-      const cx2 = cx + dir2.dx;
-      const cy2 = cy + dir2.dy;
+    placements.push(p);
+  };
 
-      if (cx2 === ex && cy2 === ey) continue;
-      if (cx2 < 0 || cx2 >= GRID_SIZE || cy2 < 0 || cy2 >= GRID_SIZE) continue;
-      if (occupied.has(`${cx2},${cy2}`)) continue;
+  if (endIsDouble) {
+    if (endTile.orientation === 'horizontal') {
+      // Doble horizontal: nueva ficha es vertical (arriba o abajo)
+      // Opción Arriba
+      addPlacementCandidate(side === 'left' ? {
+        tile: [outerVal, connVal],
+        x: ex,
+        y: ey - 2,
+        x2: ex,
+        y2: ey - 1,
+        orientation: 'vertical',
+        side
+      } : {
+        tile: [connVal, outerVal],
+        x: ex,
+        y: ey - 1,
+        x2: ex,
+        y2: ey - 2,
+        orientation: 'vertical',
+        side
+      });
 
+      // Opción Abajo
+      addPlacementCandidate(side === 'left' ? {
+        tile: [outerVal, connVal],
+        x: ex,
+        y: ey + 2,
+        x2: ex,
+        y2: ey + 1,
+        orientation: 'vertical',
+        side
+      } : {
+        tile: [connVal, outerVal],
+        x: ex,
+        y: ey + 1,
+        x2: ex,
+        y2: ey + 2,
+        orientation: 'vertical',
+        side
+      });
+    } else {
+      // Doble vertical: nueva ficha es horizontal (izquierda o derecha)
+      // Opción Izquierda
+      addPlacementCandidate(side === 'left' ? {
+        tile: [outerVal, connVal],
+        x: ex - 2,
+        y: ey,
+        x2: ex - 1,
+        y2: ey,
+        orientation: 'horizontal',
+        side
+      } : {
+        tile: [connVal, outerVal],
+        x: ex - 1,
+        y: ey,
+        x2: ex - 2,
+        y2: ey,
+        orientation: 'horizontal',
+        side
+      });
+
+      // Opción Derecha
+      addPlacementCandidate(side === 'left' ? {
+        tile: [outerVal, connVal],
+        x: ex + 2,
+        y: ey,
+        x2: ex + 1,
+        y2: ey,
+        orientation: 'horizontal',
+        side
+      } : {
+        tile: [connVal, outerVal],
+        x: ex + 1,
+        y: ey,
+        x2: ex + 2,
+        y2: ey,
+        orientation: 'horizontal',
+        side
+      });
+    }
+  } else {
+    if (endTile.orientation === 'horizontal') {
+      // Ficha horizontal: continuar horizontalmente
       if (side === 'left') {
-        placements.push({
+        addPlacementCandidate({
           tile: [outerVal, connVal],
-          x: cx2,
-          y: cy2,
-          x2: cx,
-          y2: cy,
-          orientation: (cy === cy2) ? 'horizontal' : 'vertical',
+          x: ex - 2,
+          y: ey,
+          x2: ex - 1,
+          y2: ey,
+          orientation: 'horizontal',
           side
         });
       } else {
-        placements.push({
+        addPlacementCandidate({
           tile: [connVal, outerVal],
-          x: cx,
-          y: cy,
-          x2: cx2,
-          y2: cy2,
-          orientation: (cy === cy2) ? 'horizontal' : 'vertical',
+          x: ex + 1,
+          y: ey,
+          x2: ex + 2,
+          y2: ey,
+          orientation: 'horizontal',
+          side
+        });
+      }
+    } else {
+      // Ficha vertical: continuar verticalmente
+      if (side === 'left') {
+        addPlacementCandidate({
+          tile: [outerVal, connVal],
+          x: ex,
+          y: ey - 2,
+          x2: ex,
+          y2: ey - 1,
+          orientation: 'vertical',
+          side
+        });
+      } else {
+        addPlacementCandidate({
+          tile: [connVal, outerVal],
+          x: ex,
+          y: ey + 1,
+          x2: ex,
+          y2: ey + 2,
+          orientation: 'vertical',
           side
         });
       }
     }
   }
 
+  // Deduplicar posiciones físicas idénticas
   const seen = new Set();
   const uniquePlacements = [];
   for (const p of placements) {
@@ -358,9 +459,7 @@ export default function Board({
         className="relative"
         style={{
           width: `${GRID_SIZE * CELL_SIZE}px`,
-          height: `${GRID_SIZE * CELL_SIZE}px`,
-          backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)',
-          backgroundSize: `${CELL_SIZE}px ${CELL_SIZE}px`
+          height: `${GRID_SIZE * CELL_SIZE}px`
         }}
       >
         {/* Renderizar Fichas Colocadas */}

@@ -182,7 +182,6 @@ export class DominoGame {
 
   getValidPlacementsForTile(tile, side) {
     const placements = [];
-    const isDouble = tile[0] === tile[1];
 
     // Si el tablero está vacío
     if (this.board.length === 0) {
@@ -219,20 +218,23 @@ export class DominoGame {
     let ex = 0;
     let ey = 0;
     let ev = 0;
-    let endTileOrientation = null;
+    let endTile = null;
 
     if (side === 'left') {
-      const firstTile = this.board[0];
-      ex = firstTile.x;
-      ey = firstTile.y;
-      ev = firstTile.tile[0];
-      endTileOrientation = firstTile.orientation;
+      endTile = this.board[0];
+      ex = endTile.x;
+      ey = endTile.y;
+      ev = endTile.tile[0];
     } else if (side === 'right') {
-      const lastTile = this.board[this.board.length - 1];
-      ex = lastTile.x2;
-      ey = lastTile.y2;
-      ev = lastTile.tile[1];
-      endTileOrientation = lastTile.orientation;
+      endTile = this.board[this.board.length - 1];
+      ex = lastTile ? lastTile.x2 : endTile.x2; // fallback por seguridad
+      ey = lastTile ? lastTile.y2 : endTile.y2;
+      // Usar directamente lastTile o endTile de forma consistente
+      const rightTile = this.board[this.board.length - 1];
+      ex = rightTile.x2;
+      ey = rightTile.y2;
+      ev = rightTile.tile[1];
+      endTile = rightTile;
     } else {
       return [];
     }
@@ -250,61 +252,150 @@ export class DominoGame {
       occupied.add(`${t.x2},${t.y2}`);
     }
 
-    const adjacentDirs = [
-      { dx: -1, dy: 0 }, // Izquierda
-      { dx: 1, dy: 0 },  // Derecha
-      { dx: 0, dy: -1 }, // Arriba
-      { dx: 0, dy: 1 }   // Abajo
-    ];
+    const endIsDouble = endTile.tile[0] === endTile.tile[1];
 
-    // Para cada celda adyacente al extremo libre
-    for (const dir1 of adjacentDirs) {
-      const cx = ex + dir1.dx;
-      const cy = ey + dir1.dy;
+    // Función auxiliar para agregar placement si es válido
+    const addPlacementCandidate = (p) => {
+      const minX = Math.min(p.x, p.x2);
+      const minY = Math.min(p.y, p.y2);
+      const maxX = Math.max(p.x, p.x2);
+      const maxY = Math.max(p.y, p.y2);
 
-      if (cx < 0 || cx >= GRID_SIZE || cy < 0 || cy >= GRID_SIZE) continue;
-      if (occupied.has(`${cx},${cy}`)) continue;
+      // Verificar límites
+      if (minX < 0 || maxX >= GRID_SIZE || minY < 0 || maxY >= GRID_SIZE) return;
 
-      // cx, cy es un lugar libre para poner la mitad de conexión (connVal)
-      // Ahora buscamos un lugar libre adyacente a (cx, cy) para la mitad exterior (outerVal)
-      for (const dir2 of adjacentDirs) {
-        const cx2 = cx + dir2.dx;
-        const cy2 = cy + dir2.dy;
+      // Verificar colisión
+      if (occupied.has(`${p.x},${p.y}`) || occupied.has(`${p.x2},${p.y2}`)) return;
 
-        // No puede ser la celda origen de la conexión (ex, ey)
-        if (cx2 === ex && cy2 === ey) continue;
-        if (cx2 < 0 || cx2 >= GRID_SIZE || cy2 < 0 || cy2 >= GRID_SIZE) continue;
-        if (occupied.has(`${cx2},${cy2}`)) continue;
+      placements.push(p);
+    };
 
-        const placementOrientation = (cy === cy2) ? 'horizontal' : 'vertical';
+    if (endIsDouble) {
+      // Si el extremo es un DOBLE, la nueva ficha debe colocarse perpendicular
+      if (endTile.orientation === 'horizontal') {
+        // Doble horizontal: nueva ficha es vertical (arriba o abajo)
+        // Opción Arriba
+        addPlacementCandidate(side === 'left' ? {
+          tile: [outerVal, connVal],
+          x: ex,
+          y: ey - 2,
+          x2: ex,
+          y2: ey - 1,
+          orientation: 'vertical',
+          side
+        } : {
+          tile: [connVal, outerVal],
+          x: ex,
+          y: ey - 1,
+          x2: ex,
+          y2: ey - 2,
+          orientation: 'vertical',
+          side
+        });
 
-        // Si es doble: colocar PERPENDICULAR a la ficha final (en "T")
-        // Si NO es doble: colocar PARALELA a la ficha final (continuando la línea)
-        if (isDouble) {
-          if (placementOrientation === endTileOrientation) continue; // No permitir paralelo
-        } else {
-          if (placementOrientation !== endTileOrientation) continue; // Solo permitir paralelo
-        }
+        // Opción Abajo
+        addPlacementCandidate(side === 'left' ? {
+          tile: [outerVal, connVal],
+          x: ex,
+          y: ey + 2,
+          x2: ex,
+          y2: ey + 1,
+          orientation: 'vertical',
+          side
+        } : {
+          tile: [connVal, outerVal],
+          x: ex,
+          y: ey + 1,
+          x2: ex,
+          y2: ey + 2,
+          orientation: 'vertical',
+          side
+        });
+      } else {
+        // Doble vertical: nueva ficha es horizontal (izquierda o derecha)
+        // Opción Izquierda
+        addPlacementCandidate(side === 'left' ? {
+          tile: [outerVal, connVal],
+          x: ex - 2,
+          y: ey,
+          x2: ex - 1,
+          y2: ey,
+          orientation: 'horizontal',
+          side
+        } : {
+          tile: [connVal, outerVal],
+          x: ex - 1,
+          y: ey,
+          x2: ex - 2,
+          y2: ey,
+          orientation: 'horizontal',
+          side
+        });
 
-        // Colocación válida encontrada
+        // Opción Derecha
+        addPlacementCandidate(side === 'left' ? {
+          tile: [outerVal, connVal],
+          x: ex + 2,
+          y: ey,
+          x2: ex + 1,
+          y2: ey,
+          orientation: 'horizontal',
+          side
+        } : {
+          tile: [connVal, outerVal],
+          x: ex + 1,
+          y: ey,
+          x2: ex + 2,
+          y2: ey,
+          orientation: 'horizontal',
+          side
+        });
+      }
+    } else {
+      // Si el extremo es NORMAL, la nueva ficha debe colocarse en la misma orientación
+      if (endTile.orientation === 'horizontal') {
+        // Ficha horizontal: continuar horizontalmente a la izq o der
         if (side === 'left') {
-          placements.push({
+          addPlacementCandidate({
             tile: [outerVal, connVal],
-            x: cx2,
-            y: cy2,
-            x2: cx,
-            y2: cy,
-            orientation: placementOrientation,
+            x: ex - 2,
+            y: ey,
+            x2: ex - 1,
+            y2: ey,
+            orientation: 'horizontal',
             side
           });
         } else {
-          placements.push({
+          addPlacementCandidate({
             tile: [connVal, outerVal],
-            x: cx,
-            y: cy,
-            x2: cx2,
-            y2: cy2,
-            orientation: placementOrientation,
+            x: ex + 1,
+            y: ey,
+            x2: ex + 2,
+            y2: ey,
+            orientation: 'horizontal',
+            side
+          });
+        }
+      } else {
+        // Ficha vertical: continuar verticalmente arriba o abajo
+        if (side === 'left') {
+          addPlacementCandidate({
+            tile: [outerVal, connVal],
+            x: ex,
+            y: ey - 2,
+            x2: ex,
+            y2: ey - 1,
+            orientation: 'vertical',
+            side
+          });
+        } else {
+          addPlacementCandidate({
+            tile: [connVal, outerVal],
+            x: ex,
+            y: ey + 1,
+            x2: ex,
+            y2: ey + 2,
+            orientation: 'vertical',
             side
           });
         }
