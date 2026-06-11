@@ -337,7 +337,7 @@ export class DominoGame {
       const maxY = Math.max(p.y, p.y2);
 
       // 1. Grid boundary check
-      if (minX < 0 || maxX >= GRID_SIZE || minY < 0 || maxY >= GRID_SIZE) return;
+      if (minX < 1 || maxX >= GRID_SIZE - 1 || minY < 1 || maxY >= GRID_SIZE - 1) return;
       // 2. Collision check
       if (occupied.has(`${p.x},${p.y}`) || occupied.has(`${p.x2},${p.y2}`)) return;
 
@@ -382,7 +382,7 @@ export class DominoGame {
       const top = minY * CELL_SIZE + offset.y;
 
       // 3. Visual boundary check
-      if (left < 0 || (left + tileWidth) > (GRID_SIZE * CELL_SIZE) || top < 0 || (top + tileHeight) > (GRID_SIZE * CELL_SIZE)) {
+      if (left < CELL_SIZE || (left + tileWidth) > ((GRID_SIZE - 1) * CELL_SIZE) || top < CELL_SIZE || (top + tileHeight) > ((GRID_SIZE - 1) * CELL_SIZE)) {
         return; // Rejects placements that would render outside the visual board area
       }
 
