@@ -132,7 +132,7 @@ export default function Game() {
       setActualRoomCode(state.roomCode);
       setLobby(null);
       setSelectedTile(null);
-      setDraggingTile(null);
+      setDraggedTile(null);
       setShowSidePicker(false);
       setError('');
       setIsPlacing(false);
@@ -227,6 +227,26 @@ export default function Game() {
     } else {
       setSelectedTile({ index, tile: gameState.myHand[index] });
     }
+  };
+
+  const playTile = (tileIndex, side, placement = null) => {
+    if (!socket || !actualRoomCode || isPlacing) return;
+    setError('');
+    setIsPlacing(true);
+    const payload = { code: actualRoomCode, tileIndex, side };
+    if (placement) {
+      payload.x = placement.x;
+      payload.y = placement.y;
+      payload.x2 = placement.x2;
+      payload.y2 = placement.y2;
+      payload.orientation = placement.orientation;
+    }
+    socket.emit('game:play', payload, (res) => {
+      if (!res.ok) {
+        setError(res.error);
+        setIsPlacing(false);
+      }
+    });
   };
 
   const handlePass = () => {
