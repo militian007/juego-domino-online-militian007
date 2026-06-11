@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import Tile from './Tile.jsx';
 
-const GRID_SIZE = 20;
+const GRID_SIZE = 80;
 const CELL_SIZE = 32;
 
 const getCenter = (t) => {

@@ -7,7 +7,7 @@ import {
   WINNING_SCORE
 } from './Tile.js';
 
-export const GRID_SIZE = 20;
+export const GRID_SIZE = 80;
 const CELL_SIZE = 32;
 
 const getCenter = (t) => {
