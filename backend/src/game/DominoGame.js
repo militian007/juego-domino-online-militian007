@@ -7,7 +7,7 @@ import {
   WINNING_SCORE
 } from './Tile.js';
 
-export const GRID_SIZE = 24;
+export const GRID_SIZE = 20;
 const CELL_SIZE = 32;
 
 const getCenter = (t) => {
@@ -540,25 +540,29 @@ export class DominoGame {
         if (endTile.orientation === 'horizontal') {
           // 1. Recto (horizontal)
           if (side === 'left') {
-            addPlacementCandidate({
-              tile: [outerVal, connVal],
-              x: ex - 2,
-              y: ey,
-              x2: ex - 1,
-              y2: ey,
-              orientation: 'horizontal',
-              side
-            });
+            if (ex - 2 >= 2) {
+              addPlacementCandidate({
+                tile: [outerVal, connVal],
+                x: ex - 2,
+                y: ey,
+                x2: ex - 1,
+                y2: ey,
+                orientation: 'horizontal',
+                side
+              });
+            }
           } else {
-            addPlacementCandidate({
-              tile: [connVal, outerVal],
-              x: ex + 1,
-              y: ey,
-              x2: ex + 2,
-              y2: ey,
-              orientation: 'horizontal',
-              side
-            });
+            if (ex + 2 < GRID_SIZE - 2) {
+              addPlacementCandidate({
+                tile: [connVal, outerVal],
+                x: ex + 1,
+                y: ey,
+                x2: ex + 2,
+                y2: ey,
+                orientation: 'horizontal',
+                side
+              });
+            }
           }
 
           // 2. Giro arriba (vertical)
@@ -610,25 +614,29 @@ export class DominoGame {
           // El extremo es vertical
           // 1. Recto (vertical)
           if (side === 'left') {
-            addPlacementCandidate({
-              tile: [outerVal, connVal],
-              x: ex,
-              y: ey - 2,
-              x2: ex,
-              y2: ey - 1,
-              orientation: 'vertical',
-              side
-            });
+            if (ey - 2 >= 2) {
+              addPlacementCandidate({
+                tile: [outerVal, connVal],
+                x: ex,
+                y: ey - 2,
+                x2: ex,
+                y2: ey - 1,
+                orientation: 'vertical',
+                side
+              });
+            }
           } else {
-            addPlacementCandidate({
-              tile: [connVal, outerVal],
-              x: ex,
-              y: ey + 1,
-              x2: ex,
-              y2: ey + 2,
-              orientation: 'vertical',
-              side
-            });
+            if (ey + 2 < GRID_SIZE - 2) {
+              addPlacementCandidate({
+                tile: [connVal, outerVal],
+                x: ex,
+                y: ey + 1,
+                x2: ex,
+                y2: ey + 2,
+                orientation: 'vertical',
+                side
+              });
+            }
           }
 
           // 2. Giro izquierda (horizontal)

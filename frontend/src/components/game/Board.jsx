@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import Tile from './Tile.jsx';
 
-const GRID_SIZE = 24;
+const GRID_SIZE = 20;
 const CELL_SIZE = 32;
 
 const getCenter = (t) => {
@@ -353,25 +353,29 @@ function getValidPlacementsForTile(board, tile, side) {
       if (endTile.orientation === 'horizontal') {
         // 1. Recto (horizontal)
         if (side === 'left') {
-          addPlacementCandidate({
-            tile: [outerVal, connVal],
-            x: ex - 2,
-            y: ey,
-            x2: ex - 1,
-            y2: ey,
-            orientation: 'horizontal',
-            side
-          });
+          if (ex - 2 >= 2) {
+            addPlacementCandidate({
+              tile: [outerVal, connVal],
+              x: ex - 2,
+              y: ey,
+              x2: ex - 1,
+              y2: ey,
+              orientation: 'horizontal',
+              side
+            });
+          }
         } else {
-          addPlacementCandidate({
-            tile: [connVal, outerVal],
-            x: ex + 1,
-            y: ey,
-            x2: ex + 2,
-            y2: ey,
-            orientation: 'horizontal',
-            side
-          });
+          if (ex + 2 < GRID_SIZE - 2) {
+            addPlacementCandidate({
+              tile: [connVal, outerVal],
+              x: ex + 1,
+              y: ey,
+              x2: ex + 2,
+              y2: ey,
+              orientation: 'horizontal',
+              side
+            });
+          }
         }
 
         // 2. Giro arriba (vertical)
@@ -423,25 +427,29 @@ function getValidPlacementsForTile(board, tile, side) {
         // El extremo es vertical
         // 1. Recto (vertical)
         if (side === 'left') {
-          addPlacementCandidate({
-            tile: [outerVal, connVal],
-            x: ex,
-            y: ey - 2,
-            x2: ex,
-            y2: ey - 1,
-            orientation: 'vertical',
-            side
-          });
+          if (ey - 2 >= 2) {
+            addPlacementCandidate({
+              tile: [outerVal, connVal],
+              x: ex,
+              y: ey - 2,
+              x2: ex,
+              y2: ey - 1,
+              orientation: 'vertical',
+              side
+            });
+          }
         } else {
-          addPlacementCandidate({
-            tile: [connVal, outerVal],
-            x: ex,
-            y: ey + 1,
-            x2: ex,
-            y2: ey + 2,
-            orientation: 'vertical',
-            side
-          });
+          if (ey + 2 < GRID_SIZE - 2) {
+            addPlacementCandidate({
+              tile: [connVal, outerVal],
+              x: ex,
+              y: ey + 1,
+              x2: ex,
+              y2: ey + 2,
+              orientation: 'vertical',
+              side
+            });
+          }
         }
 
         // 2. Giro izquierda (horizontal)
@@ -617,31 +625,7 @@ export default function Board({
     }
   }, []);
 
-  // Autocentrado hacia última pieza jugada
-  useEffect(() => {
-    if (board && board.length > 0 && containerRef.current) {
-      let lastTile = board[board.length - 1];
-      if (lastAction && lastAction.type === 'play' && lastAction.tile) {
-        const matchingTile = board.find((pos, idx) =>
-          (idx === 0 || idx === board.length - 1) &&
-          ((pos.tile[0] === lastAction.tile[0] && pos.tile[1] === lastAction.tile[1]) ||
-           (pos.tile[0] === lastAction.tile[1] && pos.tile[1] === lastAction.tile[0]))
-        );
-        if (matchingTile) lastTile = matchingTile;
-      }
 
-      const containerWidth = containerRef.current.clientWidth;
-      const containerHeight = containerRef.current.clientHeight;
-      const lastTileIdx = board.indexOf(lastTile);
-      const { left: tileLeft, top: tileTop } = getVisualCoords(lastTile, lastTileIdx, boardOffsets);
-
-      containerRef.current.scrollTo({
-        left: tileLeft - containerWidth / 2 + CELL_SIZE,
-        top: tileTop - containerHeight / 2 + CELL_SIZE / 2,
-        behavior: 'smooth'
-      });
-    }
-  }, [board, lastAction, boardOffsets]);
 
   // Calcular y notificar snap en tiempo real
   useEffect(() => {
