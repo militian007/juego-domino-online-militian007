@@ -327,7 +327,8 @@ function computeBoardOffsets(board) {
     if (prev.orientation !== curr.orientation && (prevIsDouble || currIsDouble)) {
       const prevCenter = getCenter(prev);
       const currCenter = getCenter(curr);
-      if (curr.orientation === 'horizontal') {
+      const doubleTile = currIsDouble ? curr : prev;
+      if (doubleTile.orientation === 'vertical') {
         offsets[i] = {
           x: prevOffset.x,
           y: prevOffset.y + prevCenter.y - currCenter.y
@@ -354,7 +355,8 @@ function computeBoardOffsets(board) {
     if (prev.orientation !== curr.orientation && (prevIsDouble || currIsDouble)) {
       const prevCenter = getCenter(prev);
       const currCenter = getCenter(curr);
-      if (curr.orientation === 'horizontal') {
+      const doubleTile = currIsDouble ? curr : prev;
+      if (doubleTile.orientation === 'vertical') {
         offsets[i] = {
           x: prevOffset.x,
           y: prevOffset.y + prevCenter.y - currCenter.y
@@ -406,7 +408,8 @@ function getGhostVisualCoords(opt, board, boardOffsets) {
   if (prev.orientation !== opt.orientation && (prevIsDouble || optIsDouble)) {
     const prevCenter = getCenter(prev);
     const optCenter = getCenter(opt);
-    if (opt.orientation === 'horizontal') {
+    const doubleTile = optIsDouble ? opt : prev;
+    if (doubleTile.orientation === 'vertical') {
       offset = {
         x: prevOffset.x,
         y: prevOffset.y + prevCenter.y - optCenter.y
