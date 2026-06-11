@@ -4,6 +4,85 @@ import Tile from './Tile.jsx';
 const GRID_SIZE = 20;
 const CELL_SIZE = 32;
 
+const getCenter = (t) => {
+  const minX = Math.min(t.x, t.x2);
+  const minY = Math.min(t.y, t.y2);
+  if (t.orientation === 'horizontal') {
+    return { x: minX * CELL_SIZE + 32, y: minY * CELL_SIZE + 16 };
+  } else {
+    return { x: minX * CELL_SIZE + 16, y: minY * CELL_SIZE + 32 };
+  }
+};
+
+function computeBoardOffsets(board) {
+  if (!board || board.length === 0) return [];
+
+  const offsets = new Array(board.length);
+  const firstIdx = board.findIndex(t => t.side === 'first');
+  const startIdx = firstIdx !== -1 ? firstIdx : 0;
+
+  offsets[startIdx] = { x: 0, y: 0 };
+
+  // Propagar a la derecha
+  for (let i = startIdx + 1; i < board.length; i++) {
+    const prev = board[i - 1];
+    const curr = board[i];
+    const prevOffset = offsets[i - 1];
+    const prevIsDouble = prev.tile[0] === prev.tile[1];
+    const currIsDouble = curr.tile[0] === curr.tile[1];
+
+    if (prev.orientation !== curr.orientation && (prevIsDouble || currIsDouble)) {
+      const prevCenter = getCenter(prev);
+      const currCenter = getCenter(curr);
+      const doubleTile = currIsDouble ? curr : prev;
+      if (doubleTile.orientation === 'vertical') {
+        offsets[i] = {
+          x: prevOffset.x,
+          y: prevOffset.y + prevCenter.y - currCenter.y
+        };
+      } else {
+        offsets[i] = {
+          x: prevOffset.x + prevCenter.x - currCenter.x,
+          y: prevOffset.y
+        };
+      }
+    } else {
+      offsets[i] = { x: prevOffset.x, y: prevOffset.y };
+    }
+  }
+
+  // Propagar a la izquierda
+  for (let i = startIdx - 1; i >= 0; i--) {
+    const prev = board[i + 1];
+    const curr = board[i];
+    const prevOffset = offsets[i + 1];
+    const prevIsDouble = prev.tile[0] === prev.tile[1];
+    const currIsDouble = curr.tile[0] === curr.tile[1];
+
+    if (prev.orientation !== curr.orientation && (prevIsDouble || currIsDouble)) {
+      const prevCenter = getCenter(prev);
+      const currCenter = getCenter(curr);
+      const doubleTile = currIsDouble ? curr : prev;
+      if (doubleTile.orientation === 'vertical') {
+        offsets[i] = {
+          x: prevOffset.x,
+          y: prevOffset.y + prevCenter.y - currCenter.y
+        };
+      } else {
+        offsets[i] = {
+          x: prevOffset.x + prevCenter.x - currCenter.x,
+          y: prevOffset.y
+        };
+      }
+    } else {
+      offsets[i] = { x: prevOffset.x, y: prevOffset.y };
+    }
+  }
+
+  return offsets;
+}
+
+
 function getValidPlacementsForTile(board, tile, side) {
   const placements = [];
   if (!board || board.length === 0) {
@@ -63,6 +142,7 @@ function getValidPlacementsForTile(board, tile, side) {
   }
 
   const endIsDouble = endTile.tile[0] === endTile.tile[1];
+  const boardOffsets = computeBoardOffsets(board);
 
   const addPlacementCandidate = (p) => {
     const minX = Math.min(p.x, p.x2);
@@ -70,8 +150,54 @@ function getValidPlacementsForTile(board, tile, side) {
     const maxX = Math.max(p.x, p.x2);
     const maxY = Math.max(p.y, p.y2);
 
+    // 1. Grid boundary check
     if (minX < 0 || maxX >= GRID_SIZE || minY < 0 || maxY >= GRID_SIZE) return;
+    // 2. Collision check
     if (occupied.has(`${p.x},${p.y}`) || occupied.has(`${p.x2},${p.y2}`)) return;
+
+    // 3. Visual boundary check (taking propagation offsets into account)
+    let offset = { x: 0, y: 0 };
+    if (board && board.length > 0) {
+      let prev, prevOffset;
+      if (p.side === 'left') {
+        prev = board[0];
+        prevOffset = boardOffsets[0] || { x: 0, y: 0 };
+      } else {
+        prev = board[board.length - 1];
+        prevOffset = boardOffsets[board.length - 1] || { x: 0, y: 0 };
+      }
+
+      const prevIsDouble = prev.tile[0] === prev.tile[1];
+      const optIsDouble = p.tile[0] === p.tile[1];
+
+      if (prev.orientation !== p.orientation && (prevIsDouble || optIsDouble)) {
+        const prevCenter = getCenter(prev);
+        const optCenter = getCenter(p);
+        const doubleTile = optIsDouble ? p : prev;
+        if (doubleTile.orientation === 'vertical') {
+          offset = {
+            x: prevOffset.x,
+            y: prevOffset.y + prevCenter.y - optCenter.y
+          };
+        } else {
+          offset = {
+            x: prevOffset.x + prevCenter.x - optCenter.x,
+            y: prevOffset.y
+          };
+        }
+      } else {
+        offset = { x: prevOffset.x, y: prevOffset.y };
+      }
+    }
+
+    const tileWidth = p.orientation === 'horizontal' ? CELL_SIZE * 2 : CELL_SIZE;
+    const tileHeight = p.orientation === 'horizontal' ? CELL_SIZE : CELL_SIZE * 2;
+    const left = minX * CELL_SIZE + offset.x;
+    const top = minY * CELL_SIZE + offset.y;
+
+    if (left < 0 || (left + tileWidth) > (GRID_SIZE * CELL_SIZE) || top < 0 || (top + tileHeight) > (GRID_SIZE * CELL_SIZE)) {
+      return; // Rejects placements that would render outside the visual board area
+    }
 
     placements.push(p);
   };
@@ -297,83 +423,7 @@ function getValidPlacementsForTile(board, tile, side) {
   return uniquePlacements;
 }
 
-const getCenter = (t) => {
-  const minX = Math.min(t.x, t.x2);
-  const minY = Math.min(t.y, t.y2);
-  if (t.orientation === 'horizontal') {
-    return { x: minX * CELL_SIZE + 32, y: minY * CELL_SIZE + 16 };
-  } else {
-    return { x: minX * CELL_SIZE + 16, y: minY * CELL_SIZE + 32 };
-  }
-};
 
-function computeBoardOffsets(board) {
-  if (!board || board.length === 0) return [];
-
-  const offsets = new Array(board.length);
-  const firstIdx = board.findIndex(t => t.side === 'first');
-  const startIdx = firstIdx !== -1 ? firstIdx : 0;
-
-  offsets[startIdx] = { x: 0, y: 0 };
-
-  // Propagar a la derecha
-  for (let i = startIdx + 1; i < board.length; i++) {
-    const prev = board[i - 1];
-    const curr = board[i];
-    const prevOffset = offsets[i - 1];
-    const prevIsDouble = prev.tile[0] === prev.tile[1];
-    const currIsDouble = curr.tile[0] === curr.tile[1];
-
-    if (prev.orientation !== curr.orientation && (prevIsDouble || currIsDouble)) {
-      const prevCenter = getCenter(prev);
-      const currCenter = getCenter(curr);
-      const doubleTile = currIsDouble ? curr : prev;
-      if (doubleTile.orientation === 'vertical') {
-        offsets[i] = {
-          x: prevOffset.x,
-          y: prevOffset.y + prevCenter.y - currCenter.y
-        };
-      } else {
-        offsets[i] = {
-          x: prevOffset.x + prevCenter.x - currCenter.x,
-          y: prevOffset.y
-        };
-      }
-    } else {
-      offsets[i] = { x: prevOffset.x, y: prevOffset.y };
-    }
-  }
-
-  // Propagar a la izquierda
-  for (let i = startIdx - 1; i >= 0; i--) {
-    const prev = board[i + 1];
-    const curr = board[i];
-    const prevOffset = offsets[i + 1];
-    const prevIsDouble = prev.tile[0] === prev.tile[1];
-    const currIsDouble = curr.tile[0] === curr.tile[1];
-
-    if (prev.orientation !== curr.orientation && (prevIsDouble || currIsDouble)) {
-      const prevCenter = getCenter(prev);
-      const currCenter = getCenter(curr);
-      const doubleTile = currIsDouble ? curr : prev;
-      if (doubleTile.orientation === 'vertical') {
-        offsets[i] = {
-          x: prevOffset.x,
-          y: prevOffset.y + prevCenter.y - currCenter.y
-        };
-      } else {
-        offsets[i] = {
-          x: prevOffset.x + prevCenter.x - currCenter.x,
-          y: prevOffset.y
-        };
-      }
-    } else {
-      offsets[i] = { x: prevOffset.x, y: prevOffset.y };
-    }
-  }
-
-  return offsets;
-}
 
 // Centrar ficha normal si pertenece a un segmento acoplado a un doble perpendicular
 function getVisualCoords(pos, idx, boardOffsets) {
