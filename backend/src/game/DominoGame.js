@@ -383,8 +383,46 @@ export class DominoGame {
       const left = minX * CELL_SIZE + offset.x;
       const top = minY * CELL_SIZE + offset.y;
 
+      // 3. Visual boundary check
       if (left < 0 || (left + tileWidth) > (GRID_SIZE * CELL_SIZE) || top < 0 || (top + tileHeight) > (GRID_SIZE * CELL_SIZE)) {
         return; // Rejects placements that would render outside the visual board area
+      }
+
+      // 4. Visual collision check with all existing tiles on the board
+      if (this.board && this.board.length > 0) {
+        const pRect = {
+          left: left,
+          top: top,
+          width: tileWidth,
+          height: tileHeight
+        };
+
+        for (let idx = 0; idx < this.board.length; idx++) {
+          const t = this.board[idx];
+          const tOffset = boardOffsets[idx] || { x: 0, y: 0 };
+          const tMinX = Math.min(t.x, t.x2);
+          const tMinY = Math.min(t.y, t.y2);
+          const tWidth = t.orientation === 'horizontal' ? CELL_SIZE * 2 : CELL_SIZE;
+          const tHeight = t.orientation === 'horizontal' ? CELL_SIZE : CELL_SIZE * 2;
+          const tRect = {
+            left: tMinX * CELL_SIZE + tOffset.x,
+            top: tMinY * CELL_SIZE + tOffset.y,
+            width: tWidth,
+            height: tHeight
+          };
+
+          // Strict inequality so touching edges are not counted as overlapping
+          const overlaps = (
+            pRect.left < tRect.left + tRect.width &&
+            pRect.left + pRect.width > tRect.left &&
+            pRect.top < tRect.top + tRect.height &&
+            pRect.top + pRect.height > tRect.top
+          );
+
+          if (overlaps) {
+            return; // Rejects placements that visually overlap with any existing tile
+          }
+        }
       }
 
       placements.push(p);
