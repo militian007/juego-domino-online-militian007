@@ -735,13 +735,14 @@ export default function Game() {
                 {/* REACCIONES FLOTANTES EN LA MESA */}
                 {Object.entries(reactions).map(([pId, val]) => {
                   let posClass = "";
-                  if (pId === myPlayerId) {
+                  const pIdStr = String(pId);
+                  if (pIdStr === String(myPlayerId)) {
                     posClass = "bottom-8 left-1/2 -translate-x-1/2";
-                  } else if (topOpponent && pId === topOpponent.id) {
+                  } else if (topOpponent && pIdStr === String(topOpponent.id)) {
                     posClass = "top-8 left-1/2 -translate-x-1/2";
-                  } else if (leftOpponent && pId === leftOpponent.id) {
+                  } else if (leftOpponent && pIdStr === String(leftOpponent.id)) {
                     posClass = "left-8 top-1/2 -translate-y-1/2";
-                  } else if (rightOpponent && pId === rightOpponent.id) {
+                  } else if (rightOpponent && pIdStr === String(rightOpponent.id)) {
                     posClass = "right-8 top-1/2 -translate-y-1/2";
                   } else {
                     return null;
