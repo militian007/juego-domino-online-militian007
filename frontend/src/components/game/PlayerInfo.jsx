@@ -1,4 +1,4 @@
-export default function PlayerInfo({ player, count, isTurn, isWinner, team, reaction }) {
+export default function PlayerInfo({ player, count, isTurn, isWinner, team }) {
   if (!player) return null;
 
   const teamColor =
@@ -6,7 +6,7 @@ export default function PlayerInfo({ player, count, isTurn, isWinner, team, reac
 
   return (
     <div
-      className={`flex flex-col items-center gap-1 px-2 relative ${
+      className={`flex flex-col items-center gap-1 px-2 ${
         isTurn ? 'animate-pulse' : ''
       }`}
     >
@@ -23,13 +23,6 @@ export default function PlayerInfo({ player, count, isTurn, isWinner, team, reac
           {count} ficha{count !== 1 ? 's' : ''}
         </div>
       </div>
-
-      {/* Globo flotante de reacción */}
-      {reaction && (
-        <div className="absolute -top-10 bg-black/90 border border-domino-accent/60 rounded-full px-2.5 py-1 text-2xl sm:text-3xl animate-bounce shadow-lg shadow-amber-500/20 z-50">
-          {reaction}
-        </div>
-      )}
     </div>
   );
 }

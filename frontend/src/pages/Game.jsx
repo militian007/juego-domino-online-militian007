@@ -158,11 +158,11 @@ export default function Game() {
       setError(`Conectando al servidor... (puede tardar 30-50s si está dormido)`);
     };
 
-    const onReaction = ({ playerId, emoji }) => {
+    const onReaction = ({ playerId, username, emoji }) => {
       const reactionId = Date.now();
       setReactions((prev) => ({
         ...prev,
-        [playerId]: { emoji, id: reactionId }
+        [playerId]: { emoji, username, id: reactionId }
       }));
 
       setTimeout(() => {
@@ -678,7 +678,6 @@ export default function Game() {
                     count={gameState.handCounts[topOpponent.id]}
                     isTurn={gameState.currentPlayerId === topOpponent.id}
                     team={topOpponent.team}
-                    reaction={reactions[topOpponent.id]?.emoji}
                   />
                   <div className="mt-2">
                     <OpponentHand
@@ -732,22 +731,45 @@ export default function Game() {
                     {lastAction}
                   </div>
                 )}
+
+                {/* REACCIONES FLOTANTES EN LA MESA */}
+                {Object.entries(reactions).map(([pId, val]) => {
+                  let posClass = "";
+                  if (pId === myPlayerId) {
+                    posClass = "bottom-8 left-1/2 -translate-x-1/2";
+                  } else if (topOpponent && pId === topOpponent.id) {
+                    posClass = "top-8 left-1/2 -translate-x-1/2";
+                  } else if (leftOpponent && pId === leftOpponent.id) {
+                    posClass = "left-8 top-1/2 -translate-y-1/2";
+                  } else if (rightOpponent && pId === rightOpponent.id) {
+                    posClass = "right-8 top-1/2 -translate-y-1/2";
+                  } else {
+                    return null;
+                  }
+
+                  return (
+                    <div
+                      key={`${pId}-${val.id}`}
+                      className={`absolute ${posClass} flex flex-col items-center justify-center animate-bounce z-30`}
+                    >
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-domino-dark/95 border-2 border-domino-accent rounded-full flex items-center justify-center text-3xl sm:text-4xl shadow-xl shadow-amber-500/20">
+                        {val.emoji}
+                      </div>
+                      <span className="text-[9px] sm:text-[10px] text-domino-accent font-semibold tracking-wider bg-black/70 px-2 py-0.5 rounded-full mt-1 border border-domino-accent/20 max-w-[80px] truncate">
+                        {val.username}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="card p-3 sm:p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <div className="font-bold text-sm sm:text-base">Tu mano</div>
-                      <div className="text-[10px] sm:text-xs text-slate-400">
-                        {gameState.myHand?.length ?? 0} fichas
-                      </div>
+                  <div>
+                    <div className="font-bold text-sm sm:text-base">Tu mano</div>
+                    <div className="text-[10px] sm:text-xs text-slate-400">
+                      {gameState.myHand?.length ?? 0} fichas
                     </div>
-                    {reactions[myPlayerId] && (
-                      <div className="bg-black/90 border border-domino-accent/40 rounded-full px-2.5 py-0.5 text-sm sm:text-base animate-bounce shadow-lg shadow-amber-500/20 z-50">
-                        {reactions[myPlayerId].emoji}
-                      </div>
-                    )}
                   </div>
                   <div className="text-right">
                     {myTurn ? (
@@ -855,7 +877,6 @@ export default function Game() {
                   count={gameState.handCounts[leftOpponent.id]}
                   isTurn={gameState.currentPlayerId === leftOpponent.id}
                   team={leftOpponent.team}
-                  reaction={reactions[leftOpponent.id]?.emoji}
                 />
                 <div className="mt-2">
                   <OpponentHand
@@ -873,7 +894,6 @@ export default function Game() {
                   count={gameState.handCounts[rightOpponent.id]}
                   isTurn={gameState.currentPlayerId === rightOpponent.id}
                   team={rightOpponent.team}
-                  reaction={reactions[rightOpponent.id]?.emoji}
                 />
                 <div className="mt-2">
                   <OpponentHand
@@ -891,7 +911,6 @@ export default function Game() {
                   count={gameState.handCounts[topOpponent.id]}
                   isTurn={gameState.currentPlayerId === topOpponent.id}
                   team={topOpponent.team}
-                  reaction={reactions[topOpponent.id]?.emoji}
                 />
                 <div className="mt-2">
                   <OpponentHand
