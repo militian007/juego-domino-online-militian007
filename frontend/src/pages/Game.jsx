@@ -814,12 +814,12 @@ export default function Game() {
 
                     {/* Menú emergente de emojis */}
                     {showReactionMenu && (
-                      <div className="absolute bottom-16 right-0 bg-domino-felt border-2 border-domino-accent/50 rounded-2xl p-2.5 shadow-2xl z-50 flex gap-2.5 items-center justify-center" style={{ minWidth: '220px' }}>
-                        {['👀', '🤩', '👍', '👎', '😳', '😂', '😮', '😡'].map((emoji) => (
+                      <div className="absolute bottom-16 right-0 bg-domino-felt border-2 border-domino-accent/50 rounded-2xl p-3 shadow-2xl z-50 grid grid-cols-6 gap-2" style={{ minWidth: '240px' }}>
+                        {['😎', '😂', '🤣', '😆', '😭', '😡', '🤬', '🥱', '🤔', '😒', '😮'].map((emoji) => (
                           <button
                             key={emoji}
                             onClick={() => handleSendReaction(emoji)}
-                            className="text-2xl sm:text-3xl hover:scale-125 active:scale-95 transition cursor-pointer p-0.5"
+                            className="text-2xl sm:text-3xl hover:scale-125 active:scale-95 transition cursor-pointer p-0.5 flex items-center justify-center"
                           >
                             {emoji}
                           </button>
