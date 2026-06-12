@@ -173,6 +173,16 @@ export function setupGameSocket(io, roomManager) {
       await roomManager.playBotTurns(room);
     });
 
+    socket.on('game:reaction', ({ code, emoji }) => {
+      const room = roomManager.rooms.get(code);
+      if (!room) return;
+      io.to(code).emit('game:reaction', {
+        playerId: socket.userId,
+        username: socket.username,
+        emoji
+      });
+    });
+
     socket.on('disconnect', () => {
       console.log(`👋 ${socket.username} desconectado`);
       roomManager.removeFromMatchmaking(socket.id);

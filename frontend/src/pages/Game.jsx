@@ -41,6 +41,9 @@ export default function Game() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchTime, setSearchTime] = useState(0);
 
+  const [reactions, setReactions] = useState({});
+  const [showReactionMenu, setShowReactionMenu] = useState(false);
+
   const handleDragStart = (index, tile, clientX, clientY) => {
     setDraggedTile({
       index,
@@ -155,14 +158,35 @@ export default function Game() {
       setError(`Conectando al servidor... (puede tardar 30-50s si está dormido)`);
     };
 
+    const onReaction = ({ playerId, emoji }) => {
+      const reactionId = Date.now();
+      setReactions((prev) => ({
+        ...prev,
+        [playerId]: { emoji, id: reactionId }
+      }));
+
+      setTimeout(() => {
+        setReactions((prev) => {
+          if (prev[playerId]?.id === reactionId) {
+            const next = { ...prev };
+            delete next[playerId];
+            return next;
+          }
+          return prev;
+        });
+      }, 3000);
+    };
+
     s.on('lobby:update', onLobby);
     s.on('game:state', onGameState);
     s.on('connect_error', onConnectError);
+    s.on('game:reaction', onReaction);
 
     return () => {
       s.off('lobby:update', onLobby);
       s.off('game:state', onGameState);
       s.off('connect_error', onConnectError);
+      s.off('game:reaction', onReaction);
     };
   }, [loading, user, urlRoomCode, mode]);
 
@@ -372,6 +396,12 @@ export default function Game() {
     socket.emit('game:next-round', { code: actualRoomCode }, (res) => {
       if (!res.ok) setError(res.error);
     });
+  };
+
+  const handleSendReaction = (emoji) => {
+    if (!socket || !actualRoomCode) return;
+    socket.emit('game:reaction', { code: actualRoomCode, emoji });
+    setShowReactionMenu(false);
   };
 
   if (error && !lobby && !gameState) {
@@ -648,6 +678,7 @@ export default function Game() {
                     count={gameState.handCounts[topOpponent.id]}
                     isTurn={gameState.currentPlayerId === topOpponent.id}
                     team={topOpponent.team}
+                    reaction={reactions[topOpponent.id]?.emoji}
                   />
                   <div className="mt-2">
                     <OpponentHand
@@ -705,11 +736,18 @@ export default function Game() {
 
               <div className="card p-3 sm:p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <div className="font-bold text-sm sm:text-base">Tu mano</div>
-                    <div className="text-[10px] sm:text-xs text-slate-400">
-                      {gameState.myHand?.length ?? 0} fichas
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <div className="font-bold text-sm sm:text-base">Tu mano</div>
+                      <div className="text-[10px] sm:text-xs text-slate-400">
+                        {gameState.myHand?.length ?? 0} fichas
+                      </div>
                     </div>
+                    {reactions[myPlayerId] && (
+                      <div className="bg-black/90 border border-domino-accent/40 rounded-full px-2.5 py-0.5 text-sm sm:text-base animate-bounce shadow-lg shadow-amber-500/20 z-50">
+                        {reactions[myPlayerId].emoji}
+                      </div>
+                    )}
                   </div>
                   <div className="text-right">
                     {myTurn ? (
@@ -723,17 +761,50 @@ export default function Game() {
                     )}
                   </div>
                 </div>
-                <Hand
-                  tiles={gameState.myHand}
-                  validIndices={validIndices}
-                  selectedIndex={selectedTile?.index}
-                  onSelect={handleTileClick}
-                  canPlay={myTurn && !isPlacing && !draggedTile}
-                  draggedTile={draggedTile}
-                  onDragStart={handleDragStart}
-                  onDragUpdate={handleDragUpdate}
-                  onDragEnd={handleDragEnd}
-                />
+                
+                <div className="flex items-center gap-2 sm:gap-4 w-full">
+                  <div className="flex-1 min-w-0">
+                    <Hand
+                      tiles={gameState.myHand}
+                      validIndices={validIndices}
+                      selectedIndex={selectedTile?.index}
+                      onSelect={handleTileClick}
+                      canPlay={myTurn && !isPlacing && !draggedTile}
+                      draggedTile={draggedTile}
+                      onDragStart={handleDragStart}
+                      onDragUpdate={handleDragUpdate}
+                      onDragEnd={handleDragEnd}
+                    />
+                  </div>
+
+                  {/* Icono de Mensaje / Reacción */}
+                  <div className="relative shrink-0 pb-3">
+                    <button
+                      onClick={() => setShowReactionMenu(!showReactionMenu)}
+                      className="w-12 h-12 sm:w-14 sm:h-14 bg-domino-card hover:bg-domino-card/80 border-2 border-domino-accent/40 hover:border-domino-accent rounded-xl flex items-center justify-center text-domino-accent transition shadow-lg cursor-pointer"
+                      title="Enviar gesto o emoji"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 sm:w-8 sm:h-8">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a.75.75 0 0 1-1.074-.765 6 6 0 0 0 1.257-2.907C4.228 15.932 3 14.1 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+                      </svg>
+                    </button>
+
+                    {/* Menú emergente de emojis */}
+                    {showReactionMenu && (
+                      <div className="absolute bottom-16 right-0 bg-domino-felt border-2 border-domino-accent/50 rounded-2xl p-2.5 shadow-2xl z-50 flex gap-2.5 items-center justify-center" style={{ minWidth: '220px' }}>
+                        {['👀', '🤩', '👍', '👎', '😳', '😂', '😮', '😡'].map((emoji) => (
+                          <button
+                            key={emoji}
+                            onClick={() => handleSendReaction(emoji)}
+                            className="text-2xl sm:text-3xl hover:scale-125 active:scale-95 transition cursor-pointer p-0.5"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 {myTurn && gameState.canPlay && !draggedTile && (
                   <p className="text-center text-[10px] sm:text-xs text-slate-500 italic mt-2">
@@ -784,6 +855,7 @@ export default function Game() {
                   count={gameState.handCounts[leftOpponent.id]}
                   isTurn={gameState.currentPlayerId === leftOpponent.id}
                   team={leftOpponent.team}
+                  reaction={reactions[leftOpponent.id]?.emoji}
                 />
                 <div className="mt-2">
                   <OpponentHand
@@ -801,6 +873,7 @@ export default function Game() {
                   count={gameState.handCounts[rightOpponent.id]}
                   isTurn={gameState.currentPlayerId === rightOpponent.id}
                   team={rightOpponent.team}
+                  reaction={reactions[rightOpponent.id]?.emoji}
                 />
                 <div className="mt-2">
                   <OpponentHand
@@ -818,6 +891,7 @@ export default function Game() {
                   count={gameState.handCounts[topOpponent.id]}
                   isTurn={gameState.currentPlayerId === topOpponent.id}
                   team={topOpponent.team}
+                  reaction={reactions[topOpponent.id]?.emoji}
                 />
                 <div className="mt-2">
                   <OpponentHand
