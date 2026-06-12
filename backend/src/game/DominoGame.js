@@ -396,28 +396,7 @@ export class DominoGame {
       const left = minX * CELL_SIZE + offset.x;
       const top = minY * CELL_SIZE + offset.y;
 
-      // 3. Visual boundary check
-      let isVisualWithinBounds = true;
-      const leftBorder = CELL_SIZE;
-      const rightBorder = (GRID_SIZE - 1) * CELL_SIZE;
-      const topBorder = CELL_SIZE;
-      const bottomBorder = (GRID_SIZE - 1) * CELL_SIZE;
 
-      if (left < leftBorder || (left + tileWidth) > rightBorder) {
-        if (left < 0 || (left + tileWidth) > (GRID_SIZE * CELL_SIZE)) {
-          isVisualWithinBounds = false;
-        } else if (p.orientation !== 'vertical') {
-          isVisualWithinBounds = false;
-        }
-      }
-      if (top < topBorder || (top + tileHeight) > bottomBorder) {
-        if (top < 0 || (top + tileHeight) > (GRID_SIZE * CELL_SIZE)) {
-          isVisualWithinBounds = false;
-        } else if (p.orientation !== 'horizontal') {
-          isVisualWithinBounds = false;
-        }
-      }
-      if (!isVisualWithinBounds) return;
 
       // 4. Visual collision check with all existing tiles on the board
       if (this.board && this.board.length > 0) {
