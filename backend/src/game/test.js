@@ -1,6 +1,7 @@
 import { DominoGame, MODE_CONFIG } from './DominoGame.js';
 import { Bot } from './Bot.js';
 import { generateAllTiles, isDouble, tilePips } from './Tile.js';
+import { RoomManager } from '../RoomManager.js';
 
 let passed = 0;
 let failed = 0;
@@ -355,6 +356,64 @@ console.log('\nTEST 14: Colocación de ficha doble perpendicular');
   const dOpt = placements[0];
   assert(dOpt.orientation === 'vertical', 'El doble es vertical');
   assert(dOpt.x === 12 && dOpt.y === 10 && dOpt.x2 === 12 && dOpt.y2 === 9, 'La posición vertical del doble es correcta y centrada');
+}
+
+console.log('\nTEST 15: Cola de matchmaking y emparejamiento 1v1');
+{
+  const rm = new RoomManager();
+
+  const socketA = {
+    id: 'sA',
+    userId: 'p1',
+    username: 'Player A',
+    isGuest: false,
+    joined: [],
+    emitted: [],
+    join(code) { this.joined.push(code); },
+    emit(event, data) { this.emitted.push({ event, data }); }
+  };
+
+  const socketB = {
+    id: 'sB',
+    userId: 'p2',
+    username: 'Player B',
+    isGuest: false,
+    joined: [],
+    emitted: [],
+    join(code) { this.joined.push(code); },
+    emit(event, data) { this.emitted.push({ event, data }); }
+  };
+
+  // 1. Agregar Player A
+  rm.addToMatchmaking(socketA, '1v1');
+  assert(rm.matchmakingQueue.length === 1, 'Player A en la cola');
+  assert(rm.matchmakingQueue[0].userId === 'p1', 'ID del jugador A es correcto');
+
+  // 2. Intentar agregar de nuevo (debe evitar duplicados)
+  rm.addToMatchmaking(socketA, '1v1');
+  assert(rm.matchmakingQueue.length === 1, 'No hay duplicados de Player A en la cola');
+
+  // 3. Agregar Player B
+  rm.addToMatchmaking(socketB, '1v1');
+  rm.processMatchmaking('1v1');
+
+  assert(rm.matchmakingQueue.length === 0, 'La cola quedó vacía tras emparejar');
+  assert(socketA.joined.length === 1, 'Player A se unió a la sala en socket.io');
+  assert(socketB.joined.length === 1, 'Player B se unió a la sala en socket.io');
+  
+  const roomCode = socketA.joined[0];
+  assert(roomCode && roomCode.length === 6, 'Código de sala de 6 letras generado');
+  assert(socketB.joined[0] === roomCode, 'Ambos jugadores están en la misma sala');
+
+  const successEmitA = socketA.emitted.find(e => e.event === 'matchmaking:success');
+  const successEmitB = socketB.emitted.find(e => e.event === 'matchmaking:success');
+  assert(successEmitA && successEmitA.data.code === roomCode, 'Player A recibió matchmaking:success');
+  assert(successEmitB && successEmitB.data.code === roomCode, 'Player B recibió matchmaking:success');
+
+  const room = rm.rooms.get(roomCode);
+  assert(room !== undefined, 'La sala fue creada en el manager');
+  assert(room.started === true, 'La partida fue iniciada automáticamente');
+  assert(room.game !== null, 'El motor de juego fue inicializado');
 }
 
 console.log(`\n${'='.repeat(40)}`);

@@ -68,6 +68,14 @@ export function setupGameSocket(io, roomManager) {
       const me = room.players.find((p) => p.id === socket.userId);
       me.socketId = socket.id;
       roomManager.broadcastLobby(room);
+
+      // Si la partida ya comenzó, enviarle el estado actual del juego de inmediato
+      if (room.started && room.game) {
+        const state = room.game.getStateForPlayer(socket.userId);
+        state.boardShape = room.boardShape;
+        socket.emit('game:state', state);
+      }
+
       callback?.({
         ok: true,
         room: {
@@ -85,6 +93,23 @@ export function setupGameSocket(io, roomManager) {
     socket.on('room:leave', ({ code }) => {
       socket.leave(code);
       roomManager.leaveRoom(code, socket.userId);
+    });
+
+    socket.on('matchmaking:join', ({ mode }, callback) => {
+      if (socket.isGuest) {
+        return callback?.({ ok: false, error: 'Necesitas registrarte para jugar en línea' });
+      }
+      try {
+        roomManager.addToMatchmaking(socket, mode);
+        callback?.({ ok: true });
+      } catch (e) {
+        callback?.({ ok: false, error: e.message });
+      }
+    });
+
+    socket.on('matchmaking:leave', (callback) => {
+      roomManager.removeFromMatchmaking(socket.id);
+      callback?.({ ok: true });
     });
 
     socket.on('room:start', async ({ code }, callback) => {
@@ -150,6 +175,7 @@ export function setupGameSocket(io, roomManager) {
 
     socket.on('disconnect', () => {
       console.log(`👋 ${socket.username} desconectado`);
+      roomManager.removeFromMatchmaking(socket.id);
     });
   });
 }

@@ -8,6 +8,7 @@ export class RoomManager {
   constructor() {
     this.rooms = new Map();
     this.io = null;
+    this.matchmakingQueue = [];
   }
 
   setIO(io) {
@@ -44,9 +45,14 @@ export class RoomManager {
   joinRoom(code, { userId, username, socketId }) {
     const room = this.rooms.get(code);
     if (!room) return { error: 'Sala no encontrada' };
+
+    const existingPlayer = room.players.find((p) => p.id === userId);
+    if (existingPlayer) {
+      existingPlayer.socketId = socketId;
+      return { room, reconnected: true };
+    }
+
     if (room.started) return { error: 'La partida ya comenzó' };
-    if (room.players.find((p) => p.id === userId))
-      return { error: 'Ya estás en la sala', room };
     if (room.players.length >= room.config.totalPlayers)
       return { error: 'Sala llena' };
 
@@ -57,6 +63,86 @@ export class RoomManager {
       socketId
     });
     return { room };
+  }
+
+  addToMatchmaking(socket, mode) {
+    if (socket.isGuest) {
+      throw new Error('Necesitas registrarte para jugar en línea');
+    }
+    // Evitar duplicados en la cola
+    this.removeFromMatchmaking(socket.id);
+    
+    this.matchmakingQueue.push({
+      socket,
+      userId: socket.userId,
+      username: socket.username,
+      mode
+    });
+
+    console.log(`🔍 [Matchmaking] ${socket.username} se unió a la cola para ${mode}. Cola: ${this.matchmakingQueue.length}`);
+    
+    process.nextTick(() => this.processMatchmaking(mode));
+  }
+
+  removeFromMatchmaking(socketId) {
+    const initialLen = this.matchmakingQueue.length;
+    this.matchmakingQueue = this.matchmakingQueue.filter(p => p.socket.id !== socketId);
+    if (this.matchmakingQueue.length < initialLen) {
+      console.log(`🔌 [Matchmaking] Removido socket ${socketId}. Restantes: ${this.matchmakingQueue.length}`);
+    }
+  }
+
+  processMatchmaking(mode) {
+    const modeQueue = this.matchmakingQueue.filter(p => p.mode === mode);
+    if (modeQueue.length >= 2) {
+      const playerA = modeQueue[0];
+      const playerB = modeQueue[1];
+
+      this.removeFromMatchmaking(playerA.socket.id);
+      this.removeFromMatchmaking(playerB.socket.id);
+
+      console.log(`🤝 [Matchmaking] ¡Emparejando! ${playerA.username} vs ${playerB.username} para ${mode}`);
+
+      try {
+        const room = this.createRoom({
+          mode,
+          hostId: playerA.userId,
+          hostUsername: playerA.username
+        });
+
+        const pA = room.players.find(p => p.id === playerA.userId);
+        if (pA) pA.socketId = playerA.socket.id;
+        playerA.socket.join(room.code);
+
+        const joinResult = this.joinRoom(room.code, {
+          userId: playerB.userId,
+          username: playerB.username,
+          socketId: playerB.socket.id
+        });
+
+        if (joinResult.error) {
+          console.error('Error al unir al jugador B en matchmaking:', joinResult.error);
+          return;
+        }
+        playerB.socket.join(room.code);
+
+        const startResult = this.startGame(room.code);
+        if (startResult.error) {
+          console.error('Error al iniciar partida en matchmaking:', startResult.error);
+          return;
+        }
+
+        this.broadcastLobby(room);
+        this.broadcastState(room);
+
+        playerA.socket.emit('matchmaking:success', { code: room.code });
+        playerB.socket.emit('matchmaking:success', { code: room.code });
+
+        console.log(`🚀 [Matchmaking] Partida iniciada en sala: ${room.code}`);
+      } catch (err) {
+        console.error('Error en proceso de matchmaking:', err);
+      }
+    }
   }
 
   leaveRoom(code, userId) {

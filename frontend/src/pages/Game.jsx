@@ -36,6 +36,10 @@ export default function Game() {
   const [actualRoomCode, setActualRoomCode] = useState(urlRoomCode || null);
   const [lastAction, setLastAction] = useState(null);
   const [isPlacing, setIsPlacing] = useState(false);
+  
+  const [playModeOption, setPlayModeOption] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchTime, setSearchTime] = useState(0);
 
   const handleDragStart = (index, tile, clientX, clientY) => {
     setDraggedTile({
@@ -101,10 +105,12 @@ export default function Game() {
 
   const roomInitRef = useRef(false);
 
+  // 1. Conexión de socket y registro de listeners de eventos del juego
   useEffect(() => {
     if (loading) return;
     if (!user && !GUEST_ALLOWED_MODES.includes(mode)) return;
     if (urlRoomCode && !user) return;
+
     const s = connectSocket();
     setSocket(s);
     setError('');
@@ -114,6 +120,7 @@ export default function Game() {
       setActualRoomCode(state.code);
       if (state.started) setLobby(null);
     };
+
     const onGameState = (state) => {
       setGameState((prev) => {
         if (prev && state) {
@@ -138,6 +145,7 @@ export default function Game() {
       setError('');
       setIsPlacing(false);
     };
+
     const onConnectError = (err) => {
       const msg = err?.message || '';
       if (msg.toLowerCase().includes('token')) {
@@ -146,11 +154,29 @@ export default function Game() {
       }
       setError(`Conectando al servidor... (puede tardar 30-50s si está dormido)`);
     };
-    const onConnect = () => {
+
+    s.on('lobby:update', onLobby);
+    s.on('game:state', onGameState);
+    s.on('connect_error', onConnectError);
+
+    return () => {
+      s.off('lobby:update', onLobby);
+      s.off('game:state', onGameState);
+      s.off('connect_error', onConnectError);
+    };
+  }, [loading, user, urlRoomCode, mode]);
+
+  // 2. Control de acciones de sala y matchmaking
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleAction = () => {
       if (roomInitRef.current) return;
-      roomInitRef.current = true;
+
+      // Caso A: Se unió directamente con un código en URL o query param
       if (joinParam) {
-        s.emit('room:join', { code: joinParam }, (res) => {
+        roomInitRef.current = true;
+        socket.emit('room:join', { code: joinParam }, (res) => {
           if (!res?.ok) {
             setError(res?.error || 'No se pudo unir a la sala');
             roomInitRef.current = false;
@@ -158,37 +184,97 @@ export default function Game() {
           }
           if (res.room?.code) setActualRoomCode(res.room.code);
         });
-      } else {
-        s.emit('room:create', { mode }, (res) => {
+        return;
+      }
+
+      // Caso B: Modo práctica contra Bot (auto-inicia)
+      if (mode === '1v1bot') {
+        roomInitRef.current = true;
+        socket.emit('room:create', { mode }, (res) => {
           if (!res?.ok) {
             setError(res?.error || 'No se pudo crear la sala');
             roomInitRef.current = false;
             return;
           }
           if (res.code) setActualRoomCode(res.code);
-          if (AUTO_START_MODES.includes(mode)) {
-            s.emit('room:start', { code: res.code }, (startRes) => {
-              if (!startRes?.ok) setError(startRes?.error || 'No se pudo iniciar');
-            });
+          socket.emit('room:start', { code: res.code }, (startRes) => {
+            if (!startRes?.ok) setError(startRes?.error || 'No se pudo iniciar');
+          });
+        });
+        return;
+      }
+
+      // Caso C: El usuario eligió crear una sala privada
+      if (playModeOption === 'private') {
+        roomInitRef.current = true;
+        socket.emit('room:create', { mode }, (res) => {
+          if (!res?.ok) {
+            setError(res?.error || 'No se pudo crear la sala');
+            roomInitRef.current = false;
+            setPlayModeOption(null);
+            return;
+          }
+          if (res.code) setActualRoomCode(res.code);
+        });
+        return;
+      }
+
+      // Caso D: El usuario eligió buscar partida (matchmaking)
+      if (playModeOption === 'matchmaking') {
+        roomInitRef.current = true;
+        setIsSearching(true);
+        socket.emit('matchmaking:join', { mode }, (res) => {
+          if (!res?.ok) {
+            setError(res?.error || 'No se pudo unir al emparejamiento');
+            roomInitRef.current = false;
+            setIsSearching(false);
+            setPlayModeOption(null);
           }
         });
+        return;
       }
     };
 
-    s.on('lobby:update', onLobby);
-    s.on('game:state', onGameState);
-    s.on('connect', onConnect);
-    s.on('connect_error', onConnectError);
-    if (s.connected) onConnect();
+    const onMatchSuccess = ({ code }) => {
+      setIsSearching(false);
+      setPlayModeOption(null);
+      roomInitRef.current = false;
+      navigate(`/game?join=${code}`, { replace: true });
+    };
+
+    socket.on('matchmaking:success', onMatchSuccess);
+
+    if (socket.connected) {
+      handleAction();
+    }
+    socket.on('connect', handleAction);
 
     return () => {
-      s.off('lobby:update', onLobby);
-      s.off('game:state', onGameState);
-      s.off('connect', onConnect);
-      s.off('connect_error', onConnectError);
-      roomInitRef.current = false;
+      socket.off('connect', handleAction);
+      socket.off('matchmaking:success', onMatchSuccess);
     };
-  }, [mode, joinParam, loading, user, urlRoomCode, navigate]);
+  }, [socket, mode, joinParam, playModeOption, navigate]);
+
+  // 3. Temporizador de búsqueda de matchmaking
+  useEffect(() => {
+    if (!isSearching) {
+      setSearchTime(0);
+      return;
+    }
+    const timer = setInterval(() => {
+      setSearchTime((t) => t + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isSearching]);
+
+  const handleCancelSearch = () => {
+    if (socket) {
+      socket.emit('matchmaking:leave');
+    }
+    setIsSearching(false);
+    setPlayModeOption(null);
+    roomInitRef.current = false;
+  };
 
   const myPlayerId = useMemo(() => {
     if (user?.id) return user.id;
@@ -305,6 +391,113 @@ export default function Game() {
             <Link to="/dashboard" className="btn-secondary w-full block">
               Volver al dashboard
             </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isSearching) {
+    return (
+      <div className="min-h-screen flex flex-col bg-domino-dark text-domino-cream">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center px-4 py-8">
+          <div className="card p-6 sm:p-10 max-w-md w-full border border-domino-accent/30 bg-domino-felt shadow-2xl text-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-felt opacity-5 pointer-events-none" />
+            <div className="relative z-10 flex flex-col items-center py-4">
+              <div className="relative flex items-center justify-center w-24 h-24 mb-6">
+                <div className="absolute inset-0 rounded-full border-2 border-domino-accent/20 border-t-domino-accent animate-spin" />
+                <div className="text-4xl animate-pulse">🎲</div>
+              </div>
+              <p className="text-domino-accent text-[10px] tracking-[0.4em] uppercase mb-2">
+                Buscando Mesa
+              </p>
+              <h1 className="font-serif text-2xl sm:text-3xl text-domino-cream font-bold mb-2">
+                Buscando oponente...
+              </h1>
+              <p className="text-slate-400 text-sm max-w-xs mb-6">
+                Buscando jugadores activos para un duelo 1 vs 1 en línea.
+              </p>
+              <div className="bg-domino-dark/50 border border-slate-700/60 rounded-xl px-6 py-3 mb-8 w-full font-mono text-sm flex justify-between items-center">
+                <span className="text-slate-500">Tiempo en cola:</span>
+                <span className="text-domino-accent font-bold">
+                  {Math.floor(searchTime / 60)}:{(searchTime % 60).toString().padStart(2, '0')}
+                </span>
+              </div>
+              <button
+                onClick={handleCancelSearch}
+                className="btn-secondary w-full text-sm py-3 hover:bg-domino-crimson/10 hover:text-red-400 hover:border-domino-crimson/50 transition duration-200"
+              >
+                Cancelar búsqueda
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!joinParam && mode !== '1v1bot' && playModeOption === null && !lobby && !gameState) {
+    return (
+      <div className="min-h-screen flex flex-col bg-domino-dark text-domino-cream">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center px-4 py-8">
+          <div className="card p-6 sm:p-10 max-w-2xl w-full border border-domino-accent/30 bg-domino-felt shadow-2xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-felt opacity-5 pointer-events-none" />
+            <div className="text-center mb-8 relative z-10">
+              <p className="text-domino-accent text-xs tracking-[0.4em] uppercase mb-2">
+                Duelo de Caballeros
+              </p>
+              <h1 className="font-serif text-3xl sm:text-4xl text-domino-cream font-bold">
+                Modalidad <span className="text-domino-accent italic">1 vs 1 Online</span>
+              </h1>
+              <p className="text-slate-400 text-sm mt-2 max-w-md mx-auto">
+                Elige cómo deseas buscar tu próxima partida de dominó. Puedes emparejarte al azar o crear una sala privada.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 mb-8">
+              <button
+                onClick={() => setPlayModeOption('matchmaking')}
+                className="group p-6 text-left rounded-xl border border-domino-accent/20 hover:border-domino-accent bg-domino-card/40 hover:bg-domino-card/80 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 cursor-pointer"
+              >
+                <div>
+                  <div className="text-3xl mb-3 group-hover:scale-110 transition-transform duration-300 w-fit">⚡</div>
+                  <h3 className="font-bold text-lg text-domino-cream mb-2 group-hover:text-domino-accent transition-colors">
+                    Emparejamiento Rápido
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                    Te conecta automáticamente con otro jugador disponible en línea. ¡Rápido, competitivo y directo!
+                  </p>
+                </div>
+                <div className="mt-6 flex items-center justify-between text-xs text-domino-accent font-semibold tracking-wider pt-4 border-t border-domino-accent/10 w-full">
+                  <span>JUGAR AHORA</span>
+                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setPlayModeOption('private')}
+                className="group p-6 text-left rounded-xl border border-domino-accent/20 hover:border-domino-accent bg-domino-card/40 hover:bg-domino-card/80 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 cursor-pointer"
+              >
+                <div>
+                  <div className="text-3xl mb-3 group-hover:scale-110 transition-transform duration-300 w-fit">🗝️</div>
+                  <h3 className="font-bold text-lg text-domino-cream mb-2 group-hover:text-domino-accent transition-colors">
+                    Crear Sala Privada
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                    Genera un código único para compartirlo con un amigo. Ideal para partidas personalizadas y revanchas.
+                  </p>
+                </div>
+                <div className="mt-6 flex items-center justify-between text-xs text-domino-accent font-semibold tracking-wider pt-4 border-t border-domino-accent/10 w-full">
+                  <span>CREAR SALA</span>
+                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </div>
+              </button>
+            </div>
+            <div className="text-center relative z-10">
+              <Link to="/dashboard" className="text-slate-500 hover:text-domino-cream text-sm transition">
+                ← Volver al dashboard
+              </Link>
+            </div>
           </div>
         </div>
       </div>
