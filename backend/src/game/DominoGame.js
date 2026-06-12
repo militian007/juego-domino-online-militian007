@@ -468,8 +468,8 @@ export class DominoGame {
           });
         }
 
-        // REGLA NUEVA: Si el doble horizontal queda en la fila superior (0) o inferior (19), habilitamos imanes a los lados (horizontal)
-        const isAtBorder = (ey === 0 || ey === GRID_SIZE - 1);
+        // REGLA NUEVA: Si el doble horizontal queda en la fila superior (0 o 1) o inferior (18 o 19), habilitamos imanes a los lados (horizontal)
+        const isAtBorder = (ey <= 1 || ey >= GRID_SIZE - 2);
         if (isAtBorder) {
           const maxX = Math.max(endTile.x, endTile.x2);
           if (side === 'left') {
@@ -522,8 +522,8 @@ export class DominoGame {
           });
         }
 
-        // REGLA NUEVA: Si el doble vertical queda en la columna izquierda (0) o derecha (19), habilitamos imanes a los lados (vertical)
-        const isAtBorder = (ex === 0 || ex === GRID_SIZE - 1);
+        // REGLA NUEVA: Si el doble vertical queda en la columna izquierda (0 o 1) o derecha (18 o 19), habilitamos imanes a los lados (vertical)
+        const isAtBorder = (ex <= 1 || ex >= GRID_SIZE - 2);
         if (isAtBorder) {
           const maxY = Math.max(endTile.y, endTile.y2);
           if (side === 'left') {
