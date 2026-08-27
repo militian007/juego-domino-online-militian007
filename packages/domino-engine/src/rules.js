@@ -1,0 +1,82 @@
+import { DEFAULT_LAYOUT } from './layout.js';
+
+export const BASE_RULES = {
+  maxPip: 6,
+  tilesPerPlayer: 7,
+  targetPoints: 100,
+  hasPool: true,
+  teams: true,
+  seats: 4,
+  layout: DEFAULT_LAYOUT,
+  firstRoundStarter: 'highest-double',
+  nextRoundStarter: 'winner',
+  blockedScoring: 'difference',
+  turnMs: 30000
+};
+
+export const FORMATS = {
+  'domino-1v1-v1': {
+    label: '1 vs 1',
+    seats: 2,
+    teams: false,
+    hasPool: true,
+    tilesPerPlayer: 7,
+    targetPoints: 100
+  },
+  'domino-1v1bot-v1': {
+    label: '1 vs Bot',
+    seats: 2,
+    teams: false,
+    hasPool: true,
+    tilesPerPlayer: 7,
+    targetPoints: 100,
+    botSeats: [1]
+  },
+  'domino-2v2-v1': {
+    label: '2 vs 2',
+    seats: 4,
+    teams: true,
+    hasPool: false,
+    tilesPerPlayer: 7,
+    targetPoints: 100
+  },
+  'domino-2v2bots-v1': {
+    label: '2 vs 2 (con bots)',
+    seats: 4,
+    teams: true,
+    hasPool: false,
+    tilesPerPlayer: 7,
+    targetPoints: 100,
+    botSeats: [1, 3]
+  }
+};
+
+export function resolveConfig(gameFormat, overrides = {}) {
+  const preset = FORMATS[gameFormat];
+  if (!preset) {
+    throw new Error(`gameFormat desconocido: ${gameFormat}. Válidos: ${Object.keys(FORMATS).join(', ')}`);
+  }
+  const cfg = { ...BASE_RULES, ...preset, ...overrides };
+  cfg.layout = { ...DEFAULT_LAYOUT, ...(overrides.layout || preset.layout || {}) };
+  cfg.botSeats = (overrides.botSeats || preset.botSeats || []).slice();
+  delete cfg.label;
+
+  const totalTiles = ((cfg.maxPip + 1) * (cfg.maxPip + 2)) / 2;
+  if (cfg.seats * cfg.tilesPerPlayer > totalTiles) {
+    throw new Error(`No alcanzan las fichas: ${cfg.seats} x ${cfg.tilesPerPlayer} > ${totalTiles}`);
+  }
+  if (!cfg.hasPool && cfg.seats * cfg.tilesPerPlayer !== totalTiles) {
+    cfg.hasPool = true;
+  }
+  return cfg;
+}
+
+export function teamOfSeat(seat, cfg) {
+  return cfg.teams ? (seat % 2 === 0 ? 1 : 2) : seat === 0 ? 1 : 2;
+}
+
+export function teamsFor(cfg) {
+  const out = [];
+  for (let s = 0; s < cfg.seats; s++) out.push(teamOfSeat(s, cfg));
+  return out;
+}

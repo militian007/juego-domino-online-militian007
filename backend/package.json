@@ -6,9 +6,13 @@
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "test": "node src/game/test.js",
+    "test:e2e": "node src/test-e2e-bot.js",
+    "test:engine": "npm --prefix ../packages/domino-engine test"
   },
   "dependencies": {
+    "@privoytruco/domino-engine": "file:../packages/domino-engine",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

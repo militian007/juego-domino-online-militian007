@@ -16,6 +16,21 @@ function assert(condition, message) {
   }
 }
 
+function setEnds(game, left, right) {
+  const cx = 9;
+  const cy = 10;
+  game.board = [{
+    tile: [left, right],
+    side: 'first',
+    x: cx,
+    y: cy,
+    x2: left === right ? cx : cx + 1,
+    y2: left === right ? cy + 1 : cy,
+    orientation: left === right ? 'vertical' : 'horizontal'
+  }];
+  game.ends = { left, right };
+}
+
 console.log('TEST 1: Crear juego 1v1 (2 jugadores, con pozo)');
 {
   const game = new DominoGame({
@@ -83,7 +98,7 @@ console.log('\nTEST 4: Robar del pozo en 1v1');
   game.hands.p1 = [[3, 4]];
   game.hands.p2 = [[1, 2]];
   game.pool = [[5, 5], [6, 6]];
-  game.ends = { left: 0, right: 0 };
+  setEnds(game, 0, 0);
   game.currentPlayerIndex = 0;
 
   const r = game.drawFromPool('p1');
@@ -113,7 +128,7 @@ console.log('\nTEST 5: No se puede pasar si hay fichas en el pozo');
   game.hands.p1 = [[0, 0]];
   game.hands.p2 = [[1, 1]];
   game.pool = [[2, 2], [3, 3]];
-  game.ends = { left: 5, right: 5 };
+  setEnds(game, 5, 5);
   game.currentPlayerIndex = 0;
 
   const r = game.pass('p1');
@@ -134,7 +149,7 @@ console.log('\nTEST 6: Sí se puede pasar cuando el pozo está vacío');
   game.hands.p1 = [[0, 0]];
   game.hands.p2 = [[1, 1]];
   game.pool = [];
-  game.ends = { left: 5, right: 5 };
+  setEnds(game, 5, 5);
   game.currentPlayerIndex = 0;
 
   const r = game.pass('p1');
@@ -158,7 +173,7 @@ console.log('\nTEST 7: En 2v2 siempre se puede pasar (no hay pozo)');
   game.hands.p2 = [[1, 1]];
   game.hands.p3 = [[2, 2]];
   game.hands.p4 = [[3, 3]];
-  game.ends = { left: 5, right: 5 };
+  setEnds(game, 5, 5);
   game.currentPlayerIndex = 0;
 
   const r = game.pass('p1');
@@ -185,7 +200,7 @@ console.log('\nTEST 8: Tranque en 1v1 después de vaciar el pozo');
   game.hands.p1 = [[0, 0]];
   game.hands.p2 = [[1, 1]];
   game.pool = [];
-  game.ends = { left: 5, right: 5 };
+  setEnds(game, 5, 5);
   game.currentPlayerIndex = 0;
 
   game.pass('p1');
@@ -229,7 +244,7 @@ console.log('\nTEST 10: Estado del cliente incluye info de pozo y canDraw/canPas
   game.hands.p1 = [[0, 0]];
   game.hands.p2 = [[1, 1]];
   game.pool = [[2, 2]];
-  game.ends = { left: 5, right: 5 };
+  setEnds(game, 5, 5);
   game.currentPlayerIndex = 0;
   const state = game.getStateForPlayer('p1');
   assert(state.hasPool === true, 'hasPool=true en 1v1');
@@ -350,12 +365,18 @@ console.log('\nTEST 14: Colocación de ficha doble perpendicular');
   // Intentar colocar la ficha doble [4, 4] en el extremo derecho (valor 4)
   const placements = game.getValidPlacementsForTile([4, 4], 'right');
 
-  // Debe haber exactamente 1 opción (perpendicular vertical centrada):
-  // x: 12, y: 10, x2: 12, y2: 9
-  assert(placements.length === 1, 'Tiene exactamente 1 opción de colocación para el doble');
-  const dOpt = placements[0];
-  assert(dOpt.orientation === 'vertical', 'El doble es vertical');
-  assert(dOpt.x === 12 && dOpt.y === 10 && dOpt.x2 === 12 && dOpt.y2 === 9, 'La posición vertical del doble es correcta y centrada');
+  // Debe haber 2 opciones: el doble se cruza perpendicular y puede sobresalir
+  // hacia arriba o hacia abajo de la linea de la cadena.
+  assert(placements.length === 2, 'Tiene 2 opciones cruzadas para el doble');
+  assert(placements.every(p => p.orientation === 'vertical'), 'Ambas son verticales');
+  assert(placements.every(p => p.x === 12 && p.x2 === 12), 'Ambas en la columna siguiente');
+
+  const arriba = placements.find(p => Math.min(p.y, p.y2) === 9);
+  assert(arriba && arriba.x === 12 && arriba.y === 10 && arriba.x2 === 12 && arriba.y2 === 9,
+    'La opción que sobresale hacia arriba es correcta y centrada');
+
+  const abajo = placements.find(p => Math.min(p.y, p.y2) === 10);
+  assert(abajo && abajo.y === 10 && abajo.y2 === 11, 'La opción que sobresale hacia abajo es correcta');
 }
 
 console.log('\nTEST 15: Cola de matchmaking y emparejamiento 1v1');

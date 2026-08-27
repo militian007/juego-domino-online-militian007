@@ -1,0 +1,20 @@
+{
+  "name": "@privoytruco/domino-engine",
+  "version": "1.0.0",
+  "description": "Motor de dominó determinista, sin dependencias, listo para integrarse en la plataforma PrivoyTruco",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./bot": "./src/bot.js",
+    "./layout": "./src/layout.js"
+  },
+  "files": ["src", "README.md", "INTEGRATION.md"],
+  "engines": { "node": ">=18" },
+  "sideEffects": false,
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "dependencies": {},
+  "license": "UNLICENSED"
+}

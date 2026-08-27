@@ -1,8 +1,12 @@
+import { randomSeed } from '@privoytruco/domino-engine';
 import { DominoGame } from './game/DominoGame.js';
 import { Bot } from './game/Bot.js';
 import { MODE_CONFIG } from './game/DominoGame.js';
 
 const MODES = MODE_CONFIG;
+
+export const BOT_DELAY_MS = Number(process.env.BOT_DELAY_MS ?? 3000);
+export const HUMAN_DELAY_MS = Number(process.env.HUMAN_DELAY_MS ?? 1000);
 
 export class RoomManager {
   constructor() {
@@ -178,10 +182,12 @@ export class RoomManager {
     const shapes = ['espiral', 'serpiente', 'bucle', 'zigzag', 'laberinto'];
     room.boardShape = shapes[Math.floor(Math.random() * shapes.length)];
 
+    room.seed = randomSeed();
     room.game = new DominoGame({
       roomCode: room.code,
       mode: room.mode,
-      players: room.players
+      players: room.players,
+      seed: room.seed
     });
     room.started = true;
     return { room };
@@ -193,7 +199,7 @@ export class RoomManager {
       if (!current.isBot) break;
 
       // Esperar antes de realizar la jugada (tiempo de "pensamiento" del bot)
-      await this._sleep(3000);
+      await this._sleep(BOT_DELAY_MS);
 
       // Verificar que el juego sigue activo y sigue siendo el turno del bot después de dormir
       if (room.game.status !== 'playing' || room.game.getCurrentPlayer()?.id !== current.id) {
@@ -202,10 +208,11 @@ export class RoomManager {
 
       const validMoves = room.game.getValidMoves(current.id);
       if (validMoves.length > 0) {
-        const bot = new Bot(room.game, current.id);
+        const bot = new Bot(room.game, current.id, room.botDifficulty || 'normal');
         const move = bot.chooseMove();
         if (move) {
-          room.game.playTile(current.id, move.tileIndex, move.side);
+          const c = move.placement || {};
+          room.game.playTile(current.id, move.tileIndex, move.side, c.x, c.y, c.x2, c.y2, c.orientation);
         } else {
           room.game.pass(current.id);
         }

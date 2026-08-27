@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { HUMAN_DELAY_MS } from '../RoomManager.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
@@ -127,7 +128,7 @@ export function setupGameSocket(io, roomManager) {
       if (!room?.game) return callback?.({ ok: false, error: 'No hay juego' });
       
       // Delay human move so it doesn't appear too instantly
-      await roomManager._sleep(1000);
+      if (HUMAN_DELAY_MS > 0) await roomManager._sleep(HUMAN_DELAY_MS);
       
       // Re-verify that the room and game are still active after the sleep
       const activeRoom = roomManager.rooms.get(code);
@@ -142,10 +143,10 @@ export function setupGameSocket(io, roomManager) {
       }
     });
 
-    socket.on('game:draw', async ({ code }, callback) => {
+    socket.on('game:draw', async ({ code, poolIndex }, callback) => {
       const room = roomManager.rooms.get(code);
       if (!room?.game) return callback?.({ ok: false, error: 'No hay juego' });
-      const result = room.game.drawFromPool(socket.userId);
+      const result = room.game.drawFromPool(socket.userId, poolIndex);
       if (!result.ok) return callback?.(result);
       roomManager.broadcastState(room);
       callback?.(result);
