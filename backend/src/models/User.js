@@ -32,3 +32,7 @@ export const updateStats = async (id, won) => {
     [won ? 1 : 0, id]
   );
 };
+
+export const updatePassword = async (id, passwordHash) => {
+  await query('UPDATE users SET password_hash = ? WHERE id = ?', [passwordHash, id]);
+};

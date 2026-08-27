@@ -4,6 +4,7 @@ import Landing from './pages/Landing.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import ChangePassword from './pages/ChangePassword.jsx';
 import Game from './pages/Game.jsx';
 
 const PrivateRoute = ({ children }) => {
@@ -19,6 +20,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+      <Route path="/cambiar-clave" element={<PrivateRoute><ChangePassword /></PrivateRoute>} />
       <Route path="/game" element={<Game />} />
       <Route path="/game/:roomCode" element={<Game />} />
       <Route path="*" element={<Navigate to="/" replace />} />

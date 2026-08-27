@@ -20,6 +20,7 @@ export { FORMATS, BASE_RULES, resolveConfig, teamOfSeat, teamsFor } from './rule
 export {
   DEFAULT_LAYOUT,
   placementsFor,
+  explainPlacements,
   placementKey,
   computeBoardOffsets,
   anchorOffsetFor,

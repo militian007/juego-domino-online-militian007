@@ -1115,3 +1115,69 @@ su propia clave. Además **no hay endpoint de recuperación**: `routes/auth.js` 
 
 > Pendiente: falta un flujo de cambio/recuperación de clave. Mientras tanto, la salida es
 > registrarse de nuevo en producción.
+
+---
+
+## 32. Auditoría de las reglas de colocación (2026-08-24)
+
+El usuario, después del tercer "tengo la ficha y no me deja jugarla", pidió verificar **todas** las
+reglas de una vez. En vez de mirar caso por caso, se hizo que el motor **explique cada rechazo**.
+
+### La herramienta
+
+`explainPlacements(board, tile, side, layout)` devuelve las colocaciones válidas **y** todas las
+candidatas descartadas con el motivo. Para eso `add()` se partió en `evaluar()` (devuelve el motivo
+o `null`) y el `add` que registra. Queda como API pública del motor: sirve para depurar en vez de
+adivinar.
+
+Motivos posibles: `no-coincide-con-el-extremo`, `fuera-del-tablero`, `celda-ocupada`,
+`roza-otra-ficha`, `solapa-visualmente`.
+
+### El resultado (94.920 coincidencias sobre 500 partidas)
+
+De las fichas que coincidían con un extremo, el 18,1% no tenía dónde entrar. Repartido así:
+
+| motivo | % de los bloqueos |
+|---|---|
+| roza otra ficha | 55,1% |
+| **borde superior/inferior** | **27,1%** |
+| **borde lateral** | **9,7%** |
+| celda ocupada | 7,8% |
+| solapa visualmente | 0,1% |
+
+### La regla obsoleta
+
+Las dos reglas de borde (una "banda" que prohibía fichas horizontales en las columnas 0/19 y
+verticales en las filas 0/19) causaban juntas el **37% de los bloqueos**.
+
+Existían para que las fichas no quedaran cortadas contra el margen cuando el tablero se
+scrolleaba. Desde §29 el tablero **se escala y se ve entero**, así que ya no protegían de nada: el
+chequeo `fuera-del-tablero` alcanza para que nada se salga del grid.
+
+Se eliminaron. Medido sobre 400 partidas:
+
+| | ficha válida sin lugar | trancas | fuera del grid | contactos indebidos |
+|---|---|---|---|---|
+| con la regla | 18,2% | 49,2% | 0 | 0 |
+| **sin la regla** | **12,8%** | **37,8%** | **0** | **0** |
+
+Un tercio menos de bloqueos y 11 puntos menos de trancas, sin que se saliera una sola ficha.
+
+> Cuando se cambie algo del render, revisar si alguna regla del motor existía solo para tapar una
+> limitación del render. Esta llevaba meses cobrando peaje sin proteger nada.
+
+### Cambio de contraseña
+
+`routes/auth.js` solo tenía `register`, `login` y `me`: quien olvidaba la clave quedaba afuera
+para siempre. Se agregó `POST /api/auth/change-password` (con `authMiddleware`) y la pantalla
+`/cambiar-clave`.
+
+El usuario se resuelve desde `req.username`, que pone el middleware **desde el token verificado**,
+no desde el cuerpo del pedido: nadie puede cambiarle la clave a otro. Se busca por username porque
+`findById` no trae el `password_hash`.
+
+Probado contra el servidor: sin token rechaza, con la clave actual mal rechaza, con clave corta
+rechaza, con la nueva igual a la actual rechaza, y el cambio válido invalida la clave vieja.
+
+> Local y producción usan bases distintas (SQLite vs PostgreSQL según `DATABASE_URL`), así que un
+> cambio de clave en una no afecta a la otra.

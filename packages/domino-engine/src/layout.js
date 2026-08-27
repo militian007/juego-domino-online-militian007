@@ -76,7 +76,7 @@ export function boardEnds(board) {
   return { left: board[0].tile[0], right: board[board.length - 1].tile[1] };
 }
 
-export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT) {
+export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagnostico = null) {
   const GRID = layout.grid;
   const cell = layout.cell;
   const out = [];
@@ -109,7 +109,10 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT) {
     return [];
   }
 
-  if (tile[0] !== ev && tile[1] !== ev) return [];
+  if (tile[0] !== ev && tile[1] !== ev) {
+    if (diagnostico) diagnostico.push({ motivo: 'no-coincide-con-el-extremo' });
+    return [];
+  }
 
   const connVal = ev;
   const outerVal = tile[0] === ev ? tile[1] : tile[0];
@@ -128,34 +131,47 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT) {
   const anchor = board[anchorIdx];
   const anchorOffset = offsets[anchorIdx] || { x: 0, y: 0 };
 
-  const add = (p) => {
+  // Devuelve null si la colocacion es valida, o el motivo del rechazo.
+  // Tenerlo separado permite auditar por que se descarta cada opcion
+  // (ver `explainPlacements`) en vez de adivinar.
+  const evaluar = (p) => {
     const pMinX = minX(p);
     const pMinY = minY(p);
     const pMaxX = maxX(p);
     const pMaxY = maxY(p);
 
-    if (pMinX < 0 || pMaxX >= GRID || pMinY < 0 || pMaxY >= GRID) return;
-    if ((pMinX < 1 || pMaxX >= GRID - 1) && p.orientation !== 'vertical') return;
-    if ((pMinY < 1 || pMaxY >= GRID - 1) && p.orientation !== 'horizontal') return;
+    // Solo hace falta que la ficha entre en el tablero. Antes habia ademas una
+    // "banda de borde" que prohibia fichas horizontales en las columnas 0/19 y
+    // verticales en las filas 0/19. Existia para que no quedaran cortadas contra
+    // el margen, pero desde que el tablero se escala y se ve entero (§29) ya no
+    // protege de nada: medido, causaba el 37% de los bloqueos y sacarla bajo las
+    // trancas de 49.2% a 37.8% sin que se saliera una sola ficha del grid.
+    if (pMinX < 0 || pMaxX >= GRID || pMinY < 0 || pMaxY >= GRID) return 'fuera-del-tablero';
 
-    if (occupied.has(p.x + ',' + p.y) || occupied.has(p.x2 + ',' + p.y2)) return;
+    if (occupied.has(p.x + ',' + p.y) || occupied.has(p.x2 + ',' + p.y2)) return 'celda-ocupada';
 
     // La ficha nueva solo puede tocar a la ficha con la que engancha. Si roza
     // cualquier otra, la cadena se esta doblando sobre si misma y queda amontonada.
     for (const [cx, cy] of [[p.x, p.y], [p.x2, p.y2]]) {
       for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
         const owner = ownerOf.get(cx + dx + ',' + (cy + dy));
-        if (owner !== undefined && owner !== anchorIdx) return;
+        if (owner !== undefined && owner !== anchorIdx) return 'roza-otra-ficha';
       }
     }
 
     const offset = joinOffset(anchor, p, anchorOffset, cell);
     const pRect = rectOf(p, offset, cell);
     for (let i = 0; i < board.length; i++) {
-      if (overlaps(pRect, rectOf(board[i], offsets[i] || { x: 0, y: 0 }, cell))) return;
+      if (overlaps(pRect, rectOf(board[i], offsets[i] || { x: 0, y: 0 }, cell))) return 'solapa-visualmente';
     }
 
-    out.push(p);
+    return null;
+  };
+
+  const add = (p) => {
+    const motivo = evaluar(p);
+    if (diagnostico) diagnostico.push({ ...p, motivo });
+    if (motivo === null) out.push(p);
   };
 
   const endIsDouble = endTile.tile[0] === endTile.tile[1];
@@ -278,4 +294,15 @@ export function straightestPlacement(board, placements, side) {
       : p.x === cx && p.y === cy && p.x2 === cx2 && p.y2 === cy2
   );
   return straight || placements[0];
+}
+
+/**
+ * Igual que `placementsFor` pero devuelve TODAS las opciones que el motor
+ * considero, con el motivo por el que descarto cada una. Sirve para auditar
+ * las reglas de colocacion en vez de adivinar por que una ficha no entra.
+ */
+export function explainPlacements(board, tile, side, layout = DEFAULT_LAYOUT) {
+  const diagnostico = [];
+  const validas = placementsFor(board, tile, side, layout, diagnostico);
+  return { validas, candidatas: diagnostico };
 }

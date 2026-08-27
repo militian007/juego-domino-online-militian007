@@ -104,3 +104,42 @@ export const me = async (req, res) => {
     res.status(500).json({ error: 'Error en el servidor' });
   }
 };
+
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Faltan la contraseña actual y la nueva' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'La contraseña nueva debe tener al menos 6 caracteres' });
+    }
+
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ error: 'La contraseña nueva tiene que ser distinta de la actual' });
+    }
+
+    // authMiddleware pone req.username desde el token verificado: nadie puede
+    // cambiar la contraseña de otro aunque mande otro usuario en el cuerpo.
+    // Se busca por username porque findById no trae el hash.
+    const user = await User.findByUsername(req.username);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    const coincide = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!coincide) {
+      return res.status(401).json({ error: 'La contraseña actual no es correcta' });
+    }
+
+    const hash = await bcrypt.hash(newPassword, 10);
+    await User.updatePassword(user.id, hash);
+
+    res.json({ ok: true, message: 'Contraseña actualizada' });
+  } catch (error) {
+    console.error('Error en changePassword:', error);
+    res.status(500).json({ error: 'No se pudo cambiar la contraseña' });
+  }
+};
