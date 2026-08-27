@@ -10,7 +10,9 @@ export const BASE_RULES = {
   layout: DEFAULT_LAYOUT,
   firstRoundStarter: 'highest-double',
   nextRoundStarter: 'winner',
-  blockedScoring: 'difference',
+  // En el tranque gana el equipo con menos pips y suma los pips que le quedaron
+  // al rival. 'difference' (restar los propios) queda disponible como variante.
+  blockedScoring: 'total',
   turnMs: 30000
 };
 

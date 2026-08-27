@@ -1030,3 +1030,48 @@ elemento pasaba de 586 a 264 px, porque el panel estaba oculto y no componía cu
 
 > Si el tablero vuelve a salirse de la mesa, revisar primero que `escala` se esté actualizando.
 > Verificado en vivo: imantado correcto a escala 0.916 y a 0.512.
+
+---
+
+## 30. Bug de puntaje en el tranque + manos reveladas (2026-08-24)
+
+### El bug
+
+Reportado por el usuario: "tenía el doble 4 y el doble 6 y solo le sumó al rival 8 puntos en vez
+de 20". Los números cierran exacto:
+
+| | pips |
+|---|---|
+| su mano: 4-4 + 6-6 | **20** |
+| mano del rival | 12 |
+| lo que otorgó el motor | 20 - 12 = **8** |
+
+O sea, la ronda cerró por **tranque** (no por dominó) y el motor sumaba la **diferencia** entre
+las manos. La regla venezolana es que el ganador del tranque suma los pips que le quedaron al
+rival, igual que en el dominó.
+
+`BASE_RULES.blockedScoring` pasó de `'difference'` a `'total'`. La variante sigue disponible por
+config para quien juegue con la otra regla.
+
+4 tests nuevos (51 en total): tranque con la regla correcta, la variante `difference`, el empate de
+pips que no suma a nadie, y el dominó (que ya estaba bien) para que quede cubierto.
+
+> Si aparece una diferencia de puntaje, mirar primero si la ronda cerró por `blocked` o por
+> `domino`: son dos cuentas distintas y solo una estaba mal.
+
+### Manos reveladas al cerrar la ronda
+
+El modal de fin de ronda ahora muestra **las fichas que le quedaron a cada uno** con sus pips y la
+suma, para que el puntaje se pueda verificar a ojo sin creerle al servidor.
+
+- El motor ya lo exponía (`state.lastRound.hands` y `viewFor().revealedHands`), pero el adaptador
+  del backend no lo pasaba al cliente. Ahora `getStateForPlayer` incluye `revealedHands` con
+  `{ id, username, isBot, team, tiles, pips }` por jugador, solo cuando la ronda está cerrada.
+- `frontend/src/components/game/RoundBreakdown.jsx` lo dibuja. Si la suma de los pips no coincide
+  con los puntos otorgados, lo avisa en rojo en pantalla.
+
+El `test-e2e-bot.js` ahora **verifica la cuenta en cada ronda**: recalcula los pips de las manos
+reveladas y falla si el puntaje otorgado no coincide.
+
+Verificado en vivo: tranque con 98 pips del perdedor otorgó +98 (antes habría dado 96), y el modal
+dibujó las 16 fichas sumando 100 pips entre los dos jugadores.

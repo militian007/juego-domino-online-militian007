@@ -289,6 +289,17 @@ export class DominoGame {
       winningTeam: this.winningTeam,
       roundPoints: this.roundPoints,
       endReason: this.endReason,
+      // Al cerrar la ronda se revelan las manos, para que se pueda verificar el puntaje
+      revealedHands: this._roundClosed && this.state.lastRound
+        ? this.players.map((p, i) => ({
+            id: p.id,
+            username: p.username,
+            isBot: Boolean(p.isBot),
+            team: this.state.teams[i],
+            tiles: this.state.lastRound.hands[i] || [],
+            pips: this.state.lastRound.pips[i] ?? 0
+          }))
+        : null,
       lastAction: this.lastAction,
       currentPlayerId: this.getCurrentPlayer()?.id,
       board: this.state.board,

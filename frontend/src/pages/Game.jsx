@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar.jsx';
 import Board from '../components/game/Board.jsx';
 import MesaThemePicker, { useMesaTheme } from '../components/game/MesaTheme.jsx';
 import Pool from '../components/game/Pool.jsx';
+import RoundBreakdown from '../components/game/RoundBreakdown.jsx';
 import Hand from '../components/game/Hand.jsx';
 import OpponentHand from '../components/game/OpponentHand.jsx';
 import PlayerInfo from '../components/game/PlayerInfo.jsx';
@@ -949,7 +950,7 @@ export default function Game() {
 
         {gameState.status === 'round-end' && (
           <div className="fixed inset-0 z-40 bg-black/70 flex items-center justify-center p-4">
-            <div className="card p-6 sm:p-8 max-w-md w-full text-center">
+            <div className="card p-6 sm:p-8 max-w-md w-full text-center max-h-[90vh] overflow-y-auto">
               <h2 className="text-2xl sm:text-3xl font-bold mb-2">
                 {gameState.winningTeam
                   ? `¡Ganó el equipo ${gameState.winningTeam}!`
@@ -960,9 +961,17 @@ export default function Game() {
                   ? 'Un jugador se quedó sin fichas'
                   : 'El juego se trancó'}
               </p>
-              <p className="text-3xl font-black text-domino-accent mb-6">
+              <p className="text-3xl font-black text-domino-accent mb-4">
                 +{gameState.roundPoints} puntos
               </p>
+
+              <RoundBreakdown
+                manos={gameState.revealedHands}
+                equipoGanador={gameState.winningTeam}
+                motivo={gameState.endReason}
+                puntos={gameState.roundPoints}
+              />
+
               <div className="space-y-2">
                 {gameState.status === 'round-end' && gameState.winningTeam !== 0 && (
                   <button onClick={handleNextRound} className="btn-primary w-full">

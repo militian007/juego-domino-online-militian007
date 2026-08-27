@@ -62,7 +62,8 @@ dominó se adapta a él, no al revés.
 - Se juega por los dos extremos de la cadena.
 - **1v1**: hay pozo. Si no puedes jugar, robas hasta poder o hasta vaciar el pozo; recién ahí pasas.
 - **2v2**: sin pozo. Si no puedes jugar, pasas directo.
-- **Tranque**: cuando todos pasan seguido. Gana el equipo con menos pips en mano.
+- **Tranque**: cuando todos pasan seguido. Gana el equipo con menos pips en mano y
+  **suma los pips que le quedaron al rival** (no la diferencia).
 - **Domino**: el que se queda sin fichas suma todos los pips que quedan en las manos rivales.
 - Empate en tranque: nadie suma.
 - Se juega a `targetPoints` puntos (por defecto 100).

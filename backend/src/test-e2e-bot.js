@@ -64,7 +64,23 @@ async function run() {
 
     if (state.status === 'round-end') {
       rounds += 1;
-      log(`ronda ${state.round} cerrada por "${state.endReason}" — equipo ${state.winningTeam} +${state.roundPoints} | ${JSON.stringify(state.teamScores)}`);
+      // verificar la cuenta con las manos reveladas
+      const manos = state.revealedHands;
+      if (!manos) throw new Error('la ronda cerro sin revelar las manos');
+      const pips = (t) => t.reduce((a, x) => a + x[0] + x[1], 0);
+      for (const m of manos) {
+        if (m.pips !== pips(m.tiles)) throw new Error(`pips mal calculados para ${m.username}`);
+      }
+      if (state.winningTeam) {
+        const esperado = manos.filter((m) => m.team !== state.winningTeam).reduce((a, m) => a + m.pips, 0);
+        if (esperado !== state.roundPoints) {
+          throw new Error(`PUNTAJE MAL: otorgo ${state.roundPoints}, los rivales tenian ${esperado} pips`);
+        }
+      } else if (state.roundPoints !== 0) {
+        throw new Error('empate deberia sumar 0');
+      }
+      const detalle = manos.map((m) => `${m.username}:${m.pips}`).join(' ');
+      log(`ronda ${state.round} "${state.endReason}" — equipo ${state.winningTeam} +${state.roundPoints}  [${detalle}]  ${JSON.stringify(state.teamScores)}`);
       latest = null;
       const r = await emit('game:next-round', { code });
       if (!r.ok) throw new Error('game:next-round fallo: ' + r.error);

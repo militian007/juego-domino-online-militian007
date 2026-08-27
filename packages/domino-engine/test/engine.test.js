@@ -677,3 +677,81 @@ test('doble en el medio: sigue siendo perpendicular, nunca en linea', () => {
     assert.notEqual(p.orientation, board[0].orientation, 'un doble jamas va en linea');
   }
 });
+
+test('tranque: el ganador suma los pips del rival, no la diferencia', () => {
+  const s = createGame({ gameFormat: 'domino-1v1-v1', seed: 'tranque-puntos' });
+  s.hands[0] = [[4, 4], [6, 6]];   // 20 pips
+  s.hands[1] = [[5, 5], [1, 1]];   // 12 pips
+  s.pool = [];
+  s.board = [
+    { tile: [3, 3], side: 'first', x: 10, y: 10, x2: 10, y2: 11, orientation: 'vertical' }
+  ];
+  s.ends = boardEnds(s.board);
+  s.turn = 0;
+
+  const r1 = applyAction(s, { type: ACTION.PASS, seat: 0 });
+  assert.ok(r1.ok, r1.error);
+  const r2 = applyAction(r1.state, { type: ACTION.PASS, seat: 1 });
+  assert.ok(r2.ok, r2.error);
+
+  const fin = r2.state.lastRound;
+  assert.equal(fin.reason, 'blocked');
+  assert.equal(fin.winnerTeam, 2, 'gana el que tiene menos pips');
+  assert.equal(fin.points, 20, 'suma los 20 pips del rival, no la diferencia de 8');
+  assert.equal(r2.state.scores[2], 20);
+  assert.equal(r2.state.scores[1], 0);
+});
+
+test('tranque: la variante "difference" sigue disponible por config', () => {
+  const s = createGame({
+    gameFormat: 'domino-1v1-v1',
+    seed: 'tranque-dif',
+    config: { blockedScoring: 'difference' }
+  });
+  s.hands[0] = [[4, 4], [6, 6]];
+  s.hands[1] = [[5, 5], [1, 1]];
+  s.pool = [];
+  s.board = [
+    { tile: [3, 3], side: 'first', x: 10, y: 10, x2: 10, y2: 11, orientation: 'vertical' }
+  ];
+  s.ends = boardEnds(s.board);
+  s.turn = 0;
+  const r = applyAction(applyAction(s, { type: ACTION.PASS, seat: 0 }).state, { type: ACTION.PASS, seat: 1 });
+  assert.equal(r.state.lastRound.points, 8, '20 - 12 = 8');
+});
+
+test('tranque: empate de pips no suma a nadie', () => {
+  const s = createGame({ gameFormat: 'domino-1v1-v1', seed: 'tranque-empate' });
+  s.hands[0] = [[6, 6]];
+  s.hands[1] = [[5, 4], [2, 1]];   // 12 pips los dos
+  s.pool = [];
+  s.board = [
+    { tile: [3, 3], side: 'first', x: 10, y: 10, x2: 10, y2: 11, orientation: 'vertical' }
+  ];
+  s.ends = boardEnds(s.board);
+  s.turn = 0;
+  const r = applyAction(applyAction(s, { type: ACTION.PASS, seat: 0 }).state, { type: ACTION.PASS, seat: 1 });
+  assert.equal(r.state.lastRound.winnerTeam, null);
+  assert.equal(r.state.lastRound.points, 0);
+});
+
+test('domino: el ganador suma los pips que quedan en las manos rivales', () => {
+  const s = createGame({ gameFormat: 'domino-1v1-v1', seed: 'domino-puntos' });
+  s.hands[0] = [[3, 5]];
+  s.hands[1] = [[4, 4], [6, 6]];   // 20 pips
+  s.board = [
+    { tile: [3, 3], side: 'first', x: 10, y: 10, x2: 10, y2: 11, orientation: 'vertical' }
+  ];
+  s.ends = boardEnds(s.board);
+  s.turn = 0;
+
+  const jugada = legalActions(s, 0).find((a) => a.type === ACTION.PLAY_TILE);
+  assert.ok(jugada, 'el 3-5 tiene que poder jugarse en el 3');
+  const r = applyAction(s, jugada);
+  assert.ok(r.ok, r.error);
+
+  const fin = r.state.lastRound;
+  assert.equal(fin.reason, 'domino');
+  assert.equal(fin.winnerSeat, 0);
+  assert.equal(fin.points, 20, 'los 20 pips que le quedaron al rival');
+});
