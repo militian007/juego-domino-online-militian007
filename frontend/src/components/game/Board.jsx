@@ -10,6 +10,13 @@ import {
 const GRID_SIZE = DEFAULT_LAYOUT.grid;
 const CELL_SIZE = DEFAULT_LAYOUT.cell;
 
+// Una celda de aire en cada lado, para que la cadena nunca quede pegada a la
+// baranda. No se le quita area de juego a nadie: la rejilla sigue siendo de
+// 20x20, solo se dibuja un poco mas chica dentro del paño.
+const MARGEN_CELDAS = 1;
+const LADO_LOGICO = GRID_SIZE * CELL_SIZE;
+const LADO_CON_MARGEN = LADO_LOGICO + 2 * MARGEN_CELDAS * CELL_SIZE;
+
 const getValidPlacementsForTile = (board, tile, side) => placementsFor(board, tile, side);
 
 function getVisualCoords(pos, idx, boardOffsets) {
@@ -84,13 +91,15 @@ export default function Board({
     if (ancho > 0) {
       // React descarta el estado si el valor no cambia, asi que llamar de mas
       // no provoca renders extra.
-      setEscala(ancho / (GRID_SIZE * CELL_SIZE));
+      setEscala(ancho / LADO_CON_MARGEN);
     }
   }, []);
 
   // Se mide por tres vias porque ninguna alcanza sola: en el primer render el
   // ResizeObserver todavia no disparo, y hay entornos donde no dispara nunca.
   useLayoutEffect(medirEscala);
+
+  const desplazamiento = MARGEN_CELDAS * CELL_SIZE * escala;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -126,8 +135,8 @@ export default function Board({
     if (!containerRef.current) return;
 
     const rect = containerRef.current.getBoundingClientRect();
-    const localX = (draggedTile.currentX - rect.left) / escala;
-    const localY = (draggedTile.currentY - rect.top) / escala;
+    const localX = (draggedTile.currentX - rect.left - desplazamiento) / escala;
+    const localY = (draggedTile.currentY - rect.top - desplazamiento) / escala;
 
     let bestPlacement = null;
     let minDistance = Infinity;
@@ -153,7 +162,7 @@ export default function Board({
     } else {
       onSnapChange(false, null);
     }
-  }, [draggedTile, ghostPlacements, onSnapChange, board, boardOffsets, escala]);
+  }, [draggedTile, ghostPlacements, onSnapChange, board, boardOffsets, escala, desplazamiento]);
 
   const renderGhostPlacements = () => {
     return ghostPlacements.map((opt, idx) => {
@@ -247,7 +256,7 @@ export default function Board({
           style={{
             width: `${GRID_SIZE * CELL_SIZE}px`,
             height: `${GRID_SIZE * CELL_SIZE}px`,
-            transform: `scale(${escala})`
+            transform: `translate(${desplazamiento}px, ${desplazamiento}px) scale(${escala})`
           }}
         >
           {renderGhostPlacements()}
@@ -284,7 +293,7 @@ export default function Board({
         style={{
           width: `${GRID_SIZE * CELL_SIZE}px`,
           height: `${GRID_SIZE * CELL_SIZE}px`,
-          transform: `scale(${escala})`
+          transform: `translate(${desplazamiento}px, ${desplazamiento}px) scale(${escala})`
         }}
       >
         {/* Renderizar Fichas Colocadas */}

@@ -1181,3 +1181,63 @@ rechaza, con la nueva igual a la actual rechaza, y el cambio válido invalida la
 
 > Local y producción usan bases distintas (SQLite vs PostgreSQL según `DATABASE_URL`), así que un
 > cambio de clave en una no afecta a la otra.
+
+---
+
+## 33. Cierre de la auditoría: la regla anti-amontone es gratis (2026-08-24)
+
+Después de sacar la regla de banda (§32), se volvió a auditar. El reparto quedó así sobre 108.508
+coincidencias:
+
+| motivo | % de los bloqueos |
+|---|---|
+| roza otra ficha | 82,7% |
+| fuera del tablero | 9,2% |
+| celda ocupada | 8,0% |
+
+Parecía que la regla anti-amontone era la culpable. **No lo es.** Se probaron cuatro tolerancias:
+
+| variante | ficha sin lugar | trancas | fichas apretadas |
+|---|---|---|---|
+| toca 1+ (la actual) | 12,7% | 38,9% | **0** |
+| toca 2+ | 12,7% | 39,0% | 9 |
+| toca 3+ | 12,8% | 39,0% | 99 |
+| sin regla | 12,7% | 38,9% | **154** |
+
+Relajarla **no destraba ni una sola jugada**. El 82,7% era una atribución engañosa: esas
+colocaciones caían igual en el chequeo de solape visual, solo que más tarde. La regla es un rechazo
+más temprano y más barato de algo que iba a pasar igual, y a cambio deja el tablero limpio.
+
+> Cuidado con los porcentajes de "motivo del rechazo" cuando los chequeos están en cadena: el
+> primero que falla se lleva toda la atribución. Para saber si una regla cuesta algo hay que
+> sacarla y volver a medir, no mirar el reparto.
+
+### Estado final del bloqueo
+
+| mesa | ficha válida sin lugar | trancas |
+|---|---|---|
+| 20x20 (actual) | 13,5% | 36,9% |
+| 24x24 | 9,8% | 26,4% |
+| 28x28 | 6,9% | 22,9% |
+
+Al empezar la sesión eran 19,1% y 46,1%. El tamaño de mesa sigue siendo el único lever que queda,
+y cuesta tamaño de ficha en pantalla.
+
+### Margen visual de la mesa
+
+La cadena quedaba pegada a la baranda. Se agregó **una celda de aire en los cuatro lados**, sin
+quitar área de juego: la rejilla sigue siendo de 20x20, solo se dibuja más chica dentro del paño.
+
+```js
+escala = anchoDelPaño / (640 + 2 * 32);
+transform: translate(margen, margen) scale(escala);
+```
+
+El imán del arrastre descuenta el desplazamiento antes de dividir por la escala. Verificado:
+27 px de margen en los cuatro lados.
+
+### El enlace que faltaba
+
+La pantalla `/cambiar-clave` existía desde §32 pero **no tenía ningún enlace**, así que era
+inalcanzable. Se agregó en el Navbar: el nombre de usuario ahora es el enlace (escritorio) y hay un
+botón "Clave" en móvil.

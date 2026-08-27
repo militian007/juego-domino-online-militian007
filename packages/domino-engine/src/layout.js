@@ -150,8 +150,13 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
 
     if (occupied.has(p.x + ',' + p.y) || occupied.has(p.x2 + ',' + p.y2)) return 'celda-ocupada';
 
-    // La ficha nueva solo puede tocar a la ficha con la que engancha. Si roza
-    // cualquier otra, la cadena se esta doblando sobre si misma y queda amontonada.
+    // La ficha nueva solo puede tocar a la ficha con la que engancha.
+    //
+    // Medido: relajar esta regla NO destraba ni una jugada (12.7% de bloqueo con
+    // y sin ella). Lo que hace es adelantar un rechazo que igual iba a ocurrir en
+    // el chequeo de solape visual. A cambio deja el tablero limpio: sin la regla
+    // quedan 154 fichas apretadas contra vecinas que no son de la cadena, con
+    // ella quedan 0. Es gratis, se queda.
     for (const [cx, cy] of [[p.x, p.y], [p.x2, p.y2]]) {
       for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
         const owner = ownerOf.get(cx + dx + ',' + (cy + dy));

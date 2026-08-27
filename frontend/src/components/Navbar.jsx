@@ -20,12 +20,23 @@ export default function Navbar() {
 
         {user ? (
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="text-right hidden md:block">
-              <div className="text-xs text-slate-400">Conectado como</div>
-              <div className="text-sm font-semibold text-domino-accent truncate max-w-[120px]">
+            <Link
+              to="/cambiar-clave"
+              title="Cambiar mi contraseña"
+              className="text-right hidden md:block group"
+            >
+              <div className="text-xs text-slate-400 group-hover:text-slate-300">Conectado como</div>
+              <div className="text-sm font-semibold text-domino-accent truncate max-w-[120px] group-hover:underline">
                 {user.username}
               </div>
-            </div>
+            </Link>
+            <Link
+              to="/cambiar-clave"
+              title="Cambiar mi contraseña"
+              className="md:hidden text-slate-400 hover:text-white text-xs px-2 py-2"
+            >
+              Clave
+            </Link>
             <Link
               to="/dashboard"
               className="btn-secondary text-xs sm:text-sm py-2 px-3 sm:px-4"
