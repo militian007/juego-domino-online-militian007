@@ -1075,3 +1075,43 @@ reveladas y falla si el puntaje otorgado no coincide.
 
 Verificado en vivo: tranque con 98 pips del perdedor otorgó +98 (antes habría dado 96), y el modal
 dibujó las 16 fichas sumando 100 pips entre los dos jugadores.
+
+---
+
+## 31. La mano se acomoda en filas (2026-08-24)
+
+Con la mano cargada (18 fichas después de comerse el pozo) la mano se estiraba en **una sola fila**
+con scroll horizontal, y en el teléfono eso es impracticable.
+
+Ahora el contenedor es `flex-wrap` y las fichas se achican según cuántas haya:
+
+| fichas | tamaño | ancho c/u | filas en pantalla de 375px |
+|---|---|---|---|
+| hasta 9 | `md` | 40 px | 1 |
+| 10 a 14 | `sm` | 32 px | 2 |
+| 15 o más | `xs` | 24 px | 2 |
+
+Se agregó el tamaño `xs` a `Tile.jsx` (`w-12 h-6` / `w-6 h-12`). **Verificado que Tailwind lo
+generó en el CSS compilado**: al ser clases dentro de un objeto en el código, podían haberse
+purgado.
+
+Verificado en vivo: a 320 px de contenedor, 7 fichas pasan a 2 filas sin scroll lateral.
+
+### Nota sobre la clave en producción
+
+El usuario reportó que su clave no le sirve en la página de Vercel. **No es un bug.** Local y
+producción usan **bases distintas**:
+
+```js
+let isPostgres = !!process.env.DATABASE_URL;   // config/database.js
+```
+
+- Local: sin `DATABASE_URL` -> SQLite en `%APPDATA%\domino-online\data.db`
+- Producción: con `DATABASE_URL` -> PostgreSQL
+
+El reseteo de clave que se hizo en local solo tocó el SQLite. La cuenta de producción es otra, con
+su propia clave. Además **no hay endpoint de recuperación**: `routes/auth.js` solo expone
+`register`, `login` y `me`.
+
+> Pendiente: falta un flujo de cambio/recuperación de clave. Mientras tanto, la salida es
+> registrarse de nuevo en producción.

@@ -56,6 +56,10 @@ export default function Hand({
     };
   }, [draggedTile, onDragUpdate, onDragEnd]);
 
+  // Con la mano cargada las fichas se achican para que sigan entrando en pocas
+  // filas. En el telefono una sola fila larga obligaba a scrollear de costado.
+  const tamanoFicha = tiles.length > 14 ? 'xs' : tiles.length > 9 ? 'sm' : 'md';
+
   if (!tiles || tiles.length === 0) {
     return (
       <div className="text-center text-slate-400 italic text-sm py-4">
@@ -65,8 +69,8 @@ export default function Hand({
   }
 
   return (
-    <div className="w-full overflow-x-auto overflow-y-visible py-3">
-      <div className="flex items-center justify-center gap-2 px-2 mx-auto" style={{ minWidth: 'fit-content' }}>
+    <div className="w-full overflow-visible py-3">
+      <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-3 px-2">
         {tiles.map((tile, i) => {
           const isValid = validIndices.includes(i);
           const isSelected = selectedIndex === i;
@@ -99,7 +103,7 @@ export default function Hand({
               <Tile
                 tile={tile}
                 orientation="vertical"
-                size="md"
+                size={tamanoFicha}
                 selected={isSelected}
                 dim={canPlay && !isValid}
                 onClick={() => !draggedTile && isValid && onSelect && onSelect(i)}

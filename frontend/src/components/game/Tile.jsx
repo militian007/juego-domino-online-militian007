@@ -19,6 +19,7 @@ export default function Tile({
   const finalSize = size === 'md' && small ? 'sm' : size;
 
   const dims = {
+    xs: { w: 'w-12 h-6', wv: 'w-6 h-12' },
     sm: { w: 'w-16 h-8', wv: 'w-8 h-16' },
     md: { w: 'w-20 h-10 sm:w-24 sm:h-12', wv: 'w-10 h-20 sm:w-12 sm:h-24' },
     lg: { w: 'w-24 h-12 sm:w-28 sm:h-14', wv: 'w-12 h-24 sm:w-14 sm:h-28' }
