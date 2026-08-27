@@ -46,7 +46,8 @@ export default function Tile({
     ? 'shadow-[0_0_18px_rgba(212,175,55,0.95)] ring-2 ring-domino-accent/60 z-10 scale-105'
     : '';
 
-  const baseClasses = `transition-all duration-300 select-none relative rounded ${newestShadow}`;
+  const reliefClass = onClick ? 'tile-hand' : 'tile-3d';
+  const baseClasses = `transition-all duration-300 select-none relative rounded ${reliefClass} ${newestShadow}`;
 
   const interactiveClasses = onClick
     ? 'cursor-pointer hover:shadow-[0_0_12px_rgba(212,175,55,0.4)] active:scale-95 hover:scale-105'
@@ -85,12 +86,14 @@ export default function Tile({
       onClick={onClick}
       className={`${baseClasses} ${sizeClasses} ${interactiveClasses} ${stateClasses} ${dimClasses} overflow-visible ${className}`}
     >
+      <span className="tile-edge" aria-hidden="true" />
       <img
         src={imgSrc}
         alt={`tile [${a}|${b}]`}
         style={imgStyle}
         className="max-w-none"
       />
+      <span className="tile-sheen" aria-hidden="true" />
     </div>
   );
 }

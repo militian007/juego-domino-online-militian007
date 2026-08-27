@@ -5,7 +5,7 @@ export default function AdSidebar() {
 
   return (
     <div
-      className="w-full h-full flex items-center justify-center p-1 cursor-pointer"
+      className="w-full flex items-start justify-center cursor-pointer"
       onClick={handleClick}
       role="link"
       tabIndex={0}
@@ -14,9 +14,9 @@ export default function AdSidebar() {
       }}
     >
       <img
-        src="/banner-publicidad.png"
+        src="/banner-publicidad.webp"
         alt="Club de Truco Premier - Publicidad"
-        className="w-full h-full object-cover rounded-lg border border-slate-700"
+        className="w-full h-auto object-contain rounded-lg border border-slate-700/70"
         draggable="false"
       />
     </div>

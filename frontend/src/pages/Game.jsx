@@ -3,6 +3,8 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
 import Board from '../components/game/Board.jsx';
+import MesaThemePicker, { useMesaTheme } from '../components/game/MesaTheme.jsx';
+import Pool from '../components/game/Pool.jsx';
 import Hand from '../components/game/Hand.jsx';
 import OpponentHand from '../components/game/OpponentHand.jsx';
 import PlayerInfo from '../components/game/PlayerInfo.jsx';
@@ -43,6 +45,8 @@ export default function Game() {
 
   const [reactions, setReactions] = useState({});
   const [showReactionMenu, setShowReactionMenu] = useState(false);
+
+  const { tema, setTema, clasePano, claseBaranda } = useMesaTheme();
 
   const handleDragStart = (index, tile, clientX, clientY) => {
     setDraggedTile({
@@ -372,11 +376,11 @@ export default function Game() {
     });
   };
 
-  const handleDraw = () => {
+  const handleDraw = (poolIndex = null) => {
     if (!socket || !actualRoomCode || isPlacing) return;
     setError('');
     setIsPlacing(true);
-    socket.emit('game:draw', { code: actualRoomCode }, (res) => {
+    socket.emit('game:draw', { code: actualRoomCode, poolIndex }, (res) => {
       if (!res.ok) {
         setError(res.error);
         setIsPlacing(false);
@@ -665,8 +669,8 @@ export default function Game() {
         <TopBanner />
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-3 sm:gap-4">
           <div className="flex gap-3 sm:gap-4">
-            <div className="hidden lg:block w-[180px] h-full">
-              <div className="w-full h-full overflow-hidden rounded-xl">
+            <div className="hidden lg:block w-[230px] xl:w-[260px] shrink-0">
+              <div className="sticky top-4 w-full overflow-hidden rounded-xl">
                 <AdSidebar />
               </div>
             </div>
@@ -707,14 +711,19 @@ export default function Game() {
                   <div className="flex-1">
                     <div className="text-[9px] text-slate-400">Pozo</div>
                     <div className="font-bold text-sm text-amber-400">
-                      🃏 {gameState.poolCount}
+                      {gameState.poolCount}
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="rounded-xl p-3 sm:p-4 aspect-square max-w-[640px] relative bg-felt-inset shadow-inner border border-domino-accent/20 mx-auto w-full overflow-hidden">
+              <div className="max-w-[768px] relative mx-auto w-full">
+                <div className="mb-2 flex justify-end">
+                  <MesaThemePicker tema={tema} setTema={setTema} />
+                </div>
                 <Board
+                  clasePano={clasePano}
+                  claseBaranda={claseBaranda}
                   board={gameState.board}
                   ends={gameState.ends}
                   selectedTile={selectedTile}
@@ -835,10 +844,15 @@ export default function Game() {
                   </p>
                 )}
 
-                {myTurn && gameState.canDraw && (
-                  <button onClick={handleDraw} className="btn-primary w-full mt-3 text-sm">
-                    🃏 Robar del pozo ({gameState.poolCount})
-                  </button>
+                {gameState.hasPool && gameState.poolCount > 0 && (
+                  <div className="mt-3">
+                    <Pool
+                      cantidad={gameState.poolCount}
+                      activo={myTurn && gameState.canDraw}
+                      robando={isPlacing}
+                      onRobar={handleDraw}
+                    />
+                  </div>
                 )}
 
                 {myTurn && gameState.canPass && (

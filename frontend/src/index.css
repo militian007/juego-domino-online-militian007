@@ -36,15 +36,7 @@
     background-color: #0a1414;
     background-image:
       radial-gradient(ellipse at top left, rgba(212, 175, 55, 0.10), transparent 50%),
-      radial-gradient(ellipse at bottom right, rgba(212, 175, 55, 0.06), transparent 50%),
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.83 0 0 0 0 0.69 0 0 0 0 0.22 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
-  .bg-felt-inset {
-    background-color: #0d3d2e;
-    background-image:
-      radial-gradient(ellipse at center, rgba(255, 255, 255, 0.05), transparent 60%),
-      radial-gradient(ellipse at top, rgba(0, 0, 0, 0.4), transparent 70%),
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      radial-gradient(ellipse at bottom right, rgba(212, 175, 55, 0.06), transparent 50%);
   }
   .text-shadow-gold {
     text-shadow: 0 0 30px rgba(212, 175, 55, 0.4);
@@ -93,5 +85,227 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+}
+
+@layer utilities {
+  /* ════════════════════════════════════════════════════════════════════
+     MESA — paño y baranda intercambiables por el jugador.
+     Color limpio + luz. Sin grano ni trama: el ruido ensuciaba la imagen.
+     Cualquier .felt-* combina con cualquier .rail-*
+     ════════════════════════════════════════════════════════════════════ */
+
+  .felt-base {
+    box-shadow:
+      inset 0 4px 16px rgba(0, 0, 0, 0.7),
+      inset 0 -2px 8px rgba(0, 0, 0, 0.5);
+  }
+
+  .felt-verde {
+    background-color: #0d6340;
+    background-image:
+      radial-gradient(ellipse 70% 55% at 50% 26%, rgba(255, 255, 255, 0.13), transparent 74%),
+      radial-gradient(ellipse 95% 95% at 50% 50%, transparent 38%, rgba(0, 0, 0, 0.52) 100%);
+  }
+
+  .felt-oscuro {
+    background-color: #0a4a30;
+    background-image:
+      radial-gradient(ellipse 62% 48% at 50% 24%, rgba(210, 255, 232, 0.11), transparent 70%),
+      radial-gradient(ellipse 88% 88% at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.66) 100%);
+  }
+
+  .felt-torneo {
+    background-color: #0b5745;
+    background-image:
+      radial-gradient(ellipse 72% 56% at 50% 28%, rgba(190, 255, 240, 0.12), transparent 72%),
+      radial-gradient(ellipse 92% 92% at 50% 50%, transparent 36%, rgba(0, 0, 0, 0.55) 100%);
+  }
+
+  .felt-vino {
+    background-color: #5a1626;
+    background-image:
+      radial-gradient(ellipse 70% 55% at 50% 26%, rgba(255, 226, 226, 0.12), transparent 74%),
+      radial-gradient(ellipse 92% 92% at 50% 50%, transparent 36%, rgba(0, 0, 0, 0.58) 100%);
+  }
+
+  .felt-negro {
+    background-color: #14171a;
+    background-image:
+      radial-gradient(ellipse 68% 52% at 50% 26%, rgba(255, 255, 255, 0.09), transparent 72%),
+      radial-gradient(ellipse 92% 92% at 50% 50%, transparent 34%, rgba(0, 0, 0, 0.6) 100%);
+  }
+
+  /* ── Baranda de cuero ───────────────────────────────────────────────
+     Un solo borde. La estructura es siempre la misma y cada variante solo
+     cambia las 4 variables de color:
+
+       --cuero-canto  canto exterior, en sombra
+       --cuero-medio  la subida hacia la cresta
+       --cuero-luz    la cresta del rollo, donde pega la luz
+       --cuero-int    el lado interno, en sombra contra el paño
+
+     Las cuatro tiras (arriba/abajo/izq/der) llevan cada una su gradiente
+     perpendicular: eso es lo que hace que el cuero se vea abullonado y no
+     una franja plana. El conic-gradient dibuja las costuras mitradas de
+     las esquinas a 45 grados.
+     --rail: ancho de la baranda, tiene que coincidir con el padding.
+  */
+
+  .rail-base {
+    position: relative;
+    overflow: hidden;
+    --rail: 4.2%;
+    --cuero-canto: #6b3924;
+    --cuero-medio: #8f5030;
+    --cuero-luz: #b3714a;
+    --cuero-int: #5a2e1d;
+
+    background-color: var(--cuero-int);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 226, 196, 0.16),
+      0 22px 50px rgba(0, 0, 0, 0.78);
+  }
+
+  /* Cada lado es un trapecio recortado, así las esquinas quedan mitradas de
+     verdad. Antes las 4 tiras se pisaban en las esquinas y quedaba una cuña. */
+  .rail-side {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-repeat: repeat, no-repeat;
+    background-blend-mode: overlay, normal;
+  }
+
+  .rail-top {
+    clip-path: polygon(
+      0 0, 100% 0,
+      calc(100% - var(--rail)) var(--rail), var(--rail) var(--rail)
+    );
+    background-image:
+      url("/cuero.webp"),
+      linear-gradient(180deg, var(--cuero-canto) 0%, var(--cuero-medio) 16%, var(--cuero-luz) 40%, var(--cuero-medio) 62%, var(--cuero-int) 100%);
+    background-size: 190px 190px, 100% var(--rail);
+    background-position: 0 0, 0 0;
+  }
+
+  .rail-bottom {
+    clip-path: polygon(
+      0 100%, var(--rail) calc(100% - var(--rail)),
+      calc(100% - var(--rail)) calc(100% - var(--rail)), 100% 100%
+    );
+    background-image:
+      url("/cuero.webp"),
+      linear-gradient(0deg, var(--cuero-canto) 0%, var(--cuero-medio) 16%, var(--cuero-luz) 40%, var(--cuero-medio) 62%, var(--cuero-int) 100%);
+    background-size: 190px 190px, 100% var(--rail);
+    background-position: 0 100%, 0 100%;
+  }
+
+  .rail-left {
+    clip-path: polygon(
+      0 0, var(--rail) var(--rail),
+      var(--rail) calc(100% - var(--rail)), 0 100%
+    );
+    background-image:
+      url("/cuero.webp"),
+      linear-gradient(90deg, var(--cuero-canto) 0%, var(--cuero-medio) 16%, var(--cuero-luz) 40%, var(--cuero-medio) 62%, var(--cuero-int) 100%);
+    background-size: 190px 190px, var(--rail) 100%;
+    background-position: 0 0, 0 0;
+  }
+
+  .rail-right {
+    clip-path: polygon(
+      100% 0, 100% 100%,
+      calc(100% - var(--rail)) calc(100% - var(--rail)), calc(100% - var(--rail)) var(--rail)
+    );
+    background-image:
+      url("/cuero.webp"),
+      linear-gradient(270deg, var(--cuero-canto) 0%, var(--cuero-medio) 16%, var(--cuero-luz) 40%, var(--cuero-medio) 62%, var(--cuero-int) 100%);
+    background-size: 190px 190px, var(--rail) 100%;
+    background-position: 100% 0, 100% 0;
+  }
+
+  .rail-cognac {
+    --cuero-canto: #6b3924;
+    --cuero-medio: #8f5030;
+    --cuero-luz: #b3714a;
+    --cuero-int: #5a2e1d;
+  }
+
+  .rail-espresso {
+    --cuero-canto: #2a1a11;
+    --cuero-medio: #462c1c;
+    --cuero-luz: #6b452c;
+    --cuero-int: #1d120b;
+  }
+
+  .rail-negro {
+    --cuero-canto: #16120f;
+    --cuero-medio: #272019;
+    --cuero-luz: #453a2e;
+    --cuero-int: #100d0a;
+  }
+
+  .rail-caoba {
+    --cuero-canto: #4a1d16;
+    --cuero-medio: #6e2e21;
+    --cuero-luz: #96452f;
+    --cuero-int: #37150f;
+  }
+
+  .rail-nogal {
+    --cuero-canto: #3a2612;
+    --cuero-medio: #5c3d20;
+    --cuero-luz: #8a5f34;
+    --cuero-int: #2c1c0d;
+  }
+
+  /* ── Fichas con relieve ─────────────────────────────────────────── */
+
+  .tile-3d {
+    filter:
+      drop-shadow(0 2px 1px rgba(0, 0, 0, 0.45))
+      drop-shadow(0 5px 6px rgba(0, 0, 0, 0.5));
+  }
+
+  .tile-hand {
+    filter:
+      drop-shadow(0 3px 2px rgba(0, 0, 0, 0.5))
+      drop-shadow(0 10px 12px rgba(0, 0, 0, 0.55));
+  }
+
+  .tile-edge {
+    position: absolute;
+    left: 1px;
+    right: 1px;
+    top: 3px;
+    bottom: -3px;
+    border-radius: 5px;
+    background: linear-gradient(180deg, #1c1109 0%, #120b06 55%, #070403 100%);
+  }
+
+  .tile-sheen {
+    position: absolute;
+    inset: 0;
+    border-radius: 5px;
+    pointer-events: none;
+    background:
+      linear-gradient(170deg, rgba(255, 244, 214, 0.22) 0%, rgba(255, 244, 214, 0.05) 26%, transparent 46%),
+      linear-gradient(0deg, rgba(0, 0, 0, 0.32) 0%, transparent 34%);
+  }
+}
+
+@layer utilities {
+  /* Ficha del pozo, boca abajo. Mismo lenguaje visual que las de la mano. */
+  .pool-tile {
+    background-color: #1a1109;
+    background-image:
+      linear-gradient(160deg, rgba(255, 226, 180, 0.16) 0%, transparent 38%),
+      linear-gradient(0deg, rgba(0, 0, 0, 0.5) 0%, transparent 42%),
+      linear-gradient(180deg, #2c1c0f 0%, #1a1109 55%, #0d0805 100%);
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 226, 180, 0.14),
+      0 2px 3px rgba(0, 0, 0, 0.55);
   }
 }

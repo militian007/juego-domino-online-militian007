@@ -1,642 +1,30 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useRef, useMemo, useState, useCallback } from 'react';
 import Tile from './Tile.jsx';
+import {
+  DEFAULT_LAYOUT,
+  placementsFor,
+  computeBoardOffsets,
+  anchorOffsetFor
+} from '@privoytruco/domino-engine';
 
-const GRID_SIZE = 20;
-const CELL_SIZE = 32;
+const GRID_SIZE = DEFAULT_LAYOUT.grid;
+const CELL_SIZE = DEFAULT_LAYOUT.cell;
 
-const getCenter = (t) => {
-  const minX = Math.min(t.x, t.x2);
-  const minY = Math.min(t.y, t.y2);
-  if (t.orientation === 'horizontal') {
-    return { x: minX * CELL_SIZE + 32, y: minY * CELL_SIZE + 16 };
-  } else {
-    return { x: minX * CELL_SIZE + 16, y: minY * CELL_SIZE + 32 };
-  }
-};
+const getValidPlacementsForTile = (board, tile, side) => placementsFor(board, tile, side);
 
-function computeBoardOffsets(board) {
-  if (!board || board.length === 0) return [];
-
-  const offsets = new Array(board.length);
-  const firstIdx = board.findIndex(t => t.side === 'first');
-  const startIdx = firstIdx !== -1 ? firstIdx : 0;
-
-  offsets[startIdx] = { x: 0, y: 0 };
-
-  // Propagar a la derecha
-  for (let i = startIdx + 1; i < board.length; i++) {
-    const prev = board[i - 1];
-    const curr = board[i];
-    const prevOffset = offsets[i - 1];
-    const prevIsDouble = prev.tile[0] === prev.tile[1];
-    const currIsDouble = curr.tile[0] === curr.tile[1];
-
-    if (prev.orientation !== curr.orientation && (prevIsDouble || currIsDouble)) {
-      const prevCenter = getCenter(prev);
-      const currCenter = getCenter(curr);
-      const doubleTile = currIsDouble ? curr : prev;
-      if (doubleTile.orientation === 'vertical') {
-        offsets[i] = {
-          x: prevOffset.x,
-          y: prevOffset.y + prevCenter.y - currCenter.y
-        };
-      } else {
-        offsets[i] = {
-          x: prevOffset.x + prevCenter.x - currCenter.x,
-          y: prevOffset.y
-        };
-      }
-    } else {
-      offsets[i] = { x: prevOffset.x, y: prevOffset.y };
-    }
-  }
-
-  // Propagar a la izquierda
-  for (let i = startIdx - 1; i >= 0; i--) {
-    const prev = board[i + 1];
-    const curr = board[i];
-    const prevOffset = offsets[i + 1];
-    const prevIsDouble = prev.tile[0] === prev.tile[1];
-    const currIsDouble = curr.tile[0] === curr.tile[1];
-
-    if (prev.orientation !== curr.orientation && (prevIsDouble || currIsDouble)) {
-      const prevCenter = getCenter(prev);
-      const currCenter = getCenter(curr);
-      const doubleTile = currIsDouble ? curr : prev;
-      if (doubleTile.orientation === 'vertical') {
-        offsets[i] = {
-          x: prevOffset.x,
-          y: prevOffset.y + prevCenter.y - currCenter.y
-        };
-      } else {
-        offsets[i] = {
-          x: prevOffset.x + prevCenter.x - currCenter.x,
-          y: prevOffset.y
-        };
-      }
-    } else {
-      offsets[i] = { x: prevOffset.x, y: prevOffset.y };
-    }
-  }
-
-  return offsets;
-}
-
-
-function getValidPlacementsForTile(board, tile, side) {
-  const placements = [];
-  if (!board || board.length === 0) {
-    if (side !== 'first') return [];
-    const cx = Math.floor(GRID_SIZE / 2);
-    const cy = Math.floor(GRID_SIZE / 2);
-    placements.push({
-      tile: [tile[0], tile[1]],
-      x: cx,
-      y: cy,
-      x2: cx + 1,
-      y2: cy,
-      orientation: 'horizontal',
-      side: 'first'
-    });
-    placements.push({
-      tile: [tile[0], tile[1]],
-      x: cx,
-      y: cy,
-      x2: cx,
-      y2: cy + 1,
-      orientation: 'vertical',
-      side: 'first'
-    });
-    return placements;
-  }
-
-  let ex = 0;
-  let ey = 0;
-  let ev = 0;
-  let endTile = null;
-
-  if (side === 'left') {
-    endTile = board[0];
-    ex = endTile.x;
-    ey = endTile.y;
-    ev = endTile.tile[0];
-  } else if (side === 'right') {
-    const rightTile = board[board.length - 1];
-    ex = rightTile.x2;
-    ey = rightTile.y2;
-    ev = rightTile.tile[1];
-    endTile = rightTile;
-  } else {
-    return [];
-  }
-
-  if (tile[0] !== ev && tile[1] !== ev) return [];
-
-  const connVal = ev;
-  const outerVal = (tile[0] === ev) ? tile[1] : tile[0];
-
-  const occupied = new Set();
-  for (const t of board) {
-    occupied.add(`${t.x},${t.y}`);
-    occupied.add(`${t.x2},${t.y2}`);
-  }
-
-  const endIsDouble = endTile.tile[0] === endTile.tile[1];
-  const boardOffsets = computeBoardOffsets(board);
-
-  const addPlacementCandidate = (p) => {
-    const minX = Math.min(p.x, p.x2);
-    const minY = Math.min(p.y, p.y2);
-    const maxX = Math.max(p.x, p.x2);
-    const maxY = Math.max(p.y, p.y2);
-
-    // 1. Grid boundary check
-    let isWithinBounds = true;
-    if (minX < 1 || maxX >= GRID_SIZE - 1) {
-      if (minX < 0 || maxX >= GRID_SIZE) {
-        isWithinBounds = false; // Fuera del tablero absoluto
-      } else if (p.orientation !== 'vertical') {
-        isWithinBounds = false; // No se permiten horizontales en los bordes izquierdo/derecho
-      }
-    }
-    if (minY < 1 || maxY >= GRID_SIZE - 1) {
-      if (minY < 0 || maxY >= GRID_SIZE) {
-        isWithinBounds = false; // Fuera del tablero absoluto
-      } else if (p.orientation !== 'horizontal') {
-        isWithinBounds = false; // No se permiten verticales en los bordes superior/inferior
-      }
-    }
-    if (!isWithinBounds) return;
-    // 2. Collision check
-    if (occupied.has(`${p.x},${p.y}`) || occupied.has(`${p.x2},${p.y2}`)) return;
-
-    // 3. Visual boundary check (taking propagation offsets into account)
-    let offset = { x: 0, y: 0 };
-    if (board && board.length > 0) {
-      let prev, prevOffset;
-      if (p.side === 'left') {
-        prev = board[0];
-        prevOffset = boardOffsets[0] || { x: 0, y: 0 };
-      } else {
-        prev = board[board.length - 1];
-        prevOffset = boardOffsets[board.length - 1] || { x: 0, y: 0 };
-      }
-
-      const prevIsDouble = prev.tile[0] === prev.tile[1];
-      const optIsDouble = p.tile[0] === p.tile[1];
-
-      if (prev.orientation !== p.orientation && (prevIsDouble || optIsDouble)) {
-        const prevCenter = getCenter(prev);
-        const optCenter = getCenter(p);
-        const doubleTile = optIsDouble ? p : prev;
-        if (doubleTile.orientation === 'vertical') {
-          offset = {
-            x: prevOffset.x,
-            y: prevOffset.y + prevCenter.y - optCenter.y
-          };
-        } else {
-          offset = {
-            x: prevOffset.x + prevCenter.x - optCenter.x,
-            y: prevOffset.y
-          };
-        }
-      } else {
-        offset = { x: prevOffset.x, y: prevOffset.y };
-      }
-    }
-
-    const tileWidth = p.orientation === 'horizontal' ? CELL_SIZE * 2 : CELL_SIZE;
-    const tileHeight = p.orientation === 'horizontal' ? CELL_SIZE : CELL_SIZE * 2;
-    const left = minX * CELL_SIZE + offset.x;
-    const top = minY * CELL_SIZE + offset.y;
-
-
-
-    // 4. Visual collision check with all existing tiles on the board
-    if (board && board.length > 0) {
-      const pRect = {
-        left: left,
-        top: top,
-        width: tileWidth,
-        height: tileHeight
-      };
-
-      for (let idx = 0; idx < board.length; idx++) {
-        const t = board[idx];
-        const tOffset = boardOffsets[idx] || { x: 0, y: 0 };
-        const tMinX = Math.min(t.x, t.x2);
-        const tMinY = Math.min(t.y, t.y2);
-        const tWidth = t.orientation === 'horizontal' ? CELL_SIZE * 2 : CELL_SIZE;
-        const tHeight = t.orientation === 'horizontal' ? CELL_SIZE : CELL_SIZE * 2;
-        const tRect = {
-          left: tMinX * CELL_SIZE + tOffset.x,
-          top: tMinY * CELL_SIZE + tOffset.y,
-          width: tWidth,
-          height: tHeight
-        };
-
-        // Strict inequality so touching edges are not counted as overlapping
-        const overlaps = (
-          pRect.left < tRect.left + tRect.width &&
-          pRect.left + pRect.width > tRect.left &&
-          pRect.top < tRect.top + tRect.height &&
-          pRect.top + pRect.height > tRect.top
-        );
-
-        if (overlaps) {
-          return; // Rejects placements that visually overlap with any existing tile
-        }
-      }
-    }
-
-    placements.push(p);
-  };
-
-  if (endIsDouble) {
-    if (endTile.orientation === 'horizontal') {
-      // Doble horizontal: nueva ficha es vertical (arriba para left, abajo para right)
-      // Usar Math.min(endTile.x, endTile.x2) para que ambas opciones (Arriba y Abajo) estén en la misma columna (alineadas al medio)
-      const minX = Math.min(endTile.x, endTile.x2);
-      if (side === 'left') {
-        // Opción Arriba
-        addPlacementCandidate({
-          tile: [outerVal, connVal],
-          x: minX,
-          y: ey - 2,
-          x2: minX,
-          y2: ey - 1,
-          orientation: 'vertical',
-          side
-        });
-      } else {
-        // Opción Abajo
-        addPlacementCandidate({
-          tile: [connVal, outerVal],
-          x: minX,
-          y: ey + 1,
-          x2: minX,
-          y2: ey + 2,
-          orientation: 'vertical',
-          side
-        });
-      }
-
-      // REGLA NUEVA: Si el doble horizontal queda en la fila superior (0 o 1) o inferior (18 o 19), habilitamos imanes a los lados (horizontal)
-      const isAtBorder = (ey <= 1 || ey >= GRID_SIZE - 2);
-      if (isAtBorder) {
-        const maxX = Math.max(endTile.x, endTile.x2);
-        if (side === 'left') {
-          addPlacementCandidate({
-            tile: [outerVal, connVal],
-            x: minX - 2,
-            y: ey,
-            x2: minX - 1,
-            y2: ey,
-            orientation: 'horizontal',
-            side
-          });
-        } else {
-          addPlacementCandidate({
-            tile: [connVal, outerVal],
-            x: maxX + 1,
-            y: ey,
-            x2: maxX + 2,
-            y2: ey,
-            orientation: 'horizontal',
-            side
-          });
-        }
-      }
-    } else {
-      // Doble vertical: nueva ficha es horizontal (izquierda para left, derecha para right)
-      // Usar Math.min(endTile.y, endTile.y2) para que ambas opciones (Izquierda y Derecha) estén en la misma fila (alineadas al medio)
-      const minY = Math.min(endTile.y, endTile.y2);
-      if (side === 'left') {
-        // Opción Izquierda
-        addPlacementCandidate({
-          tile: [outerVal, connVal],
-          x: ex - 2,
-          y: minY,
-          x2: ex - 1,
-          y2: minY,
-          orientation: 'horizontal',
-          side
-        });
-      } else {
-        // Opción Derecha
-        addPlacementCandidate({
-          tile: [connVal, outerVal],
-          x: ex + 1,
-          y: minY,
-          x2: ex + 2,
-          y2: minY,
-          orientation: 'horizontal',
-          side
-        });
-      }
-
-      // REGLA NUEVA: Si el doble vertical queda en la columna izquierda (0 o 1) o derecha (18 o 19), habilitamos imanes a los lados (vertical)
-      const isAtBorder = (ex <= 1 || ex >= GRID_SIZE - 2);
-      if (isAtBorder) {
-        const maxY = Math.max(endTile.y, endTile.y2);
-        if (side === 'left') {
-          addPlacementCandidate({
-            tile: [outerVal, connVal],
-            x: ex,
-            y: minY - 2,
-            x2: ex,
-            y2: minY - 1,
-            orientation: 'vertical',
-            side
-          });
-        } else {
-          addPlacementCandidate({
-            tile: [connVal, outerVal],
-            x: ex,
-            y: maxY + 1,
-            x2: ex,
-            y2: maxY + 2,
-            orientation: 'vertical',
-            side
-          });
-        }
-      }
-    }
-  } else {
-    // El extremo es una ficha NORMAL.
-    const tileIsDouble = tile[0] === tile[1];
-    if (tileIsDouble) {
-      // La nueva ficha es un DOBLE: se coloca perpendicular, centrada en el extremo
-      if (endTile.orientation === 'horizontal') {
-        // El doble debe ser vertical
-        if (side === 'left') {
-          addPlacementCandidate({
-            tile: [connVal, connVal],
-            x: ex - 1,
-            y: ey - 1,
-            x2: ex - 1,
-            y2: ey,
-            orientation: 'vertical',
-            side
-          });
-        } else {
-          addPlacementCandidate({
-            tile: [connVal, connVal],
-            x: ex + 1,
-            y: ey,
-            x2: ex + 1,
-            y2: ey - 1,
-            orientation: 'vertical',
-            side
-          });
-        }
-      } else {
-        // El doble debe ser horizontal
-        if (side === 'left') {
-          addPlacementCandidate({
-            tile: [connVal, connVal],
-            x: ex - 1,
-            y: ey - 1,
-            x2: ex,
-            y2: ey - 1,
-            orientation: 'horizontal',
-            side
-          });
-        } else {
-          addPlacementCandidate({
-            tile: [connVal, connVal],
-            x: ex - 1,
-            y: ey + 1,
-            x2: ex,
-            y2: ey + 1,
-            orientation: 'horizontal',
-            side
-          });
-        }
-      }
-    } else {
-      // La nueva ficha es NORMAL (no es doble). Puede colocarse en 3 direcciones:
-      if (endTile.orientation === 'horizontal') {
-        // 1. Recto (horizontal)
-        if (side === 'left') {
-          if (ex - 2 >= 2) {
-            addPlacementCandidate({
-              tile: [outerVal, connVal],
-              x: ex - 2,
-              y: ey,
-              x2: ex - 1,
-              y2: ey,
-              orientation: 'horizontal',
-              side
-            });
-          }
-        } else {
-          if (ex + 2 < GRID_SIZE - 2) {
-            addPlacementCandidate({
-              tile: [connVal, outerVal],
-              x: ex + 1,
-              y: ey,
-              x2: ex + 2,
-              y2: ey,
-              orientation: 'horizontal',
-              side
-            });
-          }
-        }
-
-        // 2. Giro arriba (vertical)
-        if (side === 'left') {
-          addPlacementCandidate({
-            tile: [outerVal, connVal],
-            x: ex,
-            y: ey - 2,
-            x2: ex,
-            y2: ey - 1,
-            orientation: 'vertical',
-            side
-          });
-        } else {
-          addPlacementCandidate({
-            tile: [connVal, outerVal],
-            x: ex,
-            y: ey - 1,
-            x2: ex,
-            y2: ey - 2,
-            orientation: 'vertical',
-            side
-          });
-        }
-
-        // 3. Giro abajo (vertical)
-        if (side === 'left') {
-          addPlacementCandidate({
-            tile: [outerVal, connVal],
-            x: ex,
-            y: ey + 2,
-            x2: ex,
-            y2: ey + 1,
-            orientation: 'vertical',
-            side
-          });
-        } else {
-          addPlacementCandidate({
-            tile: [connVal, outerVal],
-            x: ex,
-            y: ey + 1,
-            x2: ex,
-            y2: ey + 2,
-            orientation: 'vertical',
-            side
-          });
-        }
-      } else {
-        // El extremo es vertical
-        // 1. Recto (vertical)
-        if (side === 'left') {
-          if (ey - 2 >= 2) {
-            addPlacementCandidate({
-              tile: [outerVal, connVal],
-              x: ex,
-              y: ey - 2,
-              x2: ex,
-              y2: ey - 1,
-              orientation: 'vertical',
-              side
-            });
-          }
-        } else {
-          if (ey + 2 < GRID_SIZE - 2) {
-            addPlacementCandidate({
-              tile: [connVal, outerVal],
-              x: ex,
-              y: ey + 1,
-              x2: ex,
-              y2: ey + 2,
-              orientation: 'vertical',
-              side
-            });
-          }
-        }
-
-        // 2. Giro izquierda (horizontal)
-        if (side === 'left') {
-          addPlacementCandidate({
-            tile: [outerVal, connVal],
-            x: ex - 2,
-            y: ey,
-            x2: ex - 1,
-            y2: ey,
-            orientation: 'horizontal',
-            side
-          });
-        } else {
-          addPlacementCandidate({
-            tile: [connVal, outerVal],
-            x: ex - 1,
-            y: ey,
-            x2: ex - 2,
-            y2: ey,
-            orientation: 'horizontal',
-            side
-          });
-        }
-
-        // 3. Giro derecha (horizontal)
-        if (side === 'left') {
-          addPlacementCandidate({
-            tile: [outerVal, connVal],
-            x: ex + 2,
-            y: ey,
-            x2: ex + 1,
-            y2: ey,
-            orientation: 'horizontal',
-            side
-          });
-        } else {
-          addPlacementCandidate({
-            tile: [connVal, outerVal],
-            x: ex + 1,
-            y: ey,
-            x2: ex + 2,
-            y2: ey,
-            orientation: 'horizontal',
-            side
-          });
-        }
-      }
-    }
-  }
-
-  // Deduplicar posiciones físicas idénticas
-  const seen = new Set();
-  const uniquePlacements = [];
-  for (const p of placements) {
-    const minX = Math.min(p.x, p.x2);
-    const minY = Math.min(p.y, p.y2);
-    const key = `${minX},${minY},${p.orientation}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      uniquePlacements.push(p);
-    }
-  }
-
-  return uniquePlacements;
-}
-
-
-
-// Centrar ficha normal si pertenece a un segmento acoplado a un doble perpendicular
 function getVisualCoords(pos, idx, boardOffsets) {
   const offset = boardOffsets[idx] || { x: 0, y: 0 };
-  const left = Math.min(pos.x, pos.x2) * CELL_SIZE + offset.x;
-  const top = Math.min(pos.y, pos.y2) * CELL_SIZE + offset.y;
-  return { left, top };
+  return {
+    left: Math.min(pos.x, pos.x2) * CELL_SIZE + offset.x,
+    top: Math.min(pos.y, pos.y2) * CELL_SIZE + offset.y
+  };
 }
 
-// Centrar ficha fantasma normal si pertenece a un segmento acoplado a un doble perpendicular
-function getGhostVisualCoords(opt, board, boardOffsets) {
-  const left = Math.min(opt.x, opt.x2) * CELL_SIZE;
-  const top = Math.min(opt.y, opt.y2) * CELL_SIZE;
-
-  if (!board || board.length === 0 || !boardOffsets || boardOffsets.length === 0) {
-    return { left, top };
-  }
-
-  let offset = { x: 0, y: 0 };
-  let prev, prevOffset;
-  if (opt.side === 'left') {
-    prev = board[0];
-    prevOffset = boardOffsets[0] || { x: 0, y: 0 };
-  } else {
-    prev = board[board.length - 1];
-    prevOffset = boardOffsets[board.length - 1] || { x: 0, y: 0 };
-  }
-
-  const prevIsDouble = prev.tile[0] === prev.tile[1];
-  const optIsDouble = opt.tile[0] === opt.tile[1];
-
-  if (prev.orientation !== opt.orientation && (prevIsDouble || optIsDouble)) {
-    const prevCenter = getCenter(prev);
-    const optCenter = getCenter(opt);
-    const doubleTile = optIsDouble ? opt : prev;
-    if (doubleTile.orientation === 'vertical') {
-      offset = {
-        x: prevOffset.x,
-        y: prevOffset.y + prevCenter.y - optCenter.y
-      };
-    } else {
-      offset = {
-        x: prevOffset.x + prevCenter.x - optCenter.x,
-        y: prevOffset.y
-      };
-    }
-  } else {
-    offset = { x: prevOffset.x, y: prevOffset.y };
-  }
-
+function getGhostVisualCoords(opt, board) {
+  const offset = anchorOffsetFor(board, opt);
   return {
-    left: left + offset.x,
-    top: top + offset.y
+    left: Math.min(opt.x, opt.x2) * CELL_SIZE + offset.x,
+    top: Math.min(opt.y, opt.y2) * CELL_SIZE + offset.y
   };
 }
 
@@ -648,7 +36,9 @@ export default function Board({
   myTurn = false,
   lastAction = null,
   draggedTile = null,
-  onSnapChange = null
+  onSnapChange = null,
+  clasePano = 'felt-verde',
+  claseBaranda = 'rail-cognac'
 }) {
   const containerRef = useRef(null);
 
@@ -682,14 +72,47 @@ export default function Board({
   }, [board, activeTileForPlacements, myTurn]);
 
   // Centrar el tablero inicialmente
-  useEffect(() => {
-    if (containerRef.current) {
-      const containerWidth = containerRef.current.clientWidth;
-      const containerHeight = containerRef.current.clientHeight;
-      containerRef.current.scrollLeft = (GRID_SIZE * CELL_SIZE - containerWidth) / 2;
-      containerRef.current.scrollTop = (GRID_SIZE * CELL_SIZE - containerHeight) / 2;
+  // El tablero de 20x20 se escala para entrar entero en el paño. Antes se
+  // scrolleaba, lo que en el telefono era impracticable.
+  const tableroVacio = !board || board.length === 0;
+  const [escala, setEscala] = useState(1);
+
+  const medirEscala = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ancho = el.clientWidth;
+    if (ancho > 0) {
+      // React descarta el estado si el valor no cambia, asi que llamar de mas
+      // no provoca renders extra.
+      setEscala(ancho / (GRID_SIZE * CELL_SIZE));
     }
   }, []);
+
+  // Se mide por tres vias porque ninguna alcanza sola: en el primer render el
+  // ResizeObserver todavia no disparo, y hay entornos donde no dispara nunca.
+  useLayoutEffect(medirEscala);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    medirEscala();
+    window.addEventListener('resize', medirEscala);
+    window.addEventListener('orientationchange', medirEscala);
+
+    let observador = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      observador = new ResizeObserver(medirEscala);
+      observador.observe(el);
+    }
+
+    return () => {
+      window.removeEventListener('resize', medirEscala);
+      window.removeEventListener('orientationchange', medirEscala);
+      observador?.disconnect();
+    };
+  }, [tableroVacio, medirEscala]);
+
 
 
 
@@ -703,15 +126,15 @@ export default function Board({
     if (!containerRef.current) return;
 
     const rect = containerRef.current.getBoundingClientRect();
-    const localX = (draggedTile.currentX - rect.left) + containerRef.current.scrollLeft;
-    const localY = (draggedTile.currentY - rect.top) + containerRef.current.scrollTop;
+    const localX = (draggedTile.currentX - rect.left) / escala;
+    const localY = (draggedTile.currentY - rect.top) / escala;
 
     let bestPlacement = null;
     let minDistance = Infinity;
-    const threshold = 45; // 45 píxeles de umbral para imantación
+    const threshold = 45 / escala; // 45 px de pantalla, sea cual sea la escala
 
     for (const opt of ghostPlacements) {
-      const { left: tileLeft, top: tileTop } = getGhostVisualCoords(opt, board, boardOffsets);
+      const { left: tileLeft, top: tileTop } = getGhostVisualCoords(opt, board);
       const tileWidth = opt.orientation === 'horizontal' ? CELL_SIZE * 2 : CELL_SIZE;
       const tileHeight = opt.orientation === 'horizontal' ? CELL_SIZE : CELL_SIZE * 2;
 
@@ -730,7 +153,7 @@ export default function Board({
     } else {
       onSnapChange(false, null);
     }
-  }, [draggedTile, ghostPlacements, onSnapChange, board, boardOffsets]);
+  }, [draggedTile, ghostPlacements, onSnapChange, board, boardOffsets, escala]);
 
   const renderGhostPlacements = () => {
     return ghostPlacements.map((opt, idx) => {
@@ -740,7 +163,7 @@ export default function Board({
         draggedTile.activePlacement.y === opt.y &&
         draggedTile.activePlacement.orientation === opt.orientation;
 
-      const { left: tileLeft, top: tileTop } = getGhostVisualCoords(opt, board, boardOffsets);
+      const { left: tileLeft, top: tileTop } = getGhostVisualCoords(opt, board);
       const tileWidth = opt.orientation === 'horizontal' ? CELL_SIZE * 2 : CELL_SIZE;
       const tileHeight = opt.orientation === 'horizontal' ? CELL_SIZE : CELL_SIZE * 2;
 
@@ -810,18 +233,22 @@ export default function Board({
 
   if (!board || board.length === 0) {
     return (
+      <div className={`rail-base ${claseBaranda} w-full max-w-[768px] mx-auto rounded-[22px] p-[4.2%] relative`}>
+      <span className="rail-side rail-top" aria-hidden="true" />
+      <span className="rail-side rail-bottom" aria-hidden="true" />
+      <span className="rail-side rail-left" aria-hidden="true" />
+      <span className="rail-side rail-right" aria-hidden="true" />
       <div
         ref={containerRef}
-        className="w-full max-w-[640px] mx-auto aspect-square relative overflow-auto rounded-xl border border-slate-700 shadow-2xl bg-felt-inset no-scrollbar"
-        style={{
-          backgroundImage: 'url("/mesa-de-juego.webp")',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        }}
+        className={`felt-base ${clasePano} w-full aspect-square relative overflow-hidden rounded-xl`}
       >
         <div
-          className="relative"
-          style={{ width: `${GRID_SIZE * CELL_SIZE}px`, height: `${GRID_SIZE * CELL_SIZE}px` }}
+          className="relative origin-top-left"
+          style={{
+            width: `${GRID_SIZE * CELL_SIZE}px`,
+            height: `${GRID_SIZE * CELL_SIZE}px`,
+            transform: `scale(${escala})`
+          }}
         >
           {renderGhostPlacements()}
 
@@ -838,24 +265,26 @@ export default function Board({
           </div>
         </div>
       </div>
+      </div>
     );
   }
 
   return (
+    <div className={`rail-base ${claseBaranda} w-full max-w-[768px] mx-auto rounded-[22px] p-[4.2%] relative`}>
+      <span className="rail-side rail-top" aria-hidden="true" />
+      <span className="rail-side rail-bottom" aria-hidden="true" />
+      <span className="rail-side rail-left" aria-hidden="true" />
+      <span className="rail-side rail-right" aria-hidden="true" />
     <div
       ref={containerRef}
-      className="w-full max-w-[640px] mx-auto aspect-square relative overflow-auto rounded-xl border border-slate-700 shadow-2xl select-none bg-felt-inset no-scrollbar"
-      style={{
-        backgroundImage: 'url("/mesa-de-juego.webp")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center'
-      }}
+      className={`felt-base ${clasePano} w-full aspect-square relative overflow-hidden rounded-xl select-none`}
     >
       <div
-        className="relative"
+        className="relative origin-top-left"
         style={{
           width: `${GRID_SIZE * CELL_SIZE}px`,
-          height: `${GRID_SIZE * CELL_SIZE}px`
+          height: `${GRID_SIZE * CELL_SIZE}px`,
+          transform: `scale(${escala})`
         }}
       >
         {/* Renderizar Fichas Colocadas */}
@@ -891,6 +320,7 @@ export default function Board({
         {/* Renderizar Siluetas e Imanes */}
         {renderGhostPlacements()}
       </div>
+    </div>
     </div>
   );
 }
