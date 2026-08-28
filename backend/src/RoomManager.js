@@ -1,4 +1,5 @@
 import { randomSeed } from '@privoytruco/domino-engine';
+import { elegirBot } from './game/bots.js';
 import { DominoGame } from './game/DominoGame.js';
 import { Bot } from './game/Bot.js';
 import { MODE_CONFIG } from './game/DominoGame.js';
@@ -167,11 +168,18 @@ export class RoomManager {
       if (room.players.length !== 1) {
         return { error: 'El modo 1v1+bot solo admite 1 jugador' };
       }
+      const bot = elegirBot(room.botPreferido);
+      room.bot = bot;
+      room.botDifficulty = bot.difficulty;
       room.players.push({
         id: `bot-${room.code}-1`,
-        username: 'Bot Rival',
+        username: bot.nombre,
         isBot: true,
-        socketId: null
+        socketId: null,
+        avatar: bot.avatar,
+        difficulty: bot.difficulty,
+        frase: bot.frase,
+        estrellas: bot.estrellas
       });
     } else {
       if (room.players.length < room.config.totalPlayers) {

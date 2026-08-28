@@ -1288,3 +1288,70 @@ DELETE FROM users WHERE username = 'probe-usuario-inexistente';
 
 > Para chequear si un usuario existe no usar el endpoint de registro: crea la cuenta si el dato
 > libre no colisiona. Consultar la base directamente.
+
+---
+
+## 35. Los cinco rivales y el HUD nuevo (2026-08-24)
+
+### Cinco niveles de bot, no tres
+
+`DIFFICULTY` pasó de `easy/normal/hard` a cinco niveles con nombre en español, ajustando el ruido
+del puntaje y la probabilidad de tirar al azar:
+
+| nivel | ruido | tira al azar |
+|---|---|---|
+| novato | 22 | 45% |
+| facil | 14 | 28% |
+| normal | 6 | 10% |
+| dificil | 2 | 3% |
+| maestro | 0 | 0% |
+
+Los alias `easy`/`hard` siguen funcionando. Escalera medida (150 partidas por cruce, a 50 puntos):
+
+```
+          novato   facil  normal dificil maestro
+novato      --       43%     38%     27%     35%
+facil        50%    --       44%     38%     28%
+normal       66%     67%    --       47%     49%
+dificil      67%     57%     55%    --       45%
+maestro      68%     73%     61%     53%    --
+```
+
+### El plantel
+
+`backend/src/game/bots.js`. Cada rival es una dificultad con nombre, cara y frase:
+
+| bot | nivel | estrellas |
+|---|---|---|
+| Nano | novato | 1 |
+| Doña Chela | facil | 2 |
+| El Catire | normal | 3 |
+| La Comadre | dificil | 4 |
+| El Tigre | maestro | 5 |
+
+Se elige uno al azar por sala, o se puede pedir uno concreto con
+`room:create { mode, bot: 'tigre' }`. Verificado que los cinco responden al pedido explícito.
+
+### Retratos generados por código
+
+`frontend/src/components/game/Avatar.jsx`. **No hay imágenes**: son SVG, pesan 0 KB y se ven
+nítidos a cualquier tamaño. Los cinco bots tienen su cara diseñada (gorra, lentes, bigote, barba,
+sombrero, aros); los jugadores humanos reciben una derivada de su nombre, siempre la misma.
+
+> **Bug encontrado al hacerlo:** el generador usaba `>>` sobre un hash sin signo. Con hashes
+> grandes el desplazamiento con signo da negativo y eso indexa fuera del array, devolviendo
+> `undefined` y tumbando la app entera. Medido: **8 de 12 nombres de prueba fallaban** ("Invitado"
+> daba índice -3). Se corrigió a `>>>`. También se usa `Object.hasOwn` para que semillas como
+> "toString" no caigan en el prototipo.
+
+### HUD
+
+`frontend/src/components/game/Hud.jsx` reemplaza el panel lateral:
+
+- **Mesa**: código de sala y pozo, con las 14 fichas dibujadas y las gastadas apagadas.
+- **Marcador**: barras que avanzan hacia `targetPoints`, con la ronda y cuál equipo es el tuyo.
+- **Jugador**: retrato, nombre, estrellas de dificultad, fichas en mano dibujadas y la frase del
+  bot cuando le toca.
+
+El backend ahora manda `targetPoints` en el estado (antes el marcador no sabía a cuánto se jugaba)
+y la identidad del bot (`avatar`, `difficulty`, `frase`, `estrellas`). Se eliminó el emoji 🤖.

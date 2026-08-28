@@ -282,6 +282,7 @@ export class DominoGame {
       roomCode: this.roomCode,
       mode: this.mode,
       hasPool: this.hasPool,
+      targetPoints: this.state.config.targetPoints,
       poolCount: this.state.pool.length,
       status: this.status,
       round: this.state.round,
@@ -314,7 +315,11 @@ export class DominoGame {
         username: p.username,
         isBot: Boolean(p.isBot),
         team: this.state.teams[i],
-        seat: i
+        seat: i,
+        avatar: p.avatar || p.username,
+        difficulty: p.difficulty || null,
+        frase: p.frase || null,
+        estrellas: p.estrellas || null
       })),
       validMoves: validMoves.map((m) => ({ index: m.index, tile: m.tile, side: m.side })),
       canPlay,

@@ -34,7 +34,7 @@ export function setupGameSocket(io, roomManager) {
     const tag = socket.isGuest ? 'invitado' : 'usuario';
     console.log(`🎮 ${socket.username} (${tag}) conectado (${socket.id})`);
 
-    socket.on('room:create', ({ mode }, callback) => {
+    socket.on('room:create', ({ mode, bot }, callback) => {
       if (socket.isGuest && mode !== '1v1bot') {
         return callback?.({ ok: false, error: 'Necesitas registrarte para jugar en línea' });
       }
@@ -44,6 +44,7 @@ export function setupGameSocket(io, roomManager) {
           hostId: socket.userId,
           hostUsername: socket.username
         });
+        if (bot) room.botPreferido = bot;
         const player = room.players.find((p) => p.id === socket.userId);
         player.socketId = socket.id;
         socket.join(room.code);

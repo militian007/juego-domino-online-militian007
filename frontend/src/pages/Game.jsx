@@ -6,6 +6,7 @@ import Board from '../components/game/Board.jsx';
 import MesaThemePicker, { useMesaTheme } from '../components/game/MesaTheme.jsx';
 import Pool from '../components/game/Pool.jsx';
 import RoundBreakdown from '../components/game/RoundBreakdown.jsx';
+import { Marcador, Jugador, Mesa } from '../components/game/Hud.jsx';
 import Hand from '../components/game/Hand.jsx';
 import OpponentHand from '../components/game/OpponentHand.jsx';
 import PlayerInfo from '../components/game/PlayerInfo.jsx';
@@ -651,6 +652,7 @@ export default function Game() {
     );
   }
 
+  const miJugador = gameState?.players?.find((p) => p.id === myPlayerId) || null;
   const is1v1 = opponents.length === 1;
   const topOpponent = opponents[0];
   const leftOpponent = opponents[1];
@@ -871,79 +873,37 @@ export default function Game() {
             </div>
 
           <div className="hidden lg:block space-y-3">
-            <div className="card p-3">
-              <div className="text-[10px] text-slate-400">Sala</div>
-              <div className="font-mono font-bold text-lg text-blue-400 break-all">
-                {gameState.roomCode}
-              </div>
-            </div>
-
-            <Scoreboard
-              teamScores={gameState.teamScores}
-              mode={gameState.mode}
-              round={gameState.round}
-              winningTeam={gameState.winningTeam}
-              endReason={gameState.endReason}
+            <Mesa
+              sala={gameState.roomCode}
+              pozo={gameState.hasPool ? gameState.poolCount : null}
             />
-            {!is1v1 && leftOpponent && (
-              <div className="card p-3">
-                <div className="text-xs text-slate-400 mb-2">Oeste</div>
-                <PlayerInfo
-                  player={leftOpponent}
-                  count={gameState.handCounts[leftOpponent.id]}
-                  isTurn={gameState.currentPlayerId === leftOpponent.id}
-                  team={leftOpponent.team}
-                />
-                <div className="mt-2">
-                  <OpponentHand
-                    count={gameState.handCounts[leftOpponent.id]}
-                    position="left"
-                  />
-                </div>
-              </div>
-            )}
-            {!is1v1 && rightOpponent && (
-              <div className="card p-3">
-                <div className="text-xs text-slate-400 mb-2">Este</div>
-                <PlayerInfo
-                  player={rightOpponent}
-                  count={gameState.handCounts[rightOpponent.id]}
-                  isTurn={gameState.currentPlayerId === rightOpponent.id}
-                  team={rightOpponent.team}
-                />
-                <div className="mt-2">
-                  <OpponentHand
-                    count={gameState.handCounts[rightOpponent.id]}
-                    position="left"
-                  />
-                </div>
-              </div>
-            )}
-            {is1v1 && topOpponent && (
-              <div className="card p-3">
-                <div className="text-xs text-slate-400 mb-2">Oponente</div>
-                <PlayerInfo
-                  player={topOpponent}
-                  count={gameState.handCounts[topOpponent.id]}
-                  isTurn={gameState.currentPlayerId === topOpponent.id}
-                  team={topOpponent.team}
-                />
-                <div className="mt-2">
-                  <OpponentHand
-                    count={gameState.handCounts[topOpponent.id]}
-                    position="top"
-                  />
-                </div>
-              </div>
-            )}
 
-            {gameState.hasPool && (
-              <div className="card p-3">
-                <div className="text-[10px] text-slate-400">Pozo</div>
-                <div className="font-bold text-2xl text-amber-400">
-                  🃏 {gameState.poolCount}
-                </div>
-              </div>
+            <Marcador
+              equipo1={gameState.teamScores?.[1] ?? 0}
+              equipo2={gameState.teamScores?.[2] ?? 0}
+              objetivo={gameState.targetPoints ?? 100}
+              ronda={gameState.round}
+              miEquipo={miJugador?.team}
+            />
+
+            {[topOpponent, leftOpponent, rightOpponent]
+              .filter(Boolean)
+              .map((rival) => (
+                <Jugador
+                  key={rival.id}
+                  jugador={rival}
+                  fichas={gameState.handCounts[rival.id] ?? 0}
+                  enTurno={gameState.currentPlayerId === rival.id}
+                  esRival
+                />
+              ))}
+
+            {miJugador && (
+              <Jugador
+                jugador={miJugador}
+                fichas={gameState.myHand?.length ?? 0}
+                enTurno={myTurn}
+              />
             )}
           </div>
         </div>

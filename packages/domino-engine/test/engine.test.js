@@ -755,3 +755,40 @@ test('domino: el ganador suma los pips que quedan en las manos rivales', () => {
   assert.equal(fin.winnerSeat, 0);
   assert.equal(fin.points, 20, 'los 20 pips que le quedaron al rival');
 });
+
+test('bots: los cinco niveles existen y forman una escalera', () => {
+  const niveles = ['novato', 'facil', 'normal', 'dificil', 'maestro'];
+  const s = createGame({ gameFormat: 'domino-2v2-v1', seed: 'niveles' });
+  const v = viewFor(s, s.turn);
+  for (const d of niveles) {
+    assert.ok(chooseAction(v, { difficulty: d }), `${d} deberia elegir una accion`);
+  }
+
+  // el maestro le gana al novato de forma clara
+  let ganaMaestro = 0;
+  const N = 60;
+  for (let i = 0; i < N; i++) {
+    let e = createGame({ gameFormat: 'domino-2v2-v1', seed: `esc-${i}`, config: { targetPoints: 50 } });
+    let g = 0;
+    while (e.phase !== PHASE.GAME_OVER && g < 4000) {
+      g += 1;
+      if (e.phase === PHASE.ROUND_OVER) {
+        e = applyAction(e, { type: ACTION.START_NEXT_ROUND, seat: 0 }).state;
+        continue;
+      }
+      const vista = viewFor(e, e.turn);
+      const dificultad = e.teams[e.turn] === 1 ? 'maestro' : 'novato';
+      e = applyAction(e, chooseAction(vista, { difficulty: dificultad, seed: `${i}-${e.seq}` }) || vista.actions[0]).state;
+    }
+    if (e.result?.winnerTeam === 1) ganaMaestro += 1;
+  }
+  assert.ok(ganaMaestro >= N * 0.6, `el maestro gano ${ganaMaestro}/${N} contra el novato`);
+});
+
+test('bots: una dificultad desconocida no rompe, cae en normal', () => {
+  const s = createGame({ gameFormat: 'domino-2v2-v1', seed: 'nivel-raro' });
+  const v = viewFor(s, s.turn);
+  const a = chooseAction(v, { difficulty: 'inventada' });
+  assert.ok(a, 'deberia devolver una accion igual');
+  assert.ok(v.actions.some((x) => JSON.stringify(x) === JSON.stringify(a)), 'y ser legal');
+});

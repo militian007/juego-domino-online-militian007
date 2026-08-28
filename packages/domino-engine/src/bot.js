@@ -1,10 +1,27 @@
 import { createRng } from './rng.js';
 import { generateSet, tileKey, pips, isDouble } from './tiles.js';
 
-export const DIFFICULTY = { EASY: 'easy', NORMAL: 'normal', HARD: 'hard' };
+export const DIFFICULTY = {
+  NOVATO: 'novato',
+  FACIL: 'facil',
+  NORMAL: 'normal',
+  DIFICIL: 'dificil',
+  MAESTRO: 'maestro',
+  // alias en ingles, por compatibilidad con quien ya use estos nombres
+  EASY: 'facil',
+  HARD: 'maestro'
+};
 
-const NOISE = { easy: 14, normal: 3, hard: 0 };
-const RANDOM_RATE = { easy: 0.3, normal: 0.05, hard: 0 };
+// NOISE  = cuanto ruido se le suma al puntaje de cada ficha (juega peor)
+// RANDOM = con que probabilidad tira una ficha al azar, ignorando la estrategia
+const NOISE = { novato: 22, facil: 14, normal: 6, dificil: 2, maestro: 0 };
+const RANDOM_RATE = { novato: 0.45, facil: 0.28, normal: 0.10, dificil: 0.03, maestro: 0 };
+
+// alias viejos
+NOISE.easy = NOISE.facil;
+NOISE.hard = NOISE.maestro;
+RANDOM_RATE.easy = RANDOM_RATE.facil;
+RANDOM_RATE.hard = RANDOM_RATE.maestro;
 
 function unseenCounts(view) {
   const maxPip = view.maxPip ?? 6;
