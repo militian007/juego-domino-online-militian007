@@ -1241,3 +1241,50 @@ El imán del arrastre descuenta el desplazamiento antes de dividir por la escala
 La pantalla `/cambiar-clave` existía desde §32 pero **no tenía ningún enlace**, así que era
 inalcanzable. Se agregó en el Navbar: el nombre de usuario ahora es el enlace (escritorio) y hay un
 botón "Clave" en móvil.
+
+---
+
+## 34. Cambiar la clave en producción (Supabase)
+
+La base de producción es **PostgreSQL en Supabase**. Local usa SQLite, así que un cambio de clave
+en una no afecta a la otra. Herramienta: `backend/scripts/clave.js`.
+
+### Vía 1 — desde el panel de Supabase, sin conexión local
+
+```bash
+node scripts/clave.js hash "miClaveNueva"
+```
+
+Imprime el hash bcrypt y el `UPDATE` listo. Se pega en **Supabase > SQL Editor** y se ejecuta.
+No hace falta tener la `DATABASE_URL` en la máquina.
+
+### Vía 2 — directo, con la DATABASE_URL
+
+```bash
+DATABASE_URL="postgresql://..." node scripts/clave.js listar
+DATABASE_URL="postgresql://..." node scripts/clave.js set mili "miClaveNueva"
+```
+
+La cadena sale de **Supabase > Settings > Database > Connection string > Transaction pooler**
+(el mismo pooler IPv4 del puerto 6543 que usa Render). El `set` verifica con `bcrypt.compare`
+después de escribir, así que no canta victoria sin comprobar.
+
+> La `DATABASE_URL` nunca se guarda en el repo ni en `.env` versionado: se pasa como variable de
+> entorno en el momento.
+
+### Ver los datos
+
+Supabase tiene **Table Editor** para ver `users` a ojo, y **SQL Editor** para consultas. La tabla
+relevante es `users(id, username, email, password_hash, games_played, games_won, created_at)`.
+
+### Cuenta basura creada por error
+
+Al diagnosticar si el usuario `mili` existía en producción se probó registrar con el email
+`12@hotmail.com`, y eso **creó** la cuenta `probe-usuario-inexistente`. Para borrarla:
+
+```sql
+DELETE FROM users WHERE username = 'probe-usuario-inexistente';
+```
+
+> Para chequear si un usuario existe no usar el endpoint de registro: crea la cuenta si el dato
+> libre no colisiona. Consultar la base directamente.
