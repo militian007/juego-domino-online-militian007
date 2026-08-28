@@ -175,6 +175,16 @@ export function setupGameSocket(io, roomManager) {
       await roomManager.playBotTurns(room);
     });
 
+    socket.on('game:explain', ({ code }, callback) => {
+      const room = roomManager.rooms.get(code);
+      if (!room?.game) return callback?.({ ok: false, error: 'No hay juego' });
+      callback?.({
+        ok: true,
+        ends: room.game.ends,
+        fichas: room.game.explicarMano(socket.userId)
+      });
+    });
+
     socket.on('game:reaction', ({ code, emoji }) => {
       const room = roomManager.rooms.get(code);
       if (!room) return;

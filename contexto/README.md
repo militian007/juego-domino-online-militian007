@@ -1355,3 +1355,48 @@ sombrero, aros); los jugadores humanos reciben una derivada de su nombre, siempr
 
 El backend ahora manda `targetPoints` en el estado (antes el marcador no sabía a cuánto se jugaba)
 y la identidad del bot (`avatar`, `difficulty`, `frase`, `estrellas`). Se eliminó el emoji 🤖.
+
+---
+
+## 36. "¿Por qué no puedo jugar?" — el juego se explica solo (2026-08-24)
+
+Tras varios reportes de "tengo la ficha y no me deja", en vez de seguir diagnosticando desde
+capturas se conectó `explainPlacements` (§32) a la pantalla.
+
+### Cómo funciona
+
+`game:explain` por socket devuelve, para **cada ficha de la mano**, si se puede jugar y si no, por
+qué, en castellano:
+
+| motivo interno | lo que ve el jugador |
+|---|---|
+| (no coincide) | "no tiene 5 ni 3" |
+| `fuera-del-tablero` | "no queda espacio en la mesa por ese lado" |
+| `celda-ocupada` | "el lugar ya está ocupado" |
+| `roza-otra-ficha` | "quedaría pegada a otra ficha de la cadena" |
+| `solapa-visualmente` | "se montaría sobre otra ficha" |
+
+`DominoGame.explicarMano(playerId)` hace la traducción; el motor sigue devolviendo motivos
+técnicos.
+
+El panel aparece **solo**, cuando es tu turno y no podés jugar. No hay que apretar nada.
+
+> Primer intento: era un botón "¿Por qué no puedo jugar?" y la explicación se guardaba en estado.
+> No servía: `onGameState` limpiaba ese estado en **cada** actualización, y llegan seguido. Ahora
+> se pide desde un `useEffect` atado a `[myTurn, canPlay, board.length]`.
+
+### Verificado
+
+Por socket, contra el servidor, en los dos caminos:
+
+```
+extremos 5 y 3        [4|4] no tiene 5 ni 3 ... (4 fichas)
+                      servidor canPlay=false, diagnostico 0 jugables => COINCIDEN
+
+extremos 5 y 3        [3|3] no queda espacio en la mesa por ese lado
+(14 fichas en mesa)   [2|3] [0|5] [4|5] se pueden jugar
+```
+
+**Pendiente de confirmar en pantalla:** el panel no se pudo capturar en el navegador porque la
+automatización no logra frenar en ese instante (el estado dura poco y el bot lo resuelve). El
+endpoint y los mensajes están verificados; lo que falta comprobar es el render en vivo.

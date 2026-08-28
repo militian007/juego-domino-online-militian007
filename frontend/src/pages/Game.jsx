@@ -49,6 +49,7 @@ export default function Game() {
   const [showReactionMenu, setShowReactionMenu] = useState(false);
 
   const { tema, setTema, clasePano, claseBaranda } = useMesaTheme();
+  const [explicacion, setExplicacion] = useState(null);
 
   const handleDragStart = (index, tile, clientX, clientY) => {
     setDraggedTile({
@@ -653,6 +654,24 @@ export default function Game() {
   }
 
   const miJugador = gameState?.players?.find((p) => p.id === myPlayerId) || null;
+  // Cuando no podés jugar, el servidor explica ficha por ficha por qué.
+  // Se pide sola, sin que haya que apretar nada.
+  useEffect(() => {
+    if (!socket || !actualRoomCode) return;
+    if (!myTurn || gameState?.canPlay !== false) {
+      setExplicacion(null);
+      return;
+    }
+    let vigente = true;
+    socket.emit('game:explain', { code: actualRoomCode }, (res) => {
+      if (!vigente) return;
+      setExplicacion(res?.ok ? res : { error: res?.error || 'No se pudo consultar' });
+    });
+    return () => {
+      vigente = false;
+    };
+  }, [socket, actualRoomCode, myTurn, gameState?.canPlay, gameState?.board?.length]);
+
   const is1v1 = opponents.length === 1;
   const topOpponent = opponents[0];
   const leftOpponent = opponents[1];
@@ -845,6 +864,31 @@ export default function Game() {
                   <p className="text-center text-[10px] sm:text-xs text-slate-500 italic mt-2">
                     Arrastra una ficha válida a la mesa
                   </p>
+                )}
+
+                {myTurn && !gameState.canPlay && (
+                  <div className="mt-3 rounded-lg border border-slate-700/60 bg-black/25 p-3 text-left">
+                    <p className="mb-1.5 text-[10px] uppercase tracking-widest text-slate-500">
+                      Por qué no podés jugar
+                      {explicacion?.ends
+                        ? ` · extremos ${explicacion.ends.left} y ${explicacion.ends.right}`
+                        : ''}
+                    </p>
+                    {!explicacion && (
+                      <p className="text-xs italic text-slate-500">revisando tu mano...</p>
+                    )}
+                    {explicacion?.error && (
+                      <p className="text-xs text-red-300">{explicacion.error}</p>
+                    )}
+                    {explicacion?.fichas?.map((f) => (
+                      <p key={f.index} className="text-xs leading-relaxed">
+                        <span className="font-mono text-domino-cream">[{f.tile[0]}|{f.tile[1]}]</span>{' '}
+                        <span className={f.jugable ? 'text-emerald-400' : 'text-slate-400'}>
+                          {f.jugable ? 'se puede jugar' : f.motivo}
+                        </span>
+                      </p>
+                    ))}
+                  </div>
                 )}
 
                 {gameState.hasPool && gameState.poolCount > 0 && (

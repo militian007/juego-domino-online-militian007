@@ -1,4 +1,5 @@
 import {
+  explainPlacements,
   createGame,
   applyAction,
   playableMoves,
@@ -214,6 +215,60 @@ export class DominoGame {
 
   getValidPlacementsForTile(tile, side) {
     return placementsFor(this.state.board, tile, side, this.state.config.layout);
+  }
+
+  /**
+   * Para cada ficha de la mano, por que NO se puede jugar.
+   * Usa el diagnostico del motor en vez de adivinar.
+   */
+  explicarMano(playerId) {
+    const seat = this._seatOf(playerId);
+    if (seat == null) return [];
+    const mano = this.state.hands[seat] || [];
+    const ends = this.state.ends;
+
+    return mano.map((tile, index) => {
+      if (!ends) return { index, tile, jugable: true, motivo: null };
+
+      const coincide = [ends.left, ends.right].some((e) => tile[0] === e || tile[1] === e);
+      if (!coincide) {
+        return {
+          index,
+          tile,
+          jugable: false,
+          motivo: `no tiene ${ends.left}${ends.left === ends.right ? '' : ' ni ' + ends.right}`
+        };
+      }
+
+      const detalle = [];
+      for (const side of ['left', 'right']) {
+        const end = side === 'left' ? ends.left : ends.right;
+        if (tile[0] !== end && tile[1] !== end) continue;
+        const { validas, candidatas } = explainPlacements(
+          this.state.board, tile, side, this.state.config.layout
+        );
+        if (validas.length > 0) return { index, tile, jugable: true, motivo: null };
+        for (const c of candidatas) if (c.motivo) detalle.push(c.motivo);
+      }
+
+      const cuenta = {};
+      for (const m of detalle) cuenta[m] = (cuenta[m] || 0) + 1;
+      const principal = Object.entries(cuenta).sort((a, b) => b[1] - a[1])[0]?.[0];
+
+      const texto = {
+        'fuera-del-tablero': 'no queda espacio en la mesa por ese lado',
+        'celda-ocupada': 'el lugar ya está ocupado',
+        'roza-otra-ficha': 'quedaría pegada a otra ficha de la cadena',
+        'solapa-visualmente': 'se montaría sobre otra ficha'
+      };
+
+      return {
+        index,
+        tile,
+        jugable: false,
+        motivo: texto[principal] || 'no hay lugar donde colocarla'
+      };
+    });
   }
 
   chooseBotPlacement(placements, side) {
