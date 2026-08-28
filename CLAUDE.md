@@ -2,8 +2,39 @@
 
 > Archivo de reglas para cualquier dev o IA que trabaje en este repo.
 > El contexto largo y el historial de decisiones está en [contexto/README.md](contexto/README.md).
+> Para arrancar un chat nuevo: [contexto/PROMPT-NUEVO-CHAT.md](contexto/PROMPT-NUEVO-CHAT.md).
 
-## 0. Objetivo actual (2026-08-24)
+## Regla de oro
+
+**Toda respuesta empieza con `jonathan`.** Sin excepciones.
+
+## 0. Reglas heredadas (OLIMPO → jpdevgames → aquí)
+
+Vienen de `dev/appGym` (OLIMPO) y `dev/jpdevgames/docs/REGLAS.md`. Mandan sobre cualquier
+preferencia técnica: si algo choca con una regla, gana la regla. Adaptadas a este proyecto
+(aquí no hay dinero real ni Docker, así que esas dos no aplican).
+
+1. **`contexto/` siempre al día**, en el **mismo commit** en que cambia el código.
+   Aquí el histórico vive en `contexto/README.md` (secciones numeradas, cada una con su fecha
+   y su *porqué*) y el traspaso en `contexto/PROMPT-NUEVO-CHAT.md`.
+2. **Estructura ordenada.** Cada cosa en su carpeta. Nada suelto en la raíz.
+3. **Pensado para escalar.** El motor va a una plataforma con muchos jugadores a la vez.
+   Nada de parches que haya que rehacer al crecer.
+4. **Seguridad máxima.** Ninguna clave visible, ningún dato de un usuario expuesto a otro.
+   Nunca mandar `state` completo al cliente: siempre `viewFor(state, seat)`.
+5. **Todo se guarda en GitHub:** https://github.com/militian007/juego-domino-online-militian007
+6. **Móvil primero.** La mayoría entra desde el teléfono. Se diseña en vertical, para una
+   mano, y luego se estira a escritorio. Nunca al revés.
+7. **Decir la verdad.** Si algo está a medias, roto o es un riesgo, se dice claro.
+   **No se dice que algo funciona si no se probó corriendo.**
+8. **El servidor manda.** El cliente nunca decide un resultado ni un puntaje. Manda intenciones
+   (`table:action`); el servidor valida con el motor y dicta el estado.
+9. **Explicar en español y claro.** Jonathan no es programador de profesión. Cada decisión
+   técnica lleva su *por qué* en una línea.
+10. **Medir antes de cambiar una regla de juego.** Nada de "creo que esto lo mejora": se corre
+    una simulación A/B de miles de manos y se compara. Ver `contexto/README.md` §32 y §33.
+
+## 1. Objetivo actual (2026-08-24)
 
 Terminar el **motor de dominó** y dejarlo **portable** para integrarlo en la plataforma
 **https://privoytruco.com** (proyecto de otro dev del grupo). El motor vive en
@@ -13,7 +44,7 @@ ni de nada de este repo.
 - `packages/domino-engine/` → el producto que se entrega al equipo de PrivoyTruco.
 - `backend/` + `frontend/` → banco de pruebas / cliente de referencia del motor.
 
-## 1. Reglas de código
+## 2. Reglas de código
 
 1. **NO comentar de más.** Código limpio; comentario solo si la lógica no se explica sola.
 2. **NO usar emojis en el código** salvo que el usuario lo pida explícito.
@@ -22,7 +53,7 @@ ni de nada de este repo.
 5. **NO commitear cambios sin haberlos visto corriendo en localhost.**
 6. Cambios a `main` → Vercel y Render redespliegan solos.
 
-## 2. Reglas del motor (obligatorias para que sea portable)
+## 3. Reglas del motor (obligatorias para que sea portable)
 
 1. **Cero dependencias.** ESM puro, corre en Node 18+ y en el browser.
 2. **Determinista.** Todo azar sale de una seed. Nada de `Math.random()` dentro del motor.
@@ -37,7 +68,7 @@ ni de nada de este repo.
    con o sin pozo, equipos, quién sale.
 8. **Nada de `setTimeout` ni delays dentro del motor.** Los tiempos los pone la capa de transporte.
 
-## 3. Contrato con la plataforma PrivoyTruco
+## 4. Contrato con la plataforma PrivoyTruco
 
 La plataforma ya tiene su protocolo definido (visto en el bundle de producción). El motor de
 dominó se adapta a él, no al revés.
@@ -54,7 +85,7 @@ dominó se adapta a él, no al revés.
   Para dominó: `domino-1v1-v1`, `domino-2v2-v1`.
 - `targetPoints` lo manda la plataforma (los torneos lo traen en su payload). No asumir 100.
 
-## 4. Reglas de dominó implementadas (venezolano, doble 6)
+## 5. Reglas de dominó implementadas (venezolano, doble 6)
 
 - 28 fichas, 7 por jugador.
 - Sale el doble más alto de la primera mano; en manos siguientes sale quien ganó la anterior.
@@ -68,7 +99,7 @@ dominó se adapta a él, no al revés.
 - Empate en tranque: nadie suma.
 - Se juega a `targetPoints` puntos (por defecto 100).
 
-## 5. Cómo correrlo en local
+## 6. Cómo correrlo en local
 
 ```bash
 node --run dev --prefix backend    # o: cd backend && npm run dev   → :4000
@@ -82,7 +113,7 @@ cd packages/domino-engine && node --test
 cd backend && node src/game/test.js
 ```
 
-## 6. Archivos que NO se tocan sin preguntar
+## 7. Archivos que NO se tocan sin preguntar
 
 - `frontend/public/hero-table.png` — fondo de la landing.
 - `frontend/public/tiles/*.png` — fichas recortadas a mano.
