@@ -1,5 +1,5 @@
 import { randomSeed } from '@privoytruco/domino-engine';
-import { elegirBot } from './game/bots.js';
+import { elegirBots } from './game/bots.js';
 import { DominoGame } from './game/DominoGame.js';
 import { Bot } from './game/Bot.js';
 import { MODE_CONFIG } from './game/DominoGame.js';
@@ -164,22 +164,27 @@ export class RoomManager {
     if (!room) return { error: 'Sala no encontrada' };
     if (room.started) return { error: 'Ya comenzó' };
 
-    if (room.mode === '1v1bot') {
-      if (room.players.length !== 1) {
-        return { error: 'El modo 1v1+bot solo admite 1 jugador' };
+    // Los modos con bots se completan solos. El humano siempre es el asiento 0,
+    // asi que en 2v2 el companero le toca al asiento 2: es el de enfrente.
+    const botsFaltantes = room.config.bots || 0;
+    if (botsFaltantes > 0) {
+      if (room.players.length !== room.config.humans) {
+        return { error: `Este modo es para ${room.config.humans} jugador(es), hay ${room.players.length}` };
       }
-      const bot = elegirBot(room.botPreferido);
-      room.bot = bot;
-      room.botDifficulty = bot.difficulty;
-      room.players.push({
-        id: `bot-${room.code}-1`,
-        username: bot.nombre,
-        isBot: true,
-        socketId: null,
-        avatar: bot.avatar,
-        difficulty: bot.difficulty,
-        frase: bot.frase,
-        estrellas: bot.estrellas
+      const elegidos = elegirBots(botsFaltantes, room.botPreferido);
+      room.bot = elegidos[0];
+      room.botDifficulty = elegidos[0].difficulty;
+      elegidos.forEach((bot, i) => {
+        room.players.push({
+          id: `bot-${room.code}-${i + 1}`,
+          username: bot.nombre,
+          isBot: true,
+          socketId: null,
+          avatar: bot.avatar,
+          difficulty: bot.difficulty,
+          frase: bot.frase,
+          estrellas: bot.estrellas
+        });
       });
     } else {
       if (room.players.length < room.config.totalPlayers) {

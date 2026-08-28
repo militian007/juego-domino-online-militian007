@@ -15,6 +15,16 @@ const MODES = [
     badge: 'Sin registro'
   },
   {
+    id: '2v2bots',
+    eyebrow: 'Equipos',
+    title: '2 VS 2',
+    titleAccent: 'CON BOTS',
+    desc: 'Prueba la modalidad en parejas sin esperar a nadie: tu compañero y los dos rivales los pone la casa.',
+    cta: 'Jugar en pareja',
+    requiresAuth: false,
+    badge: 'Sin registro'
+  },
+  {
     id: '1v1',
     eyebrow: 'Duelo',
     title: '1 VS 1',

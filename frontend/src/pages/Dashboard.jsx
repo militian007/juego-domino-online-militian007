@@ -14,6 +14,15 @@ const MODES = [
     autoStart: true
   },
   {
+    id: '2v2bots',
+    label: '2 vs 2 (vos y 3 bots)',
+    desc: 'Equipos, sin pozo. Tu compañero se sienta enfrente.',
+    players: 1,
+    maxPlayers: 1,
+    icon: '👥',
+    autoStart: true
+  },
+  {
     id: '1v1',
     label: '1 vs 1 Jugador',
     desc: 'Tú y un amigo, con código de sala. Con pozo.',

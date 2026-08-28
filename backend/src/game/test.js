@@ -2,6 +2,7 @@ import { DominoGame, MODE_CONFIG } from './DominoGame.js';
 import { Bot } from './Bot.js';
 import { generateAllTiles, isDouble, tilePips } from './Tile.js';
 import { RoomManager } from '../RoomManager.js';
+import { elegirBots } from './bots.js';
 
 let passed = 0;
 let failed = 0;
@@ -435,6 +436,40 @@ console.log('\nTEST 15: Cola de matchmaking y emparejamiento 1v1');
   assert(room !== undefined, 'La sala fue creada en el manager');
   assert(room.started === true, 'La partida fue iniciada automáticamente');
   assert(room.game !== null, 'El motor de juego fue inicializado');
+}
+
+console.log('\nTEST 2v2 con bots: la mesa se arma sola y en el orden correcto');
+{
+  const cfg = MODE_CONFIG['2v2bots'];
+  assert(cfg !== undefined, 'existe el modo 2v2bots');
+  assert(cfg.totalPlayers === 4 && cfg.humans === 1 && cfg.bots === 3, 'es 1 humano y 3 bots');
+  assert(cfg.hasPool === false, 'el 2v2 no lleva pozo');
+  assert(cfg.gameFormat === 'domino-2v2-v1', 'usa el mismo gameFormat que el 2v2 real');
+
+  const tres = elegirBots(3);
+  assert(tres.length === 3, 'elegirBots devuelve la cantidad pedida');
+  assert(new Set(tres.map((b) => b.id)).size === 3, 'los tres bots son distintos');
+
+  const rm = new RoomManager();
+  const sala = rm.createRoom({ mode: '2v2bots', hostId: 'humano', hostUsername: 'Vos' });
+  const res = rm.startGame(sala.code);
+  assert(!res.error, 'la partida arranca con un solo humano en la sala');
+
+  const juego = rm.rooms.get(sala.code).game;
+  assert(juego.players.length === 4, 'se sientan cuatro');
+  assert(juego.players[0].id === 'humano', 'el humano queda en el asiento 0');
+  assert(juego.players.slice(1).every((j) => j.isBot), 'los otros tres son bots');
+  assert(juego.players[0].team === juego.players[2].team, 'el asiento 2 es tu companero');
+  assert(juego.players[0].team !== juego.players[1].team, 'el asiento 1 es rival');
+  assert(juego.players[0].team !== juego.players[3].team, 'el asiento 3 es rival');
+  assert(juego.pool.length === 0, 'no queda pozo: las 28 fichas se repartieron');
+  assert(juego.players.every((j) => juego.hands[j.id].length === 7), 'siete fichas cada uno');
+
+  const vista = juego.getStateForPlayer('humano');
+  assert(vista.myHand.length === 7, 'la vista trae tu mano');
+  assert(vista.hasPool === false && vista.canDraw === false, 'nunca se puede robar en 2v2');
+  const manoRival = JSON.stringify(juego.hands[juego.players[1].id]);
+  assert(JSON.stringify(vista).indexOf(manoRival) === -1, 'la vista NO expone la mano del rival');
 }
 
 console.log(`\n${'='.repeat(40)}`);

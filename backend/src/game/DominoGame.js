@@ -17,7 +17,10 @@ export const GRID_SIZE = 20;
 export const MODE_CONFIG = {
   '1v1': { humans: 2, bots: 0, totalPlayers: 2, teams: false, hasPool: true, label: '1 vs 1', gameFormat: 'domino-1v1-v1' },
   '1v1bot': { humans: 1, bots: 1, totalPlayers: 2, teams: false, hasPool: true, label: '1 vs 1 (con bot)', gameFormat: 'domino-1v1-v1' },
-  '2v2': { humans: 4, bots: 0, totalPlayers: 4, teams: true, hasPool: false, label: '2 vs 2', gameFormat: 'domino-2v2-v1' }
+  '2v2': { humans: 4, bots: 0, totalPlayers: 4, teams: true, hasPool: false, label: '2 vs 2', gameFormat: 'domino-2v2-v1' },
+  // Banco de pruebas del 2v2: vos y tres bots. Usa el mismo gameFormat que el
+  // 2v2 real, asi lo que se prueba aqui es exactamente lo que corre con humanos.
+  '2v2bots': { humans: 1, bots: 3, totalPlayers: 4, teams: true, hasPool: false, label: '2 vs 2 (vos y 3 bots)', gameFormat: 'domino-2v2-v1' }
 };
 
 const PHASE_TO_STATUS = {

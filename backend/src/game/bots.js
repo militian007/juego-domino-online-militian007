@@ -61,3 +61,20 @@ export function elegirBot(preferido) {
   }
   return BOTS[Math.floor(Math.random() * BOTS.length)];
 }
+
+/**
+ * Varios rivales distintos para una misma mesa. Se evita repetir cara y nombre,
+ * porque en 2v2 hay tres bots sentados a la vez y dos "Doña Chela" confunden.
+ */
+export function elegirBots(cantidad, preferido) {
+  const elegidos = [];
+  const primero = elegirBot(preferido);
+  if (primero) elegidos.push(primero);
+  const resto = BOTS.filter((b) => b.id !== primero?.id);
+  for (let i = resto.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [resto[i], resto[j]] = [resto[j], resto[i]];
+  }
+  while (elegidos.length < cantidad && resto.length) elegidos.push(resto.pop());
+  return elegidos.slice(0, cantidad);
+}

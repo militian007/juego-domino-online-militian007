@@ -46,8 +46,25 @@ function olvidarPartida() {
   try { localStorage.removeItem(CLAVE_PARTIDA); } catch { /* nada */ }
 }
 
-const AUTO_START_MODES = ['1v1bot'];
-const GUEST_ALLOWED_MODES = ['1v1bot'];
+function AsientoLateral({ jugador, fichas, enTurno, esCompanero }) {
+  if (!jugador) return null;
+  return (
+    <div className="card min-w-0 flex-1 p-2 sm:w-[136px] sm:flex-none">
+      <PlayerInfo player={jugador} count={fichas} isTurn={enTurno} team={jugador.team} />
+      <div className="mt-1 hidden sm:block">
+        <OpponentHand count={fichas} position="left" />
+      </div>
+      {esCompanero && (
+        <div className="mt-1 text-center text-[9px] uppercase tracking-widest text-sky-300">
+          tu compañero
+        </div>
+      )}
+    </div>
+  );
+}
+
+const AUTO_START_MODES = ['1v1bot', '2v2bots'];
+const GUEST_ALLOWED_MODES = ['1v1bot', '2v2bots'];
 
 export default function Game() {
   const params = useParams();
@@ -290,8 +307,8 @@ export default function Game() {
         return;
       }
 
-      // Caso B: Modo práctica contra Bot (auto-inicia)
-      if (mode === '1v1bot') {
+      // Caso B: Modos contra bots (auto-inician)
+      if (AUTO_START_MODES.includes(mode)) {
         roomInitRef.current = true;
 
         // Si habia una partida en curso, se vuelve a ella en vez de empezar otra
@@ -591,7 +608,7 @@ export default function Game() {
     );
   }
 
-  if (!joinParam && mode !== '1v1bot' && playModeOption === null && !lobby && !gameState) {
+  if (!joinParam && !AUTO_START_MODES.includes(mode) && playModeOption === null && !lobby && !gameState) {
     return (
       <div className="min-h-screen flex flex-col bg-domino-dark text-domino-cream">
         <Navbar />
@@ -772,9 +789,17 @@ export default function Game() {
 
   const miJugador = gameState?.players?.find((p) => p.id === myPlayerId) || null;
   const is1v1 = opponents.length === 1;
-  const topOpponent = opponents[0];
-  const leftOpponent = opponents[1];
-  const rightOpponent = opponents[2];
+  // En dominó el compañero se sienta enfrente. Antes los rivales se repartían
+  // por orden de lista, y en 2v2 el compañero (asiento +2) caía a un costado
+  // como si fuera un rival.
+  const totalAsientos = gameState.players.length;
+  const miAsiento = miJugador?.seat ?? 0;
+  const porAsiento = (salto) =>
+    gameState.players.find((p) => p.seat === (miAsiento + salto) % totalAsientos) || null;
+  const seatTop = totalAsientos === 4 ? porAsiento(2) : opponents[0] || null;
+  const seatRight = totalAsientos === 4 ? porAsiento(1) : null;
+  const seatLeft = totalAsientos === 4 ? porAsiento(3) : null;
+  const esCompanero = (p) => p && miJugador && p.team === miJugador.team;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -795,21 +820,43 @@ export default function Game() {
                 <AdSidebar />
               </div>
             </div>
-            <div className="flex-1 flex flex-col gap-3 sm:gap-4">
-              {topOpponent && (
+            <div className="flex-1 min-w-0 flex flex-col gap-3 sm:gap-4">
+              {seatTop && (
                 <div className="card p-3 sm:p-4">
                   <PlayerInfo
-                    player={topOpponent}
-                    count={gameState.handCounts[topOpponent.id]}
-                    isTurn={gameState.currentPlayerId === topOpponent.id}
-                    team={topOpponent.team}
+                    player={seatTop}
+                    count={gameState.handCounts[seatTop.id]}
+                    isTurn={gameState.currentPlayerId === seatTop.id}
+                    team={seatTop.team}
                   />
                   <div className="mt-2">
                     <OpponentHand
-                      count={gameState.handCounts[topOpponent.id]}
-                      position={is1v1 ? 'top' : 'top'}
+                      count={gameState.handCounts[seatTop.id]}
+                      position="top"
                     />
                   </div>
+                  {esCompanero(seatTop) && (
+                    <div className="mt-1 text-center text-[9px] uppercase tracking-widest text-sky-300">
+                      tu compañero
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {(seatLeft || seatRight) && (
+                <div className="flex gap-2 sm:hidden">
+                  <AsientoLateral
+                    jugador={seatLeft}
+                    fichas={gameState.handCounts[seatLeft?.id]}
+                    enTurno={gameState.currentPlayerId === seatLeft?.id}
+                    esCompanero={esCompanero(seatLeft)}
+                  />
+                  <AsientoLateral
+                    jugador={seatRight}
+                    fichas={gameState.handCounts[seatRight?.id]}
+                    enTurno={gameState.currentPlayerId === seatRight?.id}
+                    esCompanero={esCompanero(seatRight)}
+                  />
                 </div>
               )}
 
@@ -838,7 +885,16 @@ export default function Game() {
                 )}
               </div>
 
-              <div className="max-w-[768px] relative mx-auto w-full">
+              <div className="flex w-full items-start justify-center gap-2 sm:items-center sm:gap-3">
+              <div className="hidden shrink-0 sm:block">
+                <AsientoLateral
+                  jugador={seatLeft}
+                  fichas={gameState.handCounts[seatLeft?.id]}
+                  enTurno={gameState.currentPlayerId === seatLeft?.id}
+                  esCompanero={esCompanero(seatLeft)}
+                />
+              </div>
+              <div className="max-w-[768px] relative mx-auto w-full min-w-0">
                 <div className="mb-2 flex justify-end">
                   <MesaThemePicker tema={tema} setTema={setTema} />
                 </div>
@@ -868,11 +924,11 @@ export default function Game() {
                   const pIdStr = String(pId);
                   if (pIdStr === String(myPlayerId)) {
                     posClass = "bottom-8 left-1/2 -translate-x-1/2";
-                  } else if (topOpponent && pIdStr === String(topOpponent.id)) {
+                  } else if (seatTop && pIdStr === String(seatTop.id)) {
                     posClass = "top-8 left-1/2 -translate-x-1/2";
-                  } else if (leftOpponent && pIdStr === String(leftOpponent.id)) {
+                  } else if (seatLeft && pIdStr === String(seatLeft.id)) {
                     posClass = "left-8 top-1/2 -translate-y-1/2";
-                  } else if (rightOpponent && pIdStr === String(rightOpponent.id)) {
+                  } else if (seatRight && pIdStr === String(seatRight.id)) {
                     posClass = "right-8 top-1/2 -translate-y-1/2";
                   } else {
                     return null;
@@ -892,6 +948,15 @@ export default function Game() {
                     </div>
                   );
                 })}
+              </div>
+              <div className="hidden shrink-0 sm:block">
+                <AsientoLateral
+                  jugador={seatRight}
+                  fichas={gameState.handCounts[seatRight?.id]}
+                  enTurno={gameState.currentPlayerId === seatRight?.id}
+                  esCompanero={esCompanero(seatRight)}
+                />
+              </div>
               </div>
 
               <div className="card p-3 sm:p-4">
@@ -1029,7 +1094,7 @@ export default function Game() {
               miEquipo={miJugador?.team}
             />
 
-            {[topOpponent, leftOpponent, rightOpponent]
+            {[seatTop, seatLeft, seatRight]
               .filter(Boolean)
               .map((rival) => (
                 <Jugador

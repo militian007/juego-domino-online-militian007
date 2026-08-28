@@ -1627,3 +1627,66 @@ entera, así que con 24x24 las fichas quedan al 83% del tamaño actual y con 26x
 Queda **sin decidir** a la espera del usuario, porque toca el equilibrio con la regla de móvil
 primero. La alternativa que evitaría el costo es que el tablero haga zoom al área ocupada por la
 cadena en vez de a la rejilla completa: así la mesa podría crecer sin achicar las fichas.
+
+---
+
+## 41. El 2v2 jugable: vos y tres bots (2026-08-28)
+
+El usuario pidió desarrollar la segunda parte del motor —el 2v2— y probarla primero con tres bots
+antes de meter personas. Buen orden: con bots se prueban cientos de partidas en segundos.
+
+### Primero medir, después construir
+
+Antes de tocar UI se corrieron **300 partidas 2v2 completas** en el motor puro:
+
+```
+partidas terminadas: 300 / 300
+manos: 1929 | domino: 1031 | trancas: 898 (46.6%)
+jugadas: 46937 | pases: 15977 (25.4%)
+gana equipo 1: 156 | equipo 2: 144
+```
+
+Sin pozo, 28 fichas repartidas, equipos `[1,2,1,2]`, ningún bot intentó robar y ninguna acción
+fue rechazada. El reparto de victorias (156/144) dice que no hay ventaja de asiento.
+
+**Falsa alarma de seguridad, resuelta.** Un chequeo grueso marcó que `viewFor` exponía manos
+ajenas. Es `lastRound`, que lleva las manos de la ronda **anterior** —ya reveladas en pantalla al
+cerrar la mano—. Verificado sobre 11.514 momentos: las 77 "coincidencias" con la mano actual eran
+todas de manos de 1 ó 2 fichas (casualidad, 1 en 28) y el `lastRound` siempre era de la ronda
+previa. No hay fuga.
+
+### El modo `2v2bots`
+
+Usa **el mismo `gameFormat` que el 2v2 real** (`domino-2v2-v1`). Es a propósito: así lo que se
+prueba con bots es exactamente lo que va a correr con humanos, no una variante paralela que se
+desincronice.
+
+`RoomManager.startGame` dejó de estar cableado al `1v1bot`: ahora mira `room.config.bots` y
+completa la mesa con esa cantidad. `elegirBots(n)` devuelve rivales **distintos**, porque tres
+"Doña Chela" en la misma mesa confunden.
+
+### El compañero se sienta enfrente
+
+El frontend repartía los rivales por orden de lista (`opponents[0]`, `[1]`, `[2]`). En 2v2 eso
+ponía al compañero —asiento +2— en un costado, como si fuera un rival. Ahora las posiciones se
+calculan por asiento relativo al tuyo: **+2 enfrente, +1 a la derecha, +3 a la izquierda**, con la
+etiqueta "tu compañero" y el color de equipo en el borde (azul los tuyos, rojo los rivales).
+
+Los dos asientos laterales antes no se dibujaban en la mesa: solo aparecían en la lista del
+costado. Ahora se sientan a los lados en pantalla grande y en una fila sobre el tablero en
+teléfono.
+
+### El desborde horizontal que salió de paso
+
+Al meter el tablero dentro de un contenedor flex pasó a ser un *flex item*, y esos no bajan de su
+ancho natural (`min-width: auto`). El tablero mide 20 celdas x 32px = **640px**, así que empujaba
+la página: `scrollWidth` 653 contra `clientWidth` 375 en un teléfono. Se arregló con `min-w-0` en
+la columna. Medido después: 375 = 375, sin desborde, y el 1v1 también quedó sin desborde.
+
+### Estado
+
+Motor 53/53, backend **87/87** (18 pruebas nuevas para el modo), build ok. Probado corriendo: una
+partida completa por socket (ronda jugada y puntuada, sin pozo, compañero en el asiento 2) y la
+mesa vista en el navegador en escritorio y en teléfono.
+
+Falta el 2v2 entre personas de verdad: lobby de 4, equipos, y qué pasa si uno se va.

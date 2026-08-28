@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 import { HUMAN_DELAY_MS } from '../RoomManager.js';
 
+const MODOS_INVITADO = ['1v1bot', '2v2bots'];
+
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
 const GUEST_NAME = 'Invitado';
@@ -40,7 +42,9 @@ export function setupGameSocket(io, roomManager) {
     console.log(`🎮 ${socket.username} (${tag}) conectado (${socket.id})`);
 
     socket.on('room:create', ({ mode, bot }, callback) => {
-      if (socket.isGuest && mode !== '1v1bot') {
+      // Los modos contra bots no exponen a nadie a otro usuario, asi que un
+      // invitado puede crearlos. Los que llevan humanos siguen pidiendo cuenta.
+      if (socket.isGuest && !MODOS_INVITADO.includes(mode)) {
         return callback?.({ ok: false, error: 'Necesitas registrarte para jugar en línea' });
       }
       try {
