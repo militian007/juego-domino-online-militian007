@@ -18,6 +18,34 @@ import { connectSocket } from '../services/socket.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { playTileSound, playDrawSound } from '../utils/soundEffects.js';
 
+// La partida en curso se recuerda en el navegador para poder volver a ella al
+// refrescar o al salir a otra app. Solo se olvida cuando la partida termina o
+// el jugador se va a proposito.
+const CLAVE_PARTIDA = 'domino-partida-activa';
+
+function recordarPartida(code, mode) {
+  try {
+    if (code) localStorage.setItem(CLAVE_PARTIDA, JSON.stringify({ code, mode, ts: Date.now() }));
+  } catch { /* sin localStorage, simplemente no se recuerda */ }
+}
+
+function partidaRecordada(mode) {
+  try {
+    const g = JSON.parse(localStorage.getItem(CLAVE_PARTIDA) || 'null');
+    if (!g?.code) return null;
+    // se descarta si es de otro modo o si tiene mas de 6 horas
+    if (g.mode !== mode) return null;
+    if (Date.now() - (g.ts || 0) > 6 * 60 * 60 * 1000) return null;
+    return g.code;
+  } catch {
+    return null;
+  }
+}
+
+function olvidarPartida() {
+  try { localStorage.removeItem(CLAVE_PARTIDA); } catch { /* nada */ }
+}
+
 const AUTO_START_MODES = ['1v1bot'];
 const GUEST_ALLOWED_MODES = ['1v1bot'];
 
@@ -61,6 +89,12 @@ export default function Game() {
   // Candado contra doble envio en el mismo tick. `isPlacing` no alcanza porque
   // se lee del closure y dos llamadas seguidas ven el mismo valor viejo.
   const enviandoRef = useRef(false);
+
+  // Sala activa en un ref: el manejador de reconexion corre fuera del render.
+  const salaActivaRef = useRef(null);
+  useEffect(() => {
+    salaActivaRef.current = actualRoomCode;
+  }, [actualRoomCode]);
 
   const handleDragStart = (index, tile, clientX, clientY) => {
     setDraggedTile({
@@ -164,6 +198,8 @@ export default function Game() {
         return state;
       });
       setActualRoomCode(state.roomCode);
+      if (state.status === 'game-over') olvidarPartida();
+      else recordarPartida(state.roomCode, mode);
       setLobby(null);
       setSelectedTile(null);
       setDraggedTile(null);
@@ -201,16 +237,35 @@ export default function Game() {
       }, 3000);
     };
 
+    // Al reconectar (volviste de otra app, se cayo el wifi) el servidor todavia
+    // tiene el socketId viejo y no te llega nada. Hay que volver a entrar.
+    const onReconnect = () => {
+      const code = salaActivaRef.current;
+      if (!code) return;
+      s.emit('room:join', { code }, (res) => {
+        if (!res?.ok) {
+          setError('Se perdió la conexión con la mesa. Volvé a entrar.');
+          olvidarPartida();
+        } else {
+          setError('');
+        }
+      });
+    };
+
     s.on('lobby:update', onLobby);
     s.on('game:state', onGameState);
     s.on('connect_error', onConnectError);
     s.on('game:reaction', onReaction);
+    s.on('connect', onReconnect);
+    s.io.on('reconnect', onReconnect);
 
     return () => {
       s.off('lobby:update', onLobby);
       s.off('game:state', onGameState);
       s.off('connect_error', onConnectError);
       s.off('game:reaction', onReaction);
+      s.off('connect', onReconnect);
+      s.io.off('reconnect', onReconnect);
     };
   }, [loading, user, urlRoomCode, mode]);
 
@@ -238,6 +293,23 @@ export default function Game() {
       // Caso B: Modo práctica contra Bot (auto-inicia)
       if (mode === '1v1bot') {
         roomInitRef.current = true;
+
+        // Si habia una partida en curso, se vuelve a ella en vez de empezar otra
+        const anterior = partidaRecordada(mode);
+        if (anterior) {
+          socket.emit('room:join', { code: anterior }, (res) => {
+            if (res?.ok) {
+              setActualRoomCode(res.room?.code || anterior);
+              return;
+            }
+            // la sala ya no existe: se olvida y se crea una nueva
+            olvidarPartida();
+            roomInitRef.current = false;
+            handleAction();
+          });
+          return;
+        }
+
         socket.emit('room:create', { mode }, (res) => {
           if (!res?.ok) {
             setError(res?.error || 'No se pudo crear la sala');

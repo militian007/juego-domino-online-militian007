@@ -10,10 +10,14 @@ import {
 const GRID_SIZE = DEFAULT_LAYOUT.grid;
 const CELL_SIZE = DEFAULT_LAYOUT.cell;
 
-// Una celda de aire en cada lado, para que la cadena nunca quede pegada a la
-// baranda. No se le quita area de juego a nadie: la rejilla sigue siendo de
-// 20x20, solo se dibuja un poco mas chica dentro del paño.
-const MARGEN_CELDAS = 1;
+// Aire en cada lado para que la cadena no quede pegada a la baranda. No se le
+// quita area de juego a nadie: la rejilla sigue siendo de 20x20, solo se dibuja
+// un poco mas chica dentro del paño.
+//
+// Con 1 celda en un telefono quedaban solo 15px de aire, y medido, la cadena
+// llega a la fila o columna extrema en el 51% de las jugadas: se veia pegada.
+// Con 2 celdas quedan 30px en telefono y 55px en escritorio.
+const MARGEN_CELDAS = 2;
 const LADO_LOGICO = GRID_SIZE * CELL_SIZE;
 const LADO_CON_MARGEN = LADO_LOGICO + 2 * MARGEN_CELDAS * CELL_SIZE;
 

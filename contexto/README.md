@@ -1512,3 +1512,60 @@ la pagina se movio  : false
 
 > Los videos del usuario se pueden revisar: `ffmpeg -i video.mp4 -vf "fps=2,scale=540:-1" f_%03d.jpg`
 > y después una hoja de contacto con PIL. Se ven cosas que una captura fija no muestra.
+
+---
+
+## 39. La partida sobrevive al refresco y a salir de la app (2026-08-28)
+
+El usuario: *"cuando quiero refrescar la página me manda a otra partida, si me salgo a ver un
+WhatsApp también se buguea. Quiero que la partida solo se cierre cuando yo o el otro humano no
+quiera seguir."*
+
+### La raíz
+
+```js
+socket.userId = `guest-${socket.id}`;   // gameSocket.js
+```
+
+Cada conexión trae un `socket.id` nuevo, así que **cada refresco convertía al jugador en otra
+persona**. El servidor ya sabía reconectar (`joinRoom` detecta `existingPlayer` y actualiza el
+`socketId`), pero nunca lo reconocía. Y el frontend, al no encontrar sala, creaba una nueva.
+
+Además `room:join` rechazaba a **todos** los invitados, así que un invitado no podía volver ni a su
+propia mesa.
+
+### El arreglo, en cuatro piezas
+
+1. **Id de invitado estable.** `idDeInvitado()` en `services/socket.js` lo genera una vez y lo
+   guarda en el navegador; viaja en el handshake como `auth.guestId`. El backend lo acepta si
+   coincide con `/^guest-[a-z0-9]{6,40}$/i`, y si no cae al comportamiento viejo.
+
+2. **El invitado puede volver a SU mesa.** `room:join` ahora deja pasar a un invitado solo si ya
+   figura entre los jugadores de esa sala. A una sala ajena sigue rechazándolo.
+
+3. **La partida se recuerda.** El código de sala se guarda en `localStorage` con su modo y la hora.
+   Al entrar se intenta volver a ella antes de crear una nueva; si ya no existe, se olvida y se
+   crea. Se descarta sola a las 6 horas, y se borra al terminar la partida.
+
+4. **Reconexión del socket.** Al reconectar, el servidor todavía tiene el `socketId` viejo y no
+   llega nada. Ahora se re-emite `room:join` en `connect` y en `reconnect`.
+
+### Verificado
+
+```
+sala 46PYEL | mano: 56 66 16 55 14 11 12 | rival: Doña Chela
+--- refrescar: socket nuevo, mismo guestId ---
+volvi a 46PYEL | mano: 66 16 55 14 11 12 | tablero: 2 fichas | rival: Doña Chela
+=> RECUPERO LA MISMA PARTIDA, INTACTA
+
+invitado ajeno a esa sala -> rechazado
+```
+
+La ficha jugada antes del refresco ya no está en la mano: es la partida real, no una nueva.
+
+### Margen del tablero: de 1 a 2 celdas
+
+El usuario reportó que la cadena tocaba el borde de abajo. Medido: con 1 celda quedaban 27px de
+aire en escritorio pero **solo 15px en teléfono**, y la cadena llega a la fila o columna extrema en
+el **51% de las jugadas** (desde que se quitó la regla de banda en §32). Con 2 celdas quedan 49px
+en escritorio y 28px en teléfono. Cuesta ~8% de tamaño de ficha.

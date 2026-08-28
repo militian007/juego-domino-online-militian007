@@ -9,7 +9,12 @@ export function setupGameSocket(io, roomManager) {
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
     if (!token) {
-      socket.userId = `guest-${socket.id}`;
+      // El invitado trae su propio id, guardado en su navegador. Antes se usaba
+      // `guest-${socket.id}`, que cambiaba en cada conexion: al refrescar o al
+      // salir a otra app el jugador pasaba a ser "otro" y perdia su partida.
+      const propio = socket.handshake.auth?.guestId;
+      const valido = typeof propio === 'string' && /^guest-[a-z0-9]{6,40}$/i.test(propio);
+      socket.userId = valido ? propio : `guest-${socket.id}`;
       socket.username = GUEST_NAME;
       socket.isGuest = true;
       return next();
@@ -56,8 +61,14 @@ export function setupGameSocket(io, roomManager) {
     });
 
     socket.on('room:join', ({ code }, callback) => {
+      // Un invitado no puede entrar a una sala ajena, pero SI puede volver a la
+      // suya: es como vuelve despues de refrescar o de salir a otra app.
       if (socket.isGuest) {
-        return callback?.({ ok: false, error: 'Necesitas registrarte para unirte a una partida' });
+        const sala = roomManager.rooms.get(code);
+        const yaEstaba = sala?.players.some((p) => p.id === socket.userId);
+        if (!yaEstaba) {
+          return callback?.({ ok: false, error: 'Necesitas registrarte para unirte a una partida' });
+        }
       }
       const result = roomManager.joinRoom(code, {
         userId: socket.userId,
