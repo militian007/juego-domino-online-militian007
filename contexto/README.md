@@ -1569,3 +1569,61 @@ El usuario reportó que la cadena tocaba el borde de abajo. Medido: con 1 celda 
 aire en escritorio pero **solo 15px en teléfono**, y la cadena llega a la fila o columna extrema en
 el **51% de las jugadas** (desde que se quitó la regla de banda en §32). Con 2 celdas quedan 49px
 en escritorio y 28px en teléfono. Cuesta ~8% de tamaño de ficha.
+
+---
+
+## 40. El panel se quedaba viejo justo cuando más lo necesitabas (2026-08-28)
+
+El usuario mandó una captura: mano de **4 fichas**, panel de "por qué no podés jugar" listando
+**3**, extremos 0 y 6, y él con un 6 en la mano que el juego no le dejaba jugar.
+
+### La raíz
+
+El efecto que pide la explicación tenía estas dependencias:
+
+```js
+}, [socket, actualRoomCode, myTurn, gameState?.canPlay, gameState?.board?.length]);
+```
+
+**La mano no estaba.** Al robar del pozo la mano crece, pero `canPlay` sigue en `false`, sigue
+siendo tu turno y el tablero no cambia: ninguna dependencia cambia, el efecto no se repite y el
+panel sigue mostrando la mano de antes de robar. Justo la ficha que acabás de levantar —la que
+motiva la pregunta— es la única que nunca se explica.
+
+Se agregó `manoFirma`, una firma de la mano, a las dependencias.
+
+### Verificado con un A/B en el navegador
+
+Se llevó una partida real hasta el estado exacto (mano bloqueada, pozo con fichas) y se robó sin
+recargar:
+
+```
+codigo viejo:  mano 6 -> el panel lista 5   (el bug)
+codigo nuevo:  mano 6 -> el panel lista 6   (aparece la [0|3] recien robada)
+```
+
+### Lo otro que salió a la luz: "tengo la ficha y no me deja"
+
+Medido sobre 2.331 manos: **en el 25% de los turnos en que no podés jugar, sí tenés una ficha que
+coincide con un extremo** y está trancada por geometría, no por las reglas del dominó. Son 5,46
+fichas así por mano. No es un caso raro: es la queja del usuario, y le pasa seguido.
+
+El motivo dominante que reporta el diagnóstico es `roza-otra-ficha` (11.131 de 13.949), pero
+**eso no significa que sacar esa regla lo arregle**: los chequeos están encadenados y el primero
+que falla se lleva toda la culpa. Ya se midió en §33 que quitarla no destraba ni una jugada.
+
+A/B del tamaño de la mesa, 400 partidas por tamaño:
+
+| grid | trancas | turnos trancado | ...teniendo la ficha del extremo | fichas así por mano |
+|---|---|---|---|---|
+| 20x20 | 38.9% | 38.0% | **25.0%** | 5.46 |
+| 22x22 | 34.7% | 37.2% | 21.5% | 4.39 |
+| 24x24 | 30.4% | 36.5% | 20.6% | 4.13 |
+| 26x26 | 27.9% | 36.2% | **17.6%** | 3.39 |
+
+Ninguna ficha se sale de la rejilla en ningún tamaño. El costo es visual: la mesa se escala
+entera, así que con 24x24 las fichas quedan al 83% del tamaño actual y con 26x26 al 77%.
+
+Queda **sin decidir** a la espera del usuario, porque toca el equilibrio con la regla de móvil
+primero. La alternativa que evitaría el costo es que el tablero haga zoom al área ocupada por la
+cadena en vez de a la rejilla completa: así la mesa podría crecer sin achicar las fichas.

@@ -410,6 +410,7 @@ export default function Game() {
   const myTurn = gameState?.currentPlayerId && myPlayerId
     ? gameState.currentPlayerId === myPlayerId
     : false;
+  const manoFirma = (gameState?.myHand || []).map((t) => `${t[0]}${t[1]}`).join(',');
   // IMPORTANTE: este efecto tiene que quedar ARRIBA de todos los `return`
   // tempranos del componente. Si queda abajo, en los renders que salen antes
   // no se ejecuta y React tira el error #310 ("rendered more hooks than
@@ -430,7 +431,10 @@ export default function Game() {
     return () => {
       vigente = false;
     };
-  }, [socket, actualRoomCode, myTurn, gameState?.canPlay, gameState?.board?.length]);
+    // `manoFirma` es imprescindible: al robar del pozo la mano crece pero el
+    // tablero y `canPlay` no cambian, asi que sin ella el efecto no se repetia
+    // y el panel seguia explicando la mano vieja, sin la ficha recien robada.
+  }, [socket, actualRoomCode, myTurn, gameState?.canPlay, gameState?.board?.length, manoFirma]);
 
   const isHost = lobby?.players.find((p) => p.isHost)?.id === myPlayerId;
   const isAutoStart = AUTO_START_MODES.includes(mode);
