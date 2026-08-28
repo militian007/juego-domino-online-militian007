@@ -1826,3 +1826,47 @@ ficha jugada arrastrándola en el navegador (mano 7 -> 6).
 
 Cuando la cadena cambia de fila, las dos filas se ven separadas: no hay nada que dibuje la vuelta.
 Se lee bien, pero no parece una cadena continua. Queda para mejorar si al usuario le molesta.
+
+---
+
+## 44. La vuelta de la cadena, dibujada (2026-08-28)
+
+El usuario mandó una captura del 2v2 con la cadena partida en dos filas sueltas: *"tiene que
+tener la misma lógica que el 1v1, eso no sirve así"*. Era el pendiente que quedó abierto en §43.
+
+### Qué faltaba
+
+Las filas iban cada 3 celdas y no había nada entre ellas. La cadena se leía como dos renglones de
+texto, no como una cadena de dominó.
+
+Ahora las filas van **cada 2 celdas** y la ficha que no entra en la fila **se pone parada y ocupa
+la celda de en medio**: toca la fila que termina y la que empieza. Es la vuelta de verdad, la
+misma que uno hace en una mesa cuando se le acaba el borde.
+
+Para que siempre haya sitio para esa ficha, **se reserva la última columna de cada fila**.
+
+### El doble que se metía en el pasillo
+
+Al medir saltó que la cadena se pisaba: 2 pruebas en rojo. La causa: los dobles sobresalían
+siempre hacia abajo, y en la mitad de arriba (que sube de fila) eso los metía justo en la celda
+del pasillo que usaba la ficha que había doblado antes. Pasaba solo cuando el primer tile de una
+fila nueva era un doble.
+
+Arreglado: **el doble sobresale hacia donde avanza su mitad de la cadena** — abajo la derecha,
+arriba la izquierda. Y el ajuste visual que lo centra en la línea ahora se calcula a partir de
+cuál de sus dos celdas está sobre la fila, en vez de asumir siempre la de arriba.
+
+### Verificado
+
+```
+pares de fichas seguidas revisados: 172.661
+pares que NO se tocan (cadena cortada): 0
+momentos con la cadena en mas de 2 filas: 8.514
+```
+
+Quedó como prueba fija del motor. También se quitó la prueba de la regla anti-amontone: con la
+serpentina las filas **tienen** que tocarse, si no la cadena se ve partida. Esa prueba pedía lo
+contrario de lo que ahora queremos.
+
+Motor 49/49, backend 86/86, build ok. Visto corriendo en escritorio y en teléfono, sin desborde
+horizontal.

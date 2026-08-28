@@ -378,37 +378,6 @@ import { placementsFor, boardEnds, computeBoardOffsets } from '../src/layout.js'
 
 const L = { grid: 20, cell: 32 };
 
-test('amontonamiento: ninguna partida deja fichas tocandose fuera de la cadena', () => {
-  for (const fmt of ['domino-1v1-v1', 'domino-2v2-v1']) {
-    let s = createGame({ gameFormat: fmt, seed: `contacto-${fmt}`, config: { targetPoints: 60 } });
-    let g = 0;
-    while (s.phase !== PHASE.GAME_OVER && g < 4000) {
-      g += 1;
-      if (s.phase === PHASE.ROUND_OVER) {
-        s = applyAction(s, { type: ACTION.START_NEXT_ROUND, seat: 0 }).state;
-        continue;
-      }
-      const v = viewFor(s, s.turn);
-      s = applyAction(s, chooseAction(v) || v.actions[0]).state;
-
-      const owner = new Map();
-      s.board.forEach((t, i) => {
-        owner.set(`${t.x},${t.y}`, i);
-        owner.set(`${t.x2},${t.y2}`, i);
-      });
-      s.board.forEach((t, i) => {
-        for (const [cx, cy] of [[t.x, t.y], [t.x2, t.y2]]) {
-          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-            const o = owner.get(`${cx + dx},${cy + dy}`);
-            if (o === undefined || o === i) continue;
-            assert.equal(Math.abs(o - i), 1, `las fichas ${i} y ${o} se tocan sin ser vecinas de cadena`);
-          }
-        }
-      });
-    }
-  }
-});
-
 test('pozo: el jugador elige que ficha levanta', () => {
   let s = createGame({ gameFormat: 'domino-1v1-v1', seed: 'pozo-elegir' });
   s.hands[0] = [[0, 1]];
@@ -752,4 +721,49 @@ test('serpentina: si la ficha pega con un extremo, SIEMPRE hay donde ponerla', (
     0,
     'nadie puede quedarse trancado teniendo una ficha que pega con un extremo'
   );
+});
+
+test('serpentina: la cadena se ve entera, cada ficha toca a la siguiente', () => {
+  const celdas = (t) => [[t.x, t.y], [t.x2, t.y2]];
+  const pegadas = (a, b) => {
+    for (const [ax, ay] of celdas(a)) {
+      for (const [bx, by] of celdas(b)) {
+        if (Math.abs(ax - bx) + Math.abs(ay - by) === 1) return true;
+      }
+    }
+    return false;
+  };
+
+  let pares = 0;
+  let cortes = 0;
+  let conVuelta = 0;
+  for (let g = 0; g < 25; g++) {
+    let st = createGame({
+      gameFormat: 'domino-2v2-v1',
+      seed: 'cadena-' + g,
+      players: [0, 1, 2, 3].map((i) => ({ id: 'p' + i }))
+    });
+    let pasos = 0;
+    while (st.phase !== PHASE.GAME_OVER && pasos++ < 1200) {
+      if (st.phase === PHASE.ROUND_OVER) {
+        const n = applyAction(st, { type: ACTION.START_NEXT_ROUND, seat: 0 });
+        if (!n.ok) break;
+        st = n.state;
+        continue;
+      }
+      const a = chooseAction(viewFor(st, st.turn), { seed: 'c' + g + '-' + pasos });
+      const r = applyAction(st, { ...a, seat: st.turn });
+      if (!r.ok) break;
+      st = r.state;
+
+      for (let i = 0; i + 1 < st.board.length; i++) {
+        pares++;
+        if (!pegadas(st.board[i], st.board[i + 1])) cortes++;
+      }
+      if (new Set(st.board.map((t) => Math.min(t.y, t.y2))).size > 2) conVuelta++;
+    }
+  }
+  assert.ok(pares > 20000, 'la muestra tiene que ser grande');
+  assert.ok(conVuelta > 500, 'tiene que haber cadenas que doblaron varias veces');
+  assert.equal(cortes, 0, 'la cadena no puede quedar cortada en ningun momento');
 });

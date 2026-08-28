@@ -1,4 +1,8 @@
-export const DEFAULT_LAYOUT = { grid: 20, cell: 32, rowStep: 3 };
+export const DEFAULT_LAYOUT = { grid: 20, cell: 32 };
+
+// Las filas van de dos en dos: la ficha que dobla se pone parada y ocupa la
+// celda de en medio, asi la cadena baja pegada en vez de quedar cortada.
+const SALTO_FILA = 2;
 
 const minX = (t) => Math.min(t.x, t.x2);
 const minY = (t) => Math.min(t.y, t.y2);
@@ -8,18 +12,27 @@ const esDoble = (t) => t[0] === t[1];
 
 /**
  * El doble se cruza sobre la fila, asi que se lo sube media celda para que
- * quede centrado en la linea. Es un ajuste por ficha y no se acumula: el dibujo
- * nunca se desvia de la cuadricula.
+ * quede centrado en la linea. La ficha que dobla, en cambio, va sin ajuste:
+ * tiene que tocar la fila de arriba y la de abajo para que se vea la vuelta.
+ *
+ * El ajuste es por ficha y no se acumula, asi que el dibujo nunca se desvia
+ * de la cuadricula.
  */
+function desfaseDoble(t, cell) {
+  if (t.orientation !== 'vertical' || !esDoble(t.tile)) return { x: 0, y: 0 };
+  // De las dos celdas del doble, la que esta sobre la linea de la cadena es la
+  // que lo engancha: la lejana del lado izquierdo, la cercana del derecho.
+  const fila = t.side === 'left' ? t.y2 : t.y;
+  return { x: 0, y: (fila - Math.min(t.y, t.y2)) * cell - cell / 2 };
+}
+
 export function computeBoardOffsets(board, layout = DEFAULT_LAYOUT) {
   if (!board || board.length === 0) return [];
-  const medio = layout.cell / 2;
-  return board.map((t) => (t.orientation === 'vertical' ? { x: 0, y: -medio } : { x: 0, y: 0 }));
+  return board.map((t) => desfaseDoble(t, layout.cell));
 }
 
 export function anchorOffsetFor(board, placement, layout = DEFAULT_LAYOUT) {
-  const medio = layout.cell / 2;
-  return placement.orientation === 'vertical' ? { x: 0, y: -medio } : { x: 0, y: 0 };
+  return desfaseDoble(placement, layout.cell);
 }
 
 export function rectOf(placed, offset, cell) {
@@ -55,32 +68,56 @@ function indiceSpinner(board) {
  * asi que nunca se cruzan entre si ni consigo mismas, y una ficha ya puesta no
  * se mueve nunca.
  *
+ * Se reserva la ultima columna de cada fila para la ficha que dobla, que va
+ * parada y une las dos filas.
+ *
  * Devuelve null solo si de verdad se acabo el tablero.
  */
 function recorrer(fichas, inicioX, fila, layout, haciaAbajo) {
   const grid = layout.grid;
-  const paso = layout.rowStep || 3;
+  const saltoFila = haciaAbajo ? SALTO_FILA : -SALTO_FILA;
+  const dentro = (v) => v >= 0 && v <= grid - 1;
+
   let x = inicioX;
   let y = fila;
   let dir = haciaAbajo ? 1 : -1;
   const puestas = [];
 
   for (const t of fichas) {
-    const ancho = esDoble(t) ? 1 : 2;
-    let lo = dir === 1 ? x : x - ancho + 1;
-    let hi = dir === 1 ? x + ancho - 1 : x;
-
-    if (lo < 0 || hi > grid - 1) {
-      y += (haciaAbajo ? 1 : -1) * paso;
+    // Un doble puede haber dejado el cursor justo fuera de la fila. Ese doble
+    // ya esta cruzado, asi que hace de union con la fila siguiente.
+    if (!dentro(x)) {
+      y += saltoFila;
       dir = -dir;
       x = dir === 1 ? 0 : grid - 1;
-      lo = dir === 1 ? x : x - ancho + 1;
-      hi = dir === 1 ? x + ancho - 1 : x;
     }
-    if (y < 0 || y + 1 > grid - 1) return null;
+    if (!dentro(x) || !dentro(y)) return null;
 
-    puestas.push({ lo, hi, y, dir, doble: esDoble(t) });
-    x += dir * ancho;
+    // El doble sobresale hacia donde avanza la cadena. Si sobresaliera al reves
+    // se metería en el pasillo que usa la ficha que dobla la fila anterior.
+    const salida = haciaAbajo ? 1 : -1;
+    if (esDoble(t)) {
+      if (!dentro(y + salida)) return null;
+      puestas.push({ tipo: 'doble', x, y, salto: salida });
+      x += dir;
+      continue;
+    }
+
+    const fin = x + dir;
+    const reserva = dir === 1 ? grid - 2 : 1;
+    const cabeAcostada = dir === 1 ? fin <= reserva : fin >= reserva;
+
+    if (dentro(fin) && cabeAcostada) {
+      puestas.push({ tipo: 'acostada', x, y, dir });
+      x += 2 * dir;
+      continue;
+    }
+
+    // No queda sitio en la fila: esta ficha es la que dobla.
+    if (!dentro(y + salida) || !dentro(y + saltoFila)) return null;
+    puestas.push({ tipo: 'giro', x, y, salto: salida });
+    y += saltoFila;
+    dir = -dir;
   }
   return puestas;
 }
@@ -91,26 +128,22 @@ function recorrer(fichas, inicioX, fila, layout, haciaAbajo) {
  * `tile[0]`, del derecho es `tile[1]`.
  */
 function aColocacion(hueco, valores, side) {
-  const [a, b] = valores;
-  const vertical = hueco.doble;
-
-  const cerca = vertical
-    ? { x: hueco.lo, y: hueco.y }
-    : { x: hueco.dir === 1 ? hueco.lo : hueco.hi, y: hueco.y };
-  const lejos = vertical
-    ? { x: hueco.lo, y: hueco.y + 1 }
-    : { x: hueco.dir === 1 ? hueco.hi : hueco.lo, y: hueco.y };
+  const cerca = { x: hueco.x, y: hueco.y };
+  const lejos =
+    hueco.tipo === 'acostada'
+      ? { x: hueco.x + hueco.dir, y: hueco.y }
+      : { x: hueco.x, y: hueco.y + hueco.salto };
 
   const punta = side === 'left' ? lejos : cerca;
   const cola = side === 'left' ? cerca : lejos;
 
   return {
-    tile: [a, b],
+    tile: [valores[0], valores[1]],
     x: punta.x,
     y: punta.y,
     x2: cola.x,
     y2: cola.y,
-    orientation: vertical ? 'vertical' : 'horizontal',
+    orientation: hueco.tipo === 'acostada' ? 'horizontal' : 'vertical',
     side
   };
 }
@@ -150,14 +183,13 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
 
   const s = indiceSpinner(board);
   const spin = board[s];
-  const fila = minY(spin);
   const haciaAbajo = side === 'right';
   const inicioX = haciaAbajo ? maxX(spin) + 1 : minX(spin) - 1;
 
   const previas = haciaAbajo ? board.slice(s + 1) : board.slice(0, s).reverse();
   const secuencia = [...previas.map((t) => t.tile), valores];
 
-  const puestas = recorrer(secuencia, inicioX, fila, layout, haciaAbajo);
+  const puestas = recorrer(secuencia, inicioX, minY(spin), layout, haciaAbajo);
   if (!puestas) {
     anotar('no-cabe-en-la-mesa');
     return [];
