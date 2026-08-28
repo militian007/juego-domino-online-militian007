@@ -1400,3 +1400,50 @@ extremos 5 y 3        [3|3] no queda espacio en la mesa por ese lado
 **Pendiente de confirmar en pantalla:** el panel no se pudo capturar en el navegador porque la
 automatización no logra frenar en ese instante (el estado dura poco y el bot lo resuelve). El
 endpoint y los mensajes están verificados; lo que falta comprobar es el render en vivo.
+
+---
+
+## 37. Pantalla en blanco en producción: error #310 de React (2026-08-24)
+
+El usuario reportó pantalla completamente en blanco en `/game?mode=1v1bot` **en Vercel**. La
+consola daba:
+
+```
+Minified React error #310  ("Rendered more hooks than during the previous render")
+```
+
+### La causa
+
+El `useEffect` que pide la explicación (§36) quedó escrito **debajo de cinco `return` tempranos**
+del componente `Game` (pantalla de error, de búsqueda, de elección de modo, de lobby, y de
+"cargando"). En los renders que salían por uno de esos `return`, ese hook nunca se ejecutaba; en
+los que llegaban al final, sí. React cuenta los hooks por render y al ver distinta cantidad tira
+el error y desmonta todo.
+
+Se movió arriba de todos los `return`, junto al resto de los hooks, con un comentario que explica
+por qué tiene que quedar ahí.
+
+> **Regla:** en `Game.jsx` cualquier hook nuevo va arriba del primer `return` temprano. El
+> componente tiene cinco, y es fácil no verlos porque están repartidos en 200 líneas.
+
+### Por qué no se detectó antes
+
+En local el bug era intermitente: si la partida arrancaba directo (modo bot, que auto-inicia) el
+componente no pasaba por los `return` tempranos y no fallaba. En producción, con la latencia de
+Render despertando, sí pasaba por el estado "cargando" y ahí reventaba.
+
+> El build de Vite pasa igual: es un error de tiempo de ejecución, no de compilación. **Compilar
+> no alcanza como verificación de un componente con hooks.**
+
+### El panel, ya confirmado en pantalla
+
+Quedaba pendiente de §36 verificar el render en vivo. Confirmado:
+
+```
+Por qué no podés jugar · extremos 3 y 0
+  [4|4]  no tiene 3 ni 0
+  [5|5]  no tiene 3 ni 0
+  [2|6]  no tiene 3 ni 0
+```
+
+606x109 px, visible, debajo de la mano.

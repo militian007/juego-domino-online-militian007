@@ -321,6 +321,28 @@ export default function Game() {
   const myTurn = gameState?.currentPlayerId && myPlayerId
     ? gameState.currentPlayerId === myPlayerId
     : false;
+  // IMPORTANTE: este efecto tiene que quedar ARRIBA de todos los `return`
+  // tempranos del componente. Si queda abajo, en los renders que salen antes
+  // no se ejecuta y React tira el error #310 ("rendered more hooks than
+  // during the previous render"), dejando la pantalla en blanco.
+  // Cuando no podés jugar, el servidor explica ficha por ficha por qué.
+  // Se pide sola, sin que haya que apretar nada.
+  useEffect(() => {
+    if (!socket || !actualRoomCode) return;
+    if (!myTurn || gameState?.canPlay !== false) {
+      setExplicacion(null);
+      return;
+    }
+    let vigente = true;
+    socket.emit('game:explain', { code: actualRoomCode }, (res) => {
+      if (!vigente) return;
+      setExplicacion(res?.ok ? res : { error: res?.error || 'No se pudo consultar' });
+    });
+    return () => {
+      vigente = false;
+    };
+  }, [socket, actualRoomCode, myTurn, gameState?.canPlay, gameState?.board?.length]);
+
   const isHost = lobby?.players.find((p) => p.isHost)?.id === myPlayerId;
   const isAutoStart = AUTO_START_MODES.includes(mode);
 
@@ -654,24 +676,6 @@ export default function Game() {
   }
 
   const miJugador = gameState?.players?.find((p) => p.id === myPlayerId) || null;
-  // Cuando no podés jugar, el servidor explica ficha por ficha por qué.
-  // Se pide sola, sin que haya que apretar nada.
-  useEffect(() => {
-    if (!socket || !actualRoomCode) return;
-    if (!myTurn || gameState?.canPlay !== false) {
-      setExplicacion(null);
-      return;
-    }
-    let vigente = true;
-    socket.emit('game:explain', { code: actualRoomCode }, (res) => {
-      if (!vigente) return;
-      setExplicacion(res?.ok ? res : { error: res?.error || 'No se pudo consultar' });
-    });
-    return () => {
-      vigente = false;
-    };
-  }, [socket, actualRoomCode, myTurn, gameState?.canPlay, gameState?.board?.length]);
-
   const is1v1 = opponents.length === 1;
   const topOpponent = opponents[0];
   const leftOpponent = opponents[1];
