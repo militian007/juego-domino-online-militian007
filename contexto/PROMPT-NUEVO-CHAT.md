@@ -3,7 +3,9 @@
 > **Cómo usarlo:** copia TODO lo que hay debajo de la línea y pégalo como primer mensaje en el
 > chat nuevo.
 >
-> Última actualización: **28 de agosto de 2026** — commit `c6cee3c`
+> Última actualización: **28 de agosto de 2026**.
+> El chat nuevo lee el repo como esté en ese momento; para saber en qué punto estás,
+> corre `git log -1 --oneline` en vez de fiarte de un commit escrito aquí.
 
 ---
 
