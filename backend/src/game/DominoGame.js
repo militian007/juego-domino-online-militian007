@@ -259,10 +259,7 @@ export class DominoGame {
       const principal = Object.entries(cuenta).sort((a, b) => b[1] - a[1])[0]?.[0];
 
       const texto = {
-        'fuera-del-tablero': 'no queda espacio en la mesa por ese lado',
-        'celda-ocupada': 'el lugar ya está ocupado',
-        'roza-otra-ficha': 'quedaría pegada a otra ficha de la cadena',
-        'solapa-visualmente': 'se montaría sobre otra ficha'
+        'no-cabe-en-la-mesa': 'ya no queda espacio en la mesa'
       };
 
       return {

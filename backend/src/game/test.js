@@ -325,20 +325,14 @@ console.log('\nTEST 13: Lógica de giros (3 colocaciones para ficha normal)');
   // Intentar colocar la ficha [4, 3] en el extremo derecho (valor 4)
   const placements = game.getValidPlacementsForTile([4, 3], 'right');
   
-  // Debe haber exactamente 3 opciones:
-  // 1. Recto (horizontal derecho): x: 12, y: 10, x2: 13, y2: 10
-  // 2. Giro arriba (vertical arriba): x: 11, y: 8, x2: 11, y2: 9
-  // 3. Giro abajo (vertical abajo): x: 11, y: 11, x2: 11, y2: 12
-  assert(placements.length === 3, 'Tiene exactamente 3 opciones de colocación');
-  
-  const straight = placements.find(p => p.orientation === 'horizontal');
-  assert(straight && straight.x === 12 && straight.y === 10 && straight.x2 === 13 && straight.y2 === 10, 'Opción recta horizontal es correcta');
+  // Con el trazado en serpentina el lugar se calcula: hay uno solo por extremo.
+  // El jugador ya no elige el punto, solo el extremo izquierdo o el derecho.
+  assert(placements.length === 1, 'Un solo lugar por extremo');
 
-  const up = placements.find(p => p.orientation === 'vertical' && p.y === 9);
-  assert(up && up.x === 11 && up.y === 9 && up.x2 === 11 && up.y2 === 8, 'Opción giro arriba vertical es correcta');
-
-  const down = placements.find(p => p.orientation === 'vertical' && p.y === 11);
-  assert(down && down.x === 11 && down.y === 11 && down.x2 === 11 && down.y2 === 12, 'Opción giro abajo vertical es correcta');
+  const straight = placements[0];
+  assert(straight.orientation === 'horizontal', 'Sigue la fila de la cadena');
+  assert(straight.x === 12 && straight.y === 10 && straight.x2 === 13 && straight.y2 === 10, 'Opción recta horizontal es correcta');
+  assert(straight.tile[0] === 4, 'La mitad que conecta va pegada al extremo');
 }
 
 console.log('\nTEST 14: Colocación de ficha doble perpendicular');
@@ -366,18 +360,13 @@ console.log('\nTEST 14: Colocación de ficha doble perpendicular');
   // Intentar colocar la ficha doble [4, 4] en el extremo derecho (valor 4)
   const placements = game.getValidPlacementsForTile([4, 4], 'right');
 
-  // Debe haber 2 opciones: el doble se cruza perpendicular y puede sobresalir
-  // hacia arriba o hacia abajo de la linea de la cadena.
-  assert(placements.length === 2, 'Tiene 2 opciones cruzadas para el doble');
-  assert(placements.every(p => p.orientation === 'vertical'), 'Ambas son verticales');
-  assert(placements.every(p => p.x === 12 && p.x2 === 12), 'Ambas en la columna siguiente');
-
-  const arriba = placements.find(p => Math.min(p.y, p.y2) === 9);
-  assert(arriba && arriba.x === 12 && arriba.y === 10 && arriba.x2 === 12 && arriba.y2 === 9,
-    'La opción que sobresale hacia arriba es correcta y centrada');
-
-  const abajo = placements.find(p => Math.min(p.y, p.y2) === 10);
-  assert(abajo && abajo.y === 10 && abajo.y2 === 11, 'La opción que sobresale hacia abajo es correcta');
+  // El doble se cruza perpendicular y ocupa una sola columna. El dibujo lo sube
+  // media celda para que quede centrado en la fila.
+  assert(placements.length === 1, 'Un solo lugar por extremo');
+  const doble = placements[0];
+  assert(doble.orientation === 'vertical', 'El doble va cruzado');
+  assert(doble.x === 12 && doble.x2 === 12, 'Ocupa una sola columna, la siguiente');
+  assert(doble.y === 10 && doble.y2 === 11, 'Arranca en la fila de la cadena');
 }
 
 console.log('\nTEST 15: Cola de matchmaking y emparejamiento 1v1');

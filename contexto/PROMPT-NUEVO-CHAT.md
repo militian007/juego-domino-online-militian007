@@ -131,8 +131,10 @@ seguridad que prueba que el adaptador viejo sigue funcionando.
 - **Motor extraído y portable**, con `createGame`, `applyAction`, `viewFor`, `playableMoves`,
   `placementsFor`, `explainPlacements`, `boardEnds`, `handPips`. Archivos: `rng.js`, `tiles.js`,
   `layout.js`, `rules.js`, `engine.js`, `bot.js`, `index.js`.
-- **Tablero en cuadrícula 20x20** de celdas de 32px, con geometría de colocación real: los dobles
-  se centran, se detecta solapamiento visual, y la cadena dobla en los bordes.
+- **Trazado en serpentina.** La posición de cada ficha se calcula, no se elige: cada mitad de la
+  cadena avanza en su propia franja y dobla de fila al llegar al borde. Una ficha legal SIEMPRE
+  tiene lugar. El jugador elige el extremo, izquierdo o derecho, que es la única decisión real
+  del dominó.
 - **Los dobles en el borde ofrecen las dos direcciones** (arriba y abajo). Antes solo una, y eso
   hacía injugable el 46% de los dobles. Ahora 5.1%.
 - **Se quitó la "banda de borde"**: se midió y causaba el 37% de los bloqueos. Bloqueos 18.2%→12.8%,
@@ -163,6 +165,11 @@ seguridad que prueba que el adaptador viejo sigue funcionando.
 - **Texturas de cuero por ruido fractal isotrópico** → parece estuco. **Por bandas anisotrópicas**
   → parece arpillera. Lo que funcionó fue **domain warping**. El generador está en
   `frontend/tools/gen_cuero.py`.
+- **Elegir el lugar de la ficha con una heurística de "más aire"**: medido dos veces, empeora
+  (29.9% -> 38.3% de fichas trancadas teniendo el número).
+- **Relajar la regla anti-amontone**: no cambia nada (29.9% -> 29.8%) y ensucia la mesa.
+- **Agrandar la mesa para destrabar**: ataca el 4% del problema. La causa era que la cadena se
+  chocaba consigo misma, ya resuelto con el trazado en serpentina.
 - **Costuras en el borde de la mesa**: se probaron dos veces (línea punteada y puntadas SVG), las
   dos horribles. Las fotos de referencia son de cuero liso. No lleva costura.
 

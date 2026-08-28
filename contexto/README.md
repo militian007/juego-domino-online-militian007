@@ -1767,3 +1767,62 @@ decisión del usuario porque cambia cómo se juega: hoy elige el punto exacto do
 
 El 2v2 se tranca más que el 1v1 (29.9% contra 24.5%): son cuatro manos y no hay pozo. El modo que
 el usuario está probando es justo el peor.
+
+---
+
+## 43. Trazado en serpentina: la posición se calcula, no se elige (2026-08-28)
+
+Decisión del usuario tras la medición de §42. El dibujo dejó de tener poder de veto sobre una
+jugada legal.
+
+### Cómo funciona
+
+La cadena se traza a partir de la **primera ficha de la mano** (la que se juega con el tablero
+vacío, marcada con `side: 'first'`). Desde ahí salen dos mitades:
+
+- La **mitad derecha** avanza hacia la derecha y, al llegar al borde, **baja** una fila y sigue al
+  revés.
+- La **mitad izquierda** avanza hacia la izquierda y, al llegar al borde, **sube** una fila.
+
+Cada mitad vive en su propia franja del tablero, así que no se cruzan entre sí ni consigo mismas.
+Como consecuencia, **una ficha ya puesta no se mueve nunca**: jugar por la izquierda no corre lo
+que hay a la derecha. Las filas van cada 3 celdas, que es lo que necesita un doble cruzado.
+
+`placementsFor` devuelve **como mucho una posición por lado**. El jugador elige el extremo, que es
+la única decisión que existe en el dominó.
+
+Los dobles ocupan una sola columna y se dibujan subidos media celda para quedar centrados en la
+fila. Ese ajuste es **por ficha y no se acumula**, así que el dibujo ya no se desvía de la
+cuadrícula (antes los desvíos se sumaban a lo largo de la cadena).
+
+### El resultado, medido
+
+| | antes | ahora |
+|---|---|---|
+| ficha legal sin lugar (1v1) | 24.5% | **0.0%** |
+| ficha legal sin lugar (2v2) | 29.9% | **0.0%** |
+| trancas 1v1 | 36-40% | **12.7%** |
+| trancas 2v2 | 47% | **23.1%** |
+
+Casi la mitad de las trancas eran falsas: no eran del dominó, era la cadena tapándose sola. Las
+que quedan son las de verdad.
+
+### Lo que se borró
+
+Se fueron 10 pruebas del motor y 5 asserts del backend que codificaban el trazado libre: las tres
+opciones por ficha, los giros, los dobles del borde ofreciendo las dos direcciones. Ya no
+describen el juego. En su lugar entraron 6 pruebas nuevas, entre ellas dos que recorren partidas
+enteras y verifican que **ninguna celda se ocupa dos veces** y que **nadie queda trancado teniendo
+una ficha que pega con un extremo**.
+
+También desaparecieron `celda-ocupada`, `roza-otra-ficha` y `solapa-visualmente` del panel de
+"por qué no podés jugar": ya no pueden ocurrir. Queda `no-cabe-en-la-mesa`, que solo saltaría si
+de verdad se acabara el tablero.
+
+Motor 49/49, backend 86/86, build ok. Probado corriendo: partida 2v2 completa por socket y una
+ficha jugada arrastrándola en el navegador (mano 7 -> 6).
+
+### Pendiente visual
+
+Cuando la cadena cambia de fila, las dos filas se ven separadas: no hay nada que dibuje la vuelta.
+Se lee bien, pero no parece una cadena continua. Queda para mejorar si al usuario le molesta.
