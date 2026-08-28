@@ -1690,3 +1690,80 @@ partida completa por socket (ronda jugada y puntuada, sin pozo, compañero en el
 mesa vista en el navegador en escritorio y en teléfono.
 
 Falta el 2v2 entre personas de verdad: lobby de 4, equipos, y qué pasa si uno se va.
+
+---
+
+## 42. La causa real de "tengo la ficha y no me deja": la cadena se choca sola (2026-08-28)
+
+El usuario volvió con dos capturas del 2v2. La segunda trae el panel:
+
+```
+EXTREMOS 3 Y 5
+[0|5] el lugar ya está ocupada
+[3|4] quedaría pegada a otra ficha de la cadena
+```
+
+Dos fichas legales, las dos trancadas por geometría. Se investigó a fondo, midiendo, y el
+resultado descarta las tres hipótesis que parecían obvias.
+
+### Hipótesis 1: la regla anti-amontone. FALSA
+
+Se hizo la regla configurable (`layout.permitirRoce`) y se midió apagándola:
+
+| formato | con la regla | sin la regla |
+|---|---|---|
+| 1v1 | 24.5% | 24.3% |
+| 2v2 | 29.9% | 29.8% |
+
+No cambia nada, y sin ella quedan 34 fichas pegadas a vecinas que no son de su cadena. §33 tenía
+razón. La bandera se revirtió: no se deja config muerta.
+
+### Hipótesis 2: el chequeo visual es demasiado estricto. FALSA
+
+Se midió la profundidad real del solape en 2.541 rechazos (celda = 32px):
+
+```
+5-16px (medio celda, desvío del dibujo)      6   0.2%
+32px o más (choque real de celda entera)  2535  99.8%
+```
+
+El dibujo no miente: son choques de verdad.
+
+### Hipótesis 3: elegir mejor el lugar. FALSA, y empeora
+
+Se probó un selector que prefiere la colocación con más aire alrededor de la punta libre:
+
+| formato | recta (actual) | "más aire" |
+|---|---|---|
+| 1v1 | 24.8% | **31.5%** |
+| 2v2 | 29.9% | **38.3%** |
+
+Segunda confirmación de §33. **No reintentar.**
+
+### La causa verdadera
+
+Con la regla del roce apagada, el motivo que queda es el verdadero:
+
+| motivo | grid 20 | grid 26 |
+|---|---|---|
+| **se montaría sobre otra ficha** | **83.6%** | **90.6%** |
+| el lugar ya está ocupado | 14.5% | 6.0% |
+| no cabe en la mesa | 3.5% | 3.9% |
+
+**No falta espacio: la cadena se enrolla y se tapa a sí misma.** Por eso agrandar la mesa solo
+lleva el 2v2 de 29.9% a 22.3%: ataca el 4% del problema.
+
+### La conclusión de fondo
+
+El lugar físico donde cae la ficha **no es una decisión de dominó**: la regla dice "va en el
+extremo izquierdo o en el derecho", nada más. Hoy el dibujo tiene poder de veto sobre una jugada
+legal, y eso está al revés. En una mesa real, cuando no hay sitio, los jugadores corren las fichas.
+
+La salida es que la posición se **derive** de la secuencia (trazado en serpentina) en vez de
+quedar congelada donde cayó. Así una jugada legal siempre tiene lugar, por construcción. Queda a
+decisión del usuario porque cambia cómo se juega: hoy elige el punto exacto donde suelta la ficha.
+
+### Dato aparte
+
+El 2v2 se tranca más que el 1v1 (29.9% contra 24.5%): son cuatro manos y no hay pozo. El modo que
+el usuario está probando es justo el peor.
