@@ -1447,3 +1447,68 @@ Por qué no podés jugar · extremos 3 y 0
 ```
 
 606x109 px, visible, debajo de la mano.
+
+---
+
+## 38. Dos bugs del arrastre en móvil, encontrados en un video (2026-08-28)
+
+El usuario mandó un video de 3 minutos jugando desde el teléfono. Se extrajeron los fotogramas con
+`ffmpeg` (`fps=2`, 363 imágenes) y se armaron hojas de contacto para revisarlos. Sirvió: aparecieron
+dos bugs que no se veían en una captura fija.
+
+### Bug 1 — la página scrollea mientras arrastrás
+
+Comparando fotogramas consecutivos se ve que el encabezado aparece y desaparece: **la página está
+scrolleando sola** durante el arrastre. Eso es el "salto".
+
+En `Hand.jsx` el listener global estaba bien registrado:
+
+```js
+window.addEventListener('touchmove', handleTouchMove, { passive: false });
+```
+
+`passive: false` existe justamente para poder cancelar el gesto... **pero `handleTouchMove` nunca
+llamaba a `e.preventDefault()`**. El navegador interpretaba el arrastre como scroll.
+
+Se agregó el `preventDefault` en `touchmove`, y también en el `touchstart` de una ficha jugable
+(si la ficha no se puede jugar no se toca nada, para que el dedo siga scrolleando normal).
+
+### Bug 2 — "No es tu turno" al soltar la ficha
+
+En el último fotograma del video aparece una barra roja con ese error. La causa:
+
+```js
+setDraggedTile((prev) => {
+  if (prev && prev.isSnapped) playTile(...);   // efecto DENTRO del updater
+  return null;
+});
+```
+
+Dos problemas juntos:
+
+1. Los updaters de React tienen que ser **puros**; pueden ejecutarse más de una vez.
+2. En táctil, `touchend` y el `mouseup` **sintético** que el navegador dispara después caen en el
+   mismo tick. Los dos updaters veían el mismo `prev` no nulo y **se emitía la jugada dos veces**.
+   La segunda llegaba cuando el turno ya había pasado: *"No es tu turno"*.
+
+El guard `isPlacing` no protegía porque se lee del closure: dos llamadas en el mismo tick ven el
+mismo valor viejo.
+
+Arreglo: el efecto salió del updater, se usa un `draggedTileRef` para leer el arrastre fuera del
+ciclo de render, y un `enviandoRef` como candado contra doble envío en el mismo tick.
+
+> Para estado que se lee desde manejadores de eventos nativos, hace falta un ref espejo. El valor
+> del closure puede estar viejo, y `useState` no protege contra dos llamadas en el mismo tick.
+
+### Verificado
+
+Con viewport de móvil (375x812), simulando un arrastre táctil real:
+
+```
+touchmove cancelado : true
+scroll antes/despues: 0 / 0
+la pagina se movio  : false
+```
+
+> Los videos del usuario se pueden revisar: `ffmpeg -i video.mp4 -vf "fps=2,scale=540:-1" f_%03d.jpg`
+> y después una hoja de contacto con PIL. Se ven cosas que una captura fija no muestra.

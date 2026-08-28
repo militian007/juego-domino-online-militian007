@@ -30,6 +30,10 @@ export default function Hand({
 
     const handleTouchMove = (e) => {
       if (draggedTile && e.touches.length > 0) {
+        // Sin esto el navegador scrollea la pagina mientras arrastras y la
+        // pantalla "salta". El listener ya esta en passive:false para poder
+        // cancelarlo; faltaba cancelarlo.
+        e.preventDefault();
         const touch = e.touches[0];
         onDragUpdate?.(touch.clientX, touch.clientY);
       }
@@ -84,9 +88,10 @@ export default function Hand({
           };
 
           const handleTouchStart = (e) => {
+            // Si la ficha no se puede jugar no interferimos: el dedo scrollea normal.
             if (!canPlay || !isValid || draggedTile) return;
-            // No prevenimos por defecto para permitir scroll si no se arrastra una ficha válida,
-            // pero si es válida evitamos comportamientos raros
+            // Si si se puede, el gesto es un arrastre y no un scroll.
+            if (e.cancelable) e.preventDefault();
             e.stopPropagation();
             const touch = e.touches[0];
             onDragStart?.(i, tile, touch.clientX, touch.clientY);

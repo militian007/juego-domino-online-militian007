@@ -51,6 +51,17 @@ export default function Game() {
   const { tema, setTema, clasePano, claseBaranda } = useMesaTheme();
   const [explicacion, setExplicacion] = useState(null);
 
+  // Espejo de draggedTile para poder leerlo desde manejadores que corren fuera
+  // del ciclo de render de React.
+  const draggedTileRef = useRef(null);
+  useEffect(() => {
+    draggedTileRef.current = draggedTile;
+  }, [draggedTile]);
+
+  // Candado contra doble envio en el mismo tick. `isPlacing` no alcanza porque
+  // se lee del closure y dos llamadas seguidas ven el mismo valor viejo.
+  const enviandoRef = useRef(false);
+
   const handleDragStart = (index, tile, clientX, clientY) => {
     setDraggedTile({
       index,
@@ -75,12 +86,17 @@ export default function Game() {
   };
 
   const handleDragEnd = () => {
-    setDraggedTile((prev) => {
-      if (prev && prev.isSnapped && prev.activePlacement) {
-        playTile(prev.index, prev.activePlacement.side, prev.activePlacement);
-      }
-      return null;
-    });
+    // El efecto va FUERA del updater: los updaters de React tienen que ser puros
+    // y pueden ejecutarse mas de una vez. Ademas, en tactil el `touchend` y el
+    // `mouseup` sintetico caen en el mismo tick: si la jugada se emitia dentro
+    // del updater, ambos veian el mismo `prev` y se enviaba dos veces, y la
+    // segunda volvia con "No es tu turno".
+    const arrastre = draggedTileRef.current;
+    setDraggedTile(null);
+    draggedTileRef.current = null;
+    if (arrastre?.isSnapped && arrastre.activePlacement) {
+      playTile(arrastre.index, arrastre.activePlacement.side, arrastre.activePlacement);
+    }
   };
 
   const handleSnapChange = (isSnapped, activePlacement) => {
@@ -154,6 +170,7 @@ export default function Game() {
       setShowSidePicker(false);
       setError('');
       setIsPlacing(false);
+      enviandoRef.current = false;
     };
 
     const onConnectError = (err) => {
@@ -370,7 +387,8 @@ export default function Game() {
   };
 
   const playTile = (tileIndex, side, placement = null) => {
-    if (!socket || !actualRoomCode || isPlacing) return;
+    if (!socket || !actualRoomCode || isPlacing || enviandoRef.current) return;
+    enviandoRef.current = true;
     setError('');
     setIsPlacing(true);
     const payload = { code: actualRoomCode, tileIndex, side };
@@ -382,6 +400,7 @@ export default function Game() {
       payload.orientation = placement.orientation;
     }
     socket.emit('game:play', payload, (res) => {
+      enviandoRef.current = false;
       if (!res.ok) {
         setError(res.error);
         setIsPlacing(false);
