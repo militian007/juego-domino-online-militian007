@@ -18,8 +18,16 @@ const CELL_SIZE = DEFAULT_LAYOUT.cell;
 // llega a la fila o columna extrema en el 51% de las jugadas: se veia pegada.
 // Con 2 celdas quedan 30px en telefono y 55px en escritorio.
 const MARGEN_CELDAS = 2;
-const LADO_LOGICO = GRID_SIZE * CELL_SIZE;
-const LADO_CON_MARGEN = LADO_LOGICO + 2 * MARGEN_CELDAS * CELL_SIZE;
+
+// El paño no dibuja siempre la rejilla entera: se acerca a donde esta la cadena.
+// Dibujar las 20x20 celdas desde el principio dejaba las fichas a 31px de ancho
+// en un telefono, con casi todo el paño vacio. Con el acercamiento arrancan al
+// doble y se van achicando solas a medida que la cadena crece, hasta llegar
+// como maximo al tamaño de antes.
+//
+// El minimo evita el efecto contrario: con una sola ficha en la mesa el
+// acercamiento seria tanto que se veria ridicula.
+const MINIMO_CELDAS = 12;
 
 const getValidPlacementsForTile = (board, tile, side) => placementsFor(board, tile, side);
 
@@ -86,16 +94,15 @@ export default function Board({
   // El tablero de 20x20 se escala para entrar entero en el paño. Antes se
   // scrolleaba, lo que en el telefono era impracticable.
   const tableroVacio = !board || board.length === 0;
-  const [escala, setEscala] = useState(1);
+  const [pano, setPano] = useState({ ancho: 0, alto: 0 });
 
   const medirEscala = useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
     const ancho = el.clientWidth;
-    if (ancho > 0) {
-      // React descarta el estado si el valor no cambia, asi que llamar de mas
-      // no provoca renders extra.
-      setEscala(ancho / LADO_CON_MARGEN);
+    const alto = el.clientHeight;
+    if (ancho > 0 && alto > 0) {
+      setPano((p) => (p.ancho === ancho && p.alto === alto ? p : { ancho, alto }));
     }
   }, []);
 
@@ -103,7 +110,47 @@ export default function Board({
   // ResizeObserver todavia no disparo, y hay entornos donde no dispara nunca.
   useLayoutEffect(medirEscala);
 
-  const desplazamiento = MARGEN_CELDAS * CELL_SIZE * escala;
+  // Las siluetas entran en la cuenta: si no, al levantar una ficha el lugar
+  // donde va podia quedar fuera de lo que se ve.
+  const vista = useMemo(() => {
+    const centro = Math.floor(GRID_SIZE / 2) - 1;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const t of [...(board || []), ...ghostPlacements]) {
+      minX = Math.min(minX, t.x, t.x2);
+      maxX = Math.max(maxX, t.x, t.x2);
+      minY = Math.min(minY, t.y, t.y2);
+      maxY = Math.max(maxY, t.y, t.y2);
+    }
+    if (minX === Infinity) {
+      minX = centro; maxX = centro + 1; minY = centro; maxY = centro + 1;
+    }
+
+    return {
+      minX,
+      minY,
+      anchoCeldas: maxX - minX + 1 + 2 * MARGEN_CELDAS,
+      altoCeldas: maxY - minY + 1 + 2 * MARGEN_CELDAS
+    };
+  }, [board, ghostPlacements]);
+
+  // Manda el eje que queda mas justo, para que la cadena entre entera.
+  const escala = useMemo(() => {
+    if (pano.ancho <= 0 || pano.alto <= 0) return 1;
+    const porAncho = pano.ancho / (Math.max(vista.anchoCeldas, MINIMO_CELDAS) * CELL_SIZE);
+    const porAlto = pano.alto / (Math.max(vista.altoCeldas, MINIMO_CELDAS) * CELL_SIZE);
+    return Math.min(porAncho, porAlto);
+  }, [pano, vista]);
+
+  // Lo que sobra se reparte a los lados: la cadena queda centrada en el paño.
+  const celdasVisiblesX = pano.ancho > 0 ? pano.ancho / (CELL_SIZE * escala) : vista.anchoCeldas;
+  const celdasVisiblesY = pano.alto > 0 ? pano.alto / (CELL_SIZE * escala) : vista.altoCeldas;
+  const origenX = vista.minX - MARGEN_CELDAS - (celdasVisiblesX - vista.anchoCeldas) / 2;
+  const origenY = vista.minY - MARGEN_CELDAS - (celdasVisiblesY - vista.altoCeldas) / 2;
+  const desplazamientoX = -origenX * CELL_SIZE * escala;
+  const desplazamientoY = -origenY * CELL_SIZE * escala;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -139,8 +186,8 @@ export default function Board({
     if (!containerRef.current) return;
 
     const rect = containerRef.current.getBoundingClientRect();
-    const localX = (draggedTile.currentX - rect.left - desplazamiento) / escala;
-    const localY = (draggedTile.currentY - rect.top - desplazamiento) / escala;
+    const localX = (draggedTile.currentX - rect.left - desplazamientoX) / escala;
+    const localY = (draggedTile.currentY - rect.top - desplazamientoY) / escala;
 
     let bestPlacement = null;
     let minDistance = Infinity;
@@ -166,7 +213,7 @@ export default function Board({
     } else {
       onSnapChange(false, null);
     }
-  }, [draggedTile, ghostPlacements, onSnapChange, board, boardOffsets, escala, desplazamiento]);
+  }, [draggedTile, ghostPlacements, onSnapChange, board, boardOffsets, escala, desplazamientoX, desplazamientoY]);
 
   const renderGhostPlacements = () => {
     return ghostPlacements.map((opt, idx) => {
@@ -246,21 +293,22 @@ export default function Board({
 
   if (!board || board.length === 0) {
     return (
-      <div className={`rail-base ${claseBaranda} w-full max-w-[768px] mx-auto rounded-[22px] p-[4.2%] relative`}>
+      <div className={`rail-base ${claseBaranda} mx-auto flex h-full w-full max-w-[768px] flex-col rounded-[22px] p-[4.2%] relative`}>
       <span className="rail-side rail-top" aria-hidden="true" />
       <span className="rail-side rail-bottom" aria-hidden="true" />
       <span className="rail-side rail-left" aria-hidden="true" />
       <span className="rail-side rail-right" aria-hidden="true" />
       <div
         ref={containerRef}
-        className={`felt-base ${clasePano} w-full aspect-square relative overflow-hidden rounded-xl`}
+        className={`felt-base ${clasePano} w-full h-full relative overflow-hidden rounded-xl`}
       >
         <div
           className="relative origin-top-left"
           style={{
             width: `${GRID_SIZE * CELL_SIZE}px`,
             height: `${GRID_SIZE * CELL_SIZE}px`,
-            transform: `translate(${desplazamiento}px, ${desplazamiento}px) scale(${escala})`
+            transform: `translate(${desplazamientoX}px, ${desplazamientoY}px) scale(${escala})`,
+            transition: 'transform 320ms ease-out'
           }}
         >
           {renderGhostPlacements()}
@@ -283,21 +331,22 @@ export default function Board({
   }
 
   return (
-    <div className={`rail-base ${claseBaranda} w-full max-w-[768px] mx-auto rounded-[22px] p-[4.2%] relative`}>
+    <div className={`rail-base ${claseBaranda} mx-auto flex h-full w-full max-w-[768px] flex-col rounded-[22px] p-[4.2%] relative`}>
       <span className="rail-side rail-top" aria-hidden="true" />
       <span className="rail-side rail-bottom" aria-hidden="true" />
       <span className="rail-side rail-left" aria-hidden="true" />
       <span className="rail-side rail-right" aria-hidden="true" />
     <div
       ref={containerRef}
-      className={`felt-base ${clasePano} w-full aspect-square relative overflow-hidden rounded-xl select-none`}
+      className={`felt-base ${clasePano} w-full h-full relative overflow-hidden rounded-xl select-none`}
     >
       <div
         className="relative origin-top-left"
         style={{
           width: `${GRID_SIZE * CELL_SIZE}px`,
           height: `${GRID_SIZE * CELL_SIZE}px`,
-          transform: `translate(${desplazamiento}px, ${desplazamiento}px) scale(${escala})`
+          transform: `translate(${desplazamientoX}px, ${desplazamientoY}px) scale(${escala})`,
+            transition: 'transform 320ms ease-out'
         }}
       >
         {/* Renderizar Fichas Colocadas */}

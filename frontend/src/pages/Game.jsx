@@ -10,6 +10,7 @@ import { Marcador, Jugador, Mesa } from '../components/game/Hud.jsx';
 import Hand from '../components/game/Hand.jsx';
 import OpponentHand from '../components/game/OpponentHand.jsx';
 import PlayerInfo from '../components/game/PlayerInfo.jsx';
+import Avatar from '../components/game/Avatar.jsx';
 import Scoreboard from '../components/game/Scoreboard.jsx';
 import SidePicker from '../components/game/SidePicker.jsx';
 import AdSidebar from '../components/AdSidebar.jsx';
@@ -44,6 +45,33 @@ function partidaRecordada(mode) {
 
 function olvidarPartida() {
   try { localStorage.removeItem(CLAVE_PARTIDA); } catch { /* nada */ }
+}
+
+function AsientoFlotante({ jugador, fichas, enTurno, esCompanero, className = '' }) {
+  if (!jugador) return null;
+  return (
+    <div
+      className={`pointer-events-none absolute z-20 flex flex-col items-center gap-0.5 text-center drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)] ${className}`}
+    >
+      <div className="relative">
+        <Avatar semilla={jugador.avatar || jugador.username} tamano={38} />
+        {enTurno && (
+          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 animate-pulse rounded-full border-2 border-black/60 bg-emerald-400" />
+        )}
+      </div>
+      <span
+        className={`max-w-[86px] truncate text-[11px] font-bold leading-none ${
+          enTurno ? 'text-emerald-300' : esCompanero ? 'text-sky-200' : 'text-domino-cream'
+        }`}
+      >
+        {jugador.username}
+      </span>
+      <span className="text-[10px] leading-none text-domino-cream/70">{fichas ?? 0} fichas</span>
+      {esCompanero && (
+        <span className="text-[8px] uppercase tracking-widest text-sky-300/90">compañero</span>
+      )}
+    </div>
+  );
 }
 
 function AsientoLateral({ jugador, fichas, enTurno, esCompanero }) {
@@ -572,7 +600,10 @@ export default function Game() {
     return (
       <div className="min-h-screen flex flex-col bg-domino-dark text-domino-cream">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 py-8">
+          <div className="hidden w-full max-w-md sm:block">
+            <AdSidebar />
+          </div>
           <div className="card p-6 sm:p-10 max-w-md w-full border border-domino-accent/30 bg-domino-felt shadow-2xl text-center relative overflow-hidden">
             <div className="absolute inset-0 bg-felt opacity-5 pointer-events-none" />
             <div className="relative z-10 flex flex-col items-center py-4">
@@ -801,9 +832,11 @@ export default function Game() {
   const seatLeft = totalAsientos === 4 ? porAsiento(3) : null;
   const esCompanero = (p) => p && miJugador && p.team === miJugador.team;
 
+  // La pantalla de juego no es una pagina con un tablero adentro: es la mesa.
+  // Sin barra de navegacion, sin banner y sin scroll, para que lo que se ve
+  // grande sea lo que importa.
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-black">
 
       {error && (
         <div className="bg-red-500/20 border-b border-red-500/50 text-red-300 px-4 py-2 text-center text-sm">
@@ -811,93 +844,12 @@ export default function Game() {
         </div>
       )}
 
-      <div className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
-        <TopBanner />
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-3 sm:gap-4">
-          <div className="flex gap-3 sm:gap-4">
-            <div className="hidden lg:block w-[230px] xl:w-[260px] shrink-0">
-              <div className="sticky top-4 w-full overflow-hidden rounded-xl">
-                <AdSidebar />
-              </div>
-            </div>
-            <div className="flex-1 min-w-0 flex flex-col gap-3 sm:gap-4">
-              {seatTop && (
-                <div className="card p-3 sm:p-4">
-                  <PlayerInfo
-                    player={seatTop}
-                    count={gameState.handCounts[seatTop.id]}
-                    isTurn={gameState.currentPlayerId === seatTop.id}
-                    team={seatTop.team}
-                  />
-                  <div className="mt-2">
-                    <OpponentHand
-                      count={gameState.handCounts[seatTop.id]}
-                      position="top"
-                    />
-                  </div>
-                  {esCompanero(seatTop) && (
-                    <div className="mt-1 text-center text-[9px] uppercase tracking-widest text-sky-300">
-                      tu compañero
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {(seatLeft || seatRight) && (
-                <div className="flex gap-2 sm:hidden">
-                  <AsientoLateral
-                    jugador={seatLeft}
-                    fichas={gameState.handCounts[seatLeft?.id]}
-                    enTurno={gameState.currentPlayerId === seatLeft?.id}
-                    esCompanero={esCompanero(seatLeft)}
-                  />
-                  <AsientoLateral
-                    jugador={seatRight}
-                    fichas={gameState.handCounts[seatRight?.id]}
-                    enTurno={gameState.currentPlayerId === seatRight?.id}
-                    esCompanero={esCompanero(seatRight)}
-                  />
-                </div>
-              )}
-
-              <div className="md:hidden card p-2 flex items-center justify-between gap-2 text-center">
-                <div className="flex-1">
-                  <div className="text-[9px] text-slate-400">Sala</div>
-                  <div className="font-mono font-bold text-xs text-blue-400 truncate">
-                    {gameState.roomCode}
-                  </div>
-                </div>
-                <div className="flex-[1.4] border-x border-slate-700 px-1">
-                  <div className="text-[9px] text-slate-400">Ronda {gameState.round}</div>
-                  <div className="flex items-center justify-center gap-2 text-xs font-bold">
-                    <span className="text-blue-400">{gameState.teamScores?.[1] ?? 0}</span>
-                    <span className="text-slate-500">·</span>
-                    <span className="text-red-400">{gameState.teamScores?.[2] ?? 0}</span>
-                  </div>
-                </div>
-                {gameState.hasPool && (
-                  <div className="flex-1">
-                    <div className="text-[9px] text-slate-400">Pozo</div>
-                    <div className="font-bold text-sm text-amber-400">
-                      {gameState.poolCount}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex w-full items-start justify-center gap-2 sm:items-center sm:gap-3">
-              <div className="hidden shrink-0 sm:block">
-                <AsientoLateral
-                  jugador={seatLeft}
-                  fichas={gameState.handCounts[seatLeft?.id]}
-                  enTurno={gameState.currentPlayerId === seatLeft?.id}
-                  esCompanero={esCompanero(seatLeft)}
-                />
-              </div>
-              <div className="max-w-[768px] relative mx-auto w-full min-w-0">
-                <div className="mb-2 flex justify-end">
-                  <MesaThemePicker tema={tema} setTema={setTema} />
-                </div>
+      <div className="mx-auto flex w-full min-h-0 max-w-7xl flex-1 flex-col px-2 py-2">
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 lg:grid-cols-[1fr_260px]">
+          <div className="flex min-h-0 gap-2">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+              <div className="relative flex min-h-0 w-full flex-1 items-center justify-center">
+                <div className="relative mx-auto h-full w-full min-w-0 max-w-[768px]">
                 <Board
                   clasePano={clasePano}
                   claseBaranda={claseBaranda}
@@ -912,6 +864,56 @@ export default function Game() {
                   draggedTile={draggedTile}
                   onSnapChange={handleSnapChange}
                 />
+                {/* El marcador y los rivales van sobre la madera, sin caja: si todo
+                    lleva marco, todo pesa igual y no resalta lo importante. */}
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between px-2 pt-1">
+                  <div className="drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
+                    <div className="text-[9px] uppercase tracking-widest text-sky-300/80">Vos</div>
+                    <div className="text-xl font-black leading-none text-sky-200">
+                      {gameState.teamScores?.[1] ?? 0}
+                    </div>
+                  </div>
+                  <div className="text-center text-[9px] uppercase tracking-widest text-domino-cream/60 drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
+                    <div>Ronda {gameState.round} · a {gameState.targetPoints ?? 100}</div>
+                    <div className="font-mono tracking-normal text-domino-cream/40">{gameState.roomCode}</div>
+                    {gameState.hasPool && (
+                      <div className="text-amber-300/80">pozo {gameState.poolCount}</div>
+                    )}
+                  </div>
+                  <div className="text-right drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
+                    <div className="text-[9px] uppercase tracking-widest text-rose-300/80">Ellos</div>
+                    <div className="text-xl font-black leading-none text-rose-200">
+                      {gameState.teamScores?.[2] ?? 0}
+                    </div>
+                  </div>
+                </div>
+
+                <AsientoFlotante
+                  jugador={seatTop}
+                  fichas={gameState.handCounts[seatTop?.id]}
+                  enTurno={gameState.currentPlayerId === seatTop?.id}
+                  esCompanero={esCompanero(seatTop)}
+                  className="left-1/2 top-7 -translate-x-1/2"
+                />
+                <AsientoFlotante
+                  jugador={seatLeft}
+                  fichas={gameState.handCounts[seatLeft?.id]}
+                  enTurno={gameState.currentPlayerId === seatLeft?.id}
+                  esCompanero={esCompanero(seatLeft)}
+                  className="left-1 top-7"
+                />
+                <AsientoFlotante
+                  jugador={seatRight}
+                  fichas={gameState.handCounts[seatRight?.id]}
+                  enTurno={gameState.currentPlayerId === seatRight?.id}
+                  esCompanero={esCompanero(seatRight)}
+                  className="right-1 top-7"
+                />
+
+                <div className="absolute bottom-1 right-1 z-30">
+                  <MesaThemePicker tema={tema} setTema={setTema} />
+                </div>
+
                 {lastAction && myTurn && (
                   <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/70 text-slate-200 text-xs sm:text-sm px-3 py-1.5 rounded-full border border-slate-700">
                     {lastAction}
@@ -949,18 +951,10 @@ export default function Game() {
                   );
                 })}
               </div>
-              <div className="hidden shrink-0 sm:block">
-                <AsientoLateral
-                  jugador={seatRight}
-                  fichas={gameState.handCounts[seatRight?.id]}
-                  enTurno={gameState.currentPlayerId === seatRight?.id}
-                  esCompanero={esCompanero(seatRight)}
-                />
-              </div>
               </div>
 
-              <div className="card p-3 sm:p-4">
-                <div className="flex items-center justify-between mb-2">
+              <div className="shrink-0 rounded-xl border border-white/5 bg-black/40 p-2 sm:p-3">
+                <div className="flex items-center justify-between mb-1">
                   <div>
                     <div className="font-bold text-sm sm:text-base">Tu mano</div>
                     <div className="text-[10px] sm:text-xs text-slate-400">
@@ -1031,7 +1025,7 @@ export default function Game() {
                 )}
 
                 {myTurn && !gameState.canPlay && (
-                  <div className="mt-3 rounded-lg border border-slate-700/60 bg-black/25 p-3 text-left">
+                  <div className="mt-2 max-h-24 overflow-y-auto rounded-lg border border-slate-700/60 bg-black/25 p-2 text-left">
                     <p className="mb-1.5 text-[10px] uppercase tracking-widest text-slate-500">
                       Por qué no podés jugar
                       {explicacion?.ends
@@ -1139,6 +1133,10 @@ export default function Game() {
                 motivo={gameState.endReason}
                 puntos={gameState.roundPoints}
               />
+
+              <div className="my-4">
+                <TopBanner />
+              </div>
 
               <div className="space-y-2">
                 {gameState.status === 'round-end' && gameState.winningTeam !== 0 && (

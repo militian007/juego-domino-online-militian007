@@ -1870,3 +1870,53 @@ contrario de lo que ahora queremos.
 
 Motor 49/49, backend 86/86, build ok. Visto corriendo en escritorio y en teléfono, sin desborde
 horizontal.
+
+---
+
+## 45. La pantalla es la mesa, no una página con una mesa adentro (2026-08-28)
+
+El usuario mandó capturas del truco de su grupo y pidió aplicar la jerarquía visual: lo principal
+grande, lo secundario más chico, y así. Se acordó un orden de cinco pasos; esto cubre los tres
+primeros. **No se tocó el motor**: es todo cáscara.
+
+### 1. El paño se acerca a la cadena
+
+Antes se dibujaban siempre las 20x20 celdas, aunque la cadena ocupara una fila. En un teléfono
+eso dejaba las fichas a 31px con casi todo el paño vacío. Ahora la vista se ajusta a la caja que
+ocupa la cadena (más las siluetas de dónde puede caer, para que el destino nunca quede fuera),
+con un mínimo de 12 celdas para que una sola ficha no se vea ridícula.
+
+Al principio de la mano las fichas se ven al doble. Cuando la cadena crece hasta ocupar el
+tablero entero, el tamaño llega como máximo al de antes: nunca queda peor.
+
+### 2. El paño dejó de ser cuadrado
+
+Un teléfono es alto y la cadena serpentea en filas, así que el alto sobrante servía. El paño
+ahora ocupa lo que le den y la escala la manda el eje que quede más justo. Antes, con el tablero
+cuadrado en una pantalla alta, quedaba un hueco negro de 200px entre la mesa y la mano.
+
+### 3. Fuera la barra, el banner y las tarjetas
+
+- Se sacaron `Navbar`, `TopBanner` y `AdSidebar` de la pantalla de juego.
+- La pantalla es `100dvh` sin scroll. **Una pantalla de juego no debería scrollear nunca**, y
+  antes en el teléfono había que bajar para ver la mano.
+- El marcador, la sala, la ronda y el pozo se escriben **sobre la madera**, sin caja.
+- Los tres rivales son cara + nombre + fichas apoyados en el paño, sin caja. Primero se probaron
+  a media altura de los costados, como en una mesa real, pero **se montaban sobre la cadena**, que
+  es lo único que no puede taparse. Quedaron en la banda de arriba.
+- La mano dejó de ser una tarjeta: es una franja al pie de la mesa.
+- El panel de "por qué no podés jugar" tiene tope de alto, porque crecía y empujaba el tablero.
+
+Medido en un teléfono de 375x812: la mesa ocupa el **54%** de la pantalla, y no hay scroll ni
+vertical ni horizontal.
+
+### La publicidad no se borró, se mudó
+
+El banner pasa al cierre de ronda y el lateral a la pantalla de espera: los momentos en que el
+jugador respira y sí mira. Es plata del usuario, no se toca sin avisar.
+
+### Falta
+
+Los pasos 4 y 5 que se acordaron: menús chiquitos que abran ventanitas, y el ambiente (luz,
+sombra y perspectiva alrededor de la mesa). En escritorio la columna derecha con el marcador y
+los jugadores sigue en tarjetas; queda para el paso 4.
