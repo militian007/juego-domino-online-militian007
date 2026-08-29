@@ -79,16 +79,17 @@ export default function MesaThemePicker({ tema, setTema }) {
       <button
         type="button"
         onClick={() => setAbierto((v) => !v)}
-        className="flex items-center gap-2 rounded-lg border border-domino-accent/30 bg-black/40 px-3 py-1.5 text-xs text-domino-cream-dim transition-colors hover:border-domino-accent/70 hover:text-domino-cream"
+        title="Cambiar el paño y el borde"
+        aria-label="Cambiar el paño y el borde"
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-domino-accent/25 bg-black/45 text-domino-cream-dim transition-colors hover:border-domino-accent/70 hover:text-domino-cream"
       >
-        <span className="h-3 w-3 rounded-full border border-black/60 bg-gradient-to-br from-emerald-600 to-amber-700" />
-        Mesa
+        <span className="h-3.5 w-3.5 rounded-full border border-black/60 bg-gradient-to-br from-emerald-600 to-amber-700" />
       </button>
 
       {abierto && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setAbierto(false)} />
-          <div className="absolute right-0 z-50 mt-2 w-60 rounded-xl border border-domino-accent/25 bg-domino-felt/95 p-4 shadow-2xl backdrop-blur">
+          <div className="absolute bottom-10 left-0 z-50 w-60 rounded-xl border border-domino-accent/25 bg-domino-felt/95 p-4 shadow-2xl backdrop-blur">
             <div className="mb-2 text-[11px] uppercase tracking-widest text-domino-accent">Paño</div>
             <div className="mb-4 grid grid-cols-5 gap-1.5">
               {PANOS.map((p) => (

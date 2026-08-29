@@ -871,9 +871,6 @@ export default function Game() {
                   <div className="text-center text-[9px] uppercase tracking-widest text-domino-cream/60 drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
                     <div>Ronda {gameState.round} · a {gameState.targetPoints ?? 100}</div>
                     <div className="font-mono tracking-normal text-domino-cream/40">{gameState.roomCode}</div>
-                    {gameState.hasPool && (
-                      <div className="text-amber-300/80">pozo {gameState.poolCount}</div>
-                    )}
                   </div>
                   <div className="text-right drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
                     <div className="text-[9px] uppercase tracking-widest text-rose-300/80">Ellos</div>
@@ -888,7 +885,7 @@ export default function Game() {
                   fichas={gameState.handCounts[seatTop?.id]}
                   enTurno={gameState.currentPlayerId === seatTop?.id}
                   esCompanero={esCompanero(seatTop)}
-                  className="left-1/2 top-7 -translate-x-1/2"
+                  className="left-1/2 top-9 -translate-x-1/2"
                 />
                 <AsientoFlotante
                   jugador={seatLeft}
@@ -905,8 +902,21 @@ export default function Game() {
                   className="right-1 top-7"
                 />
 
-                <div className="absolute bottom-1 right-1 z-30">
+                {/* Los menus van chiquitos al borde y abren su ventanita, para no
+                    competir con la mesa. Al sacar la barra de arriba, ademas, esta
+                    era la unica forma de salir de la partida. */}
+                <div className="absolute bottom-1 left-1 z-30 flex flex-col gap-1.5">
                   <MesaThemePicker tema={tema} setTema={setTema} />
+                  <Link
+                    to="/dashboard"
+                    title="Salir de la mesa"
+                    aria-label="Salir de la mesa"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-domino-accent/25 bg-black/45 text-domino-cream-dim transition-colors hover:border-domino-accent/70 hover:text-domino-cream"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+                    </svg>
+                  </Link>
                 </div>
 
                 {lastAction && myTurn && (
@@ -1045,14 +1055,20 @@ export default function Game() {
                 )}
 
                 {gameState.hasPool && gameState.poolCount > 0 && (
-                  <div className="mt-3">
-                    <Pool
-                      cantidad={gameState.poolCount}
-                      activo={myTurn && gameState.canDraw}
-                      robando={isPlacing}
-                      onRobar={handleDraw}
-                    />
-                  </div>
+                  myTurn && gameState.canDraw ? (
+                    <div className="mt-2">
+                      <Pool
+                        cantidad={gameState.poolCount}
+                        activo
+                        robando={isPlacing}
+                        onRobar={handleDraw}
+                      />
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-center text-[10px] uppercase tracking-widest text-amber-300/60">
+                      pozo · {gameState.poolCount} fichas
+                    </p>
+                  )
                 )}
 
                 {myTurn && gameState.canPass && (

@@ -1986,3 +1986,44 @@ El usuario pidió revisar el motor de reglas completo. Se verificaron diez regla
 
 **Ninguna regla violada.** De paso quedan los números reales del 1v1: trancas 12.3%, 1.940 manos
 ganadas por dominó contra 271 por tranque.
+
+---
+
+## 47. Menús chiquitos y luz de mesa: los pasos 4 y 5 (2026-08-29)
+
+Cierran el plan de cinco pasos que se acordó en §45.
+
+### Paso 4: menús que no compiten
+
+El selector de mesa era una pastilla que decía "Mesa". Ahora es un botón de 32px con su ventanita,
+pegado al borde del paño, como los iconos del truco.
+
+**Se detectó un agujero grave al sacar la barra de navegación en §45: no quedaba forma de salir de
+la partida.** Se agregó un icono de salida al lado del de la mesa. Es la clase de cosa que no
+aparece en ninguna prueba automática y que solo se ve jugando.
+
+### Paso 5: la lámpara
+
+Dos degradados sobre el paño: luz cálida cayendo desde arriba y los bordes apagándose. Más una
+sombra profunda bajo la baranda. Es lo que da la sensación de estar sentado a la mesa.
+
+**No se le puso perspectiva al tablero a propósito.** Inclinarlo deformaría las fichas y rompería
+las cuentas del arrastre: el dedo caería en un lugar y la ficha en otro. La perspectiva va en el
+ambiente, no en la superficie de juego.
+
+### Dos arreglos de jerarquía que salieron probando
+
+- El "pozo N" del encabezado quedaba **tapado por el avatar del rival**, y encima repetía lo que
+  ya se ve abajo. Se quitó de arriba.
+- El pozo entero (14 fichas boca abajo) se comía media pantalla aunque no hubiera que robar. Ahora
+  solo se despliega cuando de verdad podés robar; el resto del tiempo es una línea.
+
+### Medido en un teléfono de 375x812
+
+| | antes de §45 | ahora |
+|---|---|---|
+| la mesa ocupa | ~30% con scroll | **57%, sin scroll** |
+| ficha en la mesa al empezar la mano | 31x15 px | **27x55 px** |
+| forma de salir de la partida | barra de arriba | icono en el paño |
+
+Motor 49/49, backend 86/86, build ok.

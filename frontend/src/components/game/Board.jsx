@@ -293,7 +293,7 @@ export default function Board({
 
   if (!board || board.length === 0) {
     return (
-      <div className={`rail-base ${claseBaranda} mx-auto flex h-full w-full max-w-[768px] flex-col rounded-[22px] p-[4.2%] relative`}>
+      <div className={`rail-base ${claseBaranda} mx-auto flex h-full w-full max-w-[768px] flex-col rounded-[22px] p-[4.2%] relative shadow-[0_18px_50px_-12px_rgba(0,0,0,0.85)]`}>
       <span className="rail-side rail-top" aria-hidden="true" />
       <span className="rail-side rail-bottom" aria-hidden="true" />
       <span className="rail-side rail-left" aria-hidden="true" />
@@ -302,6 +302,14 @@ export default function Board({
         ref={containerRef}
         className={`felt-base ${clasePano} w-full h-full relative overflow-hidden rounded-xl`}
       >
+        <div
+          className="pointer-events-none absolute inset-0 z-30"
+          style={{
+            background:
+              'radial-gradient(115% 85% at 50% 4%, rgba(255,246,220,0.14) 0%, rgba(255,246,220,0.04) 34%, rgba(0,0,0,0) 58%),' +
+              'radial-gradient(135% 105% at 50% 52%, rgba(0,0,0,0) 46%, rgba(0,0,0,0.40) 100%)'
+          }}
+        />
         <div
           className="relative origin-top-left"
           style={{
@@ -331,7 +339,7 @@ export default function Board({
   }
 
   return (
-    <div className={`rail-base ${claseBaranda} mx-auto flex h-full w-full max-w-[768px] flex-col rounded-[22px] p-[4.2%] relative`}>
+    <div className={`rail-base ${claseBaranda} mx-auto flex h-full w-full max-w-[768px] flex-col rounded-[22px] p-[4.2%] relative shadow-[0_18px_50px_-12px_rgba(0,0,0,0.85)]`}>
       <span className="rail-side rail-top" aria-hidden="true" />
       <span className="rail-side rail-bottom" aria-hidden="true" />
       <span className="rail-side rail-left" aria-hidden="true" />
@@ -340,6 +348,14 @@ export default function Board({
       ref={containerRef}
       className={`felt-base ${clasePano} w-full h-full relative overflow-hidden rounded-xl select-none`}
     >
+      <div
+        className="pointer-events-none absolute inset-0 z-30"
+        style={{
+          background:
+            'radial-gradient(115% 85% at 50% 4%, rgba(255,246,220,0.14) 0%, rgba(255,246,220,0.04) 34%, rgba(0,0,0,0) 58%),' +
+            'radial-gradient(135% 105% at 50% 52%, rgba(0,0,0,0) 46%, rgba(0,0,0,0.40) 100%)'
+        }}
+      />
       <div
         className="relative origin-top-left"
         style={{
