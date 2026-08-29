@@ -126,10 +126,15 @@ export default function Game() {
 
   // Espejo de draggedTile para poder leerlo desde manejadores que corren fuera
   // del ciclo de render de React.
+  // Se escribe a mano junto con el estado. Con un `useEffect` iba un render
+  // atrasado y al soltar rapido se enviaba la jugada con datos viejos: unas
+  // veces la posicion anterior ("Colocacion invalida") y otras sin el enganche
+  // marcado, y entonces no pasaba nada.
   const draggedTileRef = useRef(null);
-  useEffect(() => {
-    draggedTileRef.current = draggedTile;
-  }, [draggedTile]);
+  const anotarArrastre = (siguiente) => {
+    draggedTileRef.current = siguiente;
+    setDraggedTile(siguiente);
+  };
 
   // Candado contra doble envio en el mismo tick. `isPlacing` no alcanza porque
   // se lee del closure y dos llamadas seguidas ven el mismo valor viejo.
@@ -142,7 +147,7 @@ export default function Game() {
   }, [actualRoomCode]);
 
   const handleDragStart = (index, tile, clientX, clientY) => {
-    setDraggedTile({
+    anotarArrastre({
       index,
       tile,
       currentX: clientX,
@@ -154,14 +159,9 @@ export default function Game() {
   };
 
   const handleDragUpdate = (clientX, clientY) => {
-    setDraggedTile((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        currentX: clientX,
-        currentY: clientY
-      };
-    });
+    const previo = draggedTileRef.current;
+    if (!previo) return;
+    anotarArrastre({ ...previo, currentX: clientX, currentY: clientY });
   };
 
   const handleDragEnd = () => {
@@ -174,23 +174,15 @@ export default function Game() {
     setDraggedTile(null);
     draggedTileRef.current = null;
     if (arrastre?.isSnapped && arrastre.activePlacement) {
-      playTile(arrastre.index, arrastre.activePlacement.side, arrastre.activePlacement);
+      playTile(arrastre.index, arrastre.activePlacement.side);
     }
   };
 
   const handleSnapChange = (isSnapped, activePlacement) => {
-    setDraggedTile((prev) => {
-      if (!prev) return null;
-      // Solo actualizar si realmente hubo un cambio para evitar re-renders infinitos
-      if (prev.isSnapped === isSnapped && prev.activePlacement === activePlacement) {
-        return prev;
-      }
-      return {
-        ...prev,
-        isSnapped,
-        activePlacement
-      };
-    });
+    const previo = draggedTileRef.current;
+    if (!previo) return;
+    if (previo.isSnapped === isSnapped && previo.activePlacement === activePlacement) return;
+    anotarArrastre({ ...previo, isSnapped, activePlacement });
   };
 
   useEffect(() => {
@@ -507,23 +499,26 @@ export default function Game() {
     }
   };
 
-  const playTile = (tileIndex, side, placement = null) => {
+  // Solo se manda que ficha y en que extremo. Donde cae lo calcula el servidor:
+  // con el trazado en serpentina hay una sola posicion por extremo, asi que
+  // mandar coordenadas era redundante y ademas podian no coincidir.
+  const playTile = (tileIndex, side) => {
     if (!socket || !actualRoomCode || isPlacing || enviandoRef.current) return;
     enviandoRef.current = true;
     setError('');
     setIsPlacing(true);
-    const payload = { code: actualRoomCode, tileIndex, side };
-    if (placement) {
-      payload.x = placement.x;
-      payload.y = placement.y;
-      payload.x2 = placement.x2;
-      payload.y2 = placement.y2;
-      payload.orientation = placement.orientation;
-    }
-    socket.emit('game:play', payload, (res) => {
+
+    // Si la respuesta nunca llega, la mano no puede quedar apagada para siempre.
+    const rescate = setTimeout(() => {
       enviandoRef.current = false;
-      if (!res.ok) {
-        setError(res.error);
+      setIsPlacing(false);
+    }, 6000);
+
+    socket.emit('game:play', { code: actualRoomCode, tileIndex, side }, (res) => {
+      clearTimeout(rescate);
+      enviandoRef.current = false;
+      if (!res?.ok) {
+        setError(res?.error || 'No se pudo jugar esa ficha');
         setIsPlacing(false);
       }
     });
@@ -857,7 +852,7 @@ export default function Game() {
                   ends={gameState.ends}
                   selectedTile={selectedTile}
                   onPlayTile={(side, placement) => {
-                    if (selectedTile) playTile(selectedTile.index, side, placement);
+                    if (selectedTile) playTile(selectedTile.index, side);
                   }}
                   myTurn={myTurn}
                   lastAction={gameState.lastAction}

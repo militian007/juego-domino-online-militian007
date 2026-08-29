@@ -1920,3 +1920,69 @@ jugador respira y sí mira. Es plata del usuario, no se toca sin avisar.
 Los pasos 4 y 5 que se acordaron: menús chiquitos que abran ventanitas, y el ambiente (luz,
 sombra y perspectiva alrededor de la mesa). En escritorio la columna derecha con el marcador y
 los jugadores sigue en tarjetas; queda para el paso 4.
+
+---
+
+## 46. El arrastre mandaba datos viejos, y la auditoría del 1v1 (2026-08-29)
+
+El usuario reportó desde producción: *"Colocación inválida"* y *"hay momentos que quiero jugar
+una pieza y se pone en oscuro todo"*. Son el mismo bug.
+
+### La causa: un espejo que iba un render atrasado
+
+`draggedTileRef` se sincronizaba con un `useEffect`:
+
+```js
+useEffect(() => { draggedTileRef.current = draggedTile; }, [draggedTile]);
+```
+
+Al soltar, `handleDragEnd` lee ese ref (tiene que leerlo, porque corre fuera del render). Pero el
+efecto corre **después** del render, así que si soltabas rápido el ref todavía tenía el estado
+anterior. De ahí los dos síntomas:
+
+- con la posición vieja, el servidor la rechazaba: **"Colocación inválida"**;
+- sin el enganche marcado, no se enviaba nada: **la ficha no se jugaba**.
+
+Ahora el ref se escribe a mano junto con el estado, en la misma línea.
+
+### El cliente dejó de dictar coordenadas
+
+De fondo había algo peor, y va contra la regla 8 (*el servidor manda*): el cliente calculaba
+`x, y, x2, y2, orientation` y se los mandaba al servidor, que los comparaba **exactos** contra los
+suyos. Cualquier diferencia —una versión distinta desplegada, un estado a medio actualizar— daba
+"Colocación inválida".
+
+Con el trazado en serpentina hay **una sola posición por extremo**, así que mandar coordenadas era
+redundante. Ahora el cliente manda solo `tileIndex` y `side`, y la posición la calcula el servidor.
+
+Medido: **65.650 jugadas enviadas sin coordenadas, 0 rechazos** (1v1 y 2v2). Antes, con
+coordenadas, 100 jugadas también pasaban en local: el bug solo aparecía con el arrastre real, que
+es donde el ref quedaba viejo.
+
+### La mano ya no se queda apagada
+
+`isPlacing` apaga la mano mientras se espera la respuesta, y solo se limpiaba al recibirla. Si la
+respuesta no llegaba, la mano quedaba apagada para siempre. Se agregó un rescate a los 6 segundos.
+
+### Auditoría de las reglas del 1v1
+
+El usuario pidió revisar el motor de reglas completo. Se verificaron diez reglas sobre
+**300 partidas y 2.211 manos**:
+
+| Regla | Resultado |
+|---|---|
+| 28 fichas, 7 por jugador, pozo de 14 | correcto |
+| Las 28 fichas son distintas | correcto |
+| Primera mano: sale el doble más alto | correcto (298 de 300) |
+| Si nadie tiene doble, sale la de más pips | correcto (2 de 300) |
+| Manos siguientes: sale quien ganó | correcto |
+| Toda jugada legal coincide con un extremo | correcto |
+| No se pasa si queda pozo | correcto |
+| No se pasa teniendo jugada | correcto |
+| Tranque: gana el de menos pips y suma los del rival | correcto |
+| Tranque empatado: nadie suma | correcto |
+| Dominó: el que se queda sin fichas suma los del rival | correcto |
+| La partida termina al llegar al objetivo | correcto |
+
+**Ninguna regla violada.** De paso quedan los números reales del 1v1: trancas 12.3%, 1.940 manos
+ganadas por dominó contra 271 por tranque.
