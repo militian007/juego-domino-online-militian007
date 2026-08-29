@@ -2027,3 +2027,46 @@ ambiente, no en la superficie de juego.
 | forma de salir de la partida | barra de arriba | icono en el paño |
 
 Motor 49/49, backend 86/86, build ok.
+
+---
+
+## 48. La pantalla entera es el paño (2026-08-29)
+
+El usuario: *"la mesa debe ocupar toda la pantalla... debe poder verse las piezas que tengo en un
+sitio de la mesa, el pozo y el resto de cosas. Diseña de nuevo"*.
+
+En §45 la mesa ocupaba el 54% y lo demás vivía en bloques debajo. Ahora **el paño es la pantalla**:
+
+- La baranda toca los cuatro bordes de la ventana. Se le quitó el tope de 768px y el paño dejó de
+  estar centrado dentro de una página.
+- **La mano se apoya sobre el paño**, en una banda oscura al pie: es la sombra del canto de la
+  mesa más cercano al jugador. Ya no es un cajón aparte debajo del tablero.
+- El pozo, el marcador, los rivales y los menús también van sobre el paño.
+
+### El detalle que hacía falta: reservarle sitio a la cadena
+
+Si la mano se apoya encima, la cadena podía quedar escondida detrás. `Board` recibe ahora
+`insetInferior`: la altura real de la mano, medida con un `ResizeObserver`. La cadena se centra en
+lo que queda libre arriba, no en el paño completo.
+
+### Tres cosas que salieron probando
+
+- **El degradado de la banda no servía.** `from-black/95 to-transparent` a lo largo de 297px
+  llegaba al 45% justo donde están las fichas, y se perdían contra el verde. Se cambió por una
+  banda casi sólida con el borde de arriba difuminado.
+- **Siete fichas se partían en dos filas.** Se achica la ficha a partir de seis en mano: siete
+  seguidas se leen mejor que seis y una sola abajo.
+- **Los menús quedaban debajo de la mano**, cortados. Se fueron al costado izquierdo, a media
+  altura.
+
+### Medido en un teléfono de 375x812
+
+| | §45 | ahora |
+|---|---|---|
+| la mesa ocupa | 54% | **98%** |
+| la mano | cajón aparte debajo | sobre el paño, una sola fila |
+| scroll | ninguno | ninguno |
+
+Verificado también en 1280x800: el paño llena la ventana y la cadena queda centrada (626 de 626).
+
+Motor 49/49, backend 86/86, build ok.

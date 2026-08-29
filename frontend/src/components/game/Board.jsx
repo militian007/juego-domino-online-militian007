@@ -49,6 +49,7 @@ function getGhostVisualCoords(opt, board) {
 
 export default function Board({
   board,
+  insetInferior = 0,
   ends,
   selectedTile = null,
   onPlayTile = null,
@@ -137,16 +138,17 @@ export default function Board({
   }, [board, ghostPlacements]);
 
   // Manda el eje que queda mas justo, para que la cadena entre entera.
+  const altoUtil = Math.max(pano.alto - insetInferior, 120);
   const escala = useMemo(() => {
-    if (pano.ancho <= 0 || pano.alto <= 0) return 1;
+    if (pano.ancho <= 0 || altoUtil <= 0) return 1;
     const porAncho = pano.ancho / (Math.max(vista.anchoCeldas, MINIMO_CELDAS) * CELL_SIZE);
-    const porAlto = pano.alto / (Math.max(vista.altoCeldas, MINIMO_CELDAS) * CELL_SIZE);
+    const porAlto = altoUtil / (Math.max(vista.altoCeldas, MINIMO_CELDAS) * CELL_SIZE);
     return Math.min(porAncho, porAlto);
-  }, [pano, vista]);
+  }, [pano.ancho, altoUtil, vista]);
 
   // Lo que sobra se reparte a los lados: la cadena queda centrada en el paño.
   const celdasVisiblesX = pano.ancho > 0 ? pano.ancho / (CELL_SIZE * escala) : vista.anchoCeldas;
-  const celdasVisiblesY = pano.alto > 0 ? pano.alto / (CELL_SIZE * escala) : vista.altoCeldas;
+  const celdasVisiblesY = altoUtil > 0 ? altoUtil / (CELL_SIZE * escala) : vista.altoCeldas;
   const origenX = vista.minX - MARGEN_CELDAS - (celdasVisiblesX - vista.anchoCeldas) / 2;
   const origenY = vista.minY - MARGEN_CELDAS - (celdasVisiblesY - vista.altoCeldas) / 2;
   const desplazamientoX = -origenX * CELL_SIZE * escala;
@@ -293,7 +295,7 @@ export default function Board({
 
   if (!board || board.length === 0) {
     return (
-      <div className={`rail-base ${claseBaranda} mx-auto flex h-full w-full max-w-[768px] flex-col rounded-[22px] p-[4.2%] relative shadow-[0_18px_50px_-12px_rgba(0,0,0,0.85)]`}>
+      <div className={`rail-base ${claseBaranda} flex h-full w-full flex-col rounded-none p-[10px] sm:p-[14px] relative`}>
       <span className="rail-side rail-top" aria-hidden="true" />
       <span className="rail-side rail-bottom" aria-hidden="true" />
       <span className="rail-side rail-left" aria-hidden="true" />
@@ -339,7 +341,7 @@ export default function Board({
   }
 
   return (
-    <div className={`rail-base ${claseBaranda} mx-auto flex h-full w-full max-w-[768px] flex-col rounded-[22px] p-[4.2%] relative shadow-[0_18px_50px_-12px_rgba(0,0,0,0.85)]`}>
+    <div className={`rail-base ${claseBaranda} flex h-full w-full flex-col rounded-none p-[10px] sm:p-[14px] relative`}>
       <span className="rail-side rail-top" aria-hidden="true" />
       <span className="rail-side rail-bottom" aria-hidden="true" />
       <span className="rail-side rail-left" aria-hidden="true" />

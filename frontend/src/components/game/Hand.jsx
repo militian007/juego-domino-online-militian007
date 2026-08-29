@@ -62,7 +62,7 @@ export default function Hand({
 
   // Con la mano cargada las fichas se achican para que sigan entrando en pocas
   // filas. En el telefono una sola fila larga obligaba a scrollear de costado.
-  const tamanoFicha = tiles.length > 14 ? 'xs' : tiles.length > 9 ? 'sm' : 'md';
+  const tamanoFicha = tiles.length > 10 ? 'xs' : tiles.length > 5 ? 'sm' : 'md';
 
   if (!tiles || tiles.length === 0) {
     return (
@@ -74,7 +74,7 @@ export default function Hand({
 
   return (
     <div className="w-full overflow-visible py-3">
-      <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-3 px-2">
+      <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-2 px-1 sm:gap-x-2">
         {tiles.map((tile, i) => {
           const isValid = validIndices.includes(i);
           const isSelected = selectedIndex === i;

@@ -448,6 +448,20 @@ export default function Game() {
     ? gameState.currentPlayerId === myPlayerId
     : false;
   const manoFirma = (gameState?.myHand || []).map((t) => `${t[0]}${t[1]}`).join(',');
+
+  // La mano se apoya sobre el paño. Se mide para reservarle sitio a la cadena.
+  const manoRef = useRef(null);
+  const [altoMano, setAltoMano] = useState(190);
+  useEffect(() => {
+    const el = manoRef.current;
+    if (!el) return;
+    const medir = () => setAltoMano(el.offsetHeight || 190);
+    medir();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(medir);
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
   // IMPORTANTE: este efecto tiene que quedar ARRIBA de todos los `return`
   // tempranos del componente. Si queda abajo, en los renders que salen antes
   // no se ejecuta y React tira el error #310 ("rendered more hooks than
@@ -839,13 +853,14 @@ export default function Game() {
         </div>
       )}
 
-      <div className="mx-auto flex w-full min-h-0 max-w-7xl flex-1 flex-col px-2 py-2">
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 lg:grid-cols-[1fr_260px]">
-          <div className="flex min-h-0 gap-2">
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
-              <div className="relative flex min-h-0 w-full flex-1 items-center justify-center">
-                <div className="relative mx-auto h-full w-full min-w-0 max-w-[768px]">
+      <div className="relative min-h-0 w-full flex-1">
+        <div className="relative h-full w-full">
+          <div className="absolute inset-0">
+            <div className="relative h-full w-full">
+              <div className="absolute inset-0">
+                <div className="relative h-full w-full">
                 <Board
+                  insetInferior={altoMano}
                   clasePano={clasePano}
                   claseBaranda={claseBaranda}
                   board={gameState.board}
@@ -905,7 +920,7 @@ export default function Game() {
                 {/* Los menus van chiquitos al borde y abren su ventanita, para no
                     competir con la mesa. Al sacar la barra de arriba, ademas, esta
                     era la unica forma de salir de la partida. */}
-                <div className="absolute bottom-1 left-1 z-30 flex flex-col gap-1.5">
+                <div className="absolute left-1 top-1/2 z-30 flex -translate-y-1/2 flex-col gap-1.5">
                   <MesaThemePicker tema={tema} setTema={setTema} />
                   <Link
                     to="/dashboard"
@@ -958,25 +973,18 @@ export default function Game() {
               </div>
               </div>
 
-              <div className="shrink-0 rounded-xl border border-white/5 bg-black/40 p-2 sm:p-3">
-                <div className="flex items-center justify-between mb-1">
-                  <div>
-                    <div className="font-bold text-sm sm:text-base">Tu mano</div>
-                    <div className="text-[10px] sm:text-xs text-slate-400">
-                      {gameState.myHand?.length ?? 0} fichas
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    {myTurn ? (
-                      <span className="text-xs sm:text-sm text-green-400 font-bold animate-pulse">
-                        🎯 Tu turno
-                      </span>
-                    ) : (
-                      <span className="text-xs sm:text-sm text-slate-400">
-                        Esperando...
-                      </span>
-                    )}
-                  </div>
+              <div ref={manoRef} className="absolute inset-x-0 bottom-0 z-30 px-2 pb-2 pt-8"
+                style={{
+                  background:
+                    'linear-gradient(to top, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.90) 62%, rgba(0,0,0,0.55) 84%, rgba(0,0,0,0) 100%)'
+                }}>
+                <div className="mb-1 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest">
+                  <span className="text-domino-cream/50">
+                    tu mano · {gameState.myHand?.length ?? 0}
+                  </span>
+                  <span className={myTurn ? 'font-bold text-emerald-300' : 'text-domino-cream/40'}>
+                    {myTurn ? 'tu turno' : 'esperando'}
+                  </span>
                 </div>
                 
                 <div className="flex items-center gap-2 sm:gap-4 w-full">
@@ -1085,7 +1093,7 @@ export default function Game() {
               </div>
             </div>
 
-          <div className="hidden lg:block space-y-3">
+          <div className="hidden">
             <Mesa
               sala={gameState.roomCode}
               pozo={gameState.hasPool ? gameState.poolCount : null}
