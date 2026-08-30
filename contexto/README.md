@@ -2295,3 +2295,30 @@ directo del equipo del jugador, y el síntoma de la captura lo explica entero.
   pseudo-elemento porque cada tema del paño ya usa su `background-image` para el color y la luz.
 
 Motor 55/55, backend 87/87, build ok.
+
+---
+
+## 54. Salir de la partida de verdad (2026-08-29)
+
+El usuario: *"hay uno pero para desloguear, y regresás y está la misma partida. Agregá un botón
+que uno pueda salir de la partida, quería probar los cambios"*.
+
+El icono de salida solo navegaba al dashboard. La sala seguía guardada en `localStorage` (§39,
+para no perder la mesa al irse a WhatsApp), así que al volver se reentraba a la misma partida —
+y encima con el código viejo cargado, que era justo lo que no lo dejaba probar los arreglos.
+
+Ahora `salirDeLaPartida()` hace las tres cosas: avisa al servidor con `room:leave`, olvida la
+partida guardada y navega. El icono pide confirmación antes, porque un dedazo no puede costarte la
+mesa. El "Salir al dashboard" del cierre de ronda usa la misma función.
+
+**Un invitado terminaba en `/login`**, porque el dashboard pide cuenta. Ahora cae en la portada.
+
+Verificado corriendo, el ciclo completo:
+
+```
+en partida:   sala 503ZH7 guardada
+salir:        partida guardada -> null, cae en "/"
+volver:       sala ZDM9CA  (partida nueva, no la vieja)
+```
+
+Motor 55/55, backend 87/87, build ok.

@@ -547,6 +547,19 @@ export default function Game() {
     });
   };
 
+  const [confirmandoSalida, setConfirmandoSalida] = useState(false);
+
+  // Salir de verdad: el servidor saca al jugador de la sala y se olvida la
+  // partida guardada. El boton de antes solo navegaba, asi que al volver se
+  // reentraba a la misma mesa (esa memoria existe para cuando te vas sin
+  // querer, ver seccion 39).
+  const salirDeLaPartida = () => {
+    if (socket && actualRoomCode) socket.emit('room:leave', { code: actualRoomCode });
+    olvidarPartida();
+    // El dashboard pide cuenta: a un invitado lo rebotaba a /login.
+    navigate(user ? '/dashboard' : '/');
+  };
+
   const handlePass = () => {
     if (!socket || !actualRoomCode || isPlacing) return;
     setError('');
@@ -935,16 +948,44 @@ export default function Game() {
                     era la unica forma de salir de la partida. */}
                 <div className="absolute left-1 top-1/2 z-30 flex -translate-y-1/2 flex-col gap-1.5">
                   <MesaThemePicker tema={tema} setTema={setTema} />
-                  <Link
-                    to="/dashboard"
-                    title="Salir de la mesa"
-                    aria-label="Salir de la mesa"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-domino-accent/25 bg-black/45 text-domino-cream-dim transition-colors hover:border-domino-accent/70 hover:text-domino-cream"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-                    </svg>
-                  </Link>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmandoSalida((v) => !v)}
+                      title="Salir de la partida"
+                      aria-label="Salir de la partida"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-domino-accent/25 bg-black/45 text-domino-cream-dim transition-colors hover:border-domino-accent/70 hover:text-domino-cream"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+                      </svg>
+                    </button>
+
+                    {confirmandoSalida && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setConfirmandoSalida(false)} />
+                        <div className="absolute bottom-0 left-10 z-50 w-52 rounded-xl border border-domino-accent/25 bg-domino-felt/95 p-3 shadow-2xl backdrop-blur">
+                          <p className="mb-2 text-xs text-domino-cream">
+                            ¿Salir de la partida? La mesa se cierra y perdés lo jugado.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={salirDeLaPartida}
+                            className="mb-1.5 w-full rounded-lg bg-domino-crimson/80 px-3 py-1.5 text-xs font-bold text-white hover:bg-domino-crimson"
+                          >
+                            Salir de la partida
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmandoSalida(false)}
+                            className="w-full rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-300 hover:border-slate-400"
+                          >
+                            Seguir jugando
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 {lastAction && myTurn && (
@@ -1181,9 +1222,9 @@ export default function Game() {
                     Siguiente ronda
                   </button>
                 )}
-                <Link to="/dashboard" className="btn-secondary w-full block">
-                  Salir al dashboard
-                </Link>
+                <button onClick={salirDeLaPartida} className="btn-secondary w-full">
+                  Salir de la partida
+                </button>
               </div>
             </div>
           </div>
