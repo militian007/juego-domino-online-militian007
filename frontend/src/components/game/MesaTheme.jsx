@@ -21,10 +21,15 @@ export const BARANDAS = [
 const DEFECTO = { pano: 'tela', baranda: 'foto' };
 const CLAVE = 'mesa-tema';
 
+// Se sube cuando entra una mesa nueva que vale la pena mostrarle a todos. Sin
+// esto, quien ya habia elegido mesa se quedaba con la vieja para siempre: el
+// valor por defecto solo aplica a quien no tiene nada guardado.
+const CATALOGO = 2;
+
 function leer() {
   try {
     const guardado = JSON.parse(localStorage.getItem(CLAVE));
-    if (!guardado) return DEFECTO;
+    if (!guardado || guardado.catalogo !== CATALOGO) return DEFECTO;
     return {
       pano: PANOS.some((p) => p.id === guardado.pano) ? guardado.pano : DEFECTO.pano,
       baranda: BARANDAS.some((b) => b.id === guardado.baranda) ? guardado.baranda : DEFECTO.baranda
@@ -39,7 +44,7 @@ export function useMesaTheme() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(CLAVE, JSON.stringify(tema));
+      localStorage.setItem(CLAVE, JSON.stringify({ ...tema, catalogo: CATALOGO }));
     } catch {
       /* si no hay localStorage, el tema simplemente no persiste */
     }

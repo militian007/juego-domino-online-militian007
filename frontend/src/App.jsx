@@ -6,6 +6,7 @@ import Register from './pages/Register.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import ChangePassword from './pages/ChangePassword.jsx';
 import Game from './pages/Game.jsx';
+import Version from './components/Version.jsx';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -15,6 +16,7 @@ const PrivateRoute = ({ children }) => {
 
 function App() {
   return (
+    <>
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
@@ -25,6 +27,8 @@ function App() {
       <Route path="/game/:roomCode" element={<Game />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    <Version />
+    </>
   );
 }
 

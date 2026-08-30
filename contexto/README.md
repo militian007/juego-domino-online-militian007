@@ -2365,3 +2365,32 @@ En pantalla grande se alcanza a ver la repetición de la baldosa del paño. Se a
 baldosa más grande, a costa de peso.
 
 Motor 55/55, backend 87/87, build ok. Visto corriendo en teléfono y escritorio, sin scroll.
+
+---
+
+## 56. Por qué no se veía la mesa nueva, y el sello de versión (2026-08-30)
+
+El usuario actualizó y seguía viendo la mesa vieja. El push estaba bien (`0406580` en el remoto,
+con los dos `.webp` dentro): **el problema era su `localStorage`.**
+
+El tema de mesa se guarda en `mesa-tema`, y el valor por defecto solo aplica a quien **no tiene
+nada guardado**. Como él ya había elegido mesa hacía días, se quedaba con la vieja para siempre.
+Le pasó igual a este chat mientras probaba: hubo que borrar la clave a mano.
+
+Se agregó `CATALOGO` al tema guardado. Cuando entra una mesa nueva que vale la pena mostrarle a
+todos, se sube ese número y los temas guardados con un número viejo se migran al nuevo por defecto.
+El jugador puede volver a elegir lo que quiera; solo se pierde la elección anterior una vez.
+
+Verificado corriendo, simulando el navegador del usuario: con `{pano:'verde', baranda:'cognac'}`
+guardado, al entrar queda en `rail-foto` + `felt-tela` y se regraba con `catalogo: 2`.
+
+### Sello de versión
+
+Abajo a la izquierda, semitransparente, se muestra la versión. Sale de `package.json` por un
+`define` de Vite, así que no hay dos números que se puedan desincronizar. Sirve para saber de un
+vistazo si el navegador está corriendo el build nuevo o uno cacheado, que es exactamente lo que
+nos hizo perder este rato.
+
+Se arranca en **0.0.25**.
+
+Motor 55/55, backend 87/87, build ok.
