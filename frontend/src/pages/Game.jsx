@@ -849,6 +849,10 @@ export default function Game() {
   const seatRight = totalAsientos === 4 ? porAsiento(1) : null;
   const seatLeft = totalAsientos === 4 ? porAsiento(3) : null;
   const esCompanero = (p) => p && miJugador && p.team === miJugador.team;
+  // El marcador se rotula segun TU equipo, no segun el numero de equipo: si
+  // entras de segundo sos el equipo 2, y "Vos" mostraba los puntos del rival.
+  const miEquipo = miJugador?.team ?? 1;
+  const equipoRival = miEquipo === 1 ? 2 : 1;
 
   // La pantalla de juego no es una pagina con un tablero adentro: es la mesa.
   // Sin barra de navegacion, sin banner y sin scroll, para que lo que se ve
@@ -889,7 +893,7 @@ export default function Game() {
                   <div className="drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
                     <div className="text-[9px] uppercase tracking-widest text-sky-300/80">Vos</div>
                     <div className="text-xl font-black leading-none text-sky-200">
-                      {gameState.teamScores?.[1] ?? 0}
+                      {gameState.teamScores?.[miEquipo] ?? 0}
                     </div>
                   </div>
                   <div className="text-center text-[9px] uppercase tracking-widest text-domino-cream/60 drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
@@ -899,7 +903,7 @@ export default function Game() {
                   <div className="text-right drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
                     <div className="text-[9px] uppercase tracking-widest text-rose-300/80">Ellos</div>
                     <div className="text-xl font-black leading-none text-rose-200">
-                      {gameState.teamScores?.[2] ?? 0}
+                      {gameState.teamScores?.[equipoRival] ?? 0}
                     </div>
                   </div>
                 </div>
@@ -952,9 +956,13 @@ export default function Game() {
                 {/* REACCIONES FLOTANTES EN LA MESA */}
                 {Object.entries(reactions).map(([pId, val]) => {
                   let posClass = "";
+                  let estilo = undefined;
                   const pIdStr = String(pId);
                   if (pIdStr === String(myPlayerId)) {
-                    posClass = "bottom-8 left-1/2 -translate-x-1/2";
+                    // Sobre la mano hay una banda oscura: el gesto propio tiene
+                    // que quedar por encima de ella o no se ve.
+                    posClass = "left-1/2 -translate-x-1/2";
+                    estilo = { bottom: altoMano + 16 };
                   } else if (seatTop && pIdStr === String(seatTop.id)) {
                     posClass = "top-8 left-1/2 -translate-x-1/2";
                   } else if (seatLeft && pIdStr === String(seatLeft.id)) {
@@ -968,7 +976,8 @@ export default function Game() {
                   return (
                     <div
                       key={`${pId}-${val.id}`}
-                      className={`absolute ${posClass} flex flex-col items-center justify-center animate-bounce z-30`}
+                      style={estilo}
+                      className={`absolute ${posClass} flex flex-col items-center justify-center animate-bounce z-40`}
                     >
                       <div className="w-12 h-12 sm:w-16 sm:h-16 bg-domino-dark/95 border-2 border-domino-accent rounded-full flex items-center justify-center text-3xl sm:text-4xl shadow-xl shadow-amber-500/20">
                         {val.emoji}

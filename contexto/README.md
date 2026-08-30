@@ -2259,3 +2259,39 @@ cuando uno la acomoda encima de su propio recorrido. Es el precio de elegir dón
 el jugador lo puede evitar mirando la mesa.
 
 Motor 55/55, backend 87/87, build ok.
+
+---
+
+## 52. El marcador estaba rotulado al revés (2026-08-29)
+
+El usuario ganó una partida y el marcador le decía **VOS 93 · ELLOS 108**, con el modal diciendo
+*"El equipo 2 ganó 108 a 93"*. Tenía razón en desconfiar.
+
+**Las cuentas estaban bien; las etiquetas al revés.** En §45, al escribir el marcador sobre la
+madera, se hardcodeó:
+
+```jsx
+<div>Vos</div>   {gameState.teamScores?.[1]}
+<div>Ellos</div> {gameState.teamScores?.[2]}
+```
+
+Él había entrado con `?join=`, así que era el **asiento 1, equipo 2**: veía los puntos del rival
+bajo su propio nombre. Ahora se rotula con `miJugador.team`.
+
+La suma de las rondas no tenía nada malo: ya se auditó en §46 sobre 300 partidas y 2.211 manos, y
+el modal —que sí usaba el equipo correcto— mostraba el resultado real.
+
+**No se pudo reproducir la mitad intercambiada corriendo**: hace falta una segunda cuenta para
+entrar de segundo, y los invitados solo pueden crear mesas contra bots. El arreglo es un mapeo
+directo del equipo del jugador, y el síntoma de la captura lo explica entero.
+
+## 53. El gesto propio caía en la banda oscura, y el paño tiene tela (2026-08-29)
+
+- **Los emojis propios no se veían.** Estaban en `bottom-8`, que desde §48 es la banda oscura
+  sobre la que se apoya la mano. Ahora se posicionan por encima de esa banda, usando su altura
+  medida. Verificado corriendo: el gesto sale en y=514 y la banda empieza en 619.
+- **El paño tenía un verde plano.** Se le agregó grano de tela: dos rayados finos cruzados que
+  hacen el tejido y ruido `feTurbulence` para que no se note la trama repetida. Va en un
+  pseudo-elemento porque cada tema del paño ya usa su `background-image` para el color y la luz.
+
+Motor 55/55, backend 87/87, build ok.
