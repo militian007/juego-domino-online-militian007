@@ -247,6 +247,25 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
         addAlong('horizontal', { x: ex, y: row }, { x: ex - 1, y: row });
         addAlong('horizontal', { x: ex, y: row }, { x: ex + 1, y: row });
       }
+
+      // Si cruzarse mas alla de la punta no entra —tipicamente porque la punta
+      // quedo contra el borde de la mesa— el doble todavia puede entrar si la
+      // cadena dobla ahi mismo: se cruza respecto de la direccion nueva, que es
+      // perpendicular. Solo se ofrece como salida de emergencia para que el
+      // doble siga viendose cruzado siempre que se pueda.
+      if (out.length === 0) {
+        if (endTile.orientation === 'horizontal') {
+          for (const fila of [free.y - 1, free.y + 1]) {
+            addAlong('horizontal', { x: free.x, y: fila }, { x: free.x - 1, y: fila });
+            addAlong('horizontal', { x: free.x, y: fila }, { x: free.x + 1, y: fila });
+          }
+        } else {
+          for (const col of [free.x - 1, free.x + 1]) {
+            addAlong('vertical', { x: col, y: free.y }, { x: col, y: free.y - 1 });
+            addAlong('vertical', { x: col, y: free.y }, { x: col, y: free.y + 1 });
+          }
+        }
+      }
     } else {
       // 1. Recta: sigue hacia donde apunta la punta libre
       addAlong(

@@ -2209,3 +2209,53 @@ Lo que queda (`celda-ocupada`, `roza-otra-ficha`) es la cadena cruzándose consi
 precio de que el jugador elija dónde poner cada ficha.
 
 Motor 54/54, backend 87/87, build ok.
+
+---
+
+## 51. El doble contra el borde ya entra doblando la cadena (2026-08-29)
+
+El usuario, viendo que el doble blanco sí le ofrecía los dos costados: *"¿puede poner el doble 3
+como la otra pieza a los lados, siempre y cuando esté en un borde? ¿No se puede?"*.
+
+Eran dos casos distintos aunque parecieran el mismo:
+
+- **El doble blanco**: la punta de la cadena tenía aire, así que los cuatro costados del doble del
+  extremo funcionaban (§49).
+- **El doble 3**: la punta estaba contra la fila 0. Un doble se cruza en la celda **siguiente** a
+  la punta libre, y esa celda no existía.
+
+### La salida
+
+Si la cadena **dobla** en ese punto, la dirección nueva es perpendicular, y el doble cruzado
+respecto de esa dirección sí entra: en vez de necesitar la fila -1, ocupa la columna de al lado.
+Es lo mismo que ya podía hacer una ficha normal (girar), que por eso no sufría el problema.
+
+Se ofrece solo **como salida de emergencia**, cuando cruzarse más allá de la punta no entra, para
+que el doble se siga viendo cruzado siempre que se pueda.
+
+### Medido
+
+| | antes | después |
+|---|---|---|
+| tenías la ficha y no te dejó (1v1) | 2.6% | **1.5%** |
+| tenías la ficha y no te dejó (2v2) | 5.2% | **3.9%** |
+| trancas 1v1 | 15.1% | **14.0%** |
+| **`fuera-del-tablero (doble)`** | 132 | **0** |
+
+El motivo desapareció de la lista. Queda una prueba fija del motor para que no vuelva.
+
+### El día completo
+
+| tenías la ficha y no te dejó | al empezar | ahora |
+|---|---|---|
+| 1v1 | 24.7% | **1.5%** |
+| 2v2 | 30.3% | **3.9%** |
+
+Dieciséis veces menos trabas en 1v1, **sin cambiar la mecánica**: colocación libre, el jugador
+acomoda, número con número, sin amontonarse.
+
+Lo que queda (`celda-ocupada` 341, `roza-otra-ficha` 335) es la cadena cruzándose consigo misma
+cuando uno la acomoda encima de su propio recorrido. Es el precio de elegir dónde va cada ficha, y
+el jugador lo puede evitar mirando la mesa.
+
+Motor 55/55, backend 87/87, build ok.

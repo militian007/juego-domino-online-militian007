@@ -811,3 +811,22 @@ test('bots: una dificultad desconocida no rompe, cae en normal', () => {
   assert.ok(a, 'deberia devolver una accion igual');
   assert.ok(v.actions.some((x) => JSON.stringify(x) === JSON.stringify(a)), 'y ser legal');
 });
+
+test('doble contra el borde: la cadena dobla y el doble entra igual', () => {
+  // La cadena sube y su punta libre queda en la fila 0. Cruzarse mas alla de la
+  // punta caeria fuera de la mesa, pero doblando ahi mismo el doble entra.
+  // Antes esto devolvia "no queda espacio en la mesa por ese lado" con la mesa
+  // practicamente vacia.
+  const board = [
+    { tile: [5, 4], side: 'first', x: 9, y: 4, x2: 9, y2: 3, orientation: 'vertical' },
+    { tile: [4, 2], side: 'right', x: 9, y: 2, x2: 9, y2: 1, orientation: 'vertical' },
+    { tile: [2, 3], side: 'right', x: 9, y: 1, x2: 9, y2: 0, orientation: 'vertical' }
+  ];
+  const ops = placementsFor(board, [3, 3], 'right', L);
+  assert.ok(ops.length > 0, 'el doble tiene que poder entrar doblando la cadena');
+  assert.ok(
+    ops.every((p) => Math.min(p.y, p.y2) >= 0),
+    'ninguna opcion puede salirse de la mesa'
+  );
+  assert.ok(ops.every((p) => p.tile[0] === 3 && p.tile[1] === 3));
+});
