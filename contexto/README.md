@@ -2322,3 +2322,46 @@ volver:       sala ZDM9CA  (partida nueva, no la vieja)
 ```
 
 Motor 55/55, backend 87/87, build ok.
+
+---
+
+## 55. La mesa ahora es una foto generada con IA (2026-08-30)
+
+El usuario pidió mejorar el borde. Se le mostraron cuatro opciones hechas con degradados de CSS
+—las llamó "basura"— y después cuatro hechas con ruido procedural iluminado, como el cuero de §27
+—"qué horrible"—. Entonces pidió generarlas con IA de imagen. **A la primera dijo que sí.**
+
+La diferencia está en el material: la veta del nogal con sus poros y la trama del paño hilo por
+hilo no salen de un degradado ni de ruido. **De ahora en adelante los materiales del juego se
+generan con IA**, no con CSS.
+
+- Modelo: `nano_banana_pro` (Google), 2K, 9:16 para la pantalla del teléfono. ~1 crédito por
+  imagen, así que se puede iterar.
+- Lo que hay que pedirle: mesa **a plomo, centrada, con el marco cerrado en los cuatro lados y sin
+  lámpara en el encuadre**. La primera salió con una lámpara preciosa ocupando el tercio superior,
+  que es justo donde van el marcador y el rival.
+
+### Cómo entró al juego
+
+La imagen se cortó en dos piezas, medidas sobre el archivo (baranda de 188px a los lados y 246
+arriba, en 1536x2752):
+
+- `public/mesa-nogal.webp` (28 KB) — el marco, usado con **`border-image`**. Las esquinas no se
+  deforman y cada lado se estira solo a lo largo, que es como corre la veta de verdad. El centro
+  de la imagen se rellenó plano porque `border-image` lo descarta.
+- `public/pano-tela.webp` (116 KB) — el paño, como baldosa **espejada en 2x2** para que repita sin
+  costura, a tamaño fijo de 340px. Al principio se usó `background-size: cover` y el tejido se
+  agrandaba hasta parecer arpillera.
+
+Entró como una opción más del selector que ya existía (`Nogal y latón` + `Paño de tela`), y quedó
+**de fábrica**. Las mesas viejas siguen disponibles.
+
+El relleno de la baranda pasó de una clase de Tailwind al CSS, para que cada tema pueda decidirlo:
+la mesa fotográfica no lleva relleno porque el marco lo pone el propio `border-image`.
+
+### Pendiente
+
+En pantalla grande se alcanza a ver la repetición de la baldosa del paño. Se arregla con una
+baldosa más grande, a costa de peso.
+
+Motor 55/55, backend 87/87, build ok. Visto corriendo en teléfono y escritorio, sin scroll.

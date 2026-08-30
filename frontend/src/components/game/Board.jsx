@@ -269,7 +269,7 @@ export default function Board({
 
   if (!board || board.length === 0) {
     return (
-      <div className={`rail-base ${claseBaranda} flex h-full w-full flex-col rounded-none p-[10px] sm:p-[14px] relative`}>
+      <div className={`rail-base ${claseBaranda} flex h-full w-full flex-col rounded-none relative`}>
       <span className="rail-side rail-top" aria-hidden="true" />
       <span className="rail-side rail-bottom" aria-hidden="true" />
       <span className="rail-side rail-left" aria-hidden="true" />
@@ -314,7 +314,7 @@ export default function Board({
   }
 
   return (
-    <div className={`rail-base ${claseBaranda} flex h-full w-full flex-col rounded-none p-[10px] sm:p-[14px] relative`}>
+    <div className={`rail-base ${claseBaranda} flex h-full w-full flex-col rounded-none relative`}>
       <span className="rail-side rail-top" aria-hidden="true" />
       <span className="rail-side rail-bottom" aria-hidden="true" />
       <span className="rail-side rail-left" aria-hidden="true" />

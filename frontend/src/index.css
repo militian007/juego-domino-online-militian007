@@ -121,6 +121,48 @@
     background-size: auto, auto, 180px 180px;
   }
 
+
+  /*
+   * Mesa fotografica. El marco es una imagen recortada con `border-image`: las
+   * esquinas no se deforman y cada lado se estira solo a lo largo, que es como
+   * corre la veta de verdad. El centro de la imagen no se dibuja (border-image
+   * lo descarta), por eso el paño va aparte.
+   *
+   * Las medidas 123/93/125/94 son el grosor real de la baranda en el archivo.
+   * El grosor en pantalla lo pone `--marco`, independiente de esos recortes.
+   */
+  .rail-foto {
+    --marco: clamp(11px, 3.2vmin, 26px);
+    padding: 0;
+    background-color: transparent;
+    border-style: solid;
+    border-width: calc(var(--marco) * 1.31) var(--marco) calc(var(--marco) * 1.33) var(--marco);
+    border-image-source: url('/mesa-nogal.webp');
+    border-image-slice: 123 93 125 94;
+    border-image-repeat: stretch;
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.78);
+  }
+
+  /* Las tiras de cuero recortadas sobran cuando el marco es una foto. */
+  .rail-foto .rail-side {
+    display: none;
+  }
+
+  /* El recorte se repite a tamaño fijo en vez de estirarse: si se estira, el
+     tejido se agranda y parece arpillera. La baldosa esta espejada en 2x2, asi
+     que repite sin costura. */
+  .felt-tela {
+    background-color: #12503a;
+    background-image: url('/pano-tela.webp');
+    background-size: 340px 340px;
+    background-repeat: repeat;
+  }
+
+  /* La foto ya trae su tejido; el grano dibujado lo ensuciaria. */
+  .felt-tela::before {
+    display: none;
+  }
+
   .felt-verde {
     background-color: #0d6340;
     background-image:
@@ -175,6 +217,7 @@
   .rail-base {
     position: relative;
     overflow: hidden;
+    padding: 10px;
     --rail: 4.2%;
     --cuero-canto: #6b3924;
     --cuero-medio: #8f5030;

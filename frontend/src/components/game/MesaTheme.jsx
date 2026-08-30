@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 export const PANOS = [
+  { id: 'tela', nombre: 'Paño de tela', clase: 'felt-tela' },
   { id: 'verde', nombre: 'Verde casino', clase: 'felt-verde' },
   { id: 'oscuro', nombre: 'Verde profundo', clase: 'felt-oscuro' },
   { id: 'torneo', nombre: 'Torneo', clase: 'felt-torneo' },
@@ -9,6 +10,7 @@ export const PANOS = [
 ];
 
 export const BARANDAS = [
+  { id: 'foto', nombre: 'Nogal y latón', clase: 'rail-foto' },
   { id: 'cognac', nombre: 'Cuero coñac', clase: 'rail-cognac' },
   { id: 'espresso', nombre: 'Cuero espresso', clase: 'rail-espresso' },
   { id: 'negro', nombre: 'Cuero negro', clase: 'rail-negro' },
@@ -16,7 +18,7 @@ export const BARANDAS = [
   { id: 'nogal', nombre: 'Madera nogal', clase: 'rail-nogal' }
 ];
 
-const DEFECTO = { pano: 'verde', baranda: 'cognac' };
+const DEFECTO = { pano: 'tela', baranda: 'foto' };
 const CLAVE = 'mesa-tema';
 
 function leer() {
