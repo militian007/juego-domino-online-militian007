@@ -2070,3 +2070,76 @@ lo que queda libre arriba, no en el paño completo.
 Verificado también en 1280x800: el paño llena la ventana y la cadena queda centrada (626 de 626).
 
 Motor 49/49, backend 86/86, build ok.
+
+---
+
+## 49. El bug estaba en los dobles, no en la mecánica (2026-08-29)
+
+El usuario, con razón: *"es una estupidez romperlo todo para que no me deje solo un error, en vez
+de arreglar la mecánica que está bloqueando la pieza en ciertos puntos"*. Y sobre la serpentina:
+*"que se vea en varias líneas es un peo porque la gente no sabe por dónde va ni dónde puede jugar"*.
+
+Tenía razón en las dos cosas. **Se revirtió la serpentina** (§43, §44) y se volvió a la colocación
+libre: el jugador acomoda la cadena, número con número, sin amontonarse.
+
+### Cómo se encontró el bug de verdad
+
+Se dibujó una posición trabada real en vez de seguir suponiendo:
+
+```
+17 .D...#...
+18 .D####...
+   (D = extremo derecho, valor 3)
+ficha [0|3] por right:
+    roza-otra-ficha  celdas (6,17)-(7,17)
+```
+
+El extremo era el **doble [3|3]**, parado en la columna 5. El motor ofrecía **una sola** salida,
+`(6,17)`, que estaba pegada a la cadena. A la izquierda del doble, `(4,17)` y `(3,17)`, estaba
+libre — y el motor ni lo miraba.
+
+La causa, en `layout.js`:
+
+```js
+if (side === 'left')  add({ ...x: ex - 2... });
+else                  add({ ...x: ex + 1... });
+if (ey <= 1 || ey >= GRID - 2) { /* recién aquí miraba los otros lados */ }
+```
+
+**La dirección se tomaba de si era el extremo izquierdo o el derecho de la cadena, no de la
+geometría**, y solo miraba los otros costados si el doble estaba pegado al borde del tablero. Es
+exactamente el error corregido en §24 para las fichas normales, que nunca se corrigió para los
+dobles.
+
+Un doble está cruzado sobre la cadena: la cadena puede salir por **sus cuatro costados**. Ahora se
+ofrecen los cuatro y los chequeos de siempre filtran los ocupados.
+
+### Medido
+
+| | antes | después |
+|---|---|---|
+| **tenías la ficha y no te dejó** (1v1) | 24.7% | **3.8%** |
+| **tenías la ficha y no te dejó** (2v2) | 30.3% | **5.0%** |
+| trancas 1v1 | 37.6% | **16.4%** |
+| trancas 2v2 | 48.1% | **25.3%** |
+
+Seis veces menos trabas, **sin tocar la mecánica**. Todo lo de §42 a §44 sobra: el 83.6% de
+`solapa-visualmente` era consecuencia de que el doble no ofrecía salidas y la cadena se enrollaba
+sobre sí misma.
+
+### Lo que también se probó y no sirvió
+
+- **Giro de esquina** (perpendicular apoyada en la celda siguiente): 24.7% → 24.6%. No cambia nada
+  por sí solo, así que no se dejó.
+- **Elegir la colocación con más salidas para la siguiente** (un ply de anticipación): empeora,
+  24.4% → 26.7%. Tercera heurística de colocación que falla. **No reintentar.**
+
+### El zoom se fue
+
+La mesa y las fichas tienen **un solo tamaño** durante toda la mano. El acercamiento a la cadena
+(§45) cambiaba de escala en cada jugada y molestaba más de lo que sumaba.
+
+De paso se arregló una medición frágil: el paño se medía a medio asentar (313px cuando terminaba
+midiendo 792) y no se volvía a medir. Ahora también se mide en un `requestAnimationFrame`.
+
+Motor 54/54, backend 87/87, build ok.

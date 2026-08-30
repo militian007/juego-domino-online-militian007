@@ -19,15 +19,11 @@ const CELL_SIZE = DEFAULT_LAYOUT.cell;
 // Con 2 celdas quedan 30px en telefono y 55px en escritorio.
 const MARGEN_CELDAS = 2;
 
-// El paño no dibuja siempre la rejilla entera: se acerca a donde esta la cadena.
-// Dibujar las 20x20 celdas desde el principio dejaba las fichas a 31px de ancho
-// en un telefono, con casi todo el paño vacio. Con el acercamiento arrancan al
-// doble y se van achicando solas a medida que la cadena crece, hasta llegar
-// como maximo al tamaño de antes.
-//
-// El minimo evita el efecto contrario: con una sola ficha en la mesa el
-// acercamiento seria tanto que se veria ridicula.
-const MINIMO_CELDAS = 12;
+// La mesa y las fichas tienen UN SOLO tamaño durante toda la mano. Se probo
+// acercar la vista a donde esta la cadena, para que las fichas se vieran mas
+// grandes al principio, pero el zoom cambiando en cada jugada molesta mas de lo
+// que suma. Se dibuja la rejilla entera, siempre igual.
+const LADO_CELDAS = GRID_SIZE + 2 * MARGEN_CELDAS;
 
 const getValidPlacementsForTile = (board, tile, side) => placementsFor(board, tile, side);
 
@@ -107,50 +103,28 @@ export default function Board({
     }
   }, []);
 
-  // Se mide por tres vias porque ninguna alcanza sola: en el primer render el
-  // ResizeObserver todavia no disparo, y hay entornos donde no dispara nunca.
+  // Se mide por varias vias porque ninguna alcanza sola: en el primer render el
+  // ResizeObserver todavia no disparo, hay entornos donde no dispara nunca, y
+  // medir en el mismo render daba el alto a medio asentar (se quedaba en 313
+  // cuando el paño terminaba midiendo 792).
   useLayoutEffect(medirEscala);
+  useEffect(() => {
+    const id = requestAnimationFrame(medirEscala);
+    return () => cancelAnimationFrame(id);
+  });
 
-  // Las siluetas entran en la cuenta: si no, al levantar una ficha el lugar
-  // donde va podia quedar fuera de lo que se ve.
-  const vista = useMemo(() => {
-    const centro = Math.floor(GRID_SIZE / 2) - 1;
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    for (const t of [...(board || []), ...ghostPlacements]) {
-      minX = Math.min(minX, t.x, t.x2);
-      maxX = Math.max(maxX, t.x, t.x2);
-      minY = Math.min(minY, t.y, t.y2);
-      maxY = Math.max(maxY, t.y, t.y2);
-    }
-    if (minX === Infinity) {
-      minX = centro; maxX = centro + 1; minY = centro; maxY = centro + 1;
-    }
-
-    return {
-      minX,
-      minY,
-      anchoCeldas: maxX - minX + 1 + 2 * MARGEN_CELDAS,
-      altoCeldas: maxY - minY + 1 + 2 * MARGEN_CELDAS
-    };
-  }, [board, ghostPlacements]);
-
-  // Manda el eje que queda mas justo, para que la cadena entre entera.
   const altoUtil = Math.max(pano.alto - insetInferior, 120);
-  const escala = useMemo(() => {
-    if (pano.ancho <= 0 || altoUtil <= 0) return 1;
-    const porAncho = pano.ancho / (Math.max(vista.anchoCeldas, MINIMO_CELDAS) * CELL_SIZE);
-    const porAlto = altoUtil / (Math.max(vista.altoCeldas, MINIMO_CELDAS) * CELL_SIZE);
-    return Math.min(porAncho, porAlto);
-  }, [pano.ancho, altoUtil, vista]);
+  // Manda el eje mas justo, para que la mesa entre entera y siga siendo cuadrada.
+  const escala =
+    pano.ancho > 0 && altoUtil > 0
+      ? Math.min(pano.ancho, altoUtil) / (LADO_CELDAS * CELL_SIZE)
+      : 1;
 
-  // Lo que sobra se reparte a los lados: la cadena queda centrada en el paño.
-  const celdasVisiblesX = pano.ancho > 0 ? pano.ancho / (CELL_SIZE * escala) : vista.anchoCeldas;
-  const celdasVisiblesY = altoUtil > 0 ? altoUtil / (CELL_SIZE * escala) : vista.altoCeldas;
-  const origenX = vista.minX - MARGEN_CELDAS - (celdasVisiblesX - vista.anchoCeldas) / 2;
-  const origenY = vista.minY - MARGEN_CELDAS - (celdasVisiblesY - vista.altoCeldas) / 2;
+  // Lo que sobra en el otro eje se reparte a los lados: la mesa queda centrada.
+  const celdasVisiblesX = pano.ancho > 0 ? pano.ancho / (CELL_SIZE * escala) : LADO_CELDAS;
+  const celdasVisiblesY = altoUtil > 0 ? altoUtil / (CELL_SIZE * escala) : LADO_CELDAS;
+  const origenX = -MARGEN_CELDAS - (celdasVisiblesX - LADO_CELDAS) / 2;
+  const origenY = -MARGEN_CELDAS - (celdasVisiblesY - LADO_CELDAS) / 2;
   const desplazamientoX = -origenX * CELL_SIZE * escala;
   const desplazamientoY = -origenY * CELL_SIZE * escala;
 
@@ -317,8 +291,7 @@ export default function Board({
           style={{
             width: `${GRID_SIZE * CELL_SIZE}px`,
             height: `${GRID_SIZE * CELL_SIZE}px`,
-            transform: `translate(${desplazamientoX}px, ${desplazamientoY}px) scale(${escala})`,
-            transition: 'transform 320ms ease-out'
+            transform: `translate(${desplazamientoX}px, ${desplazamientoY}px) scale(${escala})`
           }}
         >
           {renderGhostPlacements()}
@@ -363,8 +336,7 @@ export default function Board({
         style={{
           width: `${GRID_SIZE * CELL_SIZE}px`,
           height: `${GRID_SIZE * CELL_SIZE}px`,
-          transform: `translate(${desplazamientoX}px, ${desplazamientoY}px) scale(${escala})`,
-            transition: 'transform 320ms ease-out'
+          transform: `translate(${desplazamientoX}px, ${desplazamientoY}px) scale(${escala})`
         }}
       >
         {/* Renderizar Fichas Colocadas */}

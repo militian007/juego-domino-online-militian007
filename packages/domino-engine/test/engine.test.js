@@ -17,8 +17,7 @@ import {
   tileKey,
   createRng,
   shuffleWithRng,
-  roundSeed,
-  playableMoves
+  roundSeed
 } from '../src/index.js';
 import { chooseAction } from '../src/bot.js';
 
@@ -374,9 +373,202 @@ test('gameFormat desconocido lanza error claro', () => {
   assert.throws(() => createGame({ gameFormat: 'truco-1v1' }), /gameFormat desconocido/);
 });
 
-import { placementsFor, boardEnds, computeBoardOffsets } from '../src/layout.js';
+import { placementsFor, boardEnds } from '../src/layout.js';
 
 const L = { grid: 20, cell: 32 };
+
+test('borde: doble vertical pegado al borde izquierdo ofrece arriba Y abajo', () => {
+  const board = [
+    { tile: [2, 2], side: 'left', x: 1, y: 9, x2: 1, y2: 10, orientation: 'vertical' },
+    { tile: [2, 5], side: 'first', x: 2, y: 10, x2: 3, y2: 10, orientation: 'horizontal' },
+    { tile: [5, 4], side: 'right', x: 4, y: 10, x2: 5, y2: 10, orientation: 'horizontal' }
+  ];
+  const ops = placementsFor(board, [2, 6], 'left', L);
+  assert.equal(ops.length, 2, 'deberia ofrecer las dos direcciones del borde');
+  assert.ok(ops.every((p) => p.orientation === 'vertical'));
+  assert.ok(ops.some((p) => Math.min(p.y, p.y2) < 9), 'falta la opcion hacia arriba');
+  assert.ok(ops.some((p) => Math.min(p.y, p.y2) > 10), 'falta la opcion hacia abajo');
+  for (const p of ops) {
+    assert.equal(p.tile[1], 2, 'la mitad que conecta debe ser el valor del extremo');
+    assert.equal(boardEnds([p, ...board]).left, 6, 'el nuevo extremo izquierdo debe ser 6');
+  }
+});
+
+test('borde: doble vertical pegado al borde derecho ofrece arriba Y abajo', () => {
+  const board = [
+    { tile: [4, 5], side: 'first', x: 16, y: 10, x2: 17, y2: 10, orientation: 'horizontal' },
+    { tile: [5, 5], side: 'right', x: 18, y: 10, x2: 18, y2: 11, orientation: 'vertical' }
+  ];
+  const ops = placementsFor(board, [5, 2], 'right', L);
+  assert.equal(ops.length, 2);
+  assert.ok(ops.some((p) => Math.min(p.y, p.y2) < 10), 'falta hacia arriba');
+  assert.ok(ops.some((p) => Math.min(p.y, p.y2) > 11), 'falta hacia abajo');
+  for (const p of ops) {
+    assert.equal(p.tile[0], 5, 'la mitad que conecta debe ser el valor del extremo');
+    assert.equal(boardEnds([...board, p]).right, 2);
+  }
+});
+
+test('borde: doble horizontal en la fila superior ofrece izquierda Y derecha', () => {
+  const board = [
+    { tile: [3, 6], side: 'first', x: 6, y: 3, x2: 6, y2: 2, orientation: 'vertical' },
+    { tile: [6, 6], side: 'right', x: 6, y: 1, x2: 7, y2: 1, orientation: 'horizontal' }
+  ];
+  const ops = placementsFor(board, [6, 4], 'right', L);
+  assert.equal(ops.length, 2);
+  assert.ok(ops.every((p) => p.orientation === 'horizontal'));
+  assert.ok(ops.some((p) => Math.min(p.x, p.x2) < 6), 'falta hacia la izquierda');
+  assert.ok(ops.some((p) => Math.min(p.x, p.x2) > 7), 'falta hacia la derecha');
+  for (const p of ops) assert.equal(boardEnds([...board, p]).right, 4);
+});
+
+test('doble: la cadena puede salir por cualquiera de sus costados', () => {
+  const board = [
+    { tile: [4, 5], side: 'first', x: 8, y: 10, x2: 9, y2: 10, orientation: 'horizontal' },
+    { tile: [5, 5], side: 'right', x: 10, y: 10, x2: 10, y2: 11, orientation: 'vertical' }
+  ];
+  const ops = placementsFor(board, [5, 2], 'right', L);
+  assert.ok(ops.length >= 2, 'un doble no puede tener una sola salida');
+  assert.ok(ops.every((p) => p.tile[0] === 5), 'la mitad que conecta va pegada al doble');
+  assert.ok(ops.every((p) => boardEnds([...board, p]).right === 2));
+});
+
+test('doble: si el costado natural esta tapado, el otro sirve', () => {
+  // Caso real medido: la cadena viene por la fila 18 hacia la izquierda y
+  // termina en el doble [3|3] parado en la columna 5. La salida hacia la
+  // derecha esta pegada a la cadena, pero a la izquierda hay sitio de sobra.
+  // Antes el motor solo miraba la derecha y la ficha quedaba injugable.
+  const board = [
+    { tile: [1, 1], side: 'right', x: 9, y: 18, x2: 8, y2: 18, orientation: 'horizontal' },
+    { tile: [1, 3], side: 'right', x: 7, y: 18, x2: 6, y2: 18, orientation: 'horizontal' },
+    { tile: [3, 3], side: 'right', x: 5, y: 18, x2: 5, y2: 17, orientation: 'vertical' }
+  ];
+  const ops = placementsFor(board, [0, 3], 'right', L);
+  assert.ok(ops.length > 0, 'teniendo el 3 tiene que haber donde ponerlo');
+  assert.ok(
+    ops.some((p) => Math.max(p.x, p.x2) < 5),
+    'tiene que ofrecer la salida por la izquierda del doble'
+  );
+});
+
+test('las dos opciones de borde son jugables de verdad por el motor', () => {
+  const state = createGame({ gameFormat: 'domino-1v1-v1', seed: 'borde-jugable' });
+  state.board = [
+    { tile: [2, 2], side: 'left', x: 1, y: 9, x2: 1, y2: 10, orientation: 'vertical' },
+    { tile: [2, 5], side: 'first', x: 2, y: 10, x2: 3, y2: 10, orientation: 'horizontal' }
+  ];
+  state.ends = boardEnds(state.board);
+  state.hands[0] = [[2, 6]];
+  state.hands[1] = [[0, 1]];
+  state.turn = 0;
+
+  const acciones = legalActions(state, 0).filter((a) => a.side === 'left');
+  assert.equal(acciones.length, 2, 'el jugador debe ver las dos opciones');
+
+  for (const a of acciones) {
+    const r = applyAction(state, a);
+    assert.ok(r.ok, `la opcion ${JSON.stringify(a.placement)} deberia ser jugable: ${r.error}`);
+    assert.equal(r.state.ends.left, 6);
+    const celdas = new Set();
+    for (const t of r.state.board) {
+      for (const k of [`${t.x},${t.y}`, `${t.x2},${t.y2}`]) {
+        assert.equal(celdas.has(k), false, 'colocacion solapada');
+        celdas.add(k);
+      }
+    }
+  }
+});
+
+test('recta: la direccion sale de la punta libre, no del lado de la cadena', () => {
+  // Extremo izquierdo cuya punta libre apunta a la DERECHA (la cadena viene desde la izquierda)
+  const board = [
+    { tile: [5, 6], side: 'left', x: 11, y: 5, x2: 10, y2: 5, orientation: 'horizontal' },
+    { tile: [6, 3], side: 'first', x: 9, y: 5, x2: 9, y2: 6, orientation: 'vertical' }
+  ];
+  const ops = placementsFor(board, [5, 0], 'left', L);
+  const recta = ops.filter((p) => p.orientation === 'horizontal');
+  assert.equal(recta.length, 1, 'debe existir la opcion recta');
+  assert.deepEqual(
+    { x: recta[0].x, y: recta[0].y, x2: recta[0].x2, y2: recta[0].y2 },
+    { x: 13, y: 5, x2: 12, y2: 5 },
+    'la recta debe seguir hacia la derecha, que es donde apunta la punta libre'
+  );
+  assert.equal(recta[0].tile[1], 5, 'la mitad que conecta va pegada al extremo');
+  assert.equal(boardEnds([recta[0], ...board]).left, 0);
+});
+
+test('recta: extremo vertical cuya punta libre apunta hacia abajo', () => {
+  const board = [
+    { tile: [2, 4], side: 'first', x: 8, y: 8, x2: 9, y2: 8, orientation: 'horizontal' },
+    { tile: [4, 6], side: 'right', x: 10, y: 8, x2: 10, y2: 9, orientation: 'vertical' }
+  ];
+  const ops = placementsFor(board, [6, 1], 'right', L);
+  const recta = ops.filter((p) => p.orientation === 'vertical');
+  assert.equal(recta.length, 1);
+  assert.deepEqual(
+    { x: recta[0].x, y: recta[0].y, x2: recta[0].x2, y2: recta[0].y2 },
+    { x: 10, y: 10, x2: 10, y2: 11 },
+    'debe continuar hacia abajo'
+  );
+});
+
+test('amontonamiento: una ficha nueva no puede tocar otra que no sea su enganche', () => {
+  // Cadena en U: el hueco de abajo a la izquierda tocaria dos fichas a la vez
+  const board = [
+    { tile: [1, 2], side: 'first', x: 8, y: 8, x2: 9, y2: 8, orientation: 'horizontal' },
+    { tile: [2, 3], side: 'right', x: 10, y: 8, x2: 10, y2: 9, orientation: 'vertical' },
+    { tile: [3, 4], side: 'right', x: 10, y: 10, x2: 9, y2: 10, orientation: 'horizontal' },
+    { tile: [4, 5], side: 'right', x: 8, y: 10, x2: 7, y2: 10, orientation: 'horizontal' }
+  ];
+  const ops = placementsFor(board, [5, 6], 'right', L);
+  const ownerOf = new Map();
+  board.forEach((t, i) => {
+    ownerOf.set(`${t.x},${t.y}`, i);
+    ownerOf.set(`${t.x2},${t.y2}`, i);
+  });
+  for (const p of ops) {
+    for (const [cx, cy] of [[p.x, p.y], [p.x2, p.y2]]) {
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const owner = ownerOf.get(`${cx + dx},${cy + dy}`);
+        assert.ok(
+          owner === undefined || owner === board.length - 1,
+          `la opcion ${p.orientation}(${p.x},${p.y}) roza la ficha ${owner}, se amontona`
+        );
+      }
+    }
+  }
+});
+
+test('amontonamiento: ninguna partida deja fichas tocandose fuera de la cadena', () => {
+  for (const fmt of ['domino-1v1-v1', 'domino-2v2-v1']) {
+    let s = createGame({ gameFormat: fmt, seed: `contacto-${fmt}`, config: { targetPoints: 60 } });
+    let g = 0;
+    while (s.phase !== PHASE.GAME_OVER && g < 4000) {
+      g += 1;
+      if (s.phase === PHASE.ROUND_OVER) {
+        s = applyAction(s, { type: ACTION.START_NEXT_ROUND, seat: 0 }).state;
+        continue;
+      }
+      const v = viewFor(s, s.turn);
+      s = applyAction(s, chooseAction(v) || v.actions[0]).state;
+
+      const owner = new Map();
+      s.board.forEach((t, i) => {
+        owner.set(`${t.x},${t.y}`, i);
+        owner.set(`${t.x2},${t.y2}`, i);
+      });
+      s.board.forEach((t, i) => {
+        for (const [cx, cy] of [[t.x, t.y], [t.x2, t.y2]]) {
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const o = owner.get(`${cx + dx},${cy + dy}`);
+            if (o === undefined || o === i) continue;
+            assert.equal(Math.abs(o - i), 1, `las fichas ${i} y ${o} se tocan sin ser vecinas de cadena`);
+          }
+        }
+      });
+    }
+  }
+});
 
 test('pozo: el jugador elige que ficha levanta', () => {
   let s = createGame({ gameFormat: 'domino-1v1-v1', seed: 'pozo-elegir' });
@@ -465,6 +657,35 @@ test('pozo: la vista nunca revela que fichas hay en el pozo', () => {
     if (enMiMano) continue;
     assert.equal(json.includes(JSON.stringify(t)), false, `se filtro la ficha ${tileKey(t)} del pozo`);
   }
+});
+
+test('doble: puede cruzarse hacia cualquiera de los dos lados de la cadena', () => {
+  const board = [
+    { tile: [2, 4], side: 'first', x: 8, y: 10, x2: 9, y2: 10, orientation: 'horizontal' }
+  ];
+  const ops = placementsFor(board, [4, 4], 'right', L);
+  assert.equal(ops.length, 2, 'un doble tiene dos posiciones cruzadas');
+  assert.ok(ops.every((p) => p.orientation === 'vertical'));
+  assert.ok(ops.every((p) => p.x === 10 && p.x2 === 10), 'ambas en la columna siguiente');
+  assert.ok(ops.some((p) => Math.min(p.y, p.y2) === 9), 'falta la que sobresale hacia arriba');
+  assert.ok(ops.some((p) => Math.min(p.y, p.y2) === 10), 'falta la que sobresale hacia abajo');
+});
+
+test('doble: si una posicion cruzada esta tapada, la otra sigue disponible', () => {
+  // Cadena en U: la vuelta de arriba tapa la posicion alta del doble
+  const board = [
+    { tile: [4, 1], side: 'left', x: 12, y: 8, x2: 11, y2: 8, orientation: 'horizontal' },
+    { tile: [1, 2], side: 'left', x: 10, y: 8, x2: 9, y2: 8, orientation: 'horizontal' },
+    { tile: [2, 0], side: 'left', x: 8, y: 8, x2: 7, y2: 8, orientation: 'horizontal' },
+    { tile: [0, 1], side: 'first', x: 6, y: 8, x2: 6, y2: 9, orientation: 'vertical' },
+    { tile: [1, 5], side: 'right', x: 6, y: 10, x2: 7, y2: 10, orientation: 'horizontal' },
+    { tile: [5, 4], side: 'right', x: 8, y: 10, x2: 9, y2: 10, orientation: 'horizontal' },
+    { tile: [4, 6], side: 'right', x: 10, y: 10, x2: 11, y2: 10, orientation: 'horizontal' }
+  ];
+  const ops = placementsFor(board, [6, 6], 'right', L);
+  assert.equal(ops.length, 1, 'la de arriba toca la vuelta, la de abajo entra');
+  assert.equal(Math.min(ops[0].y, ops[0].y2), 10, 'debe ser la que sobresale hacia abajo');
+  assert.equal(boardEnds([...board, ops[0]]).right, 6);
 });
 
 test('doble en el medio: sigue siendo perpendicular, nunca en linea', () => {
@@ -589,181 +810,4 @@ test('bots: una dificultad desconocida no rompe, cae en normal', () => {
   const a = chooseAction(v, { difficulty: 'inventada' });
   assert.ok(a, 'deberia devolver una accion igual');
   assert.ok(v.actions.some((x) => JSON.stringify(x) === JSON.stringify(a)), 'y ser legal');
-});
-
-test('serpentina: cada extremo ofrece exactamente un lugar', () => {
-  const board = [
-    { tile: [2, 5], side: 'first', x: 9, y: 9, x2: 10, y2: 9, orientation: 'horizontal' }
-  ];
-  assert.equal(placementsFor(board, [5, 3], 'right', L).length, 1);
-  assert.equal(placementsFor(board, [4, 2], 'left', L).length, 1);
-  assert.equal(placementsFor(board, [6, 6], 'right', L).length, 0, 'si no pega, no hay lugar');
-});
-
-test('serpentina: el doble se cruza y sale de la fila', () => {
-  const board = [
-    { tile: [2, 5], side: 'first', x: 9, y: 9, x2: 10, y2: 9, orientation: 'horizontal' }
-  ];
-  const [p] = placementsFor(board, [5, 5], 'right', L);
-  assert.equal(p.orientation, 'vertical', 'el doble va cruzado');
-  assert.equal(p.x, p.x2, 'ocupa una sola columna');
-  assert.equal(Math.min(p.y, p.y2), 9, 'arranca en la fila de la cadena');
-  const [off] = computeBoardOffsets([p], L);
-  assert.equal(off.y, -L.cell / 2, 'se sube media celda para quedar centrado en la fila');
-});
-
-test('serpentina: al llegar al borde baja de fila y sigue al reves', () => {
-  let board = [
-    { tile: [0, 1], side: 'first', x: 9, y: 9, x2: 10, y2: 9, orientation: 'horizontal' }
-  ];
-  let val = 1;
-  for (let i = 0; i < 8; i++) {
-    const siguiente = (val + 1) % 7;
-    const [p] = placementsFor(board, [val, siguiente], 'right', L);
-    assert.ok(p, 'siempre tiene que haber lugar');
-    board = [...board, p];
-    val = siguiente;
-  }
-  const filas = [...new Set(board.map((t) => Math.min(t.y, t.y2)))];
-  assert.ok(filas.length > 1, 'la cadena tuvo que cambiar de fila');
-  assert.ok(Math.max(...board.map((t) => Math.max(t.x, t.x2))) <= L.grid - 1, 'nada se sale');
-  assert.ok(Math.max(...filas) > 9, 'la mitad derecha baja');
-});
-
-test('serpentina: las fichas ya puestas nunca se mueven', () => {
-  let board = [
-    { tile: [3, 4], side: 'first', x: 9, y: 9, x2: 10, y2: 9, orientation: 'horizontal' }
-  ];
-  const [d1] = placementsFor(board, [4, 5], 'right', L);
-  board = [...board, d1];
-  const antes = JSON.stringify(board);
-  const [i1] = placementsFor(board, [2, 3], 'left', L);
-  board = [i1, ...board];
-  assert.equal(JSON.stringify(board.slice(1)), antes, 'jugar por la izquierda no corre lo demas');
-  const [d2] = placementsFor(board, [5, 6], 'right', L);
-  assert.deepEqual(
-    { x: d2.x, y: d2.y },
-    { x: 13, y: 9 },
-    'la derecha sigue donde iba, sin importar lo que paso por la izquierda'
-  );
-});
-
-test('serpentina: en una partida entera la cadena nunca se pisa', () => {
-  let choques = 0;
-  let fichas = 0;
-  for (let g = 0; g < 40; g++) {
-    let st = createGame({
-      gameFormat: 'domino-2v2-v1',
-      seed: 'serp-' + g,
-      players: [0, 1, 2, 3].map((i) => ({ id: 'p' + i }))
-    });
-    let pasos = 0;
-    while (st.phase !== PHASE.GAME_OVER && pasos++ < 1200) {
-      if (st.phase === PHASE.ROUND_OVER) {
-        const n = applyAction(st, { type: ACTION.START_NEXT_ROUND, seat: 0 });
-        if (!n.ok) break;
-        st = n.state;
-        continue;
-      }
-      const a = chooseAction(viewFor(st, st.turn), { seed: 's' + g + '-' + pasos });
-      const r = applyAction(st, { ...a, seat: st.turn });
-      if (!r.ok) break;
-      st = r.state;
-
-      const usadas = new Set();
-      for (const t of st.board) {
-        fichas++;
-        for (const c of [t.x + ',' + t.y, t.x2 + ',' + t.y2]) {
-          if (usadas.has(c)) choques++;
-          usadas.add(c);
-        }
-      }
-    }
-  }
-  assert.ok(fichas > 5000, 'la muestra tiene que ser grande');
-  assert.equal(choques, 0, 'ninguna celda puede estar ocupada dos veces');
-});
-
-test('serpentina: si la ficha pega con un extremo, SIEMPRE hay donde ponerla', () => {
-  let trancadoTeniendola = 0;
-  let turnosSinJugar = 0;
-  for (let g = 0; g < 40; g++) {
-    let st = createGame({
-      gameFormat: 'domino-2v2-v1',
-      seed: 'garantia-' + g,
-      players: [0, 1, 2, 3].map((i) => ({ id: 'p' + i }))
-    });
-    let pasos = 0;
-    while (st.phase !== PHASE.GAME_OVER && pasos++ < 1200) {
-      if (st.phase === PHASE.ROUND_OVER) {
-        const n = applyAction(st, { type: ACTION.START_NEXT_ROUND, seat: 0 });
-        if (!n.ok) break;
-        st = n.state;
-        continue;
-      }
-      const asiento = st.turn;
-      if (playableMoves(st, asiento).length === 0 && st.board.length > 0) {
-        turnosSinJugar++;
-        const e = st.ends;
-        if (st.hands[asiento].some(
-          (t) => t[0] === e.left || t[1] === e.left || t[0] === e.right || t[1] === e.right
-        )) trancadoTeniendola++;
-      }
-      const a = chooseAction(viewFor(st, asiento), { seed: 'g' + g + '-' + pasos });
-      const r = applyAction(st, { ...a, seat: asiento });
-      if (!r.ok) break;
-      st = r.state;
-    }
-  }
-  assert.ok(turnosSinJugar > 200, 'tiene que haber pasado seguido');
-  assert.equal(
-    trancadoTeniendola,
-    0,
-    'nadie puede quedarse trancado teniendo una ficha que pega con un extremo'
-  );
-});
-
-test('serpentina: la cadena se ve entera, cada ficha toca a la siguiente', () => {
-  const celdas = (t) => [[t.x, t.y], [t.x2, t.y2]];
-  const pegadas = (a, b) => {
-    for (const [ax, ay] of celdas(a)) {
-      for (const [bx, by] of celdas(b)) {
-        if (Math.abs(ax - bx) + Math.abs(ay - by) === 1) return true;
-      }
-    }
-    return false;
-  };
-
-  let pares = 0;
-  let cortes = 0;
-  let conVuelta = 0;
-  for (let g = 0; g < 25; g++) {
-    let st = createGame({
-      gameFormat: 'domino-2v2-v1',
-      seed: 'cadena-' + g,
-      players: [0, 1, 2, 3].map((i) => ({ id: 'p' + i }))
-    });
-    let pasos = 0;
-    while (st.phase !== PHASE.GAME_OVER && pasos++ < 1200) {
-      if (st.phase === PHASE.ROUND_OVER) {
-        const n = applyAction(st, { type: ACTION.START_NEXT_ROUND, seat: 0 });
-        if (!n.ok) break;
-        st = n.state;
-        continue;
-      }
-      const a = chooseAction(viewFor(st, st.turn), { seed: 'c' + g + '-' + pasos });
-      const r = applyAction(st, { ...a, seat: st.turn });
-      if (!r.ok) break;
-      st = r.state;
-
-      for (let i = 0; i + 1 < st.board.length; i++) {
-        pares++;
-        if (!pegadas(st.board[i], st.board[i + 1])) cortes++;
-      }
-      if (new Set(st.board.map((t) => Math.min(t.y, t.y2))).size > 2) conVuelta++;
-    }
-  }
-  assert.ok(pares > 20000, 'la muestra tiene que ser grande');
-  assert.ok(conVuelta > 500, 'tiene que haber cadenas que doblaron varias veces');
-  assert.equal(cortes, 0, 'la cadena no puede quedar cortada en ningun momento');
 });

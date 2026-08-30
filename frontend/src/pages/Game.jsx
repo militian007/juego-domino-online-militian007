@@ -174,7 +174,7 @@ export default function Game() {
     setDraggedTile(null);
     draggedTileRef.current = null;
     if (arrastre?.isSnapped && arrastre.activePlacement) {
-      playTile(arrastre.index, arrastre.activePlacement.side);
+      playTile(arrastre.index, arrastre.activePlacement.side, arrastre.activePlacement);
     }
   };
 
@@ -513,10 +513,10 @@ export default function Game() {
     }
   };
 
-  // Solo se manda que ficha y en que extremo. Donde cae lo calcula el servidor:
-  // con el trazado en serpentina hay una sola posicion por extremo, asi que
-  // mandar coordenadas era redundante y ademas podian no coincidir.
-  const playTile = (tileIndex, side) => {
+  // Con colocacion libre hay varias posiciones por extremo, asi que se manda la
+  // que eligio el jugador. El ref del arrastre se escribe a mano (ver arriba):
+  // con el `useEffect` iba atrasado y se enviaba la posicion anterior.
+  const playTile = (tileIndex, side, placement = null) => {
     if (!socket || !actualRoomCode || isPlacing || enviandoRef.current) return;
     enviandoRef.current = true;
     setError('');
@@ -528,7 +528,16 @@ export default function Game() {
       setIsPlacing(false);
     }, 6000);
 
-    socket.emit('game:play', { code: actualRoomCode, tileIndex, side }, (res) => {
+    const payload = { code: actualRoomCode, tileIndex, side };
+    if (placement) {
+      payload.x = placement.x;
+      payload.y = placement.y;
+      payload.x2 = placement.x2;
+      payload.y2 = placement.y2;
+      payload.orientation = placement.orientation;
+    }
+
+    socket.emit('game:play', payload, (res) => {
       clearTimeout(rescate);
       enviandoRef.current = false;
       if (!res?.ok) {
@@ -867,7 +876,7 @@ export default function Game() {
                   ends={gameState.ends}
                   selectedTile={selectedTile}
                   onPlayTile={(side, placement) => {
-                    if (selectedTile) playTile(selectedTile.index, side);
+                    if (selectedTile) playTile(selectedTile.index, side, placement);
                   }}
                   myTurn={myTurn}
                   lastAction={gameState.lastAction}
