@@ -2143,3 +2143,69 @@ De paso se arregló una medición frágil: el paño se medía a medio asentar (3
 midiendo 792) y no se volvía a medir. Ahora también se mide en un `requestAnimationFrame`.
 
 Motor 54/54, backend 87/87, build ok.
+
+---
+
+## 50. La cadena se iba contra la pared (2026-08-29)
+
+El usuario mandó una captura con el doble 3 injugable y el panel diciendo *"no queda espacio en
+la mesa por ese lado"*, con la mesa **casi vacía**. Su pregunta era la correcta: *"¿te parece que
+no hay espacio? Sí hay. Entonces es una regla mal escrita"*.
+
+No era la regla: era **hacia dónde había crecido la cadena**. Se midió:
+
+```
+turnos trancados teniendo la ficha del extremo: 3.4%
+extremos de la cadena pegados al borde del tablero: 19.2%
+motivos:
+   fuera-del-tablero (doble)   577   <- 66% de las fichas trancadas
+   roza-otra-ficha             176
+   ...
+```
+
+**Dos de cada tres trabas eran un doble contra la pared.** Un doble se cruza sobre la cadena, así
+que necesita la celda siguiente a la punta libre; si la punta está en la fila 0, esa celda no
+existe. Con la ficha normal no se nota, porque puede doblar.
+
+### Por qué llegaba al borde
+
+El bot elegía dónde poner la ficha así:
+
+```js
+const recta = mejor.opciones.find((a) => a.placement.orientation === extremo.orientation);
+return recta || mejor.opciones[0];
+```
+
+Seguir derecho siempre, sin mirar el borde. La cadena avanzaba en línea hasta chocar con la pared,
+y ahí el siguiente doble quedaba sin salida.
+
+Ahora primero se descartan las colocaciones que dejan la punta contra el borde, y **recién
+después** se prefiere seguir derecho. Lo mismo en `straightestPlacement`, que es lo que usa el
+servidor cuando el cliente no manda posición.
+
+### Medido
+
+| | antes | después |
+|---|---|---|
+| **extremos pegados al borde** | 19.2% | **2.1%** |
+| **doble sin espacio** | 577 | **132** |
+| tenías la ficha y no te dejó (1v1) | 3.8% | **2.6%** |
+| trancas 1v1 | 16.4% | **15.1%** |
+
+En 2v2 quedó igual dentro del ruido (5.0% → 5.2%): con cuatro manos y sin pozo, la cadena la
+arman entre todos y el bot pesa menos.
+
+### Acumulado del día
+
+| | al empezar | ahora |
+|---|---|---|
+| tenías la ficha y no te dejó (1v1) | 24.7% | **2.6%** |
+| tenías la ficha y no te dejó (2v2) | 30.3% | **5.2%** |
+
+Nueve veces menos trabas en 1v1, sin cambiar la mecánica: colocación libre, el jugador acomoda,
+número con número.
+
+Lo que queda (`celda-ocupada`, `roza-otra-ficha`) es la cadena cruzándose consigo misma, que es el
+precio de que el jugador elija dónde poner cada ficha.
+
+Motor 54/54, backend 87/87, build ok.

@@ -156,14 +156,29 @@ export function chooseAction(view, opts = {}) {
     }
   }
 
-  // 2. Donde ponerla: seguir derecho si se puede. Una cadena recta se traba
-  // mucho menos que una que serpentea (medido: 32% vs 44% de bloqueo geometrico).
+  // 2. Donde ponerla. Primero, no dejar la punta contra el borde de la mesa:
+  // si la cadena avanza derecho hasta chocar, el siguiente doble ya no tiene
+  // hacia donde cruzarse. Medido: el extremo quedaba pegado al borde el 19.2%
+  // del tiempo y eso causaba el 66% de las fichas trancadas.
+  //
+  // Recien despues se prefiere seguir derecho: una cadena recta se traba menos
+  // que una que serpentea (medido: 32% contra 44% de bloqueo geometrico).
   if (view.board.length === 0) return mejor.opciones[0];
-  const extremo = mejor.opciones[0].side === 'left'
+
+  const grid = view.layout?.grid ?? 20;
+  const aire = (a) => {
+    const p = a.placement;
+    const punta = a.side === 'left' ? { x: p.x, y: p.y } : { x: p.x2, y: p.y2 };
+    return Math.min(2, punta.x, punta.y, grid - 1 - punta.x, grid - 1 - punta.y);
+  };
+  const mejorAire = Math.max(...mejor.opciones.map(aire));
+  const holgadas = mejor.opciones.filter((a) => aire(a) === mejorAire);
+
+  const extremo = holgadas[0].side === 'left'
     ? view.board[0]
     : view.board[view.board.length - 1];
-  const recta = mejor.opciones.find((a) => a.placement.orientation === extremo.orientation);
-  return recta || mejor.opciones[0];
+  const recta = holgadas.find((a) => a.placement.orientation === extremo.orientation);
+  return recta || holgadas[0];
 }
 
 export function createBot(opts = {}) {
