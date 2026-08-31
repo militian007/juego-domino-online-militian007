@@ -11,6 +11,7 @@ import Hand from '../components/game/Hand.jsx';
 import OpponentHand from '../components/game/OpponentHand.jsx';
 import PlayerInfo from '../components/game/PlayerInfo.jsx';
 import Avatar from '../components/game/Avatar.jsx';
+import Tablero from '../components/game/Tablero.jsx';
 import Scoreboard from '../components/game/Scoreboard.jsx';
 import SidePicker from '../components/game/SidePicker.jsx';
 import AdSidebar from '../components/AdSidebar.jsx';
@@ -900,47 +901,35 @@ export default function Game() {
                   draggedTile={draggedTile}
                   onSnapChange={handleSnapChange}
                 />
-                {/* El marcador y los rivales van sobre la madera, sin caja: si todo
-                    lleva marco, todo pesa igual y no resalta lo importante. */}
-                <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between px-2 pt-1">
-                  <div className="drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
-                    <div className="text-[9px] uppercase tracking-widest text-sky-300/80">Vos</div>
-                    <div className="text-xl font-black leading-none text-sky-200">
-                      {gameState.teamScores?.[miEquipo] ?? 0}
-                    </div>
-                  </div>
-                  <div className="text-center text-[9px] uppercase tracking-widest text-domino-cream/60 drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
-                    <div>Ronda {gameState.round} · a {gameState.targetPoints ?? 100}</div>
-                    <div className="font-mono tracking-normal text-domino-cream/40">{gameState.roomCode}</div>
-                  </div>
-                  <div className="text-right drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
-                    <div className="text-[9px] uppercase tracking-widest text-rose-300/80">Ellos</div>
-                    <div className="text-xl font-black leading-none text-rose-200">
-                      {gameState.teamScores?.[equipoRival] ?? 0}
-                    </div>
-                  </div>
-                </div>
+                <Tablero
+                  mios={gameState.teamScores?.[miEquipo] ?? 0}
+                  suyos={gameState.teamScores?.[equipoRival] ?? 0}
+                  ronda={gameState.round}
+                  objetivo={gameState.targetPoints ?? 100}
+                  pozo={gameState.hasPool ? gameState.poolCount : null}
+                  sala={gameState.roomCode}
+                />
 
                 <AsientoFlotante
                   jugador={seatTop}
                   fichas={gameState.handCounts[seatTop?.id]}
                   enTurno={gameState.currentPlayerId === seatTop?.id}
                   esCompanero={esCompanero(seatTop)}
-                  className="left-1/2 top-9 -translate-x-1/2"
+                  className="left-1/2 top-[76px] -translate-x-1/2"
                 />
                 <AsientoFlotante
                   jugador={seatLeft}
                   fichas={gameState.handCounts[seatLeft?.id]}
                   enTurno={gameState.currentPlayerId === seatLeft?.id}
                   esCompanero={esCompanero(seatLeft)}
-                  className="left-1 top-7"
+                  className="left-1 top-[76px]"
                 />
                 <AsientoFlotante
                   jugador={seatRight}
                   fichas={gameState.handCounts[seatRight?.id]}
                   enTurno={gameState.currentPlayerId === seatRight?.id}
                   esCompanero={esCompanero(seatRight)}
-                  className="right-1 top-7"
+                  className="right-1 top-[76px]"
                 />
 
                 {/* Los menus van chiquitos al borde y abren su ventanita, para no
@@ -1131,11 +1120,7 @@ export default function Game() {
                         onRobar={handleDraw}
                       />
                     </div>
-                  ) : (
-                    <p className="mt-2 text-center text-[10px] uppercase tracking-widest text-amber-300/60">
-                      pozo · {gameState.poolCount} fichas
-                    </p>
-                  )
+                  ) : null
                 )}
 
                 {myTurn && gameState.canPass && (

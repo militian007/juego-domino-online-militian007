@@ -2394,3 +2394,37 @@ nos hizo perder este rato.
 Se arranca en **0.0.25**.
 
 Motor 55/55, backend 87/87, build ok.
+
+---
+
+## 57. El marcador es una placa en la mesa, no números en las esquinas (2026-08-30)
+
+El usuario, con una captura en pantalla ancha: los números de "VOS" y "ELLOS" quedaban **en las
+dos esquinas opuestas**, separados por media pantalla. No se leían como un marcador, se leían como
+dos números sueltos. Pidió un solo tablero, bien resuelto, con la ronda, el pozo y los puntos.
+
+### La placa
+
+Es una **placa de nogal con filos de latón**, centrada arriba, flotando sobre el paño. Muestra:
+
+```
+   VOS    │  RONDA 1 · A 100  │   ELLOS
+    0     │     POZO · 14     │     0
+          │      6YW05T       │
+```
+
+**El material salió de la misma imagen de la mesa**, no de una nueva: se recortó un tramo limpio
+de la baranda de arriba —evitando las esquinas, que traen el inglete— y se espejó en vertical, así
+queda latón arriba y abajo como una placa atornillada. Pesa 17 KB.
+
+Se hizo así por dos razones: se habían acabado los créditos de generación, y sobre todo porque
+recortando de la misma foto la placa es **el mismo material que la mesa**, no uno parecido. La
+línea de latón se ubica automáticamente buscando la fila más amarilla de la baranda, en vez de
+copiar un número a mano.
+
+### De paso
+
+- El pozo estaba **repetido**: en la placa y otra vez debajo de la mano. Se quitó el de abajo.
+- Los tres rivales bajaron a `top-76px` para no quedar debajo de la placa.
+
+Motor 55/55, backend 87/87, build ok. Visto corriendo en teléfono. Versión **0.0.26**.
