@@ -2455,3 +2455,24 @@ Lo que la convierte en placa y no en tabla pegada:
 - Ahí quedaba **detrás del avatar del rival**, así que los tres rivales bajaron a `top-104px`.
 
 Motor 55/55, backend 87/87, build ok. Visto corriendo en teléfono. Versión **0.0.27**.
+
+---
+
+## 59. El rival del 1v1, al costado (2026-08-30)
+
+Con la placa del marcador arriba al centro, en 1v1 el único rival quedaba justo debajo de ella y
+encima del código de sala: se pisaban. En 2v2 no pasa, porque el de enfrente comparte el centro
+con dos rivales a los lados y el conjunto se lee.
+
+En 1v1 el rival se corre al costado izquierdo, que está libre.
+
+### Sobre los personajes con IA
+
+El usuario pidió generar los avatares con IA en vez de los SVG dibujados por código. **No se pudo:
+el workspace de generación está sin créditos.** El chequeo de precio (`get_cost`) responde, pero la
+generación falla con "Out of credits".
+
+Quedan escritos los prompts para las cinco caras, listos para lanzar en cuanto haya saldo. Hasta
+entonces siguen los retratos SVG de `Avatar.jsx`, que no dependen de nada externo.
+
+Motor 55/55, backend 87/87, build ok. Versión **0.0.28**.
