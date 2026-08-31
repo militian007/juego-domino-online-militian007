@@ -915,7 +915,11 @@ export default function Game() {
                   fichas={gameState.handCounts[seatTop?.id]}
                   enTurno={gameState.currentPlayerId === seatTop?.id}
                   esCompanero={esCompanero(seatTop)}
-                  className={is1v1 ? 'left-3 top-[104px]' : 'left-1/2 top-[104px] -translate-x-1/2'}
+                  className={
+                    is1v1
+                      ? 'left-4 top-[86px] sm:left-[72px] sm:top-[74px]'
+                      : 'left-1/2 top-[104px] -translate-x-1/2'
+                  }
                 />
                 <AsientoFlotante
                   jugador={seatLeft}

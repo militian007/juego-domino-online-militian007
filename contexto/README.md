@@ -2476,3 +2476,21 @@ Quedan escritos los prompts para las cinco caras, listos para lanzar en cuanto h
 entonces siguen los retratos SVG de `Avatar.jsx`, que no dependen de nada externo.
 
 Motor 55/55, backend 87/87, build ok. Versión **0.0.28**.
+
+---
+
+## 60. El avatar del rival, dentro del paño (2026-08-30)
+
+Pegado al borde izquierdo, la baranda le comía media cara al avatar del rival. Se mete dentro del
+paño: `left-4 top-86px` en teléfono y `left-72px top-74px` en pantalla grande, que es donde el
+usuario lo marcó en su captura.
+
+### Los personajes de alta calidad siguen pendientes
+
+Segundo intento de generarlos, **misma respuesta: "Out of credits in the selected workspace"**. El
+chequeo de precio responde (2 créditos por imagen), la generación no.
+
+Los prompts están escritos para las cinco caras, con luz y encuadre comunes para que se vean de la
+misma familia y se puedan recortar en círculo. En cuanto haya saldo se lanzan.
+
+Motor 55/55, backend 87/87, build ok. Versión **0.0.29**.
