@@ -2428,3 +2428,30 @@ copiar un número a mano.
 - Los tres rivales bajaron a `top-76px` para no quedar debajo de la placa.
 
 Motor 55/55, backend 87/87, build ok. Visto corriendo en teléfono. Versión **0.0.26**.
+
+---
+
+## 58. La placa, con cariño (2026-08-30)
+
+El usuario sobre la primera versión del marcador: *"se ve como si fuera una tabla puesta en un
+borde, los números y letras apenas se ven"*. Tenía razón en las dos cosas: era madera plana con
+texto encima.
+
+Lo que la convierte en placa y no en tabla pegada:
+
+- **Cartuchos hundidos** para los números. El problema de fondo era el contraste: la veta del
+  nogal es clara, así que texto claro sobre madera clara no se lee. Ahora cada número va sobre un
+  recuadro oscuro con sombra interior, y encima queda blanco con un halo tenue.
+- **Filo de latón por dentro**, igual que el de la baranda.
+- **Cuatro tornillos de latón** en las esquinas.
+- **Sombra debajo** que la despega del paño.
+- La ronda y el pozo también pasaron a fondo oscuro, por el mismo motivo de contraste. El pozo
+  lleva un dibujito de ficha al lado del número.
+
+### Dos cosas que salieron probando
+
+- El **código de sala quedaba cortado** contra el filo de abajo. Se sacó de la placa y va debajo,
+  sobre el paño.
+- Ahí quedaba **detrás del avatar del rival**, así que los tres rivales bajaron a `top-104px`.
+
+Motor 55/55, backend 87/87, build ok. Visto corriendo en teléfono. Versión **0.0.27**.

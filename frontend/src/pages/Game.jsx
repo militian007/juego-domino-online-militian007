@@ -915,21 +915,21 @@ export default function Game() {
                   fichas={gameState.handCounts[seatTop?.id]}
                   enTurno={gameState.currentPlayerId === seatTop?.id}
                   esCompanero={esCompanero(seatTop)}
-                  className="left-1/2 top-[76px] -translate-x-1/2"
+                  className="left-1/2 top-[104px] -translate-x-1/2"
                 />
                 <AsientoFlotante
                   jugador={seatLeft}
                   fichas={gameState.handCounts[seatLeft?.id]}
                   enTurno={gameState.currentPlayerId === seatLeft?.id}
                   esCompanero={esCompanero(seatLeft)}
-                  className="left-1 top-[76px]"
+                  className="left-1 top-[104px]"
                 />
                 <AsientoFlotante
                   jugador={seatRight}
                   fichas={gameState.handCounts[seatRight?.id]}
                   enTurno={gameState.currentPlayerId === seatRight?.id}
                   esCompanero={esCompanero(seatRight)}
-                  className="right-1 top-[76px]"
+                  className="right-1 top-[104px]"
                 />
 
                 {/* Los menus van chiquitos al borde y abren su ventanita, para no
