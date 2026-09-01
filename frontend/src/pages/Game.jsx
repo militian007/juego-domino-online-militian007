@@ -1030,16 +1030,47 @@ export default function Game() {
                   background:
                     'linear-gradient(to top, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.90) 62%, rgba(0,0,0,0.55) 84%, rgba(0,0,0,0) 100%)'
                 }}>
-                <div className="mb-1 flex items-center justify-between px-1 text-[10px] uppercase tracking-widest">
+                <div className="mb-1 flex items-center justify-between gap-2 px-1 text-[10px] uppercase tracking-widest">
                   <span className="text-domino-cream/50">
                     tu mano · {gameState.myHand?.length ?? 0}
                   </span>
-                  <span className={myTurn ? 'font-bold text-emerald-300' : 'text-domino-cream/40'}>
-                    {myTurn ? 'tu turno' : 'esperando'}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={myTurn ? 'font-bold text-emerald-300' : 'text-domino-cream/40'}>
+                      {myTurn ? 'tu turno' : 'esperando'}
+                    </span>
+                    {/* Icono de Mensaje / Reacción */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowReactionMenu(!showReactionMenu)}
+                        className="w-10 h-10 sm:w-12 sm:h-12 bg-domino-card hover:bg-domino-card/80 border-2 border-domino-accent/40 hover:border-domino-accent rounded-lg flex items-center justify-center text-domino-accent transition shadow-lg cursor-pointer"
+                        title="Enviar gesto o emoji"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 sm:w-7 sm:h-7">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a.75.75 0 0 1-1.074-.765 6 6 0 0 0 1.257-2.907C4.228 15.932 3 14.1 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+                        </svg>
+                      </button>
+
+                      {/* Menú emergente de emojis */}
+                      {showReactionMenu && (
+                        <div className="absolute bottom-12 right-0 bg-domino-felt border-2 border-domino-accent/50 rounded-2xl p-3 shadow-2xl z-50 grid grid-cols-6 gap-2" style={{ minWidth: '240px' }}>
+                          {['😎', '😂', '🤣', '😆', '😭', '😡', '🤬', '🥱', '🤔', '😒', '😮'].map((emoji) => (
+                            <button
+                              key={emoji}
+                              onClick={() => handleSendReaction(emoji)}
+                              className="text-2xl sm:text-3xl hover:scale-125 active:scale-95 transition cursor-pointer p-0.5 flex items-center justify-center"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="flex items-center gap-2 sm:gap-4 w-full">
+
+                {/* La mano ocupa todo el ancho: el boton de emojis se mudo arriba
+                    porque le robaba 72px y la septima ficha caia a otra fila. */}
+                <div className="flex w-full items-center">
                   <div className="flex-1 min-w-0">
                     <Hand
                       tiles={gameState.myHand}
@@ -1054,33 +1085,6 @@ export default function Game() {
                     />
                   </div>
 
-                  {/* Icono de Mensaje / Reacción */}
-                  <div className="relative shrink-0 pb-3">
-                    <button
-                      onClick={() => setShowReactionMenu(!showReactionMenu)}
-                      className="w-12 h-12 sm:w-14 sm:h-14 bg-domino-card hover:bg-domino-card/80 border-2 border-domino-accent/40 hover:border-domino-accent rounded-xl flex items-center justify-center text-domino-accent transition shadow-lg cursor-pointer"
-                      title="Enviar gesto o emoji"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 sm:w-8 sm:h-8">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a.75.75 0 0 1-1.074-.765 6 6 0 0 0 1.257-2.907C4.228 15.932 3 14.1 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
-                      </svg>
-                    </button>
-
-                    {/* Menú emergente de emojis */}
-                    {showReactionMenu && (
-                      <div className="absolute bottom-16 right-0 bg-domino-felt border-2 border-domino-accent/50 rounded-2xl p-3 shadow-2xl z-50 grid grid-cols-6 gap-2" style={{ minWidth: '240px' }}>
-                        {['😎', '😂', '🤣', '😆', '😭', '😡', '🤬', '🥱', '🤔', '😒', '😮'].map((emoji) => (
-                          <button
-                            key={emoji}
-                            onClick={() => handleSendReaction(emoji)}
-                            className="text-2xl sm:text-3xl hover:scale-125 active:scale-95 transition cursor-pointer p-0.5 flex items-center justify-center"
-                          >
-                            {emoji}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </div>
 
                 {myTurn && gameState.canPlay && !draggedTile && (

@@ -2543,3 +2543,52 @@ En pantalla grande la portada queda como estaba, con los tres botones en fila.
 `GoldButton` acepta ahora `className`, que hacía falta para estirarlo al ancho.
 
 Sin scroll en ningún eje. Motor 55/55, backend 87/87, build ok. Versión **0.0.31**.
+
+## 63. Las fichas de la mano, un 15% más grandes. Las de la mesa ya estaban en su techo (2026-09-01)
+
+El usuario: *"aumenta un 15% el tamaño de las piezas en la mesa y que se ven en tu mano"*.
+
+**La mano sí: hecho.** De 35×70 a 40×81 px (`Tile.jsx`, tabla `dims`). El +15% va sobre el tamaño
+de ahora, que ya traía el +10% de la sección 61.
+
+Al agrandarlas, la séptima ficha se caía a una segunda fila. La culpa no era del tamaño: el botón
+de emojis vivía **al lado** de la mano y le robaba 72px de ancho. Se mudó a la línea de arriba,
+junto a "tu turno", y bajó de 48 a 40px. Ahora la mano tiene los 375px del teléfono: entran las 7
+fichas en una fila, y también las 8 de cuando robás del pozo.
+
+**La mesa no se puede.** Y esto es lo importante de anotar, para no volver a intentarlo:
+
+La mesa muestra siempre la misma porción de paño (escala fija, como pidió el usuario en la sección
+46: nada de zoom mientras se juega). Se ven `24 / zoom` celdas. Pero la cadena **dibujada** no mide
+20 celdas sino hasta **22,5**: los dobles van cruzados y su desplazamiento visual se acumula a lo
+largo de la cadena, así que el dibujo se sale hasta 1,25 celdas de la rejilla por cada lado.
+
+Medido sobre **141.606 posiciones** reales de partidas 1v1 y 2v2:
+
+| zoom | fichas de mesa | posiciones con la cadena cortada | lo peor que se corta |
+|------|----------------|----------------------------------|----------------------|
+| 1,09 | −1% | 0 (0,0%) | — |
+| **1,10 (el de hoy)** | 0% | 101 (0,1%) | 3px |
+| 1,15 | +5% | 1.264 (0,9%) | media ficha |
+| 1,20 | +9% | 1.264 (0,9%) | una celda entera |
+| 1,265 (el +15% literal) | +15% | 5.741 (4,1%) | celda y media |
+
+O sea: **el 1,10 que ya teníamos es el máximo**. Se probó 1,2 y se devolvió a 1,1.
+
+La otra vía para agrandar las fichas de la mesa es **achicar la rejilla**: menos celdas que mostrar,
+celdas más grandes. Pero eso cambia el juego, así que se midió antes (regla 10), ~120.000 turnos por
+rejilla:
+
+| rejilla | ficha trabada | trancas | tamaño de ficha en teléfono |
+|---------|---------------|---------|------------------------------|
+| **20 (hoy)** | **1,14%** | 58,8% | 32×16 |
+| 18 | 2,57% | 61,2% | 35×17 (+9%) |
+| 16 | 4,98% | 65,1% | 37×19 (+17%) |
+| 14 | 12,36% | 68,4% | 41×20 (+28%) |
+
+Pagar **4 veces más** "tengo la ficha y no me deja jugarla" (secciones 42, 50 y 51) por un 17% de
+tamaño es deshacer el trabajo de esas tres secciones. **No se hizo.** Queda anotado por si el
+usuario decide que el tamaño vale ese precio.
+
+Mano en una sola fila y sin scroll en ningún eje, medido a 375×812. Motor 55/55, backend 87/87,
+build ok. Versión **0.0.32**.

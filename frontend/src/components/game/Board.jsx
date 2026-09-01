@@ -25,9 +25,13 @@ const MARGEN_CELDAS = 2;
 // que suma. Se dibuja la rejilla entera, siempre igual.
 const LADO_CELDAS = GRID_SIZE + 2 * MARGEN_CELDAS;
 
-// Las fichas de la mesa, un 10% mas grandes a pedido del usuario. Se consigue
-// mostrando un 10% menos de paño, no agrandando la rejilla: la rejilla define
-// donde caben las fichas y tocarla cambiaria las reglas del juego.
+// Las fichas de la mesa se agrandan mostrando menos paño, no agrandando la
+// rejilla: la rejilla define donde caben las fichas y tocarla cambiaria las
+// reglas del juego.
+//
+// TOPE: se ven `LADO_CELDAS / zoom` celdas, y la cadena puede llegar a ocupar
+// las 20 de la rejilla. Para que nunca se corte hace falta 24/zoom >= 20, o
+// sea zoom <= 1.2. Aqui esta en el maximo; subirlo mas recorta la cadena.
 const ZOOM_FICHAS = 1.1;
 
 const getValidPlacementsForTile = (board, tile, side) => placementsFor(board, tile, side);

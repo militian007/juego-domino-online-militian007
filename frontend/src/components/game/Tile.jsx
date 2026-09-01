@@ -18,12 +18,12 @@ export default function Tile({
 
   const finalSize = size === 'md' && small ? 'sm' : size;
 
-  // Un 10% mas grandes que antes, a pedido del usuario.
+  // Un 10% y despues otro 15% mas grandes que el original, a pedido del usuario.
   const dims = {
-    xs: { w: 'w-[53px] h-[26px]', wv: 'w-[26px] h-[53px]' },
-    sm: { w: 'w-[70px] h-[35px]', wv: 'w-[35px] h-[70px]' },
-    md: { w: 'w-[88px] h-[44px] sm:w-[106px] sm:h-[53px]', wv: 'w-[44px] h-[88px] sm:w-[53px] sm:h-[106px]' },
-    lg: { w: 'w-[106px] h-[53px] sm:w-[123px] sm:h-[62px]', wv: 'w-[53px] h-[106px] sm:w-[62px] sm:h-[123px]' }
+    xs: { w: 'w-[61px] h-[30px]', wv: 'w-[30px] h-[61px]' },
+    sm: { w: 'w-[81px] h-[40px]', wv: 'w-[40px] h-[81px]' },
+    md: { w: 'w-[101px] h-[51px] sm:w-[122px] sm:h-[61px]', wv: 'w-[51px] h-[101px] sm:w-[61px] sm:h-[122px]' },
+    lg: { w: 'w-[122px] h-[61px] sm:w-[141px] sm:h-[71px]', wv: 'w-[61px] h-[122px] sm:w-[71px] sm:h-[141px]' }
   };
   const d = dims[finalSize] || dims.md;
 
