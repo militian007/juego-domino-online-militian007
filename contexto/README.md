@@ -2592,3 +2592,46 @@ usuario decide que el tamaño vale ese precio.
 
 Mano en una sola fila y sin scroll en ningún eje, medido a 375×812. Motor 55/55, backend 87/87,
 build ok. Versión **0.0.32**.
+
+## 64. Las fichas montadas: la mesa usaba el tamaño de la mano. Y pantalla completa (2026-09-01)
+
+Dos cosas de las capturas del usuario.
+
+### Las fichas se montaban una sobre otra
+
+**No era el motor.** Se midieron 90.126 posiciones reales de 1v1 y 2v2 buscando dos fichas cuyos
+rectángulos se pisaran: **cero**. El motor coloca bien; lo que se montaba era el **dibujo**.
+
+La causa: `Board.jsx` pintaba cada ficha de la mesa con `<Tile size="sm">`, **la misma clase que usa
+la mano**. La casilla del tablero mide 64×32px exactos (una celda de la rejilla), pero `sm` venía
+creciendo con los pedidos del usuario: 70×35 en la sección 61 y 81×40 en la 63. O sea la ficha se
+salía 17px de su casilla y pisaba a la vecina. Por eso el usuario dijo *"no como estaba antes"*:
+empezó con el +10% de la 61 y el +15% de la 63 lo hizo evidente.
+
+Arreglo: `Tile` tiene ahora un tamaño **`mesa`** de 64×32, atado a la celda, y la mesa usa ese.
+La mano se queda con los suyos. Medido en el navegador: la ficha de la mesa dibuja 30×15px y lo
+esperado era 30×15px — **calzan exactas**, cero solape.
+
+**Efecto que hay que decir claro:** al dejar de salirse de su casilla, la ficha de la mesa se ve
+más chica que en las capturas. Ese es su tamaño real. Lo de antes era el bug, no un tamaño.
+
+Para agrandarlas de verdad hay un camino sin tocar reglas y está sin hacer: el dibujo necesita
+22,5 celdas de ancho (sección 63) porque el desplazamiento visual de los dobles se **acumula** a lo
+largo de la cadena y se sale ~1,25 celdas por lado. Si se acota ese arrastre a 20,5 celdas, la ficha
+pasa de 30×15 a 32×16 (+10%) gratis. Hay que rehacer `joinOffset` y volver a correr el detector de
+solapes de esta sección.
+
+### La barra del navegador
+
+El usuario la ve arriba y ocupa pantalla. Dos caminos, y se pusieron los dos:
+
+- **Instalable (PWA).** `manifest.webmanifest` con `display: standalone` y `orientation: portrait`,
+  más los meta de Apple y `viewport-fit=cover`. Iconos 192/512 y uno *maskable*, generados con
+  Pillow: paño verde con la doble seis encima. Instalada desde "agregar a pantalla de inicio", abre
+  **sin barra ninguna**. Es la buena, pero hay que instalarla.
+- **Pantalla completa al instante.** `utils/pantalla.js`. La API solo funciona pedida **dentro de un
+  toque**, así que se llama desde el clic de los botones de jugar (portada y dashboard), nunca al
+  cargar. Al salir de la partida se devuelve la barra. Si el navegador la niega (iOS Safari no la
+  tiene), se sigue jugando igual: no rompe nada.
+
+Motor 55/55, backend 87/87, build ok. Versión **0.0.33**.

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { connectSocket, disconnectSocket } from '../services/socket.js';
+import { pantallaCompleta } from '../utils/pantalla.js';
 
 const MODES = [
   {
@@ -187,6 +188,7 @@ export default function Landing() {
   const goToMode = (modeId) => {
     const mode = MODES.find((m) => m.id === modeId);
     if (!mode) return;
+    pantallaCompleta();
     if (mode.requiresAuth && !user) {
       navigate('/login', { state: { from: `/dashboard?mode=${modeId}` } });
       return;

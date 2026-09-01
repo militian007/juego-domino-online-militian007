@@ -19,7 +19,13 @@ export default function Tile({
   const finalSize = size === 'md' && small ? 'sm' : size;
 
   // Un 10% y despues otro 15% mas grandes que el original, a pedido del usuario.
+  //
+  // OJO: estos tamaños son SOLO para la mano. La mesa usa `mesa`, que vale
+  // exactamente una celda de la rejilla (64x32). Si la mesa usara uno de estos,
+  // cada ficha se saldria de su casilla y pisaria a la vecina: eso fue el bug
+  // de las fichas montadas de la seccion 64.
   const dims = {
+    mesa: { w: 'w-[64px] h-[32px]', wv: 'w-[32px] h-[64px]' },
     xs: { w: 'w-[61px] h-[30px]', wv: 'w-[30px] h-[61px]' },
     sm: { w: 'w-[81px] h-[40px]', wv: 'w-[40px] h-[81px]' },
     md: { w: 'w-[101px] h-[51px] sm:w-[122px] sm:h-[61px]', wv: 'w-[51px] h-[101px] sm:w-[61px] sm:h-[122px]' },

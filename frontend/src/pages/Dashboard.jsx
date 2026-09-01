@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { pantallaCompleta } from '../utils/pantalla.js';
 
 const MODES = [
   {
@@ -56,6 +57,7 @@ export default function Dashboard() {
   }, [initialMode, navigate]);
 
   const startGame = (mode) => {
+    pantallaCompleta();
     navigate(`/game?mode=${mode.id}`);
   };
 
@@ -63,6 +65,7 @@ export default function Dashboard() {
     e.preventDefault();
     const code = roomCode.trim().toUpperCase();
     if (code.length === 6) {
+      pantallaCompleta();
       navigate(`/game?join=${code}`);
     }
   };

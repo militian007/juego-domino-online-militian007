@@ -19,6 +19,7 @@ import TopBanner from '../components/TopBanner.jsx';
 import { connectSocket } from '../services/socket.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { playTileSound, playDrawSound } from '../utils/soundEffects.js';
+import { salirPantallaCompleta } from '../utils/pantalla.js';
 
 // La partida en curso se recuerda en el navegador para poder volver a ella al
 // refrescar o al salir a otra app. Solo se olvida cuando la partida termina o
@@ -555,6 +556,7 @@ export default function Game() {
   // reentraba a la misma mesa (esa memoria existe para cuando te vas sin
   // querer, ver seccion 39).
   const salirDeLaPartida = () => {
+    salirPantallaCompleta();
     if (socket && actualRoomCode) socket.emit('room:leave', { code: actualRoomCode });
     olvidarPartida();
     // El dashboard pide cuenta: a un invitado lo rebotaba a /login.

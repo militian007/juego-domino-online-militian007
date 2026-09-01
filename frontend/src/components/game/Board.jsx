@@ -245,7 +245,7 @@ export default function Board({
               <Tile
                 tile={displayTile}
                 orientation={opt.orientation}
-                size="sm"
+                size="mesa"
               />
             </div>
           )}
@@ -371,7 +371,7 @@ export default function Board({
               <Tile
                 tile={displayTile}
                 orientation={pos.orientation}
-                size="sm"
+                size="mesa"
                 isNewest={isNewest}
               />
             </div>
