@@ -2635,3 +2635,41 @@ El usuario la ve arriba y ocupa pantalla. Dos caminos, y se pusieron los dos:
   tiene), se sigue jugando igual: no rompe nada.
 
 Motor 55/55, backend 87/87, build ok. Versión **0.0.33**.
+
+## 65. Doce rivales de la casa, 6 mujeres y 6 hombres (2026-09-01)
+
+El usuario quiere cambiar las caras de los circulitos y tener **12 bots**, mitad y mitad.
+
+**El plantel pasó de 5 a 12**, repartidos entre las cinco dificultades del motor:
+
+| dificultad | mujeres | hombres |
+|------------|---------|---------|
+| novato ★ | Yubi | Nano |
+| fácil ★★ | Doña Chela, La Negra Paula | Chuo |
+| normal ★★★ | Mama Juana | El Catire, El Musiú |
+| difícil ★★★★ | La Comadre | Don Pancho |
+| maestro ★★★★★ | La Zurda | El Tigre |
+
+Cada bot lleva ahora `sexo`, que el juego no usa: está para poder regenerar el retrato de
+cualquiera sin adivinar cuál era. Medido: los 12 llegan a salir, y en una mesa de 2v2 nunca se
+repite ninguno.
+
+**Los retratos todavía no están, y hay que decirlo:** el espacio de generación de imágenes está en
+**cero créditos** (plan free, y tampoco hay generaciones de prueba disponibles). Se comprobó con
+`balance` y con `models_explore`. Así que las 12 imágenes quedan pendientes de que haya crédito.
+
+Lo que sí quedó listo para que entren sin tocar código:
+
+- `Avatar.jsx` intenta primero `/avatares/<id>.webp` y, si el archivo no existe, **cae solo** al
+  retrato de SVG de siempre. Medido en el navegador: cero imágenes rotas, los tres retratos de la
+  mesa se dibujan igual que antes. Agregar un bot nunca deja un hueco.
+- `contexto/avatares-prompts.md` con los **12 prompts escritos**, cada uno con la descripción del
+  personaje más un bloque de estilo común (retrato cuadrado de hombros para arriba, luz cálida de
+  lámpara sobre la mesa, fondo de paño verde y nogal desenfocado) para que los 12 se vean del
+  mismo juego y no doce dibujos sueltos.
+- `frontend/public/avatares/` con su LEEME explicando que el archivo se llama como el `id` del bot.
+
+Cuando haya crédito: generar los 12 con `nano_banana_pro` a 2K en 1:1, guardarlos con su `id` y
+listo, aparecen solos.
+
+Motor 55/55, backend 87/87, build ok. Versión **0.0.34**.

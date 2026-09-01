@@ -1,10 +1,23 @@
 /**
- * Retratos generados por codigo. Nada de imagenes: son SVG, pesan 0 KB y se
- * ven nitidos a cualquier tamaño.
+ * Retratos.
  *
- * Los cinco bots tienen su cara diseñada a mano. Los jugadores humanos reciben
- * una derivada de su nombre, siempre la misma para el mismo nombre.
+ * Primero se intenta la foto de `/avatares/<semilla>.webp`. Si no existe (o
+ * todavia no se genero), se cae al retrato de SVG dibujado por codigo, que no
+ * pesa nada y nunca falla. Por eso agregar un bot nuevo jamas deja un hueco:
+ * se ve el SVG hasta que llegue su foto.
+ *
+ * Los jugadores humanos siempre van con SVG, derivado de su nombre: el mismo
+ * nombre da siempre la misma cara.
  */
+
+import { useState } from 'react';
+
+// Los 12 rivales de la casa. Solo estos tienen foto; cualquier otra semilla es
+// un jugador humano y va directo al SVG.
+const CON_FOTO = new Set([
+  'nano', 'yubi', 'chela', 'chuo', 'paula', 'catire',
+  'juana', 'musiu', 'comadre', 'pancho', 'zurda', 'tigre'
+]);
 
 const CARAS = {
   nano: {
@@ -66,8 +79,23 @@ function caraDe(semilla) {
 }
 
 export default function Avatar({ semilla, tamano = 44, aro = true, className = '' }) {
+  const [sinFoto, setSinFoto] = useState(false);
   const c = caraDe(semilla);
   const id = `av-${hash(semilla).toString(36)}`;
+
+  if (CON_FOTO.has(semilla) && !sinFoto) {
+    return (
+      <img
+        src={`/avatares/${semilla}.webp`}
+        width={tamano}
+        height={tamano}
+        alt={`Retrato de ${semilla}`}
+        onError={() => setSinFoto(true)}
+        className={`rounded-full object-cover ${aro ? 'ring-2 ring-domino-accent/55' : ''} ${className}`}
+        style={{ width: tamano, height: tamano }}
+      />
+    );
+  }
 
   return (
     <svg

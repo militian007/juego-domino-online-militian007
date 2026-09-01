@@ -1,52 +1,32 @@
 /**
- * Los rivales de la casa.
+ * Los rivales de la casa: 12 caras, 6 mujeres y 6 hombres.
  *
- * Cada uno es una dificultad del motor con nombre y cara propia. El `avatar`
- * es la semilla con la que el frontend dibuja el retrato: no hay imagenes,
- * se generan por codigo.
+ * Cada uno es una dificultad del motor con nombre, frase y cara propia. El
+ * `avatar` es el nombre del archivo del retrato en `frontend/public/avatares/`.
+ * Si el archivo no está, el frontend dibuja el retrato viejo de SVG, asi que
+ * agregar un bot nunca deja un hueco.
+ *
+ * `sexo` no lo usa el juego: esta para que se pueda regenerar el retrato de
+ * cualquiera sin tener que adivinar cuál era.
  */
 
+const bot = (id, nombre, sexo, difficulty, estrellas, frase) => ({
+  id, nombre, sexo, difficulty, estrellas, frase, avatar: id
+});
+
 export const BOTS = [
-  {
-    id: 'nano',
-    nombre: 'Nano',
-    difficulty: 'novato',
-    avatar: 'nano',
-    frase: 'Apenas estoy agarrando el hilo',
-    estrellas: 1
-  },
-  {
-    id: 'chela',
-    nombre: 'Doña Chela',
-    difficulty: 'facil',
-    avatar: 'chela',
-    frase: 'Yo juego es por la conversa',
-    estrellas: 2
-  },
-  {
-    id: 'catire',
-    nombre: 'El Catire',
-    difficulty: 'normal',
-    avatar: 'catire',
-    frase: 'Tranquilo que aqui hay mesa pa rato',
-    estrellas: 3
-  },
-  {
-    id: 'comadre',
-    nombre: 'La Comadre',
-    difficulty: 'dificil',
-    avatar: 'comadre',
-    frase: 'Te veo las fichas desde aqui',
-    estrellas: 4
-  },
-  {
-    id: 'tigre',
-    nombre: 'El Tigre',
-    difficulty: 'maestro',
-    avatar: 'tigre',
-    frase: 'Sientate, que esto no va a durar',
-    estrellas: 5
-  }
+  bot('nano', 'Nano', 'h', 'novato', 1, 'Apenas estoy agarrando el hilo'),
+  bot('yubi', 'Yubi', 'm', 'novato', 1, 'Enséñame bien que yo aprendo rápido'),
+  bot('chela', 'Doña Chela', 'm', 'facil', 2, 'Yo juego es por la conversa'),
+  bot('chuo', 'Chuo', 'h', 'facil', 2, 'Dale pues, que la tarde esta larga'),
+  bot('paula', 'La Negra Paula', 'm', 'facil', 2, 'Siéntate que aquí se juega sabroso'),
+  bot('catire', 'El Catire', 'h', 'normal', 3, 'Tranquilo que aquí hay mesa pa rato'),
+  bot('juana', 'Mama Juana', 'm', 'normal', 3, 'Con calma se gana, mijo'),
+  bot('musiu', 'El Musiú', 'h', 'normal', 3, 'Aprendí aquí, no se crea'),
+  bot('comadre', 'La Comadre', 'm', 'dificil', 4, 'Te veo las fichas desde aquí'),
+  bot('pancho', 'Don Pancho', 'h', 'dificil', 4, 'Cuarenta años en esta mesa'),
+  bot('zurda', 'La Zurda', 'm', 'maestro', 5, 'No te confíes de la mano izquierda'),
+  bot('tigre', 'El Tigre', 'h', 'maestro', 5, 'Siéntate, que esto no va a durar')
 ];
 
 export const porId = (id) => BOTS.find((b) => b.id === id) || null;
