@@ -46,7 +46,7 @@ const MODES = [
   }
 ];
 
-function GoldButton({ children, onClick, size = 'md', as: As = 'button', to, variant = 'solid' }) {
+function GoldButton({ children, onClick, size = 'md', as: As = 'button', to, variant = 'solid', className = '' }) {
   const base = 'inline-flex items-center justify-center font-bold tracking-[0.2em] rounded-full transition-all duration-200 whitespace-nowrap';
   const sizes = {
     sm: 'px-4 py-1.5 text-xs sm:text-sm',
@@ -57,7 +57,7 @@ function GoldButton({ children, onClick, size = 'md', as: As = 'button', to, var
     solid: 'bg-gradient-to-b from-domino-accent-bright to-domino-accent text-domino-dark shadow-lg shadow-amber-500/30 hover:from-amber-300 hover:to-amber-500 hover:-translate-y-0.5',
     outline: 'border-2 border-domino-accent/80 text-domino-accent hover:bg-domino-accent hover:text-domino-dark bg-black/30 backdrop-blur-sm'
   };
-  const cls = `${base} ${sizes[size]} ${variants[variant]}`;
+  const cls = `${base} ${sizes[size]} ${variants[variant]} ${className}`;
 
   if (As === Link) {
     return <Link to={to} className={cls}>{children}</Link>;
@@ -229,7 +229,7 @@ export default function Landing() {
               LOGIN
             </GoldButton>
           )}
-          <GoldButton onClick={() => setModalOpen(true)} size="sm">
+          <GoldButton onClick={() => setModalOpen(true)} size="sm" className="hidden md:inline-flex">
             JUGAR
           </GoldButton>
           {user && (
@@ -243,27 +243,43 @@ export default function Landing() {
         </div>
       </header>
 
-      <main className="absolute inset-0 z-10 flex items-center justify-center md:justify-end pointer-events-none">
-        <div className="flex flex-col items-center md:items-start text-center md:text-left max-w-3xl w-full md:w-auto px-5 md:pr-[6%] lg:pr-[8%] pointer-events-auto">
-          <p className="text-domino-accent text-xs sm:text-sm tracking-[0.4em] mb-3 sm:mb-4 font-sans drop-shadow">
+      <main className="absolute inset-0 z-10 flex items-end justify-center pointer-events-none md:items-center md:justify-end">
+        <div className="pointer-events-auto flex w-full max-w-3xl flex-col items-center px-5 pb-6 text-center md:w-auto md:items-start md:pb-0 md:pr-[6%] md:text-left lg:pr-[8%]">
+          <p className="mb-2 font-sans text-[10px] tracking-[0.4em] text-domino-accent drop-shadow sm:text-sm md:mb-4">
             CLUB PRIVADO · DOMINÓ
           </p>
-          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight drop-shadow-2xl">
-            <span className="block text-domino-cream whitespace-nowrap">Domina el arte</span>
-            <span className="block text-domino-accent pl-2 sm:pl-4 md:pl-8 lg:pl-12">del domino</span>
+          <h1 className="font-serif text-[2rem] font-semibold leading-[1.05] tracking-tight drop-shadow-2xl sm:text-5xl md:text-6xl lg:text-7xl">
+            <span className="block whitespace-nowrap text-domino-cream">Domina el arte</span>
+            <span className="block text-domino-accent md:pl-8 lg:pl-12">del dominó</span>
           </h1>
-          <p className="mt-5 sm:mt-6 text-domino-cream/90 text-sm sm:text-base leading-relaxed drop-shadow max-w-sm">
+          <p className="mt-5 hidden max-w-sm text-sm leading-relaxed text-domino-cream/90 drop-shadow sm:text-base md:mt-6 md:block">
             Únete a la mesa, afina tu estrategia y compite con los mejores jugadores.
           </p>
 
-          <div className="mt-7 sm:mt-9 flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-4">
-            <GoldButton onClick={() => goToMode('1v1')} size="lg">
-              1 VS 1
+          {/* En el telefono los botones van abajo, donde llega el pulgar, y manda
+              el de jugar sin cuenta: es lo unico que un recien llegado puede
+              hacer de una. Antes solo se ofrecian los modos online, que piden
+              cuenta y ademas necesitan que haya alguien del otro lado. */}
+          <div className="mt-6 flex w-full flex-col gap-2.5 md:mt-9 md:w-auto md:flex-row md:items-center md:gap-4">
+            <GoldButton onClick={() => goToMode('1v1bot')} size="lg" className="w-full md:w-auto">
+              JUGAR AHORA
             </GoldButton>
-            <GoldButton onClick={() => goToMode('2v2')} size="lg">
-              2 VS 2
-            </GoldButton>
+            <div className="flex gap-2.5 md:contents">
+              <GoldButton onClick={() => goToMode('1v1')} size="lg" variant="outline" className="flex-1 md:flex-none">
+                1 VS 1
+              </GoldButton>
+              <GoldButton onClick={() => goToMode('2v2')} size="lg" variant="outline" className="flex-1 md:flex-none">
+                2 VS 2
+              </GoldButton>
+            </div>
           </div>
+
+          <button
+            onClick={() => setModalOpen(true)}
+            className="mt-3 text-[11px] tracking-[0.2em] text-domino-cream/60 underline-offset-4 transition hover:text-domino-accent hover:underline md:mt-5 md:text-xs"
+          >
+            VER TODOS LOS MODOS
+          </button>
         </div>
       </main>
 
@@ -278,13 +294,13 @@ export default function Landing() {
         </div>
       )}
 
-      <div className="absolute bottom-3 sm:bottom-5 right-4 sm:right-6 z-20 flex items-center gap-2 bg-black/60 backdrop-blur-sm border border-domino-accent/40 rounded-full px-3 sm:px-4 py-1.5 shadow-lg">
+      <div className="absolute left-1/2 top-[68px] z-20 flex -translate-x-1/2 items-center gap-2 rounded-full border border-domino-accent/40 bg-black/60 px-3 py-1 shadow-lg backdrop-blur-sm md:left-auto md:right-6 md:top-auto md:bottom-5 md:translate-x-0 md:px-4 md:py-1.5">
         <span className="relative flex h-2.5 w-2.5">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
         </span>
-        <span className="text-domino-cream text-xs sm:text-sm font-semibold tracking-wider whitespace-nowrap">
-          {counts.loggedIn} JUGADORES EN LÍNEA
+        <span className="whitespace-nowrap text-[10px] font-semibold tracking-wider text-domino-cream sm:text-sm">
+          {counts.loggedIn} EN LÍNEA
         </span>
       </div>
 

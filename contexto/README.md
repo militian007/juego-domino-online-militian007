@@ -2516,3 +2516,30 @@ El usuario lo mandó como "el juego de dominó que tiene el otro equipo". **No e
 **marcador y organizador de torneos** ("Domino Pro — el marcador oficial de tu mesa de dominó").
 Se juega con fichas de verdad en una mesa de verdad y la app anota. No compite con esto; es
 complementario. El detalle está en la respuesta al usuario.
+
+---
+
+## 62. La portada, hecha para el teléfono (2026-08-30)
+
+El usuario: *"vamos a convertir la app web en un juego. La pantalla de inicio está bien pero hay
+que hacerla de teléfono"*.
+
+La portada ya ocupaba la pantalla y no scrolleaba. Lo que le faltaba era ser **la portada de un
+juego** y no de una web:
+
+- **Faltaba el botón de jugar ya.** Solo ofrecía `1 VS 1` y `2 VS 2`, que piden cuenta **y**
+  necesitan a alguien del otro lado. Un recién llegado no podía hacer nada. Ahora manda
+  **JUGAR AHORA**, que entra contra el bot sin cuenta.
+- **Los botones estaban al medio.** En un teléfono van abajo, donde llega el pulgar. Medido: el
+  botón grande queda a 115px del borde inferior y ocupa los 335px de ancho.
+- **Había dos botones de "jugar"** compitiendo: el de la cabecera y el nuevo. El de la cabecera se
+  esconde en teléfono; en pantalla grande se queda, porque allá no hay botón grande.
+- El contador de jugadores pasó de abajo a la derecha a arriba al centro en teléfono, porque abajo
+  chocaba con los botones. Se acortó a "0 EN LÍNEA".
+- El texto de marketing se oculta en teléfono: un juego invita a jugar, no explica.
+
+En pantalla grande la portada queda como estaba, con los tres botones en fila.
+
+`GoldButton` acepta ahora `className`, que hacía falta para estirarlo al ancho.
+
+Sin scroll en ningún eje. Motor 55/55, backend 87/87, build ok. Versión **0.0.31**.
