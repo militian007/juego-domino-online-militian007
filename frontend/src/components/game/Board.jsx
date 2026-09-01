@@ -25,6 +25,11 @@ const MARGEN_CELDAS = 2;
 // que suma. Se dibuja la rejilla entera, siempre igual.
 const LADO_CELDAS = GRID_SIZE + 2 * MARGEN_CELDAS;
 
+// Las fichas de la mesa, un 10% mas grandes a pedido del usuario. Se consigue
+// mostrando un 10% menos de paño, no agrandando la rejilla: la rejilla define
+// donde caben las fichas y tocarla cambiaria las reglas del juego.
+const ZOOM_FICHAS = 1.1;
+
 const getValidPlacementsForTile = (board, tile, side) => placementsFor(board, tile, side);
 
 function getVisualCoords(pos, idx, boardOffsets) {
@@ -117,7 +122,7 @@ export default function Board({
   // Manda el eje mas justo, para que la mesa entre entera y siga siendo cuadrada.
   const escala =
     pano.ancho > 0 && altoUtil > 0
-      ? Math.min(pano.ancho, altoUtil) / (LADO_CELDAS * CELL_SIZE)
+      ? (Math.min(pano.ancho, altoUtil) / (LADO_CELDAS * CELL_SIZE)) * ZOOM_FICHAS
       : 1;
 
   // Lo que sobra en el otro eje se reparte a los lados: la mesa queda centrada.

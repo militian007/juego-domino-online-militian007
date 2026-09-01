@@ -2494,3 +2494,25 @@ Los prompts están escritos para las cinco caras, con luz y encuadre comunes par
 misma familia y se puedan recortar en círculo. En cuanto haya saldo se lanzan.
 
 Motor 55/55, backend 87/87, build ok. Versión **0.0.29**.
+
+---
+
+## 61. Fichas un 10% más grandes (2026-08-30)
+
+Pedido del usuario. Se hizo en los dos sitios donde vive el tamaño:
+
+- **En la mano**, la tabla de tamaños de `Tile.jsx`. Medido después: la ficha pasa de 32x64 a
+  **35x70** y la mano sigue entrando en **una sola fila** en un teléfono de 375px.
+- **En la mesa**, un factor `ZOOM_FICHAS = 1.1` sobre la escala del paño. Se muestra un 10% menos
+  de mesa en vez de agrandar la rejilla: **la rejilla define dónde caben las fichas**, y tocarla
+  cambiaría las reglas del juego. Quedan ~0.9 celdas de margen a cada lado, así que la cadena
+  entera sigue cabiendo.
+
+Sin scroll en ningún eje. Motor 55/55, backend 87/87, build ok. Versión **0.0.30**.
+
+### Sobre domino.patmai.com
+
+El usuario lo mandó como "el juego de dominó que tiene el otro equipo". **No es un juego**: es un
+**marcador y organizador de torneos** ("Domino Pro — el marcador oficial de tu mesa de dominó").
+Se juega con fichas de verdad en una mesa de verdad y la app anota. No compite con esto; es
+complementario. El detalle está en la respuesta al usuario.

@@ -18,11 +18,12 @@ export default function Tile({
 
   const finalSize = size === 'md' && small ? 'sm' : size;
 
+  // Un 10% mas grandes que antes, a pedido del usuario.
   const dims = {
-    xs: { w: 'w-12 h-6', wv: 'w-6 h-12' },
-    sm: { w: 'w-16 h-8', wv: 'w-8 h-16' },
-    md: { w: 'w-20 h-10 sm:w-24 sm:h-12', wv: 'w-10 h-20 sm:w-12 sm:h-24' },
-    lg: { w: 'w-24 h-12 sm:w-28 sm:h-14', wv: 'w-12 h-24 sm:w-14 sm:h-28' }
+    xs: { w: 'w-[53px] h-[26px]', wv: 'w-[26px] h-[53px]' },
+    sm: { w: 'w-[70px] h-[35px]', wv: 'w-[35px] h-[70px]' },
+    md: { w: 'w-[88px] h-[44px] sm:w-[106px] sm:h-[53px]', wv: 'w-[44px] h-[88px] sm:w-[53px] sm:h-[106px]' },
+    lg: { w: 'w-[106px] h-[53px] sm:w-[123px] sm:h-[62px]', wv: 'w-[53px] h-[106px] sm:w-[62px] sm:h-[123px]' }
   };
   const d = dims[finalSize] || dims.md;
 
