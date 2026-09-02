@@ -1,47 +1,86 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
+import MesaIcono from '../components/MesaIcono.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { pantallaCompleta } from '../utils/pantalla.js';
 
 const MODES = [
   {
     id: '1v1bot',
-    label: '1 vs 1 (con bot)',
-    desc: 'Juega solo contra un bot. Con pozo para robar.',
-    players: 1,
+    label: '1 vs 1',
+    desc: 'Contra un rival de la casa. Con pozo.',
+    asientos: 2,
+    bots: 1,
     maxPlayers: 1,
-    icon: '🤖',
-    autoStart: true
+    grupo: 'casa'
   },
   {
     id: '2v2bots',
-    label: '2 vs 2 (vos y 3 bots)',
-    desc: 'Equipos, sin pozo. Tu compañero se sienta enfrente.',
-    players: 1,
+    label: '2 vs 2',
+    desc: 'Con un compañero de la casa. Sin pozo.',
+    asientos: 4,
+    bots: 3,
     maxPlayers: 1,
-    icon: '👥',
-    autoStart: true
+    grupo: 'casa'
   },
   {
     id: '1v1',
-    label: '1 vs 1 Jugador',
-    desc: 'Tú y un amigo, con código de sala. Con pozo.',
-    players: 2,
+    label: '1 vs 1',
+    desc: 'Vos y un amigo, con código de sala.',
+    asientos: 2,
+    bots: 0,
     maxPlayers: 2,
-    icon: '🤝',
-    autoStart: false
+    grupo: 'amigos'
   },
   {
     id: '2v2',
-    label: '2 vs 2 Jugadores',
-    desc: '2 humanos vs 2 humanos, en equipos.',
-    players: 4,
+    label: '2 vs 2',
+    desc: 'Cuatro personas en equipos. Sin pozo.',
+    asientos: 4,
+    bots: 0,
     maxPlayers: 4,
-    icon: '👥',
-    autoStart: false
+    grupo: 'amigos'
   }
 ];
+
+function Seccion({ titulo, pie, children }) {
+  return (
+    <section className="mb-6">
+      <div className="mb-2 flex items-baseline justify-between px-1">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-domino-accent/80">
+          {titulo}
+        </h2>
+        <span className="text-[10px] uppercase tracking-wider text-domino-cream/35">{pie}</span>
+      </div>
+      <div className="flex flex-col gap-2.5">{children}</div>
+    </section>
+  );
+}
+
+function ModoFila({ modo, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="group flex w-full items-center gap-3.5 rounded-xl border border-domino-accent/15 bg-domino-card/70 px-3.5 py-3.5 text-left transition hover:border-domino-accent/45 hover:bg-domino-card active:scale-[0.99]"
+    >
+      <MesaIcono asientos={modo.asientos} bots={modo.bots} tamano={54} />
+      <span className="min-w-0 flex-1">
+        <span className="block text-[17px] font-bold leading-tight tracking-wide text-domino-cream">
+          {modo.label}
+        </span>
+        <span className="mt-0.5 block text-[11px] leading-snug text-domino-cream/45">
+          {modo.desc}
+        </span>
+      </span>
+      <span className="text-domino-accent/40 transition group-hover:translate-x-0.5 group-hover:text-domino-accent">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+    </button>
+  );
+}
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -70,70 +109,63 @@ export default function Dashboard() {
     }
   };
 
+  const casa = MODES.filter((m) => m.grupo === 'casa');
+  const amigos = MODES.filter((m) => m.grupo === 'amigos');
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex min-h-[100dvh] flex-col bg-domino-dark">
       <Navbar />
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 w-full flex-1">
-        <div className="card p-5 sm:p-6 mb-6 sm:mb-8">
-          <h1 className="text-xl sm:text-2xl font-bold truncate">
-            Bienvenido, {user?.username} 👋
-          </h1>
-          <div className="flex flex-wrap gap-4 sm:gap-6 mt-2 text-sm text-slate-400">
-            <span>
-              Partidas jugadas:{' '}
-              <strong className="text-domino-accent">{user?.games_played || 0}</strong>
-            </span>
-            <span>
-              Victorias:{' '}
-              <strong className="text-green-400">{user?.games_won || 0}</strong>
-            </span>
-          </div>
+
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pb-6 pt-4 sm:max-w-2xl">
+        {/* El saludo va en una linea. Antes ocupaba una tarjeta entera y empujaba
+            los modos fuera de la pantalla del telefono. */}
+        <div className="mb-5 flex items-baseline justify-between gap-3 px-1">
+          <span className="truncate font-serif text-xl text-domino-cream">
+            Hola, {user?.username || 'jugador'}
+          </span>
+          <span className="shrink-0 text-[11px] uppercase tracking-wider text-domino-cream/40">
+            {user?.games_played || 0} partidas ·{' '}
+            <span className="text-domino-accent">{user?.games_won || 0}</span> ganadas
+          </span>
         </div>
 
-        <h2 className="text-xl sm:text-2xl font-bold mb-4">Elige un modo de juego</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mb-8 sm:mb-10">
-          {MODES.map((mode) => (
-            <button
-              key={mode.id}
-              onClick={() => startGame(mode)}
-              className="card p-5 sm:p-6 text-left hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer w-full"
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <span className="text-3xl">{mode.icon}</span>
-                <h3 className="font-bold text-base sm:text-lg">{mode.label}</h3>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-400 mb-3">{mode.desc}</p>
-              <div className="text-xs text-domino-accent font-semibold">
-                {mode.maxPlayers} jugador{mode.maxPlayers > 1 ? 'es' : ''} requerido{mode.maxPlayers > 1 ? 's' : ''}
-              </div>
-            </button>
+        <Seccion titulo="Contra la casa" pie="empieza ya">
+          {casa.map((m) => (
+            <ModoFila key={m.id} modo={m} onClick={() => startGame(m)} />
           ))}
-        </div>
+        </Seccion>
 
-        <div className="card p-5 sm:p-6">
-          <h2 className="text-lg sm:text-xl font-bold mb-2">¿Tienes un código de sala?</h2>
-          <p className="text-slate-400 text-sm mb-4">
-            Únete a la partida de tu amigo (modo 1v1 o 2v2)
-          </p>
-          <form onSubmit={joinGame} className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="text"
-              value={roomCode}
-              onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-              placeholder="ABC123"
-              maxLength={6}
-              className="input-field uppercase tracking-widest text-center font-mono text-lg"
-            />
-            <button
-              type="submit"
-              className="btn-primary whitespace-nowrap"
-              disabled={roomCode.length !== 6}
-            >
-              Unirse
-            </button>
-          </form>
-        </div>
-      </div>
+        <Seccion titulo="Con amigos" pie="hace falta gente">
+          {amigos.map((m) => (
+            <ModoFila key={m.id} modo={m} onClick={() => startGame(m)} />
+          ))}
+        </Seccion>
+
+        <form
+          onSubmit={joinGame}
+          className="flex items-center gap-2 rounded-xl border border-domino-accent/15 bg-domino-card/40 p-2"
+        >
+          <input
+            type="text"
+            value={roomCode}
+            onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+            placeholder="ABC123"
+            maxLength={6}
+            aria-label="Código de sala"
+            className="min-w-0 flex-1 rounded-lg bg-black/30 px-3 py-2.5 text-center font-mono text-base uppercase tracking-[0.3em] text-domino-cream placeholder:text-domino-cream/25 focus:outline-none focus:ring-1 focus:ring-domino-accent/50"
+          />
+          <button
+            type="submit"
+            disabled={roomCode.length !== 6}
+            className="shrink-0 rounded-lg bg-domino-accent px-5 py-2.5 text-sm font-bold text-domino-dark transition disabled:cursor-not-allowed disabled:bg-domino-accent/20 disabled:text-domino-cream/30"
+          >
+            Entrar
+          </button>
+        </form>
+        <p className="mt-1.5 px-1 text-[10px] uppercase tracking-wider text-domino-cream/30">
+          ¿Te pasaron un código? Escribilo aquí
+        </p>
+      </main>
     </div>
   );
 }

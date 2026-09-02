@@ -205,13 +205,8 @@ export default function Landing() {
     window.location.href = '/';
   };
 
-  const goMenu = () => {
-    if (user) navigate('/dashboard');
-    else navigate('/login');
-  };
-
   return (
-    <div className="relative w-full min-h-screen overflow-hidden bg-domino-dark text-domino-cream">
+    <div className="relative h-[100dvh] w-full overflow-hidden bg-domino-dark text-domino-cream">
       <img
         src="/hero-table.png"
         alt="Mesa de dominó"
@@ -285,16 +280,6 @@ export default function Landing() {
         </div>
       </main>
 
-      {user && (
-        <div className="absolute bottom-3 sm:bottom-5 left-4 sm:left-6 z-20 flex items-center gap-4 text-domino-cream/90 text-xs sm:text-sm drop-shadow">
-          <button onClick={goMenu} className="hover:text-domino-accent transition tracking-wider">
-            Menu
-          </button>
-          <button onClick={handleLogout} className="hover:text-domino-accent transition tracking-wider">
-            Salir
-          </button>
-        </div>
-      )}
 
       <div className="absolute left-1/2 top-[68px] z-20 flex -translate-x-1/2 items-center gap-2 rounded-full border border-domino-accent/40 bg-black/60 px-3 py-1 shadow-lg backdrop-blur-sm md:left-auto md:right-6 md:top-auto md:bottom-5 md:translate-x-0 md:px-4 md:py-1.5">
         <span className="relative flex h-2.5 w-2.5">

@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<defs>
+  <radialGradient id="fondo" cx="50%" cy="34%" r="78%">
+    <stop offset="0%" stop-color="#2a5a6a"/>
+    <stop offset="58%" stop-color="#123038"/>
+    <stop offset="100%" stop-color="#061418"/>
+  </radialGradient>
+  <linearGradient id="piel" x1="0.18" y1="0" x2="0.9" y2="1">
+    <stop offset="0%" stop-color="#f8dcc0"/>
+    <stop offset="46%" stop-color="#e6c0a0"/>
+    <stop offset="100%" stop-color="#b08a68"/>
+  </linearGradient>
+  <linearGradient id="ropa" x1="0.2" y1="0" x2="0.85" y2="1">
+    <stop offset="0%" stop-color="#e8dfcb"/>
+    <stop offset="100%" stop-color="#cfc4ac"/>
+  </linearGradient>
+  <linearGradient id="pelo" x1="0.25" y1="0" x2="0.85" y2="1">
+    <stop offset="0%" stop-color="#93826a"/>
+    <stop offset="100%" stop-color="#6b5c48"/>
+  </linearGradient>
+  <radialGradient id="rubor" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#c9603f" stop-opacity="0.42"/>
+    <stop offset="100%" stop-color="#c9603f" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="borde" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#f2dfa8"/>
+    <stop offset="50%" stop-color="#b9922f"/>
+    <stop offset="100%" stop-color="#f2dfa8"/>
+  </linearGradient>
+  <clipPath id="marco"><circle cx="256" cy="256" r="248"/></clipPath>
+  <filter id="suave" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur stdDeviation="9"/>
+  </filter>
+  <filter id="muysuave" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur stdDeviation="22"/>
+  </filter>
+</defs>
+
+<g clip-path="url(#marco)">
+  <rect width="512" height="512" fill="url(#fondo)"/>
+  <ellipse cx="150" cy="60" rx="230" ry="180" fill="#ffe9b8" opacity="0.13" filter="url(#muysuave)"/>
+
+  <path d="M 40 512 C 48 424 130 386 256 386 C 382 386 464 424 472 512 Z" fill="url(#ropa)"/>
+  <path d="M 40 512 C 48 424 130 386 256 386 L 256 512 Z" fill="#ffffff" opacity="0.07"/>
+  
+  <path d="M 200 392 C 224 432 288 432 312 392 C 288 384 224 384 200 392 Z" fill="#b8ab92"/>
+  <path d="M 232 390 L 256 440 L 280 390 Z" fill="#e8dfcb"/>
+
+  <path d="M 214 330 L 214 392 C 214 404 298 404 298 392 L 298 330 Z" fill="#e6c0a0"/>
+  <path d="M 214 330 L 214 372 C 240 392 272 392 298 372 L 298 330 Z" fill="#b08a68" opacity="0.55"/>
+
+  <ellipse cx="148" cy="258" rx="16" ry="24" fill="url(#piel)"/>
+  <ellipse cx="364" cy="258" rx="16" ry="24" fill="#b08a68"/>
+
+  <path d="M 148 236 C 148 158 194 112 256 112 C 318 112 364 158 364 236
+           C 364 296 340 352 302 380 C 284 393 228 393 210 380
+           C 172 352 148 296 148 236 Z" fill="url(#piel)"/>
+
+  <path d="M 300 130 C 344 158 364 190 364 236 C 364 296 340 352 302 380
+           C 292 387 276 391 258 392 C 300 352 322 280 322 216 C 322 178 314 150 300 130 Z"
+        fill="#b08a68" opacity="0.5" filter="url(#suave)"/>
+
+  <ellipse cx="198" cy="288" rx="38" ry="26" fill="url(#rubor)"/>
+  <ellipse cx="316" cy="288" rx="38" ry="26" fill="url(#rubor)"/>
+
+  
+  <path d="M 154 232 C 156 172 196 138 256 138 C 316 138 356 172 358 232
+           C 340 194 306 178 256 178 C 206 178 172 194 154 232 Z" fill="url(#pelo)"
+        stroke="#4e4234" stroke-width="3"/>
+  <path d="M 200 172 C 224 158 288 158 312 172 C 286 166 226 166 200 172 Z"
+        fill="#a8967e" opacity="0.7"/>
+  <path d="M 156 228 C 156 252 160 274 168 288 C 176 270 177 248 174 228 Z" fill="#5c4f3e"/>
+  <path d="M 358 228 C 358 252 354 274 346 288 C 338 270 337 248 340 228 Z" fill="#463b2e"/>
+
+  <path d="M 188 222 C 200 214 226 214 238 222 C 226 218 200 218 188 226 Z" fill="#6b5c48" opacity="0.95"/>
+  <path d="M 274 222 C 286 214 312 214 324 222 C 312 218 286 218 274 226 Z" fill="#6b5c48" opacity="0.95"/>
+
+  <ellipse cx="212" cy="252" rx="21" ry="11" fill="#f6efe4"/>
+  <ellipse cx="300" cy="252" rx="21" ry="11" fill="#f6efe4"/>
+  <circle cx="214" cy="252" r="9.5" fill="#5a7a6a"/>
+  <circle cx="302" cy="252" r="9.5" fill="#5a7a6a"/>
+  <circle cx="214" cy="252" r="4.6" fill="#120c07"/>
+  <circle cx="302" cy="252" r="4.6" fill="#120c07"/>
+  <circle cx="210" cy="247" r="3.1" fill="#ffffff" opacity="0.9"/>
+  <circle cx="298" cy="247" r="3.1" fill="#ffffff" opacity="0.9"/>
+  <path d="M 191 250 C 200 240 224 240 233 250" stroke="#6b5c48"
+        stroke-width="4.5" fill="none" stroke-linecap="round"/>
+  <path d="M 279 250 C 288 240 312 240 321 250" stroke="#6b5c48"
+        stroke-width="4.5" fill="none" stroke-linecap="round"/>
+
+  <path d="M 252 262 C 244 288 236 300 244 308 C 252 315 268 315 274 306"
+        stroke="#b08a68" stroke-width="6" fill="none" opacity="0.5" stroke-linecap="round"/>
+  <ellipse cx="258" cy="306" rx="19" ry="9" fill="#b08a68" opacity="0.3" filter="url(#suave)"/>
+
+  
+  <path d="M 220 332 C 242 348 272 348 294 332" stroke="#7c2f28" stroke-width="6"
+        fill="none" stroke-linecap="round"/>
+  <path d="M 228 344 C 246 352 268 352 286 344" stroke="#e0a97a" stroke-width="3"
+        fill="none" stroke-linecap="round" opacity="0.35"/>
+
+  
+  
+  <path d="M 172 286 C 172 356 206 396 256 396 C 306 396 340 356 340 286 C 336 330 306 352 256 352 C 206 352 176 330 172 286 Z" fill="#7e7060" opacity="0.95"/>
+  <g fill="none" stroke="#8d949a" stroke-width="4">
+    <rect x="182" y="234" width="60" height="36" rx="10"/>
+    <rect x="270" y="234" width="60" height="36" rx="10"/>
+    <path d="M 242 250 L 270 250"/>
+    <path d="M 182 244 L 152 238"/>
+    <path d="M 330 244 L 360 238"/>
+  </g>
+  <path d="M 190 240 L 214 240" stroke="#ffffff" stroke-width="4" opacity="0.22"
+        stroke-linecap="round"/>
+
+
+  <path d="M 148 236 C 148 158 194 112 256 112 C 232 128 190 168 178 236
+           C 168 296 182 344 206 378 C 172 350 148 296 148 236 Z"
+        fill="#ffe9b8" opacity="0.2" filter="url(#suave)"/>
+
+  <circle cx="256" cy="256" r="248" fill="none" stroke="#000000" stroke-width="70"
+          opacity="0.34" filter="url(#suave)"/>
+</g>
+<circle cx="256" cy="256" r="245" fill="none" stroke="url(#borde)" stroke-width="9" opacity="0.85"/>
+</svg>

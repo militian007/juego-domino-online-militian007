@@ -2707,3 +2707,55 @@ solos al retrato de SVG viejo sin romper nada.
 en `contexto/avatares-prompts.md` por si algún día hay crédito.
 
 Motor 55/55, backend 87/87, build ok. Versión **0.0.35**.
+
+## 67. Los doce retratos, el menú de juego y la portada a medida (2026-09-01)
+
+### Los doce retratos, completos
+
+Al usuario le sirvió el estilo de la sección 66, así que se dibujaron los diez que faltaban con la
+misma base. Para que doce caras no sean doce dibujos sueltos se hicieron **piezas compartidas**:
+bocas (sonrisa abierta, de medio lado, suave, risa grande, línea seria, bajo bigote), bigote,
+barba, lentes (redondos, de alambre, oscuros), argollas, perlas, sombrero de paja, sombrero de ala
+y pañuelo. Cada personaje es una paleta más una combinación de esas piezas.
+
+Tres se vieron mal al mirarlos grandes y se corrigieron: **a Doña Chela, El Catire y El Musiú el
+pelo se les confundía con la piel** porque los tres son de pelo claro sobre piel clara. Se
+oscurecieron los tonos, se les puso filo en el nacimiento del pelo y patilla a los lados. El
+pañuelo de Doña Chela además parecía una vincha sobre una calva: ahora baja hasta las orejas, deja
+ver las canas alrededor de la cara y lleva el nudo a la vista.
+
+Verificado corriendo: sale Doña Chela en la mesa con su retrato, cero imágenes rotas.
+
+### El menú de juego
+
+El usuario: *"se ve horrible"*. Era una página web genérica: tarjeta de bienvenida enorme, títulos
+de sección grandes, cuatro tarjetas altas con emojis y un formulario. En un teléfono había que
+scrollear para ver los modos.
+
+Ahora entra entero en la pantalla, sin scroll:
+
+- El saludo pasó de tarjeta a **una línea**.
+- Los modos se agrupan en **"Contra la casa"** y **"Con amigos"**, que es la decisión real que toma
+  el jugador: si puede empezar ya o si necesita gente.
+- El emoji se cambió por **`MesaIcono`**, un diagrama de la mesa con sus sillas: dorado sos vos,
+  crema un humano, gris con antena un bot. Dice de un vistazo cuántos juegan y contra qué.
+- Los títulos van en **sans y no en serif**: con la Cormorant, "1 vs 1" se leía "I VS I".
+
+### La portada
+
+Dos arreglos que pidió el usuario mirando su teléfono:
+
+- **Había dos "Salir"**, el de la cabecera y otro en un pie abajo a la izquierda junto a un "Menu".
+  Ese pie se eliminó: los modos ya están en "VER TODOS LOS MODOS" y el salir arriba.
+- **Sobraba alto y tocaba scrollear.** `min-h-screen` pasó a `h-[100dvh]`, que además descuenta la
+  barra del navegador en el teléfono. Medido: 812 de alto en una pantalla de 812, scroll cero.
+
+### Sobre generar con IA
+
+El usuario preguntó por Gemini. Vale la pena dejarlo escrito: **`nano_banana_pro` ES el modelo de
+imagen de Google**; no es que falte buscar en otro proveedor, es ese mismo el que está sin crédito.
+Si el usuario consigue una API key de Google AI Studio se puede escribir un script que la lea del
+`.env` (regla 4: ninguna clave en el código) y genere los doce con los prompts de
+`contexto/avatares-prompts.md`. Ojo: la suscripción a la app de Gemini no da acceso a la API.
+
+Motor 55/55, backend 87/87, build ok. Versión **0.0.36**.
