@@ -2673,3 +2673,37 @@ Cuando haya crédito: generar los 12 con `nano_banana_pro` a 2K en 1:1, guardarl
 listo, aparecen solos.
 
 Motor 55/55, backend 87/87, build ok. Versión **0.0.34**.
+
+## 66. Dos retratos dibujados a mano, porque no hay generador de IA (2026-09-01)
+
+El usuario pidió que los retratos los generara Claude mismo, no un servicio de afuera.
+
+**Hay que decirlo claro: Claude no tiene un generador de imágenes adentro.** El único generador
+conectado a esta sesión es la herramienta MCP externa, y está en cero créditos. No es cuestión de
+esforzarse más: no existe el músculo. Se verificó con `balance` (0 créditos, plan free) y con
+`models_explore` (sin generaciones de prueba disponibles).
+
+Lo que sí se puede hacer a mano es **dibujarlos en vector**. Se hicieron dos de muestra, Nano y
+La Comadre, en `frontend/tools/retratos.py`:
+
+- Una **base común** a los doce (fondo de paño con viñeta, cabeza, cuello, hombros, luz cálida de
+  lámpara desde arriba a la izquierda, sombra del lado contrario, marco dorado) para que los doce
+  se vean del mismo juego y no doce dibujos sueltos.
+- Lo propio de cada uno va aparte: pelo, ropa, accesorios, boca, cejas y paleta.
+
+Dos correcciones que se vieron al mirarlos grandes: a Nano los rizos sueltos le quedaban en la sien
+y parecían un moretón — pasaron a ser **patilla** siguiendo el contorno de la cara, que es como de
+verdad asoma el pelo bajo una gorra. Y a La Comadre la boca le quedó de amargada — se rehizo como
+sonrisa de medio lado con volumen en el labio de abajo, que es el gesto que pide su frase.
+
+Se guardan en **`.svg`**, no en `.webp`: son vector, pesan 6 KB y se ven nítidos a cualquier
+tamaño, que es justo lo que hace falta cuando el mismo retrato va a 46px en la mesa y más grande en
+otros lados. `Avatar.jsx` apunta ahora a `/avatares/<id>.svg`.
+
+Verificado corriendo: Nano sale en la mesa con su retrato, y los diez que todavía no existen caen
+solos al retrato de SVG viejo sin romper nada.
+
+**Faltan diez**, a la espera de que el usuario diga si el estilo le sirve. Los prompts de IA quedan
+en `contexto/avatares-prompts.md` por si algún día hay crédito.
+
+Motor 55/55, backend 87/87, build ok. Versión **0.0.35**.

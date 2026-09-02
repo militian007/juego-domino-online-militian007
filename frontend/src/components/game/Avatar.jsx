@@ -1,7 +1,7 @@
 /**
  * Retratos.
  *
- * Primero se intenta la foto de `/avatares/<semilla>.webp`. Si no existe (o
+ * Primero se intenta el retrato de `/avatares/<semilla>.svg`. Si no existe (o
  * todavia no se genero), se cae al retrato de SVG dibujado por codigo, que no
  * pesa nada y nunca falla. Por eso agregar un bot nuevo jamas deja un hueco:
  * se ve el SVG hasta que llegue su foto.
@@ -86,7 +86,7 @@ export default function Avatar({ semilla, tamano = 44, aro = true, className = '
   if (CON_FOTO.has(semilla) && !sinFoto) {
     return (
       <img
-        src={`/avatares/${semilla}.webp`}
+        src={`/avatares/${semilla}.svg`}
         width={tamano}
         height={tamano}
         alt={`Retrato de ${semilla}`}
