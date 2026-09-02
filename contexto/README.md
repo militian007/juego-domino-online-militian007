@@ -2797,4 +2797,8 @@ Verificado corriendo a 375x812 las tres pantallas, sin scroll en ninguna. Para p
 buscar partida sin cuenta se abrió el permiso de invitado un momento y **se devolvió a como estaba**;
 comprobado con un diff contra la copia previa.
 
+La sección de modos online se llamó primero "Con amigos", pero el usuario la cambió a
+**"Contra jugadores"**: no siempre es un amigo, y lo que la diferencia de la otra sección es
+que del otro lado hay una persona y no la casa (v0.0.38).
+
 Motor 55/55, backend 87/87, build ok. Versión **0.0.37**.

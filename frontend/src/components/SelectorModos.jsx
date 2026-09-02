@@ -110,7 +110,7 @@ export default function SelectorModos({ onElegir, mostrarInsignias = false }) {
       <Seccion titulo="Contra la casa" pie="empieza ya">
         {casa.map(fila)}
       </Seccion>
-      <Seccion titulo="Con amigos" pie="hace falta gente">
+      <Seccion titulo="Contra jugadores" pie="hace falta gente">
         {amigos.map(fila)}
       </Seccion>
     </>
