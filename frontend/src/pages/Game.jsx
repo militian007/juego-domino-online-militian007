@@ -1259,18 +1259,28 @@ export default function Game() {
               <p className="text-slate-400 mb-2">
                 {gameState.endReason === 'domino'
                   ? 'Un jugador se quedó sin fichas'
-                  : 'El juego se trancó'}
-              </p>
-              <p className="text-3xl font-black text-domino-accent mb-4">
-                +{gameState.roundPoints} puntos
+                  : gameState.endReason === 'forfeit'
+                    ? `${gameState.players?.[gameState.forfeitedSeat]?.username ?? 'Un jugador'} dejó la partida`
+                    : 'El juego se trancó'}
               </p>
 
-              <RoundBreakdown
-                manos={gameState.revealedHands}
-                equipoGanador={gameState.winningTeam}
-                motivo={gameState.endReason}
-                puntos={gameState.roundPoints}
-              />
+              {/* En un abandono no hay ronda cerrada: no hay puntos que sumar
+                  ni manos que revelar. Mostrar "+0 puntos" y un desglose vacio
+                  haria parecer que algo fallo. */}
+              {gameState.endReason !== 'forfeit' && (
+                <>
+                  <p className="text-3xl font-black text-domino-accent mb-4">
+                    +{gameState.roundPoints} puntos
+                  </p>
+
+                  <RoundBreakdown
+                    manos={gameState.revealedHands}
+                    equipoGanador={gameState.winningTeam}
+                    motivo={gameState.endReason}
+                    puntos={gameState.roundPoints}
+                  />
+                </>
+              )}
 
               <div className="my-4">
                 <TopBanner />

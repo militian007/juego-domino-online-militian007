@@ -74,6 +74,16 @@ export class RoomManager {
     if (socket.isGuest) {
       throw new Error('Necesitas registrarte para jugar en línea');
     }
+
+    const config = MODES[mode];
+    if (!config) throw new Error('Modo inválido');
+
+    // Buscar rivales para un modo que se llena con bots no tiene sentido: esa
+    // partida arranca sola. Se corta aca para que el aviso salga claro en la
+    // pantalla y no como un modo que "no encuentra a nadie".
+    if (config.bots > 0) {
+      throw new Error('Este modo se juega contra la maquina: no hace falta buscar rivales');
+    }
     // Evitar duplicados en la cola
     this.removeFromMatchmaking(socket.id);
     
@@ -98,56 +108,105 @@ export class RoomManager {
   }
 
   processMatchmaking(mode) {
-    const modeQueue = this.matchmakingQueue.filter(p => p.mode === mode);
-    if (modeQueue.length >= 2) {
-      const playerA = modeQueue[0];
-      const playerB = modeQueue[1];
+    const config = MODES[mode];
+    if (!config) return;
 
-      this.removeFromMatchmaking(playerA.socket.id);
-      this.removeFromMatchmaking(playerB.socket.id);
+    // Cuantos hacen falta lo dice el modo, no un numero fijo.
+    //
+    // Antes tomaba siempre dos de la cola. En 2v2 hacen falta cuatro, asi que
+    // creaba la sala, metia a los dos adentro, startGame devolvia
+    // "Faltan jugadores (2/4)"... y ese error solo salia por consola del
+    // servidor. Los dos quedaban fuera de la cola, en una sala que no arranca
+    // nunca, mirando el "buscando partida" girar para siempre.
+    const hacenFalta = config.humans;
 
-      console.log(`🤝 [Matchmaking] ¡Emparejando! ${playerA.username} vs ${playerB.username} para ${mode}`);
+    const modeQueue = this.matchmakingQueue.filter((p) => p.mode === mode);
+    if (modeQueue.length < hacenFalta) return;
 
-      try {
-        const room = this.createRoom({
-          mode,
-          hostId: playerA.userId,
-          hostUsername: playerA.username
-        });
+    const elegidos = modeQueue.slice(0, hacenFalta);
+    elegidos.forEach((p) => this.removeFromMatchmaking(p.socket.id));
 
-        const pA = room.players.find(p => p.id === playerA.userId);
-        if (pA) pA.socketId = playerA.socket.id;
-        playerA.socket.join(room.code);
+    const nombres = elegidos.map((p) => p.username).join(', ');
+    console.log(`🤝 [Matchmaking] ¡Emparejando! ${nombres} para ${mode}`);
 
-        const joinResult = this.joinRoom(room.code, {
-          userId: playerB.userId,
-          username: playerB.username,
-          socketId: playerB.socket.id
-        });
+    /** Si algo sale mal, no se los deja tirados: vuelven a la cola. */
+    const devolverALaCola = (motivo) => {
+      console.error(`Matchmaking (${mode}): ${motivo}`);
 
-        if (joinResult.error) {
-          console.error('Error al unir al jugador B en matchmaking:', joinResult.error);
-          return;
-        }
-        playerB.socket.join(room.code);
+      elegidos.forEach((p) => {
+        p.socket.emit('matchmaking:error', { error: 'No se pudo armar la partida. Seguimos buscando.' });
+        this.matchmakingQueue.push(p);
+      });
+    };
 
-        const startResult = this.startGame(room.code);
-        if (startResult.error) {
-          console.error('Error al iniciar partida en matchmaking:', startResult.error);
-          return;
-        }
+    const [anfitrion, ...resto] = elegidos;
+    let room;
 
-        this.broadcastLobby(room);
-        this.broadcastState(room);
-
-        playerA.socket.emit('matchmaking:success', { code: room.code });
-        playerB.socket.emit('matchmaking:success', { code: room.code });
-
-        console.log(`🚀 [Matchmaking] Partida iniciada en sala: ${room.code}`);
-      } catch (err) {
-        console.error('Error en proceso de matchmaking:', err);
-      }
+    try {
+      room = this.createRoom({
+        mode,
+        hostId: anfitrion.userId,
+        hostUsername: anfitrion.username
+      });
+    } catch (err) {
+      devolverALaCola(err.message);
+      return;
     }
+
+    const jugadorAnfitrion = room.players.find((p) => p.id === anfitrion.userId);
+    if (jugadorAnfitrion) jugadorAnfitrion.socketId = anfitrion.socket.id;
+    anfitrion.socket.join(room.code);
+
+    for (const p of resto) {
+      const resultado = this.joinRoom(room.code, {
+        userId: p.userId,
+        username: p.username,
+        socketId: p.socket.id
+      });
+
+      if (resultado.error) {
+        this.rooms.delete(room.code);
+        devolverALaCola(`no se pudo unir a ${p.username}: ${resultado.error}`);
+        return;
+      }
+
+      p.socket.join(room.code);
+    }
+
+    const inicio = this.startGame(room.code);
+
+    if (inicio.error) {
+      this.rooms.delete(room.code);
+      devolverALaCola(inicio.error);
+      return;
+    }
+
+    this.broadcastLobby(room);
+    this.broadcastState(room);
+
+    elegidos.forEach((p) => p.socket.emit('matchmaking:success', { code: room.code }));
+
+    console.log(`🚀 [Matchmaking] Partida iniciada en sala: ${room.code}`);
+  }
+
+  /**
+   * Da la partida por abandonada por ese jugador.
+   *
+   * Solo hace algo si hay una partida en curso: salir del lobby antes de
+   * arrancar no es abandonar nada, y no tiene que dar la victoria a nadie.
+   */
+  abandonarPartida(code, userId) {
+    const room = this.rooms.get(code);
+    if (!room || !room.game || room.game.status !== 'playing') return false;
+
+    const jugador = room.players.find((p) => p.id === userId);
+    if (!jugador || jugador.isBot) return false;
+
+    const resultado = room.game.forfeit(userId);
+    if (resultado?.ok === false) return false;
+
+    this.broadcastState(room);
+    return true;
   }
 
   leaveRoom(code, userId) {

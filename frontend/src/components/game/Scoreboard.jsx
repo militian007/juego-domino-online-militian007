@@ -5,7 +5,7 @@ export default function Scoreboard({ teamScores, mode, round, winningTeam, endRe
         <h3 className="font-bold text-sm sm:text-base">Ronda {round}</h3>
         {endReason && (
           <span className="text-[10px] sm:text-xs text-slate-400 italic">
-            {endReason === 'domino' ? 'Dominó' : 'Trancado'}
+            {endReason === 'domino' ? 'Dominó' : endReason === 'forfeit' ? 'Abandono' : 'Trancado'}
           </span>
         )}
       </div>

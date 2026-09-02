@@ -108,6 +108,17 @@ export function setupGameSocket(io, roomManager) {
     });
 
     socket.on('room:leave', ({ code }) => {
+      // Irse de una partida EN CURSO es abandonarla.
+      //
+      // Antes solo se sacaba al jugador de la sala y el juego se quedaba
+      // esperando su turno para siempre: los otros tres de un 2v2 quedaban
+      // colgados mirando una mesa que no avanza mas. El motor ya sabia
+      // resolver esto (FORFEIT), pero nadie se lo pedia.
+      //
+      // Se avisa ANTES de sacarlo, para que el aviso le llegue tambien a el:
+      // el que se va tiene que ver por que termino, no una pantalla en blanco.
+      roomManager.abandonarPartida(code, socket.userId);
+
       socket.leave(code);
       roomManager.leaveRoom(code, socket.userId);
     });

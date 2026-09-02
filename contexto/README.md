@@ -3454,3 +3454,75 @@ salieron mal en el primer intento y se corrigieron: el README tiene 81 encabezad
 seccion sea la 83, y faltaba el formato `domino-1v1bot-v1`.
 
 Motor 57/57, backend 87/87.
+
+## 85. El 2v2 entre cuatro personas: dos agujeros que nadie habia pisado (2026-09-02)
+
+El 2v2 entre cuatro personas reales estaba en la lista de "sin probar". Se probo, y tenia dos
+fallas que lo hacian inservible. Las dos se encontraron corriendo sondas contra el `RoomManager`
+de verdad, no leyendo el codigo.
+
+### Buscar partida en 2v2 dejaba a la gente colgada para siempre
+
+`processMatchmaking` tomaba **siempre dos** de la cola, sin mirar el modo. En 2v2 hacen falta
+cuatro: creaba la sala, metia a los dos adentro, `startGame` devolvia `Faltan jugadores (2/4)`, y
+ese error **solo salia por la consola del servidor**. Los dos jugadores quedaban fuera de la cola,
+dentro de una sala que no arranca nunca, y en la pantalla el "buscando partida" girando sin fin.
+Ni siquiera podian ser emparejados por otro que llegara despues, porque ya no estaban en la cola.
+
+Medido con una sonda antes del arreglo: dos personas en 2v2 -> 1 sala creada, 2/4 jugadores,
+`arrancada=false`, cola vacia, cero avisos a los clientes. En 1v1 la misma sonda daba 2/2 y
+arrancada. Nunca habia fallado porque **nadie habia probado el 2v2 por emparejamiento**.
+
+Ahora la cantidad la dice el modo (`config.humans`), y si algo sale mal en el medio los jugadores
+**vuelven a la cola** con un `matchmaking:error` en vez de quedarse tirados. Ademas, pedir rivales
+para un modo que se llena con bots se corta de entrada con un mensaje claro: esa partida arranca
+sola, no hay a quien esperar.
+
+Comprobado con cinco escenarios: dos personas esperan (0 salas, siguen en cola), cuatro arrancan
+(4/4, equipos 0-2 y 1-3, los cuatro avisados), el 1v1 sigue igual, el modo con bots se rechaza, y
+con seis personas arranca una partida y quedan dos esperando.
+
+### Irse a mitad de partida dejaba a los demas mirando una mesa muerta
+
+`room:leave` sacaba al jugador de `room.players` y nada mas. El juego guarda su propia lista, asi
+que el estado **no se corrompia** y los asientos no se corrian —eso estaba bien—, pero el turno se
+quedaba clavado en el que se fue. Los otros tres esperaban un turno que no iba a llegar nunca. No
+hay reloj de turno en este banco de pruebas, asi que no habia nada que lo destrabara.
+
+Lo peor es que **el motor ya sabia resolverlo**: `ACTION.FORFEIT` esta implementado, le da la
+partida al equipo contrario y deja `reason: 'forfeit'`. `DominoGame` expone `forfeit()`. Nadie lo
+llamaba.
+
+Se conecto en `room:leave`: irse de una partida **en curso** es abandonarla. Salir del lobby antes
+de arrancar no cuenta, y un bot no puede abandonar. El aviso se manda **antes** de sacar al
+jugador de la sala, para que el que se va tambien vea por que termino y no una pantalla en blanco.
+
+### Y el adaptador no sabia contar un abandono
+
+Al conectarlo aparecio una tercera falla, mas fina. `winningTeam` y `endReason` leian de
+`state.lastRound`, que es el resultado de la **ronda**. Un abandono termina la **partida** sin
+cerrar ronda: el resultado queda en `state.result`. Resultado: la partida terminaba y el que se
+quedaba veia "terminada" sin ganador ni motivo.
+
+El primer intento tampoco funciono, y vale anotarlo: se puso el caso de abandono **despues** de
+`if (this._roundClosed)`, sin ver que `_roundClosed` es `phase !== PLAYING` —y un abandono deja
+justamente esa fase—, asi que entraba por la primera rama y devolvia `null` igual. Ahora se
+consulta la ronda primero y el resultado de partida **solo si la ronda no dijo nada**: el final
+normal muestra exactamente lo mismo que antes, y el abandono deja de venir vacio.
+
+Se agrego `forfeitedSeat` al estado que viaja al cliente, para poder decir **quien** se fue.
+
+### En la pantalla
+
+El cartel de fin conocia dos motivos: "Dominó" y todo lo demas era "Trancado". Un abandono se
+habria mostrado como un tranque, que es mentira. Ahora dice `Fulano dejó la partida`, y **no
+muestra los puntos ni el desglose de manos**: en un abandono no hay ronda cerrada, asi que serian
+"+0 puntos" y una tabla vacia, que parece un error del juego.
+
+### Lo que quedo sin ver con mis propios ojos
+
+El camino de datos esta probado de punta a punta con sondas, y el juego normal se vio corriendo en
+localhost. Lo que **no** se vio es el cartel de abandono dibujado: para eso hacen falta dos
+personas registradas en dos navegadores, y no se crean cuentas para probar.
+
+Motor 57/57, backend 87/87.

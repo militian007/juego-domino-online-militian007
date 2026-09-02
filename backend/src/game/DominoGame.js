@@ -136,7 +136,18 @@ export class DominoGame {
   }
 
   get winningTeam() {
-    return this._roundClosed ? this.state.lastRound?.winnerTeam ?? null : null;
+    const deLaRonda = this._roundClosed ? this.state.lastRound?.winnerTeam ?? null : null;
+    if (deLaRonda !== null) return deLaRonda;
+
+    // Un abandono termina la partida sin cerrar ronda: el resultado queda en
+    // state.result y no en lastRound. Sin esto, quien se queda ve la partida
+    // terminada pero sin ganador.
+    //
+    // Se consulta DESPUES de la ronda y solo si esa no dijo nada: asi el final
+    // normal sigue mostrando exactamente lo mismo que antes.
+    if (this.state.phase === PHASE.GAME_OVER) return this.state.result?.winnerTeam ?? null;
+
+    return null;
   }
 
   get winner() {
@@ -146,7 +157,17 @@ export class DominoGame {
   }
 
   get endReason() {
-    return this._roundClosed ? this.state.lastRound?.reason ?? null : null;
+    const deLaRonda = this._roundClosed ? this.state.lastRound?.reason ?? null : null;
+    if (deLaRonda !== null) return deLaRonda;
+
+    if (this.state.phase === PHASE.GAME_OVER) return this.state.result?.reason ?? null;
+
+    return null;
+  }
+
+  /** Asiento que abandono, si la partida termino asi. */
+  get forfeitedSeat() {
+    return this.state.result?.reason === 'forfeit' ? this.state.result.forfeitedSeat ?? null : null;
   }
 
   get roundPoints() {
@@ -348,6 +369,7 @@ export class DominoGame {
       winningTeam: this.winningTeam,
       roundPoints: this.roundPoints,
       endReason: this.endReason,
+      forfeitedSeat: this.forfeitedSeat,
       // Al cerrar la ronda se revelan las manos, para que se pueda verificar el puntaje
       revealedHands: this._roundClosed && this.state.lastRound
         ? this.players.map((p, i) => ({
