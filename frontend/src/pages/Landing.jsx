@@ -44,7 +44,7 @@ function ModeModal({ open, onClose, onSelect }) {
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-md max-h-[88dvh] overflow-y-auto bg-domino-felt border border-domino-accent/40 rounded-2xl shadow-2xl shadow-black/70"
+        className="relative w-full max-w-md max-h-[88svh] overflow-y-auto bg-domino-felt border border-domino-accent/40 rounded-2xl shadow-2xl shadow-black/70"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 z-10 bg-domino-felt/95 backdrop-blur border-b border-domino-accent/20 px-4 sm:px-8 py-4 flex items-center justify-between">
@@ -119,11 +119,11 @@ export default function Landing() {
   };
 
   return (
-    <div className="relative h-[100dvh] w-full overflow-hidden bg-domino-dark text-domino-cream">
+    <div className="relative h-[100svh] w-full overflow-hidden bg-domino-dark text-domino-cream">
       <img
         src="/hero-table.png"
         alt="Mesa de dominó"
-        className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none"
+        className="absolute inset-x-0 top-0 h-[100dvh] w-full object-cover select-none pointer-events-none"
         draggable="false"
       />
 

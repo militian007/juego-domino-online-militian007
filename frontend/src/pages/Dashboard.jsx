@@ -33,7 +33,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-domino-dark">
+    <div className="flex min-h-[100svh] flex-col bg-domino-dark">
       <Navbar />
 
       <main className="menu-compacto mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pb-4 pt-3 sm:max-w-2xl">

@@ -2831,3 +2831,36 @@ Para medir el menú sin cuenta se agregó una ruta de prueba y **se quitó al te
 cero ocurrencias de `menu-preview` en `App.jsx`).
 
 Motor 55/55, backend 87/87, build ok. Versión **0.0.39**.
+
+## 70. El scroll que salía al recargar: `dvh` contra la barra del navegador (2026-09-01)
+
+El usuario: *"cuando actualizas o refresca la página en el primer menú sale el scroll, es raro"*.
+
+**No se pudo reproducir en el emulador**, y eso mismo fue la pista. Se metió una sonda en
+`index.html` que mide el alto del documento cuadro por cuadro desde el arranque: desde el primer
+cuadro (17ms) el alto era exacto, sin transitorio. O sea **no es la fuente ni un salto de layout**;
+esas dos habrían aparecido como un pico en los primeros cuadros.
+
+Lo que el emulador no tiene es lo que sí tiene su teléfono: **la barra del navegador**. Y ahí está
+la causa. Las pantallas usaban `100dvh`, y en el móvil `dvh` se resuelve en el primer pintado al
+alto **con la barra escondida**, que es más grande que lo que de verdad se ve. La página queda más
+alta que la ventana y sale el scroll; en cuanto la barra se va, calza y el scroll desaparece. De
+ahí el "es raro".
+
+El arreglo es cambiar a **`svh`**, que es el alto **con la barra puesta**, el más chico de los tres:
+así nunca sobra, ni en el primer pintado ni después. Cuando la barra se esconde queda un dedo de
+fondo abajo, que no se nota porque el contenido va centrado.
+
+- Menú y pantalla de buscar partida: `min-h-[100svh]`.
+- Ventana de modos de la portada: `max-h-[88svh]`.
+- Portada: el contenedor va en `100svh` para que los botones estén siempre a la vista, pero **la
+  foto de la mesa se queda en `100dvh`** para que no aparezca una franja cuando la barra se va.
+
+**Lo que NO se tocó, y hay que decirlo:** la mesa de juego sigue en `h-[100dvh]`. Ahí el riesgo es
+el mismo (que la mano quede debajo del borde) pero la partida entra en pantalla completa y la barra
+no está, así que cambiarlo metería una franja negra abajo sin ganar nada. Si alguna vez la mano se
+ve cortada al entrar a una partida sin pantalla completa, esa es la línea a cambiar.
+
+Medido: sobra cero, y el botón de JUGAR AHORA entero dentro de la ventana.
+
+Motor 55/55, backend 87/87, build ok. Versión **0.0.40**.
