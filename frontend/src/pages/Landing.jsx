@@ -3,49 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { connectSocket, disconnectSocket } from '../services/socket.js';
 import { pantallaCompleta } from '../utils/pantalla.js';
-
-const MODES = [
-  {
-    id: '1v1bot',
-    eyebrow: 'Solitario',
-    title: 'PRACTICAR',
-    titleAccent: 'VS BOT',
-    desc: 'Afina tu estrategia contra un rival que cuenta fichas, sacrifica altas y piensa antes de jugar.',
-    cta: 'Jugar solo',
-    requiresAuth: false,
-    badge: 'Sin registro'
-  },
-  {
-    id: '2v2bots',
-    eyebrow: 'Equipos',
-    title: '2 VS 2',
-    titleAccent: 'CON BOTS',
-    desc: 'Prueba la modalidad en parejas sin esperar a nadie: tu compañero y los dos rivales los pone la casa.',
-    cta: 'Jugar en pareja',
-    requiresAuth: false,
-    badge: 'Sin registro'
-  },
-  {
-    id: '1v1',
-    eyebrow: 'Duelo',
-    title: '1 VS 1',
-    titleAccent: 'ONLINE',
-    desc: 'Tú y un amigo. Sala privada con código, pozo para robar, y la gloria de cerrar la mano.',
-    cta: 'Crear sala',
-    requiresAuth: true,
-    badge: 'Con cuenta'
-  },
-  {
-    id: '2v2',
-    eyebrow: 'Equipos',
-    title: '2 VS 2',
-    titleAccent: 'PREMIER',
-    desc: 'La modalidad reina. Dos humanos contra dos humanos, en parejas. Sin pozo, pura lectura.',
-    cta: 'Armar mesa',
-    requiresAuth: true,
-    badge: 'Con cuenta'
-  }
-];
+import SelectorModos, { MODOS } from '../components/SelectorModos.jsx';
 
 function GoldButton({ children, onClick, size = 'md', as: As = 'button', to, variant = 'solid', className = '' }) {
   const base = 'inline-flex items-center justify-center font-bold tracking-[0.2em] rounded-full transition-all duration-200 whitespace-nowrap';
@@ -64,48 +22,6 @@ function GoldButton({ children, onClick, size = 'md', as: As = 'button', to, var
     return <Link to={to} className={cls}>{children}</Link>;
   }
   return <button onClick={onClick} className={cls}>{children}</button>;
-}
-
-function ModeCard({ mode, onSelect }) {
-  return (
-    <button
-      onClick={() => onSelect(mode.id)}
-      className="group relative bg-domino-card/60 hover:bg-domino-card/80 border border-domino-accent/30 hover:border-domino-accent rounded-lg p-5 sm:p-6 text-left transition-all duration-300 hover:-translate-y-1"
-    >
-      <div className="flex items-center gap-2 mb-2">
-        <p className="text-domino-accent text-[10px] sm:text-xs tracking-[0.35em]">
-          {mode.eyebrow}
-        </p>
-        {mode.badge && (
-          <span className={`text-[9px] sm:text-[10px] tracking-wider px-2 py-0.5 rounded-full border ${
-            mode.requiresAuth
-              ? 'border-domino-accent/40 text-domino-accent/80'
-              : 'border-green-400/40 text-green-400/80'
-          }`}>
-            {mode.badge}
-          </span>
-        )}
-      </div>
-      <h3 className="font-serif text-2xl sm:text-3xl leading-[1.1] mb-3">
-        <span className="text-domino-cream">{mode.title}</span>
-        <br />
-        <span className="text-domino-accent italic">
-          {mode.titleAccent}
-        </span>
-      </h3>
-      <p className="text-domino-cream-dim text-xs sm:text-sm leading-relaxed mb-4 min-h-[3.5rem]">
-        {mode.desc}
-      </p>
-      <div className="flex items-center justify-between pt-3 border-t border-domino-accent/20">
-        <span className="text-domino-accent text-xs sm:text-sm tracking-[0.25em] group-hover:tracking-[0.3em] transition-all">
-          {mode.cta}
-        </span>
-        <span className="text-domino-accent text-lg group-hover:translate-x-1 transition-transform">
-          →
-        </span>
-      </div>
-    </button>
-  );
 }
 
 function ModeModal({ open, onClose, onSelect }) {
@@ -128,10 +44,10 @@ function ModeModal({ open, onClose, onSelect }) {
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto bg-domino-felt border border-domino-accent/40 rounded-2xl shadow-2xl shadow-black/70"
+        className="relative w-full max-w-md max-h-[88dvh] overflow-y-auto bg-domino-felt border border-domino-accent/40 rounded-2xl shadow-2xl shadow-black/70"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 z-10 bg-domino-felt/95 backdrop-blur border-b border-domino-accent/20 px-6 sm:px-10 py-5 flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-domino-felt/95 backdrop-blur border-b border-domino-accent/20 px-4 sm:px-8 py-4 flex items-center justify-between">
           <div>
             <p className="text-domino-accent text-[10px] sm:text-xs tracking-[0.4em] mb-1">
               CLUB PRIVADO · SALA
@@ -148,13 +64,9 @@ function ModeModal({ open, onClose, onSelect }) {
             ×
           </button>
         </div>
-        <div className="px-6 sm:px-10 py-6 sm:py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
-            {MODES.map((mode) => (
-              <ModeCard key={mode.id} mode={mode} onSelect={onSelect} />
-            ))}
-          </div>
-          <p className="text-center text-domino-cream-dim/60 text-xs mt-8 tracking-wider">
+        <div className="px-4 py-5 sm:px-8 sm:py-6">
+          <SelectorModos onElegir={onSelect} mostrarInsignias />
+          <p className="mt-6 text-center text-[10px] uppercase tracking-wider text-domino-cream-dim/50">
             ESC para cerrar
           </p>
         </div>
@@ -185,11 +97,12 @@ export default function Landing() {
   const [modalOpen, setModalOpen] = useState(false);
   const counts = useOnlineCount();
 
-  const goToMode = (modeId) => {
-    const mode = MODES.find((m) => m.id === modeId);
-    if (!mode) return;
+  const goToMode = (mode) => {
+    const modeId = typeof mode === 'string' ? mode : mode?.id;
+    const elegido = MODOS.find((m) => m.id === modeId);
+    if (!elegido) return;
     pantallaCompleta();
-    if (mode.requiresAuth && !user) {
+    if (elegido.requiresAuth && !user) {
       navigate('/login', { state: { from: `/dashboard?mode=${modeId}` } });
       return;
     }

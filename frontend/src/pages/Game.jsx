@@ -9,6 +9,8 @@ import RoundBreakdown from '../components/game/RoundBreakdown.jsx';
 import { Marcador, Jugador, Mesa } from '../components/game/Hud.jsx';
 import Hand from '../components/game/Hand.jsx';
 import OpponentHand from '../components/game/OpponentHand.jsx';
+import MesaIcono from '../components/MesaIcono.jsx';
+import { Seccion, Fila } from '../components/SelectorModos.jsx';
 import PlayerInfo from '../components/game/PlayerInfo.jsx';
 import Avatar from '../components/game/Avatar.jsx';
 import Tablero from '../components/game/Tablero.jsx';
@@ -674,68 +676,43 @@ export default function Game() {
   }
 
   if (!joinParam && !AUTO_START_MODES.includes(mode) && playModeOption === null && !lobby && !gameState) {
+    const asientos = mode === '2v2' ? 4 : 2;
+    const vacias = asientos - 1;
     return (
-      <div className="min-h-screen flex flex-col bg-domino-dark text-domino-cream">
+      <div className="flex min-h-[100dvh] flex-col bg-domino-dark text-domino-cream">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center px-4 py-8">
-          <div className="card p-6 sm:p-10 max-w-2xl w-full border border-domino-accent/30 bg-domino-felt shadow-2xl relative overflow-hidden">
-            <div className="absolute inset-0 bg-felt opacity-5 pointer-events-none" />
-            <div className="text-center mb-8 relative z-10">
-              <p className="text-domino-accent text-xs tracking-[0.4em] uppercase mb-2">
-                Duelo de Caballeros
-              </p>
-              <h1 className="font-serif text-3xl sm:text-4xl text-domino-cream font-bold">
-                Modalidad <span className="text-domino-accent italic">1 vs 1 Online</span>
-              </h1>
-              <p className="text-slate-400 text-sm mt-2 max-w-md mx-auto">
-                Elige cómo deseas buscar tu próxima partida de dominó. Puedes emparejarte al azar o crear una sala privada.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 mb-8">
-              <button
-                onClick={() => setPlayModeOption('matchmaking')}
-                className="group p-6 text-left rounded-xl border border-domino-accent/20 hover:border-domino-accent bg-domino-card/40 hover:bg-domino-card/80 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 cursor-pointer"
-              >
-                <div>
-                  <div className="text-3xl mb-3 group-hover:scale-110 transition-transform duration-300 w-fit">⚡</div>
-                  <h3 className="font-bold text-lg text-domino-cream mb-2 group-hover:text-domino-accent transition-colors">
-                    Emparejamiento Rápido
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                    Te conecta automáticamente con otro jugador disponible en línea. ¡Rápido, competitivo y directo!
-                  </p>
-                </div>
-                <div className="mt-6 flex items-center justify-between text-xs text-domino-accent font-semibold tracking-wider pt-4 border-t border-domino-accent/10 w-full">
-                  <span>JUGAR AHORA</span>
-                  <span className="group-hover:translate-x-1 transition-transform">→</span>
-                </div>
-              </button>
-              <button
-                onClick={() => setPlayModeOption('private')}
-                className="group p-6 text-left rounded-xl border border-domino-accent/20 hover:border-domino-accent bg-domino-card/40 hover:bg-domino-card/80 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 cursor-pointer"
-              >
-                <div>
-                  <div className="text-3xl mb-3 group-hover:scale-110 transition-transform duration-300 w-fit">🗝️</div>
-                  <h3 className="font-bold text-lg text-domino-cream mb-2 group-hover:text-domino-accent transition-colors">
-                    Crear Sala Privada
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                    Genera un código único para compartirlo con un amigo. Ideal para partidas personalizadas y revanchas.
-                  </p>
-                </div>
-                <div className="mt-6 flex items-center justify-between text-xs text-domino-accent font-semibold tracking-wider pt-4 border-t border-domino-accent/10 w-full">
-                  <span>CREAR SALA</span>
-                  <span className="group-hover:translate-x-1 transition-transform">→</span>
-                </div>
-              </button>
-            </div>
-            <div className="text-center relative z-10">
-              <Link to="/dashboard" className="text-slate-500 hover:text-domino-cream text-sm transition">
-                ← Volver al dashboard
-              </Link>
-            </div>
+        <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pb-6 pt-4 sm:max-w-lg">
+          <div className="mb-5 px-1">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-domino-accent/70">
+              {asientos === 4 ? 'Equipos' : 'Duelo'}
+            </p>
+            <h1 className="text-2xl font-bold tracking-wide text-domino-cream">
+              {asientos === 4 ? '2 vs 2' : '1 vs 1'} con gente
+            </h1>
           </div>
-        </div>
+
+          <Seccion titulo="Cómo buscar" pie={`faltan ${vacias}`}>
+            <Fila
+              icono={<MesaIcono asientos={asientos} vacias={vacias} tamano={54} />}
+              titulo="Emparejamiento rápido"
+              texto="Te sentamos con quien aparezca."
+              onClick={() => setPlayModeOption('matchmaking')}
+            />
+            <Fila
+              icono={<MesaIcono asientos={asientos} vacias={vacias} codigo tamano={54} />}
+              titulo="Sala privada"
+              texto="Te damos un código para pasarle."
+              onClick={() => setPlayModeOption('private')}
+            />
+          </Seccion>
+
+          <button
+            onClick={() => navigate(user ? '/dashboard' : '/')}
+            className="mt-2 self-center text-[11px] uppercase tracking-[0.2em] text-domino-cream/35 transition hover:text-domino-accent"
+          >
+            ← Volver
+          </button>
+        </main>
       </div>
     );
   }

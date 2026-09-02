@@ -2759,3 +2759,42 @@ Si el usuario consigue una API key de Google AI Studio se puede escribir un scri
 `contexto/avatares-prompts.md`. Ojo: la suscripción a la app de Gemini no da acceso a la API.
 
 Motor 55/55, backend 87/87, build ok. Versión **0.0.36**.
+
+## 68. Un solo selector de modos, la mesa cuadrada, y el menú de buscar partida (2026-09-01)
+
+Tres cosas que el usuario vio en su teléfono.
+
+### Había dos menús de modos y le salía el viejo
+
+Desde el menú salía el diseño nuevo de la sección 67, pero **"VER TODOS LOS MODOS" en la portada
+abría el viejo**: otra lista, con otros textos ("PRACTICAR VS BOT", "2 VS 2 PREMIER") y tarjetas
+altas de tres columnas que en un teléfono obligaban a scrollear.
+
+La causa era que había **dos listas de modos**, una en `Landing.jsx` y otra en `Dashboard.jsx`, cada
+una con sus textos. Ahora hay una sola: `components/SelectorModos.jsx` exporta `MODOS`, `Seccion`,
+`Fila` y el selector completo. La portada y el menú usan ese mismo. Se borraron `ModeCard` y la
+lista vieja de la portada, y la ventana pasó de `max-w-5xl` a `max-w-md`, porque es una lista y no
+una grilla.
+
+Los textos se acortaron para que entren en una línea: dentro de la ventana el texto tiene 185px de
+ancho y los largos partían las filas a distinto alto.
+
+### La mesa del icono era redonda
+
+El usuario: *"la mesa es cuadrada no redonda"*. Tenía razón, una mesa de dominó es cuadrada.
+`MesaIcono` pasó de círculo a cuadrado redondeado, con su baranda de nogal y su filo dorado.
+
+### El menú de buscar partida
+
+Era el último con lenguaje viejo: tarjetas grandes con emojis (⚡ y 🗝️), título "Duelo de
+Caballeros" y párrafos largos. Ahora usa las mismas filas que el resto, y el icono **dice lo que
+falta**: `MesaIcono` acepta `vacias` (sillas punteadas, las que estás esperando) y `codigo` (la
+etiqueta del código para la sala privada). Arriba dice "faltan 3" si es 2v2 y "faltan 1" si es 1v1.
+
+Los títulos van en sans también aquí: en serif "1 vs 1" se leía "I vs I".
+
+Verificado corriendo a 375x812 las tres pantallas, sin scroll en ninguna. Para poder ver la de
+buscar partida sin cuenta se abrió el permiso de invitado un momento y **se devolvió a como estaba**;
+comprobado con un diff contra la copia previa.
+
+Motor 55/55, backend 87/87, build ok. Versión **0.0.37**.

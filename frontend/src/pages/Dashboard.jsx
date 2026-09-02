@@ -1,86 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
-import MesaIcono from '../components/MesaIcono.jsx';
+import SelectorModos, { MODOS } from '../components/SelectorModos.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { pantallaCompleta } from '../utils/pantalla.js';
-
-const MODES = [
-  {
-    id: '1v1bot',
-    label: '1 vs 1',
-    desc: 'Contra un rival de la casa. Con pozo.',
-    asientos: 2,
-    bots: 1,
-    maxPlayers: 1,
-    grupo: 'casa'
-  },
-  {
-    id: '2v2bots',
-    label: '2 vs 2',
-    desc: 'Con un compañero de la casa. Sin pozo.',
-    asientos: 4,
-    bots: 3,
-    maxPlayers: 1,
-    grupo: 'casa'
-  },
-  {
-    id: '1v1',
-    label: '1 vs 1',
-    desc: 'Vos y un amigo, con código de sala.',
-    asientos: 2,
-    bots: 0,
-    maxPlayers: 2,
-    grupo: 'amigos'
-  },
-  {
-    id: '2v2',
-    label: '2 vs 2',
-    desc: 'Cuatro personas en equipos. Sin pozo.',
-    asientos: 4,
-    bots: 0,
-    maxPlayers: 4,
-    grupo: 'amigos'
-  }
-];
-
-function Seccion({ titulo, pie, children }) {
-  return (
-    <section className="mb-6">
-      <div className="mb-2 flex items-baseline justify-between px-1">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-domino-accent/80">
-          {titulo}
-        </h2>
-        <span className="text-[10px] uppercase tracking-wider text-domino-cream/35">{pie}</span>
-      </div>
-      <div className="flex flex-col gap-2.5">{children}</div>
-    </section>
-  );
-}
-
-function ModoFila({ modo, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className="group flex w-full items-center gap-3.5 rounded-xl border border-domino-accent/15 bg-domino-card/70 px-3.5 py-3.5 text-left transition hover:border-domino-accent/45 hover:bg-domino-card active:scale-[0.99]"
-    >
-      <MesaIcono asientos={modo.asientos} bots={modo.bots} tamano={54} />
-      <span className="min-w-0 flex-1">
-        <span className="block text-[17px] font-bold leading-tight tracking-wide text-domino-cream">
-          {modo.label}
-        </span>
-        <span className="mt-0.5 block text-[11px] leading-snug text-domino-cream/45">
-          {modo.desc}
-        </span>
-      </span>
-      <span className="text-domino-accent/40 transition group-hover:translate-x-0.5 group-hover:text-domino-accent">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </span>
-    </button>
-  );
-}
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -91,7 +14,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!initialMode) return;
-    if (!MODES.some((m) => m.id === initialMode)) return;
+    if (!MODOS.some((m) => m.id === initialMode)) return;
     navigate(`/game?mode=${initialMode}`, { replace: true });
   }, [initialMode, navigate]);
 
@@ -108,9 +31,6 @@ export default function Dashboard() {
       navigate(`/game?join=${code}`);
     }
   };
-
-  const casa = MODES.filter((m) => m.grupo === 'casa');
-  const amigos = MODES.filter((m) => m.grupo === 'amigos');
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-domino-dark">
@@ -129,17 +49,8 @@ export default function Dashboard() {
           </span>
         </div>
 
-        <Seccion titulo="Contra la casa" pie="empieza ya">
-          {casa.map((m) => (
-            <ModoFila key={m.id} modo={m} onClick={() => startGame(m)} />
-          ))}
-        </Seccion>
+        <SelectorModos onElegir={startGame} />
 
-        <Seccion titulo="Con amigos" pie="hace falta gente">
-          {amigos.map((m) => (
-            <ModoFila key={m.id} modo={m} onClick={() => startGame(m)} />
-          ))}
-        </Seccion>
 
         <form
           onSubmit={joinGame}
