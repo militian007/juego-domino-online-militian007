@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
 import SelectorModos, { MODOS } from '../components/SelectorModos.jsx';
+import Logo from '../components/Logo.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { pantallaCompleta } from '../utils/pantalla.js';
 
@@ -37,11 +38,16 @@ export default function Dashboard() {
       <Navbar />
 
       <main className="menu-compacto mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pb-4 pt-3 sm:max-w-2xl">
-        {/* El saludo va en una linea. Antes ocupaba una tarjeta entera y empujaba
-            los modos fuera de la pantalla del telefono. */}
-        <div className="mb-4 flex items-baseline justify-between gap-3 px-1">
-          <span className="truncate font-serif text-xl text-domino-cream">
-            Hola, {user?.username || 'jugador'}
+        {/* El logo manda, y debajo el saludo con las estadisticas en una linea:
+            antes el saludo ocupaba una tarjeta entera y empujaba los modos
+            fuera de la pantalla del telefono. */}
+        <div className="logo-menu mb-3 flex justify-center">
+          <Logo variante="linea" />
+        </div>
+
+        <div className="mb-3 flex items-baseline justify-between gap-3 px-1">
+          <span className="truncate text-[13px] text-domino-cream/85">
+            Hola, <span className="font-semibold text-domino-cream">{user?.username || 'jugador'}</span>
           </span>
           <span className="shrink-0 text-[11px] uppercase tracking-wider text-domino-cream/40">
             {user?.games_played || 0} partidas ·{' '}

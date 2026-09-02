@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { connectSocket, disconnectSocket } from '../services/socket.js';
 import { pantallaCompleta } from '../utils/pantalla.js';
 import SelectorModos, { MODOS } from '../components/SelectorModos.jsx';
+import Logo from '../components/Logo.jsx';
 
 function GoldButton({ children, onClick, size = 'md', as: As = 'button', to, variant = 'solid', className = '' }) {
   const base = 'inline-flex items-center justify-center font-bold tracking-[0.2em] rounded-full transition-all duration-200 whitespace-nowrap';
@@ -129,10 +130,16 @@ export default function Landing() {
 
       <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-black/40 pointer-events-none" />
 
+      {/* El fondo es una mesa con fichas y el logo tambien lleva fichas: sin este
+          velo, el logo se pierde dentro de la foto. En escritorio el logo va al
+          costado y no hace falta. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-black via-black/80 to-transparent md:hidden" />
+
       <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-5 sm:px-10 py-4 sm:py-6">
-        <div className="font-serif text-3xl sm:text-4xl font-semibold tracking-[0.25em] text-domino-cream/95 drop-shadow-lg">
-          D<span className="text-domino-cream/50">.T</span>
-        </div>
+        {/* En telefono el logo grande manda en el centro, asi que aca arriba
+            estorbaria. Se muestra solo de escritorio para arriba. */}
+        <Logo variante="linea" className="hidden md:inline-flex" />
+        <span className="md:hidden" />
         <div className="flex items-center gap-2 sm:gap-3">
           {!user && (
             <GoldButton as={Link} to="/login" variant="outline" size="sm">
@@ -155,15 +162,12 @@ export default function Landing() {
 
       <main className="absolute inset-0 z-10 flex items-end justify-center pointer-events-none md:items-center md:justify-end">
         <div className="pointer-events-auto flex w-full max-w-3xl flex-col items-center px-5 pb-6 text-center md:w-auto md:items-start md:pb-0 md:pr-[6%] md:text-left lg:pr-[8%]">
-          <p className="mb-2 font-sans text-[10px] tracking-[0.4em] text-domino-accent drop-shadow sm:text-sm md:mb-4">
-            CLUB PRIVADO · DOMINÓ
-          </p>
-          <h1 className="font-serif text-[2rem] font-semibold leading-[1.05] tracking-tight drop-shadow-2xl sm:text-5xl md:text-6xl lg:text-7xl">
-            <span className="block whitespace-nowrap text-domino-cream">Domina el arte</span>
-            <span className="block text-domino-accent md:pl-8 lg:pl-12">del dominó</span>
-          </h1>
-          <p className="mt-5 hidden max-w-sm text-sm leading-relaxed text-domino-cream/90 drop-shadow sm:text-base md:mt-6 md:block">
-            Únete a la mesa, afina tu estrategia y compite con los mejores jugadores.
+          {/* El logo es el titulo. Antes habia un eslogan de pagina web
+              ("Domina el arte del dominó"); una pantalla de titulo de juego
+              lleva la marca, no un texto de venta. */}
+          <Logo variante="titulo" className="md:items-start" />
+          <p className="mt-4 hidden max-w-sm text-sm leading-relaxed text-domino-cream/85 drop-shadow md:block">
+            Dominó venezolano, doble seis. Sentate en la mesa.
           </p>
 
           {/* En el telefono los botones van abajo, donde llega el pulgar, y manda

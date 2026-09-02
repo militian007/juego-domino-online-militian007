@@ -3371,3 +3371,54 @@ unos **31x15**, con todo igual de visible. Queda anotado a la espera de que el u
 centro, que es otra cosa.
 
 Motor 57/57, backend 87/87, build ok. Versión **0.0.53**.
+
+## 83. El logo del juego, y los dos menús alrededor de él (2026-09-02)
+
+El usuario pidió un logo y un mejor menú. Eligió, de tres opciones, la de **dos fichas cruzadas
+sobre el nombre**, y que se mejoraran **los dos menús** (portada y menú de modos).
+
+### El logo
+
+Sin crédito de IA de imagen (verificado otra vez: 0 créditos), y la regla de oro prohíbe dibujar.
+Pero había un activo mejor que cualquiera de las dos cosas: **las fichas del propio juego**, el arte
+que el usuario recortó a mano y que está protegido en `frontend/public/tiles/`.
+
+`components/Logo.jsx` compone la doble seis y el 3|6 cruzadas, con el nombre en Cormorant Garamond
+y degradado dorado. No hay ni un `path` dibujado: el logo y la mesa usan el mismo material, que es
+justo lo que hace que se vea de la misma marca.
+
+Dos variantes, porque un logo apilado no funciona en una cabecera:
+
+- **`titulo`**: fichas grandes cruzadas encima del nombre. Para la portada.
+- **`linea`**: las mismas fichas chiquitas al lado del nombre. Para la barra y el menú.
+
+### La portada
+
+El logo **es** el título. Antes había un eslogan de página web ("Domina el arte del dominó"); una
+pantalla de título de juego lleva la marca, no un texto de venta.
+
+Un detalle que se vio al probarlo: el fondo es una foto de una mesa con fichas y el logo también
+lleva fichas, así que **el logo se perdía dentro de la foto**. Se le puso un velo oscuro de abajo
+hacia arriba, solo en teléfono (en escritorio el logo va al costado y no hace falta).
+
+### El menú de modos
+
+El logo arriba del todo, y debajo el saludo con las estadísticas en una línea. El saludo bajó de
+serif grande a texto normal para no competir con el logo.
+
+Como el menú no puede scrollear (§69), el logo **se encoge con la pantalla** igual que los modos:
+86% por debajo de 700px de alto, 72% por debajo de 600, y desaparece por debajo de 520. Medido:
+sobra cero en 375x812, 360x640, 360x560 y 320x480.
+
+### Lo demás
+
+La barra de arriba cambió el emoji de dado 🎲 por el logo en su versión de línea. Y el icono de la
+app (`icono-192`, `icono-512`, el maskable) se regeneró con las dos fichas cruzadas sobre el paño,
+para que el icono de la pantalla de inicio sea el mismo logo.
+
+**Una cosa que hay que decir:** en el servidor de desarrollo la consola muestra un error de
+websocket (`ws://localhost:5199/socket.io/`). El proxy de Vite ya tiene `ws: true`, así que es cosa
+del entorno; socket.io cae a polling y **el juego conecta y se juega igual** (comprobado). No se
+persiguió porque no afecta a producción, donde no hay proxy de por medio.
+
+Motor 57/57, backend 87/87, build ok. Versión **0.0.54**.

@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import Logo from './Logo.jsx';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -13,9 +14,11 @@ export default function Navbar() {
   return (
     <nav className="border-b border-slate-800 bg-domino-dark/90 backdrop-blur sticky top-0 z-50">
       <div className="w-full px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center gap-2">
-        <Link to="/" className="flex items-center gap-2 text-lg sm:text-xl font-bold shrink-0">
-          <span className="text-2xl sm:text-3xl">🎲</span>
-          <span className="text-domino-accent hidden xs:inline sm:inline">Dominó</span>
+        {/* La marca de la barra es el logo, no un emoji de dado suelto. En el
+            menu el logo grande ya esta debajo, asi que aca va la version de
+            linea y solo con las fichas cuando no hay sitio. */}
+        <Link to="/" className="shrink-0" aria-label="Inicio">
+          <Logo variante="linea" className="scale-[0.62] origin-left" />
         </Link>
 
         {user ? (

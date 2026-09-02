@@ -394,3 +394,17 @@
   /* La pista del codigo se va: el placeholder del campo ya dice lo mismo. */
   .menu-compacto .pista-codigo { display: none; }
 }
+
+/* El logo del menu se encoge con la pantalla, igual que los modos, para que el
+   menu siga entrando entero (ver seccion 69 del contexto). */
+@media (max-height: 700px) {
+  .menu-compacto .logo-menu { margin-bottom: 0.5rem; transform: scale(0.86); }
+}
+
+@media (max-height: 600px) {
+  .menu-compacto .logo-menu { margin-bottom: 0.25rem; transform: scale(0.72); }
+}
+
+@media (max-height: 520px) {
+  .menu-compacto .logo-menu { display: none; }
+}
