@@ -45,7 +45,7 @@ function Puntaje({ etiqueta, valor, tono }) {
 
 export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala }) {
   return (
-    <div className="pointer-events-none absolute left-1/2 top-2 z-20 w-[min(84%,340px)] -translate-x-1/2">
+    <div className="pointer-events-none mx-auto w-[min(94%,400px)] shrink-0 px-1 pb-1 pt-1.5">
     <div
       className="rounded-[10px]"
       style={{
@@ -110,7 +110,7 @@ export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala }) {
     </div>
 
     <div
-      className="mt-1 text-center font-mono text-[10px] tracking-[0.22em] text-amber-100/45"
+      className="mt-0.5 text-center font-mono text-[9px] tracking-[0.22em] text-amber-100/35"
       style={{ textShadow: '0 1px 3px rgba(0,0,0,.9)' }}
     >
       {sala}

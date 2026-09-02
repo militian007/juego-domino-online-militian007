@@ -3004,3 +3004,51 @@ Un 30% menos de fichas trabadas. La función quedó exportada como `espacioEnLaP
 `straightestPlacement` (el camino del jugador) como el bot, para que los dos coloquen igual.
 
 Motor 56/56, backend 87/87, build ok. Versión **0.0.43**.
+
+## 75. La mesa rectangular: marcador afuera y cada jugador en su borde (2026-09-02)
+
+El usuario, con dos capturas del 2v2: *"se montan las fichas en la cara de los jugadores, eso es una
+cagada"*, y una tercera de `domino.patmai.com` como referencia: mesa rectangular, marcador arriba y
+fuera de la mesa, los jugadores con su nombre en los bordes, y **un rectángulo invisible adentro
+donde van las piezas y del que no se salen**.
+
+### La medición que decidió la forma
+
+Antes de mover nada se midió cuánto ocupa la cadena a lo ancho y a lo alto, sobre 116.120
+posiciones:
+
+| | media | p95 | p99 | máximo |
+|---|-------|-----|-----|--------|
+| ancho | 11,0 | 17 | 18,5 | 20,5 |
+| alto | **6,9** | 13,5 | 16 | 19,5 |
+
+**La cadena es ancha, no cuadrada.** O sea que la mesa rectangular del usuario es la forma correcta,
+y el paño cuadrado de antes desperdiciaba alto.
+
+### Lo que se hizo
+
+- El marcador **salió de la mesa**: era `absolute` dentro del paño y ahora es una barra arriba.
+- `Board` ya no recibe un solo `insetInferior` sino **`margenes` por los cuatro lados**. Ese es el
+  rectángulo invisible: la escala y la cámara se calculan contra él, así que la cadena no puede
+  salirse.
+- `AsientoFlotante` (el retrato suelto sobre el paño, al que le crecían las fichas encima) se
+  reemplazó por **`PlacaAsiento`**, apoyada en el borde: el compañero arriba y los rivales a los
+  costados con el nombre en vertical.
+
+Medido jugando en el navegador: **cero fichas invadiendo una placa**, peor invasión 0 px.
+
+### El precio, que hay que decirlo
+
+Las placas de los costados se comen ancho, y en un teléfono el ancho es el que manda:
+
+| | antes | ahora |
+|---|-------|-------|
+| ficha de mesa en **1v1** | 38x19 | **36x18** (−5%) |
+| ficha de mesa en **2v2** | 38x19 | **30x15** (−21%) |
+
+En 1v1 no hay rivales a los costados, así que el rectángulo usa casi todo el ancho y no se pierde
+casi nada. En 2v2 las dos placas se llevan 84 px de los 375 de la pantalla. Para recuperarlos habría
+que poner a los rivales en las **esquinas de arriba** en vez de a media altura (ficha ~36x18), pero
+eso es exactamente lo que el usuario había rechazado en la sección 74.
+
+Motor 56/56, backend 87/87, build ok, sin errores de consola. Versión **0.0.45**.

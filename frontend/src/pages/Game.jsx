@@ -51,29 +51,48 @@ function olvidarPartida() {
   try { localStorage.removeItem(CLAVE_PARTIDA); } catch { /* nada */ }
 }
 
-function AsientoFlotante({ jugador, fichas, enTurno, esCompanero, className = '' }) {
+/**
+ * La placa de un jugador, apoyada en el borde de la mesa.
+ *
+ * Antes el retrato flotaba sobre el paño y la cadena le crecia encima. Ahora
+ * cada uno ocupa su lado, como en una mesa de verdad, y las fichas viven en el
+ * rectangulo de adentro sin salirse.
+ */
+function PlacaAsiento({ jugador, fichas, enTurno, esCompanero, lado, className = '' }) {
   if (!jugador) return null;
+  const vertical = lado === 'izquierda' || lado === 'derecha';
   return (
     <div
-      className={`pointer-events-none absolute z-20 flex flex-col items-center gap-0.5 text-center drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)] ${className}`}
+      className={`pointer-events-none absolute z-20 flex items-center gap-1.5 rounded-lg border px-1.5 py-1 backdrop-blur-[2px] ${
+        vertical ? 'flex-col' : 'flex-row'
+      } ${
+        enTurno
+          ? 'border-emerald-400/70 bg-emerald-950/45 shadow-[0_0_12px_rgba(52,211,153,0.35)]'
+          : 'border-domino-accent/25 bg-black/40'
+      } ${className}`}
     >
-      <div className="relative">
-        <Avatar semilla={jugador.avatar || jugador.username} tamano={38} />
+      <div className="relative shrink-0">
+        <Avatar semilla={jugador.avatar || jugador.username} tamano={vertical ? 24 : 34} />
         {enTurno && (
-          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 animate-pulse rounded-full border-2 border-black/60 bg-emerald-400" />
+          <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 animate-pulse rounded-full border-2 border-black/70 bg-emerald-400" />
         )}
       </div>
-      <span
-        className={`max-w-[86px] truncate text-[11px] font-bold leading-none ${
-          enTurno ? 'text-emerald-300' : esCompanero ? 'text-sky-200' : 'text-domino-cream'
-        }`}
+      <div
+        className={`flex min-w-0 flex-col ${vertical ? 'items-center gap-1' : 'items-start'}`}
+        style={vertical ? { writingMode: 'vertical-rl', textOrientation: 'mixed' } : undefined}
       >
-        {jugador.username}
-      </span>
-      <span className="text-[10px] leading-none text-domino-cream/70">{fichas ?? 0} fichas</span>
-      {esCompanero && (
-        <span className="text-[8px] uppercase tracking-widest text-sky-300/90">compañero</span>
-      )}
+        <span
+          className={`truncate text-[10px] font-bold leading-tight ${
+            vertical ? 'max-w-[104px]' : 'max-w-[92px] text-[11px]'
+          } ${enTurno ? 'text-emerald-300' : esCompanero ? 'text-sky-200' : 'text-domino-cream'}`}
+        >
+          {jugador.username}
+        </span>
+        <span className="text-[9px] leading-tight text-domino-cream/55">
+          {fichas ?? 0}
+          {vertical ? '' : esCompanero ? ' · compa' : ' fichas'}
+        </span>
+      </div>
     </div>
   );
 }
@@ -96,6 +115,10 @@ function AsientoLateral({ jugador, fichas, enTurno, esCompanero }) {
 }
 
 const AUTO_START_MODES = ['1v1bot', '2v2bots'];
+// Cuanto se le quita al paño por cada lado para que quepan las placas de los
+// jugadores. La cadena vive dentro de lo que queda y no se sale de ahi.
+const MARGEN_MESA = { arriba: 44, abajo: 8, lados: 34, borde: 8 };
+
 const GUEST_ALLOWED_MODES = ['1v1bot', '2v2bots'];
 
 export default function Game() {
@@ -859,6 +882,15 @@ export default function Game() {
         </div>
       )}
 
+      <Tablero
+        mios={gameState.teamScores?.[miEquipo] ?? 0}
+        suyos={gameState.teamScores?.[equipoRival] ?? 0}
+        ronda={gameState.round}
+        objetivo={gameState.targetPoints ?? 100}
+        pozo={gameState.hasPool ? gameState.poolCount : null}
+        sala={gameState.roomCode}
+      />
+
       <div className="relative min-h-0 w-full flex-1">
         <div className="relative h-full w-full">
           <div className="absolute inset-0">
@@ -866,7 +898,12 @@ export default function Game() {
               <div className="absolute inset-0">
                 <div className="relative h-full w-full">
                 <Board
-                  insetInferior={altoMano}
+                  margenes={{
+                    arriba: MARGEN_MESA.arriba,
+                    derecha: seatRight ? MARGEN_MESA.lados : MARGEN_MESA.borde,
+                    abajo: altoMano + MARGEN_MESA.abajo,
+                    izquierda: seatLeft ? MARGEN_MESA.lados : MARGEN_MESA.borde
+                  }}
                   clasePano={clasePano}
                   claseBaranda={claseBaranda}
                   board={gameState.board}
@@ -880,39 +917,33 @@ export default function Game() {
                   draggedTile={draggedTile}
                   onSnapChange={handleSnapChange}
                 />
-                <Tablero
-                  mios={gameState.teamScores?.[miEquipo] ?? 0}
-                  suyos={gameState.teamScores?.[equipoRival] ?? 0}
-                  ronda={gameState.round}
-                  objetivo={gameState.targetPoints ?? 100}
-                  pozo={gameState.hasPool ? gameState.poolCount : null}
-                  sala={gameState.roomCode}
-                />
-
-                <AsientoFlotante
+                {/* Cada uno en su lado de la mesa. Las placas se apoyan en el
+                    borde y el rectangulo de juego (los margenes que recibe
+                    Board) empieza justo por dentro, asi que la cadena nunca les
+                    crece encima. */}
+                <PlacaAsiento
                   jugador={seatTop}
                   fichas={gameState.handCounts[seatTop?.id]}
                   enTurno={gameState.currentPlayerId === seatTop?.id}
                   esCompanero={esCompanero(seatTop)}
-                  className={
-                    is1v1
-                      ? 'left-4 top-[86px] sm:left-[72px] sm:top-[74px]'
-                      : 'left-1/2 top-[104px] -translate-x-1/2'
-                  }
+                  lado="arriba"
+                  className="left-1/2 top-2 -translate-x-1/2"
                 />
-                <AsientoFlotante
+                <PlacaAsiento
                   jugador={seatLeft}
                   fichas={gameState.handCounts[seatLeft?.id]}
                   enTurno={gameState.currentPlayerId === seatLeft?.id}
                   esCompanero={esCompanero(seatLeft)}
-                  className="left-1 top-1/2 -translate-y-[60%]"
+                  lado="izquierda"
+                  className="left-0.5 top-1/2 -translate-y-1/2"
                 />
-                <AsientoFlotante
+                <PlacaAsiento
                   jugador={seatRight}
                   fichas={gameState.handCounts[seatRight?.id]}
                   enTurno={gameState.currentPlayerId === seatRight?.id}
                   esCompanero={esCompanero(seatRight)}
-                  className="right-1 top-1/2 -translate-y-[60%]"
+                  lado="derecha"
+                  className="right-0.5 top-1/2 -translate-y-1/2"
                 />
 
                 {/* Los menus van chiquitos al borde y abren su ventanita, para no

@@ -58,7 +58,10 @@ function getGhostVisualCoords(opt, board) {
 
 export default function Board({
   board,
-  insetInferior = 0,
+  // El rectangulo donde viven las fichas. Los asientos se sientan en los
+  // bordes de la mesa y la cadena no entra ahi: por eso hace falta un margen
+  // por cada lado y no solo abajo.
+  margenes = { arriba: 0, derecha: 0, abajo: 0, izquierda: 0 },
   ends,
   selectedTile = null,
   onPlayTile = null,
@@ -126,15 +129,19 @@ export default function Board({
     return () => cancelAnimationFrame(id);
   });
 
-  const altoUtil = Math.max(pano.alto - insetInferior, 120);
-  // Manda el eje mas justo, para que la mesa entre entera y siga siendo cuadrada.
+  // El rectangulo de juego: el paño menos lo que ocupan los asientos.
+  const anchoUtil = Math.max(pano.ancho - margenes.izquierda - margenes.derecha, 120);
+  const altoUtil = Math.max(pano.alto - margenes.arriba - margenes.abajo, 120);
+
+  // La cadena es ANCHA, no cuadrada: 11,0 x 6,9 celdas de media y 18,5 x 16 en
+  // el percentil 99, medido sobre 116.120 posiciones. Por eso el rectangulo de
+  // juego no tiene que ser cuadrado, y manda el eje que quede mas justo.
   const escala =
-    pano.ancho > 0 && altoUtil > 0
-      ? (Math.min(pano.ancho, altoUtil) / (LADO_CELDAS * CELL_SIZE)) * ZOOM_FICHAS
+    anchoUtil > 0 && altoUtil > 0
+      ? (Math.min(anchoUtil, altoUtil) / (LADO_CELDAS * CELL_SIZE)) * ZOOM_FICHAS
       : 1;
 
-  // Lo que sobra en el otro eje se reparte a los lados: la mesa queda centrada.
-  const celdasVisiblesX = pano.ancho > 0 ? pano.ancho / (CELL_SIZE * escala) : LADO_CELDAS;
+  const celdasVisiblesX = anchoUtil > 0 ? anchoUtil / (CELL_SIZE * escala) : LADO_CELDAS;
   const celdasVisiblesY = altoUtil > 0 ? altoUtil / (CELL_SIZE * escala) : LADO_CELDAS;
 
   // La caja que ocupa la cadena dibujada, en celdas. Lleva el corrimiento de
@@ -196,8 +203,8 @@ export default function Board({
     cajaCadena?.py1, cajaCadena?.py2, cajaCadena?.puntasY);
   const origenX = centroX - celdasVisiblesX / 2;
   const origenY = centroY - celdasVisiblesY / 2;
-  const desplazamientoX = -origenX * CELL_SIZE * escala;
-  const desplazamientoY = -origenY * CELL_SIZE * escala;
+  const desplazamientoX = margenes.izquierda - origenX * CELL_SIZE * escala;
+  const desplazamientoY = margenes.arriba - origenY * CELL_SIZE * escala;
 
   useEffect(() => {
     const el = containerRef.current;
