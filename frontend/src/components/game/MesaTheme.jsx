@@ -9,13 +9,10 @@ export const PANOS = [
   { id: 'negro', nombre: 'Negro', clase: 'felt-negro' }
 ];
 
+// Solo queda la baranda que usamos. Las de cuero eran de la epoca del CSS
+// (§55) y ninguna se acerca a la foto de nogal: solo ensuciaban el selector.
 export const BARANDAS = [
-  { id: 'foto', nombre: 'Nogal y latón', clase: 'rail-foto' },
-  { id: 'cognac', nombre: 'Cuero coñac', clase: 'rail-cognac' },
-  { id: 'espresso', nombre: 'Cuero espresso', clase: 'rail-espresso' },
-  { id: 'negro', nombre: 'Cuero negro', clase: 'rail-negro' },
-  { id: 'caoba', nombre: 'Cuero caoba', clase: 'rail-caoba' },
-  { id: 'nogal', nombre: 'Madera nogal', clase: 'rail-nogal' }
+  { id: 'foto', nombre: 'Nogal y latón', clase: 'rail-foto' }
 ];
 
 const DEFECTO = { pano: 'tela', baranda: 'foto' };

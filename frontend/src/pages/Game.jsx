@@ -905,20 +905,23 @@ export default function Game() {
                   fichas={gameState.handCounts[seatLeft?.id]}
                   enTurno={gameState.currentPlayerId === seatLeft?.id}
                   esCompanero={esCompanero(seatLeft)}
-                  className="left-1 top-[104px]"
+                  className="left-1 top-1/2 -translate-y-[60%]"
                 />
                 <AsientoFlotante
                   jugador={seatRight}
                   fichas={gameState.handCounts[seatRight?.id]}
                   enTurno={gameState.currentPlayerId === seatRight?.id}
                   esCompanero={esCompanero(seatRight)}
-                  className="right-1 top-[104px]"
+                  className="right-1 top-1/2 -translate-y-[60%]"
                 />
 
                 {/* Los menus van chiquitos al borde y abren su ventanita, para no
                     competir con la mesa. Al sacar la barra de arriba, ademas, esta
                     era la unica forma de salir de la partida. */}
-                <div className="absolute left-1 top-1/2 z-30 flex -translate-y-1/2 flex-col gap-1.5">
+                <div
+                  className="absolute left-1 z-30 flex flex-col gap-1.5"
+                  style={{ bottom: altoMano + 12 }}
+                >
                   <MesaThemePicker tema={tema} setTema={setTema} />
                   <div className="relative">
                     <button
