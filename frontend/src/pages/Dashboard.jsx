@@ -36,10 +36,10 @@ export default function Dashboard() {
     <div className="flex min-h-[100dvh] flex-col bg-domino-dark">
       <Navbar />
 
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pb-6 pt-4 sm:max-w-2xl">
+      <main className="menu-compacto mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pb-4 pt-3 sm:max-w-2xl">
         {/* El saludo va en una linea. Antes ocupaba una tarjeta entera y empujaba
             los modos fuera de la pantalla del telefono. */}
-        <div className="mb-5 flex items-baseline justify-between gap-3 px-1">
+        <div className="mb-4 flex items-baseline justify-between gap-3 px-1">
           <span className="truncate font-serif text-xl text-domino-cream">
             Hola, {user?.username || 'jugador'}
           </span>
@@ -73,7 +73,7 @@ export default function Dashboard() {
             Entrar
           </button>
         </form>
-        <p className="mt-1.5 px-1 text-[10px] uppercase tracking-wider text-domino-cream/30">
+        <p className="pista-codigo mt-1.5 px-1 text-[10px] uppercase tracking-wider text-domino-cream/30">
           ¿Te pasaron un código? Escribilo aquí
         </p>
       </main>

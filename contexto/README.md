@@ -2802,3 +2802,32 @@ La sección de modos online se llamó primero "Con amigos", pero el usuario la c
 que del otro lado hay una persona y no la casa (v0.0.38).
 
 Motor 55/55, backend 87/87, build ok. Versión **0.0.37**.
+
+## 69. El menú de modos no scrollea en ningún teléfono (2026-09-01)
+
+El usuario: *"en la pantalla principal elimina el scroll"*.
+
+Se midió en cuatro tamaños de teléfono y el que se pasaba era el **menú**: 693px de contenido en
+una pantalla de 640, o sea **53px de más**. La portada ya estaba bien desde la sección 68.
+
+Lo que se lo comía eran las filas de modo: 84px cada una por cuatro. Se bajaron a 78 (icono de 54
+a 48 y menos alto de fila), y los márgenes de sección y del `main` se apretaron un poco.
+
+Pero eso solo arregla un tamaño. Para que no vuelva a pasar, el menú **se aprieta solo** según lo
+bajita que sea la pantalla, con tres escalones en `index.css` sobre la clase `menu-compacto`:
+
+| pantalla | icono | alto de fila | pista del código |
+|----------|-------|--------------|------------------|
+| normal | 48 | py-3 | se ve |
+| menos de 700 de alto | 42 | py-1.5 | se ve |
+| menos de 600 | 36 | py-1 | se ve |
+| menos de 520 | 32 | py-0.5 | se esconde |
+
+La pista del código se esconde en la más chica porque el placeholder del campo dice lo mismo.
+
+Medido, sobra cero en: 412x732, 375x812, 360x640, 360x560 y 320x480, en el menú y en la portada.
+
+Para medir el menú sin cuenta se agregó una ruta de prueba y **se quitó al terminar** (comprobado:
+cero ocurrencias de `menu-preview` en `App.jsx`).
+
+Motor 55/55, backend 87/87, build ok. Versión **0.0.39**.

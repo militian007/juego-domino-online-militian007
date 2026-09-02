@@ -372,3 +372,25 @@
       0 2px 3px rgba(0, 0, 0, 0.55);
   }
 }
+
+/* El menu de modos no debe scrollear nunca. En pantallas bajitas (un telefono
+   con la barra del navegador puesta) se aprieta solo en vez de desbordarse. */
+@media (max-height: 700px) {
+  .menu-compacto section { margin-bottom: 0.75rem; }
+  .menu-compacto .fila-modo { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+  .menu-compacto .fila-modo svg[viewBox="0 0 64 64"] { width: 42px; height: 42px; }
+}
+
+@media (max-height: 600px) {
+  .menu-compacto section { margin-bottom: 0.5rem; }
+  .menu-compacto .fila-modo { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+  .menu-compacto .fila-modo svg[viewBox="0 0 64 64"] { width: 36px; height: 36px; }
+}
+
+@media (max-height: 520px) {
+  .menu-compacto section { margin-bottom: 0.375rem; }
+  .menu-compacto .fila-modo { padding-top: 0.125rem; padding-bottom: 0.125rem; }
+  .menu-compacto .fila-modo svg[viewBox="0 0 64 64"] { width: 32px; height: 32px; }
+  /* La pista del codigo se va: el placeholder del campo ya dice lo mismo. */
+  .menu-compacto .pista-codigo { display: none; }
+}

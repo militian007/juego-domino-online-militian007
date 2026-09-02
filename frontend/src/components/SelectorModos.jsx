@@ -49,7 +49,7 @@ export const MODOS = [
 
 export function Seccion({ titulo, pie, children }) {
   return (
-    <section className="mb-6 last:mb-0">
+    <section className="mb-5 last:mb-0">
       <div className="mb-2 flex items-baseline justify-between px-1">
         <h2 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-domino-accent/80">
           {titulo}
@@ -65,7 +65,7 @@ export function Fila({ icono, titulo, texto, onClick, insignia }) {
   return (
     <button
       onClick={onClick}
-      className="group flex w-full items-center gap-3.5 rounded-xl border border-domino-accent/15 bg-domino-card/70 px-3.5 py-3.5 text-left transition hover:border-domino-accent/45 hover:bg-domino-card active:scale-[0.99]"
+      className="fila-modo group flex w-full items-center gap-3.5 rounded-xl border border-domino-accent/15 bg-domino-card/70 px-3.5 py-3 text-left transition hover:border-domino-accent/45 hover:bg-domino-card active:scale-[0.99]"
     >
       {icono}
       <span className="min-w-0 flex-1">
@@ -97,7 +97,7 @@ export default function SelectorModos({ onElegir, mostrarInsignias = false }) {
   const fila = (m) => (
     <Fila
       key={m.id}
-      icono={<MesaIcono asientos={m.asientos} bots={m.bots} tamano={54} />}
+      icono={<MesaIcono asientos={m.asientos} bots={m.bots} tamano={48} />}
       titulo={m.label}
       texto={m.desc}
       insignia={mostrarInsignias && m.requiresAuth ? 'con cuenta' : null}
