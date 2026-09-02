@@ -3,15 +3,15 @@
 > **Cómo usarlo:** copia TODO lo que hay debajo de la línea y pégalo como primer mensaje en el
 > chat nuevo.
 >
-> Última actualización: **28 de agosto de 2026**.
+> Última actualización: **2 de septiembre de 2026** (versión 0.0.54).
 > El chat nuevo lee el repo como esté en ese momento; para saber en qué punto estás,
 > corre `git log -1 --oneline` en vez de fiarte de un commit escrito aquí.
 
 ---
 
-Hola. Vamos a continuar un proyecto que ya está bastante avanzado. Lee esto completo antes de
-tocar nada, y **no rehagas cosas que ya están hechas**: al final hay una lista de callejones sin
-salida que ya se probaron y midieron.
+Hola. Vamos a continuar un proyecto que ya está muy avanzado. Lee esto completo antes de tocar
+nada, y **no rehagas cosas que ya están hechas**: al final hay una lista de callejones sin salida
+que ya se probaron y se midieron.
 
 ## REGLA DE ORO
 
@@ -23,8 +23,10 @@ Me llamo Jonathan (militian007). No soy programador de profesión: explícame en
 dime **por qué** en una línea cada vez que tomes una decisión técnica. Hablo venezolano, escribo
 rápido y con errores de tipeo; si algo no se entiende, pregunta.
 
-Trabajo así: te muestro capturas y videos de lo que veo mal, y espero que **lo verifiques
-corriendo**, no que adivines. Si algo está roto o a medias, dímelo derecho.
+Trabajo así: te muestro capturas de lo que veo mal —muchas veces forzando el error a propósito— y
+espero que **lo verifiques corriendo**, no que adivines. Si algo está roto o a medias, dímelo
+derecho. Cuando te doy un número o un porcentaje, quiero que venga de una medición, no de una
+impresión.
 
 Mis reglas están en `CLAUDE.md` (raíz del repo). Las heredé de mis proyectos OLIMPO (`dev/appGym`)
 y `dev/jpdevgames`. Resumen:
@@ -39,23 +41,38 @@ y `dev/jpdevgames`. Resumen:
 8. **El servidor manda.** El cliente nunca decide un resultado.
 9. **Explícame en español y claro.**
 10. **Mide antes de cambiar una regla de juego.** Nada de "creo que esto lo mejora": corre una
-    simulación A/B de miles de manos y compara. Ya me equivoqué así una vez.
+    simulación A/B de miles de manos y compara.
 
 Además: **no comentar de más**, **nada de emojis en el código**, UI en español e identificadores
 en inglés, y **no commitear sin haberlo visto corriendo en localhost**.
 
+## REGLA DE ORO VISUAL (inquebrantable, la puse el 2026-09-02)
+
+**Nada de dibujar a mano lo que ya existe hecho y mejor.** Nada de `<path d="...">` inventados a
+ojo, nada de texturas de CSS, nada de gráficos improvisados.
+
+- **Iconos monocromos: `lucide-react`** (instalado).
+- **Iconos a color: set Fluent Emoji de Microsoft.** No se importa el paquete entero: hay un
+  extractor, `frontend/tools/extraer-iconos.cjs`, que saca solo los que se usan a
+  `src/components/iconosColor.js` (4 KB) y los pinta `IconoColor.jsx`. Para agregar uno, se edita
+  `QUIERO` en ese script y se vuelve a correr.
+- **Materiales y texturas: IA de imagen** (`nano_banana_pro`, 2K). **Ojo: el espacio de generación
+  está en 0 créditos desde hace días.** Verifícalo con `balance` antes de prometerme una imagen.
+- Si algo no se puede hacer con acabado profesional, **dímelo**, no me entregues algo a medias.
+
+Ya me pasó tres veces: barandas de CSS ("basura"), ruido procedural ("qué horrible") e iconos SVG
+escritos a mano ("se ven de Atari"). Cuando improvisas un gráfico, lo noto al instante.
+
 ## EL PROYECTO
 
-Juego de **dominó venezolano en línea**. El objetivo real no es el sitio: es terminar un **motor
-de dominó portable** para que el equipo de mi grupo de programación lo integre en su plataforma
-**https://privoytruco.com** (la hace otro dev; ahí estamos juntando varios juegos). El dominó es
-mi parte.
+Juego de **dominó venezolano en línea**. El objetivo real no es el sitio: es terminar un **motor de
+dominó portable** para que el equipo de mi grupo lo integre en su plataforma
+**https://privoytruco.com** (la hace otro dev; ahí estamos juntando varios juegos). El dominó es mi
+parte.
 
 - Carpeta: `C:\Users\JONAT\OneDrive\Desktop\mili\dev\juego de domino online`
 - Repo: https://github.com/militian007/juego-domino-online-militian007
 - Frontend en Vercel, backend en Render, base de datos en Supabase. Push a `main` redespliega solo.
-
-**La arquitectura, y por qué importa:**
 
 | Carpeta | Qué es |
 |---|---|
@@ -70,15 +87,14 @@ El motor **no puede depender** de Express, Socket.io, la base de datos ni de nad
 | Archivo | Qué tiene |
 |---|---|
 | `CLAUDE.md` | Las reglas completas |
-| `contexto/README.md` | El historial: 39 secciones, cada decisión con su porqué |
+| `contexto/README.md` | El historial, **hasta la sección 83**, cada decisión con su porqué y sus números |
 | `packages/domino-engine/README.md` | API del motor |
 | `packages/domino-engine/INTEGRATION.md` | Cómo lo enchufa el equipo de PrivoyTruco |
 
 ## LAS 8 REGLAS DEL MOTOR (no se negocian)
 
 1. **Cero dependencias.** ESM puro, Node 18+ y browser.
-2. **Determinista.** Todo el azar sale de una `seed`. Nada de `Math.random()` dentro del motor
-   (la plataforma usa commit/reveal, el reparto tiene que ser reproducible).
+2. **Determinista.** Todo el azar sale de una `seed`. Nada de `Math.random()` dentro del motor.
 3. **Estado serializable.** `JSON.parse(JSON.stringify(state))` da un estado válido. Sin clases,
    sin `Map`/`Set`, sin funciones dentro.
 4. **Reducer puro.** `applyAction(state, action)` no muta; devuelve `{ ok, state, events, error }`.
@@ -94,9 +110,9 @@ El motor **no puede depender** de Express, Socket.io, la base de datos ni de nad
 - Servidor → cliente: `table:state`, `table:turn_deadline`, `table:turn_timeout`,
   `table:round_committed`, `table:round_revealed`, `table:peer_joined`, `table:peer_left`,
   `table:abandoned`, `table:error`, `table:emote_received`, `table:rematch_*`.
-- `action.type` y `event.kind` en **UPPER_SNAKE_CASE** (`PLAY_TILE`, `DRAW`, `PASS`, `DEAL`,
-  `ROUND_END`, `GAME_END`).
-- `gameFormat` versionado: `domino-1v1-v1`, `domino-2v2-v1`.
+- `action.type` y `event.kind` en **UPPER_SNAKE_CASE**.
+- `gameFormat` versionado: `domino-1v1-v1`, `domino-1v1bot-v1`, `domino-2v2-v1`,
+  `domino-2v2bots-v1`.
 - `targetPoints` lo manda la plataforma. **No asumir 100.**
 
 ## LAS REGLAS DE DOMINÓ IMPLEMENTADAS
@@ -105,9 +121,9 @@ El motor **no puede depender** de Express, Socket.io, la base de datos ni de nad
 anterior. Si nadie tiene doble, la ficha de más pips. Se juega por los dos extremos.
 
 - **1v1**: hay pozo. Si no puedes jugar, robas hasta poder o hasta vaciarlo; recién ahí pasas.
-- **2v2**: sin pozo, pasas directo.
+- **2v2**: sin pozo, pasas directo. El compañero se sienta enfrente (asientos 0-2 y 1-3).
 - **Tranque**: gana quien tenga menos pips y **suma los pips que le quedaron al rival**
-  (no la diferencia — esto estuvo mal y se arregló).
+  (no la diferencia).
 - **Dominó**: el que se queda sin fichas suma los pips de las manos rivales.
 - Empate en tranque: nadie suma.
 
@@ -119,59 +135,90 @@ cd frontend && npm run dev     # :5173
 ```
 
 ```bash
-cd packages/domino-engine && node --test    # 53 tests
-cd backend && node src/game/test.js         # 69 tests
+cd packages/domino-engine && node --test    # 57 tests
+cd backend && node src/game/test.js         # 87 tests
 ```
 
-**Ahora mismo: 53/53 y 69/69 en verde.** Si tocas el motor, los 69 del backend son la red de
-seguridad que prueba que el adaptador viejo sigue funcionando.
+**Ahora mismo: 57/57 y 87/87 en verde**, versión 0.0.54. Si tocas el motor, los 87 del backend son
+la red de seguridad que prueba que el adaptador sigue funcionando.
+
+## CÓMO SE COLOCA UNA FICHA (esto es el corazón, entiéndelo antes de tocarlo)
+
+**No hay trazado automático.** La colocación es **libre**: `placementsFor` genera las posiciones
+posibles en una rejilla de 20x20 y el jugador arrastra la ficha adonde quiera. Hubo un intento de
+trazado en serpentina y **lo mandé revertir**: "que se vea en varias líneas es un peo, la gente no
+sabe por dónde va".
+
+Cuando hay varias posiciones para la misma ficha, gana la que pase estos filtros **en este orden**,
+que está medido y el orden importa más que cada regla por separado:
+
+1. **Si el extremo es un doble, salir cruzado.** Un doble está acostado sobre la cadena; la cadena
+   sale por sus costados, no por su mismo eje. Sin esto el doble quedaba "de pie" en el 22% de las
+   jugadas (§76).
+2. **`aperturaFutura`** — el "cerebro". Pone la ficha y pregunta, por cada punta, si todavía entra
+   algo (cuatro sondas: normal y doble por punta). Gana la que deja el tablero más abierto.
+   Va **primero** de los filtros de posición: medido, primero da 0,034% de fichas trabadas contra
+   0,068% si va de último (§81).
+3. **No pegarse al borde** de la mesa.
+4. **Seguir derecho** (cruzado si el extremo es doble).
+5. **`espacioEnLaPunta`** — casillas libres alrededor, solo para desempatar entre las que ya van
+   derecho. **Si esto va antes que "seguir derecho", empeora** (0,61% → 0,90%) (§73).
+
+Y hay una **pasada de rescate**: si a una ficha no le queda ni una casilla, se repasan las mismas
+posiciones permitiendo que **roce** a una vecina que no es su enlace. Solaparse y salirse del
+tablero se siguen rechazando siempre (§81).
+
+**El número que importa:** "ficha trabada" = tengo una ficha que pega con una punta y el tablero no
+me deja ponerla. Va en **0,060%**, una vez cada 1.673 turnos. Venía de 24,7%. Si tocas algo de la
+colocación, **vuelve a medir esto** antes y después.
+
+## CÓMO SE VE LA MESA
+
+- **La cámara sigue a la cadena**, con escala fija. Las fichas **nunca cambian de tamaño** mientras
+  juegas: eso lo rechacé y no se vuelve. La cámara se queda quieta el 91% de las jugadas.
+- **La ventana muestra 21,5 celdas** (`ZOOM_FICHAS = 1.116` en `Board.jsx`). Ese número no es
+  arbitrario: medido sobre 120.936 posiciones, es el mínimo con el que **no se sale ni una ficha
+  de la pantalla, nunca**. Con 20,9 celdas todavía se salía el 0,10% (§82).
+- **El marcador va fuera de la mesa**, arriba. La mesa es rectangular y los jugadores se sientan en
+  sus bordes: compañero arriba, rivales a los costados. `Board` recibe `margenes` por los cuatro
+  lados: ese es el rectángulo donde vive la cadena, y no se sale de ahí (§75).
+- **Los controles** van en una solapa al borde izquierdo que arranca recogida (sonido, color de
+  mesa, gestos). El **salir va aparte, arriba a la izquierda**, porque es lo único sin vuelta atrás.
 
 ## LO QUE YA ESTÁ HECHO (no lo rehagas)
 
-- **Motor extraído y portable**, con `createGame`, `applyAction`, `viewFor`, `playableMoves`,
-  `placementsFor`, `explainPlacements`, `boardEnds`, `handPips`. Archivos: `rng.js`, `tiles.js`,
-  `layout.js`, `rules.js`, `engine.js`, `bot.js`, `index.js`.
-- **Trazado en serpentina.** La posición de cada ficha se calcula, no se elige: cada mitad de la
-  cadena avanza en su propia franja y dobla de fila al llegar al borde. Una ficha legal SIEMPRE
-  tiene lugar. El jugador elige el extremo, izquierdo o derecho, que es la única decisión real
-  del dominó.
-- **Los dobles en el borde ofrecen las dos direcciones** (arriba y abajo). Antes solo una, y eso
-  hacía injugable el 46% de los dobles. Ahora 5.1%.
-- **Se quitó la "banda de borde"**: se midió y causaba el 37% de los bloqueos. Bloqueos 18.2%→12.8%,
-  trancas 49.2%→37.8%, y ninguna ficha se sale de la rejilla.
-- **El tablero se escala, no scrollea**, con 2 celdas de margen (49px de aire en escritorio,
-  28px en teléfono). Con 1 celda la cadena tocaba el borde: llega al extremo en el 51% de jugadas.
-- **La mano se acomoda en varias filas** y achica las fichas cuando hay muchas.
-- **Pozo elegible**: ves las fichas que quedan y eliges cuál robar.
-- **Al cerrar la ronda se revelan las manos** y se desglosa el puntaje, para poder verificarlo.
-- **Cinco bots con cara e identidad**: Nano (novato, 1 estrella), Doña Chela (fácil, 2), El Catire
-  (normal, 3), La Comadre (difícil, 4), El Tigre (maestro, 5). Difieren en ruido y en tasa de
-  jugada aleatoria. Los retratos son SVG generados por código (`Avatar.jsx`), 0 KB.
-- **HUD** con sala, ronda, puntos, pozo y turno.
+- **Motor extraído y portable**: `rng.js`, `tiles.js`, `layout.js`, `rules.js`, `engine.js`,
+  `bot.js`, `index.js`.
+- **12 rivales de la casa**, 6 mujeres y 6 hombres, repartidos en las cinco dificultades
+  (`backend/src/game/bots.js`). Sus retratos están en `frontend/public/avatares/*.svg`.
+- **1v1 con bot, 2v2 con tres bots, 1v1 y 2v2 entre personas** con código de sala.
+- **2v2 auditado**: 400 partidas, 97.663 turnos, once reglas comprobadas en cada turno, cero fallos.
 - **"¿Por qué no puedo jugar?"**: `explicarMano()` traduce el diagnóstico del motor a español.
-  Se construyó porque yo reportaba "no me deja jugar el 4" y se adivinaba desde capturas.
-- **Mesa temática elegible** por el jugador (color de paño y de borde), con textura de cuero real.
-- **Cambio de clave**: pantalla `/cambiar-clave` y `backend/scripts/clave.js`.
-- **La partida sobrevive al refresco y a salir de la app** (id de invitado estable, sala recordada
-  en localStorage 6h, re-join al reconectar).
-- **Arrastre en móvil arreglado**: la página ya no scrollea al arrastrar, y ya no se envía la
-  jugada dos veces.
+- **Pozo elegible**, **manos reveladas al cerrar la ronda** con el desglose del puntaje.
+- **La partida sobrevive al refresco** y a salir de la app (sala recordada 6h, re-join).
+- **App instalable (PWA)**: manifest, iconos, y pantalla completa al tocar jugar.
+  Las pantallas usan **`svh`, no `dvh`**: con `dvh` salía scroll al recargar en el teléfono (§70).
+- **El menú no scrollea en ningún teléfono**: se aprieta solo por escalones de alto (§69).
+- **Un solo selector de modos** (`SelectorModos.jsx`) que usan la portada y el menú.
+- **Logo** (`Logo.jsx`): dos fichas del propio juego cruzadas sobre el nombre. Dos variantes,
+  apilada para la portada y en línea para la barra y el menú.
 
 ## NO REINTENTAR (ya se probó y se midió)
 
-- **Heurística de "apertura"** para que el bot elija colocación: empeoró los bloqueos de
-  32.4% a 44.1%. Revertida.
-- **Regla de banda de borde**: quitada a propósito, ver arriba. No la reintroduzcas "por prolijidad".
-- **Texturas de cuero por ruido fractal isotrópico** → parece estuco. **Por bandas anisotrópicas**
-  → parece arpillera. Lo que funcionó fue **domain warping**. El generador está en
-  `frontend/tools/gen_cuero.py`.
-- **Elegir el lugar de la ficha con una heurística de "más aire"**: medido dos veces, empeora
-  (29.9% -> 38.3% de fichas trancadas teniendo el número).
-- **Relajar la regla anti-amontone**: no cambia nada (29.9% -> 29.8%) y ensucia la mesa.
-- **Agrandar la mesa para destrabar**: ataca el 4% del problema. La causa era que la cadena se
-  chocaba consigo misma, ya resuelto con el trazado en serpentina.
-- **Costuras en el borde de la mesa**: se probaron dos veces (línea punteada y puntadas SVG), las
-  dos horribles. Las fotos de referencia son de cuero liso. No lleva costura.
+- **Trazado en serpentina.** Lo mandé revertir: la gente no entiende por dónde va la cadena.
+- **Heurística de "apertura" o "más aire" como criterio principal** para elegir colocación: se
+  probó cuatro veces y siempre empeora. Solo sirve **de desempate**, después de "seguir derecho".
+- **Achicar la rejilla** para agrandar las fichas: medido con el motor actual, rejilla 16 multiplica
+  por 20 las fichas trabadas (0,051% → 1,032%) para ganar 20% de tamaño (§82).
+- **Subir el zoom de la mesa**: 1,116 es el techo. Más arriba se salen fichas de la pantalla (§82).
+- **Texturas de cuero por ruido procedural**: parece estuco o arpillera. Y las barandas de CSS son
+  "basura". La mesa buena es una imagen generada con IA (`mesa-nogal.webp`).
+- **Costuras en el borde de la mesa**: probadas dos veces, las dos horribles.
+- **`lucide-react` para los iconos de la mesa**: es monocromo de trazo y quedó "de Atari" a mis
+  ojos. Para la mesa van los de color (Fluent Emoji).
+- **La regla "no rozar otra ficha" como absoluta**: se relajó a propósito con la pasada de rescate.
+  El test que decía que "nunca se tocan fichas fuera de la cadena" **ya no aplica** y se cambió por
+  uno que comprueba que rozar sea raro y que montarse no pase nunca.
 
 ## CUIDADO CON ESTO
 
@@ -179,26 +226,33 @@ seguridad que prueba que el adaptador viejo sigue funcionando.
 - **Nunca confíes en un `seat` o un id de usuario que mande el cliente**; resuélvelo del token.
 - **No commitees** `node_modules`, `.env`, `data.db*`, ni imágenes de `captures/`.
 - **No toques sin preguntarme**: `frontend/public/hero-table.png` y `frontend/public/tiles/*.png`
-  (esas fichas las recorté a mano).
-- **No me pidas la `DATABASE_URL` de producción ni ninguna clave por el chat**, queda escrita para
-  siempre en el historial. Para la clave existe `node backend/scripts/clave.js hash "miclave"`,
-  que genera el hash y el SQL sin necesitar credenciales.
+  (esas fichas las recorté a mano, y son la base del logo).
+- **No me pidas la `DATABASE_URL` de producción ni ninguna clave por el chat.** Para la clave existe
+  `node backend/scripts/clave.js hash "miclave"`.
 - **No crees cuentas en producción** para probar nada.
-- En `Game.jsx` **todos los hooks van antes de cualquier `return` temprano**. Ya me tumbó la
-  página en producción una vez (error #310 de React) y el build de Vite pasa igual, porque es
-  error de tiempo de ejecución.
+- En `Game.jsx` **todos los hooks van antes de cualquier `return` temprano**. Ya me tumbó la página
+  en producción una vez (error #310 de React) y el build de Vite pasa igual.
+- El **backend en Render se duerme**: la primera conexión puede tardar 30-50 segundos.
 
-## PENDIENTE / IDEAS SIN DECIDIR
+## PENDIENTE / SIN DECIDIR
 
-- Probar el refresco en **1v1 entre dos humanos** (solo se verificó contra el bot).
-- Mesa de **24x24** en vez de 20x20: medido, bajaría bloqueos 13.5%→9.8% y trancas 37%→26%.
-  No decidido.
-- Fichas en **SVG** en vez de PNG: quitaría 3.8 MB. No decidido.
-- **Selector de rival** antes de empezar.
-- Correr en Supabase el SQL para arreglar mi clave de producción y borrar el usuario
-  `probe-usuario-inexistente`.
+- **Página de perfil**: ranking, historial de partidas, amigos, billetera para apostar, torneos,
+  foto de perfil. Lo pedí y lo frenamos porque **billetera, torneos y ranking son cosas de la
+  plataforma PrivoyTruco, no del motor**, y ese es el entregable real. Si se retoma: definir
+  primero si la billetera es de fichas de juego o de dinero real (lo segundo no lo maneja este repo).
+- **El tamaño de la ficha en 2v2** es de 20x10 px en un teléfono de 375, contra 29x15 en 1v1. La
+  diferencia son las placas de los rivales de los costados, que se comen 120 px de los 347 del paño
+  (el 35% del ancho). Ponerlas en las esquinas de arriba las devolvería (ficha ~31x15). Sin decidir.
+- **Los 12 retratos son vectores dibujados a mano** (`frontend/tools/retratos.py`), hechos cuando no
+  había crédito de IA. Los prompts para rehacerlos con IA están en `contexto/avatares-prompts.md`.
+- **2v2 entre cuatro personas reales** sin probar (lobby de cuatro, elegir compañero, qué pasa si
+  alguien se va).
+- **Acotar el corrimiento visual de los dobles**: hoy la cadena dibujada necesita 22,5 celdas cuando
+  la rejilla mide 20, porque el desplazamiento de los dobles se acumula. Acotarlo daría fichas más
+  grandes gratis, sin tocar reglas.
+- **Fichas en SVG** en vez de PNG: quitaría 3,8 MB. Sin decidir.
 
 ## POR DÓNDE EMPEZAR
 
-Salúdame, dime que leíste esto, y pregúntame en qué seguimos. No empieces a cambiar cosas por
-tu cuenta.
+Salúdame, dime que leíste esto, y pregúntame en qué seguimos. No empieces a cambiar cosas por tu
+cuenta.

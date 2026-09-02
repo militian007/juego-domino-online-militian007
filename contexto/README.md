@@ -3422,3 +3422,35 @@ del entorno; socket.io cae a polling y **el juego conecta y se juega igual** (co
 persiguió porque no afecta a producción, donde no hay proxy de por medio.
 
 Motor 57/57, backend 87/87, build ok. Versión **0.0.54**.
+
+## 84. El traspaso a chat nuevo, puesto al dia (2026-09-02)
+
+`contexto/README.md` se viene actualizando en cada commit, asi que estaba al dia. El que no:
+**`contexto/PROMPT-NUEVO-CHAT.md` era del 28 de agosto**, cuarenta y cinco secciones atras.
+
+No era solo que estuviera incompleto: **estaba mal de una forma peligrosa**. Decia que el trazado
+de la cadena era **en serpentina**, que es justo lo que el usuario mando revertir en la seccion 44.
+Un chat nuevo lo habria leido, lo habria dado por cierto y habria roto el juego. Tambien daba
+53/69 tests (van 57/87), cinco bots (van 12), y en su lista de "no reintentar" tenia entradas que
+desde entonces se demostraron al reves —por ejemplo, que relajar la regla de no rozar "no cambia
+nada", cuando en la seccion 81 resulto ser lo que bajo las fichas trabadas de 0,231% a 0,071%.
+
+Se reescribio entero. Lo que se agrego, que es lo que un chat nuevo necesita para no romper nada:
+
+- **La regla de oro visual** (§78): iconos de libreria, nunca a mano, y donde estan los dos sets.
+- **Como se coloca una ficha**, con el orden exacto de los cinco filtros y la advertencia de que
+  **el orden importa mas que cada regla**: el cerebro va primero, el sitio libre va de ultimo, y
+  cambiarlos de sitio empeora. Con los numeros de cada uno.
+- **La cifra que hay que vigilar**: ficha trabada en 0,060%, y la instruccion de volver a medirla
+  antes y despues de tocar la colocacion.
+- **Por que el zoom es 1,116** y no otro: es el minimo con el que no se sale ni una ficha.
+- **`svh` y no `dvh`**, que fue el bug del scroll al recargar.
+- Los pendientes de verdad: la pagina de perfil (y por que se freno), el tamaño de la ficha en 2v2
+  con su causa medida, y que los doce retratos son vectores a mano esperando credito de IA.
+
+Cada dato se comprobo corriendo antes de escribirlo, no de memoria: version, numero de tests,
+cantidad de bots, retratos en disco, el valor de `ZOOM_FICHAS` y los `gameFormat` registrados. Dos
+salieron mal en el primer intento y se corrigieron: el README tiene 81 encabezados aunque la ultima
+seccion sea la 83, y faltaba el formato `domino-1v1bot-v1`.
+
+Motor 57/57, backend 87/87.
