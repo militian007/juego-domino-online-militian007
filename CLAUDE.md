@@ -44,6 +44,20 @@ ni de nada de este repo.
 - `packages/domino-engine/` → el producto que se entrega al equipo de PrivoyTruco.
 - `backend/` + `frontend/` → banco de pruebas / cliente de referencia del motor.
 
+## 1.1 Regla de oro visual (2026-09-02, inquebrantable)
+
+**Nada de dibujar a mano lo que ya existe hecho y mejor.** Iconos, ilustraciones, tipografías,
+texturas: se usa una librería o un recurso profesional, no `<path d="...">` inventados a ojo.
+
+- **Iconos: `lucide-react`**, ya instalado. `import { Volume2, Palette, Smile } from 'lucide-react'`.
+  Comprobar el nombre antes de usarlo; nunca escribir un `path` de SVG a mano para un icono.
+- **Materiales y retratos:** ver [[generar-visuales-con-ia]] en la memoria. Si hay crédito, IA de
+  imagen. Si no, se le dice al usuario y se busca un recurso hecho, no se improvisa.
+- Si algo no se puede hacer con calidad profesional, **se dice**, no se entrega a medias.
+
+Sus palabras: *"ya deja de dibujar mierdas a mano, eres una IA, dame resultados profesionales y buen
+acabado, que sea una regla de oro inquebrantable a partir de ahora"*.
+
 ## 2. Reglas de código
 
 1. **NO comentar de más.** Código limpio; comentario solo si la lógica no se explica sola.

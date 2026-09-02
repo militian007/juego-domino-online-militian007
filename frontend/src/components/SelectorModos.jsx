@@ -1,3 +1,5 @@
+import { ChevronRight } from 'lucide-react';
+
 import MesaIcono from './MesaIcono.jsx';
 
 /**
@@ -82,9 +84,7 @@ export function Fila({ icono, titulo, texto, onClick, insignia }) {
         <span className="mt-0.5 block text-[11px] leading-snug text-domino-cream/45">{texto}</span>
       </span>
       <span className="text-domino-accent/40 transition group-hover:translate-x-0.5 group-hover:text-domino-accent">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <ChevronRight size={16} strokeWidth={2} />
       </span>
     </button>
   );

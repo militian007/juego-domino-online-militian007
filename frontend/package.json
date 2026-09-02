@@ -1,7 +1,7 @@
 {
   "name": "domino-online-frontend",
   "private": true,
-  "version": "0.0.47",
+  "version": "0.0.48",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,6 +11,7 @@
   "dependencies": {
     "@privoytruco/domino-engine": "file:../packages/domino-engine",
     "axios": "^1.7.7",
+    "lucide-react": "^1.39.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.27.0",

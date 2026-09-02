@@ -3133,3 +3133,34 @@ Verificado corriendo, los cuatro controles: el sonido alterna y guarda (`domino-
 paño abre y cierra, salen los 11 gestos, y el salir pide confirmación. Cero errores de consola.
 
 Motor 57/57, backend 87/87, build ok. Versión **0.0.47**.
+
+## 78. Regla de oro: nada dibujado a mano. Iconos de librería (2026-09-02)
+
+El usuario, mirando la columna de controles: *"esos iconos primero se ven de Atari, hazle mejor y con
+diseños, por Dios, agarra iconos de internet de mejor calidad"*. Y acto seguido: *"ya deja de dibujar
+mierdas a mano, eres una IA, dame resultados profesionales y buen acabado, que sea una regla de oro
+inquebrantable a partir de ahora"*.
+
+Tiene razón y el patrón se venía repitiendo: las barandas de CSS ("basura", §55), el ruido
+procedural ("qué horrible", §55) y ahora los iconos SVG escritos `path` por `path`.
+
+**Queda como regla en `CLAUDE.md` §1.1.** Nada de gráficos improvisados donde ya existe algo hecho y
+mejor. Para iconos se instaló **`lucide-react`**, y el nombre de cada icono se comprueba antes de
+usarlo. Si algo no se puede hacer con acabado profesional, se dice, no se entrega a medias.
+
+Se cambiaron todos los iconos escritos a mano: sonido (`Volume2`/`VolumeX`), color de mesa
+(`Palette`), gestos (`Smile`), salir (`LogOut`), las flechas de la solapa (`ChevronLeft`/`Right`) y
+la flecha de cada modo en el selector (`ChevronRight`). En `Game.jsx` quedan **cero** `path`
+dibujados a mano.
+
+### La solapa, ahora minimizada
+
+El usuario también aclaró, con la flecha en la captura, que los controles tienen que estar **en una
+ventanita minimizada** y salir al tocarla, no siempre a la vista. Ahora la columna arranca recogida:
+solo se ve una pestañita de 20px pegada al borde, y al tocarla se despliegan los tres botones.
+Medido: 0px recogida, 40px desplegada, y la pestaña cambia a "Ocultar los controles".
+
+Verificado corriendo: paño abre y cierra, el sonido guarda en `localStorage`, cero errores de
+consola.
+
+Motor 57/57, backend 87/87, build ok. Versión **0.0.48**.

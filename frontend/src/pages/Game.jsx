@@ -21,6 +21,7 @@ import TopBanner from '../components/TopBanner.jsx';
 import { connectSocket } from '../services/socket.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { playTileSound, playDrawSound, estaSilenciado, alternarSilencio } from '../utils/soundEffects.js';
+import { Volume2, VolumeX, Palette, Smile, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { salirPantallaCompleta } from '../utils/pantalla.js';
 
 // La partida en curso se recuerda en el navegador para poder volver a ella al
@@ -58,22 +59,20 @@ function olvidarPartida() {
  * cada uno ocupa su lado, como en una mesa de verdad, y las fichas viven en el
  * rectangulo de adentro sin salirse.
  */
-function BotonMesa({ titulo, activo = false, onClick, children }) {
+function BotonMesa({ titulo, activo = false, onClick, Icono }) {
   return (
     <button
       type="button"
       onClick={onClick}
       title={titulo}
       aria-label={titulo}
-      className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
+      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border shadow-lg transition-colors ${
         activo
           ? 'border-domino-accent bg-domino-felt/95 text-domino-accent'
-          : 'border-domino-accent/35 bg-black/50 text-domino-cream-dim hover:border-domino-accent/80 hover:text-domino-cream'
+          : 'border-domino-accent/35 bg-black/55 text-domino-cream-dim hover:border-domino-accent/80 hover:text-domino-cream'
       }`}
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
-        {children}
-      </svg>
+      <Icono size={18} strokeWidth={1.9} />
     </button>
   );
 }
@@ -596,6 +595,7 @@ export default function Game() {
 
   const [confirmandoSalida, setConfirmandoSalida] = useState(false);
   const [abierto, setAbierto] = useState(null);
+  const [solapa, setSolapa] = useState(false);
   const [silencio, setSilencio] = useState(() => estaSilenciado());
 
   // Salir de verdad: el servidor saca al jugador de la sala y se olvida la
@@ -919,9 +919,7 @@ export default function Game() {
                 : 'border-domino-accent/35 bg-black/50 text-domino-cream-dim hover:border-domino-crimson/80 hover:text-domino-cream'
             }`}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-            </svg>
+            <LogOut size={18} strokeWidth={1.9} />
           </button>
 
           {confirmandoSalida && (
@@ -1015,47 +1013,50 @@ export default function Game() {
                   className="right-0.5 top-1/2 -translate-y-1/2"
                 />
 
-                {/* Los controles de la mesa viven en una columnita al borde, como
-                    en PrivoyTruco: se despliega al tocarla y se recoge sola al
-                    elegir. El salir no va aca: va arriba del todo, aparte, para
-                    no salirse de la partida sin querer. */}
-                <div className="absolute left-1 top-2 z-40 flex items-start gap-1">
-                  <div className="flex flex-col gap-1.5">
+                {/* La solapa de controles: normalmente es una pestaña chiquita
+                    pegada al borde y, al tocarla, salen las opciones. Asi la
+                    mesa queda limpia, que es como se ve en PrivoyTruco. */}
+                <div className="absolute left-0 top-3 z-40 flex items-start">
+                  <div
+                    className={`flex flex-col gap-1.5 overflow-hidden transition-all duration-200 ${
+                      solapa ? 'ml-1 max-w-[48px] opacity-100' : 'ml-0 max-w-0 opacity-0'
+                    }`}
+                  >
                     <BotonMesa
                       titulo={silencio ? 'Activar el sonido' : 'Silenciar'}
                       activo={!silencio}
+                      Icono={silencio ? VolumeX : Volume2}
                       onClick={() => setSilencio(alternarSilencio())}
-                    >
-                      {silencio ? (
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.5a1.5 1.5 0 0 1-1.5-1.5v-4.5a1.5 1.5 0 0 1 1.5-1.5h2.25Z" />
-                      ) : (
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.5a1.5 1.5 0 0 1-1.5-1.5v-4.5a1.5 1.5 0 0 1 1.5-1.5h2.25Z" />
-                      )}
-                    </BotonMesa>
-
-                    {abierto !== 'pano' ? (
-                      <BotonMesa titulo="Color de la mesa" onClick={() => setAbierto('pano')}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9 9 0 1 1 0-18c4.97 0 9 3.694 9 8.25 0 2.07-1.68 3.75-3.75 3.75h-1.5a1.5 1.5 0 0 0-1.06 2.56c.29.29.44.68.44 1.09A2.35 2.35 0 0 1 12 21Z" />
-                      </BotonMesa>
-                    ) : (
-                      <BotonMesa titulo="Cerrar" activo onClick={() => setAbierto(null)}>
-                        <path strokeLinecap="round" d="M6 18 18 6M6 6l12 12" />
-                      </BotonMesa>
-                    )}
-
+                    />
+                    <BotonMesa
+                      titulo="Color de la mesa"
+                      activo={abierto === 'pano'}
+                      Icono={Palette}
+                      onClick={() => setAbierto((v) => (v === 'pano' ? null : 'pano'))}
+                    />
                     <BotonMesa
                       titulo="Enviar un gesto"
                       activo={showReactionMenu}
+                      Icono={Smile}
                       onClick={() => { setAbierto(null); setShowReactionMenu((v) => !v); }}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12c0 4.556-4.03 8.25-9 8.25a9.76 9.76 0 0 1-2.555-.337A5.97 5.97 0 0 1 5.41 20.97a.75.75 0 0 1-1.074-.765 6 6 0 0 0 1.257-2.907C4.228 15.932 3 14.1 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
-                    </BotonMesa>
+                    />
                   </div>
 
-                  {abierto === 'pano' && (
+                  <button
+                    type="button"
+                    onClick={() => { setSolapa((v) => !v); setAbierto(null); }}
+                    title={solapa ? 'Ocultar los controles' : 'Mostrar los controles'}
+                    aria-label={solapa ? 'Ocultar los controles' : 'Mostrar los controles'}
+                    aria-expanded={solapa}
+                    className="flex h-12 w-5 items-center justify-center rounded-r-lg border border-l-0 border-domino-accent/35 bg-black/55 text-domino-accent/80 transition-colors hover:bg-black/75 hover:text-domino-accent"
+                  >
+                    {solapa ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+                  </button>
+
+                  {solapa && abierto === 'pano' && (
                     <>
                       <div className="fixed inset-0 -z-10" onClick={() => setAbierto(null)} />
-                      <div className="w-52 rounded-xl border border-domino-accent/25 bg-domino-felt/95 p-3 shadow-2xl backdrop-blur">
+                      <div className="ml-1 w-52 rounded-xl border border-domino-accent/25 bg-domino-felt/95 p-3 shadow-2xl backdrop-blur">
                         <MesaThemePicker tema={tema} setTema={setTema} enMenu />
                       </div>
                     </>
