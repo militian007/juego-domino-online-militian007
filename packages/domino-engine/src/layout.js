@@ -294,18 +294,22 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
 
   generarCandidatos();
 
-  // Rescate del doble. Un doble se cruza sobre la cadena, asi que sobresale y
-  // toca la fila de al lado; la regla de "no rozar otra ficha" lo rechaza. Una
-  // ficha normal, acostada, pasa por el mismo pasillo sin tocar nada. Resultado:
-  // el jugador veia sitio de sobra, jugaba una normal ahi, y el doble no lo
-  // dejaba. Medido: pasaba en el 0,45% de las posiciones.
+  // Pasada de rescate. La regla de "no rozar otra ficha" deja el tablero
+  // prolijo, pero cuando aprieta rechaza colocaciones que el jugador ve
+  // perfectamente posibles: es lo que llama "estar trancado teniendo la ficha".
   //
-  // Si al doble no le queda NI UN sitio, se repasan las mismas casillas
+  // Si a la ficha no le queda NI UNA casilla, se repasan las mismas posiciones
   // permitiendo que roce. Solo se relaja rozar: solaparse y salirse del tablero
-  // se siguen rechazando, asi que la ficha entra pegada pero nunca encima.
-  if (esDoble && out.length === 0) {
+  // se siguen rechazando, asi que entra pegada a la vecina pero nunca encima.
+  //
+  // Empezo siendo solo para dobles (§71). Medido despues sobre 200 partidas por
+  // formato, extenderla a todas las fichas baja las trabadas de 0,231% a
+  // 0,071% y las trancas de 19,4% a 19,0%, con cero fichas montadas y cero
+  // fuera del tablero. El precio es cosmetico: pasan de 259 a 1.955 fichas
+  // pegadas a una vecina que no es su enlace, o sea 2 de cada 100 posiciones.
+  if (out.length === 0) {
     permitirRozar = true;
-    if (diagnostico) diagnostico.push({ motivo: 'rescate-del-doble' });
+    if (diagnostico) diagnostico.push({ motivo: 'pasada-de-rescate' });
     generarCandidatos();
     permitirRozar = false;
   }
@@ -377,6 +381,36 @@ export function espacioEnLaPunta(board, p, side, layout = DEFAULT_LAYOUT) {
  * 19.2% del tiempo, y el 66% de las fichas trancadas eran un doble que ya no
  * tenia hacia donde cruzarse.
  */
+/**
+ * Cuanto deja abierto el tablero esta colocacion, mirando una jugada adelante.
+ *
+ * Se pone la ficha y se pregunta, por cada punta, si todavia entra algo: una
+ * ficha normal (vale 2) y un doble (vale 1). Cuatro sondas alcanzan, porque lo
+ * que decide si una ficha entra es la geometria y si es doble o no, no su
+ * numero concreto.
+ *
+ * Es el "cerebro" que pidio el usuario el 2026-09-02: que la cadena no se meta
+ * sola en un rincon y deje a alguien con una ficha buena que no puede poner.
+ * Medido: baja las fichas trabadas de 0,338% a 0,034%, un factor 10, sin mover
+ * las trancas (19,3% -> 19,6%). Ver contexto/README.md seccion 81.
+ */
+export function aperturaFutura(board, placement, side, layout = DEFAULT_LAYOUT) {
+  if (!board || board.length === 0 || !placement) return 0;
+  const nuevo = side === 'left' ? [placement, ...board] : [...board, placement];
+  const ends = boardEnds(nuevo);
+  if (!ends) return 0;
+
+  let abierto = 0;
+  for (const lado of ['left', 'right']) {
+    const v = ends[lado];
+    if (v == null) continue;
+    const otro = v === 0 ? 1 : 0;
+    if (placementsFor(nuevo, [v, otro], lado, layout).length > 0) abierto += 2;
+    if (placementsFor(nuevo, [v, v], lado, layout).length > 0) abierto += 1;
+  }
+  return abierto;
+}
+
 export function straightestPlacement(board, placements, side, layout = DEFAULT_LAYOUT) {
   if (!placements || placements.length === 0) return null;
   if (!board || board.length === 0) return placements[0];
@@ -390,6 +424,15 @@ export function straightestPlacement(board, placements, side, layout = DEFAULT_L
   if (endTile.tile[0] === endTile.tile[1]) {
     const cruzadas = placements.filter((p) => p.orientation !== endTile.orientation);
     if (cruzadas.length > 0) placements = cruzadas;
+  }
+
+  // Primero el cerebro: entre las colocaciones posibles gana la que deja mas
+  // abierto el tablero para la jugada siguiente. Va ANTES que no pegarse al
+  // borde y que seguir derecho, que son atajos; esto mira de verdad.
+  if (placements.length > 1) {
+    const aperturas = placements.map((p) => aperturaFutura(board, p, side, layout));
+    const mejorApertura = Math.max(...aperturas);
+    placements = placements.filter((p, i) => aperturas[i] === mejorApertura);
   }
 
   const mejorAire = Math.max(...placements.map((p) => aireEnLaPunta(p, side, grid)));

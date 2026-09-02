@@ -3252,3 +3252,68 @@ Motor 57/57, backend 87/87, build ok. Versión **0.0.50**.
 **Retoque (v0.0.51):** la pestaña se acortó (172 px desplegada y 76 recogida, contra 196 y 104)
 y su fondo subió de negro al 25% al 45%, para que se despegue del paño sin competir con él.
 Asoma 24 px por debajo de los tres botones, que es lo que la mantiene agarrable.
+
+## 81. El cerebro que evita que te tranques (2026-09-02)
+
+El usuario: *"¿no podemos poner una IA o un cerebro que manipule la dirección en que se ponen las
+piezas para que la gente no pueda trancarse? Algo que vea: si sigues en línea derecha pegas con una
+pared, o si sigues derecho se va a trancar, mejor que bajes o subas"*. Y aclaró qué llama trancarse:
+**tener la ficha y que el tablero no te deje ponerla**.
+
+Eso es justo lo que se venía midiendo como "ficha trabada", que estaba en **0,338%**.
+
+### El cerebro
+
+`aperturaFutura(board, placement, side)`: se pone la ficha y se pregunta, por cada punta, si todavía
+entra algo. Bastan **cuatro sondas** —una ficha normal y un doble por punta— porque lo que decide si
+una ficha entra es la geometría y si es doble o no, no su número concreto. Entre las colocaciones
+posibles gana la que deja el tablero más abierto.
+
+**Dónde va en el orden importa, y esta vez al revés que en la sección 73.** Se probaron cuatro
+posiciones, con la punta fijada para que lo único que cambiara fuera dónde se apoya la ficha:
+
+| el cerebro va... | ficha trabada |
+|------------------|---------------|
+| no va (como estaba) | 0,338% |
+| **primero de todo** | **0,034%** |
+| después del borde | 0,043% |
+| último desempate | 0,068% |
+
+Va primero. Las trancas no se mueven (19,3% → 19,6%): el cerebro cambia dónde se apoya la ficha, no
+qué números quedan en las puntas.
+
+**Ojo con la primera medición.** El primer A/B dio que las trancas subían de 55,7% a 60%, y era
+mentira: al reelegir la colocación estaba cambiando también **de qué punta** juega el bot, o sea la
+estrategia. Fijando la punta, el efecto desaparece. Vale la pena recordarlo: si un experimento toca
+dos variables a la vez, el número no dice nada.
+
+### Y lo que quedaba: la regla de rozar
+
+Con el cerebro puesto, el motor real bajó a 0,231%. Se le preguntó al motor **por qué** rechazaba
+las que quedaban: de 1.158 colocaciones fallidas, **407 eran por `roza-otra-ficha`** — la misma regla
+que había causado el bug del doble en la sección 71.
+
+Allí se le puso una pasada de rescate solo para dobles. Medido ahora, extenderla a **todas las
+fichas** (si a una ficha no le queda ni una casilla, se repasan las posiciones permitiendo rozar):
+
+| | solo dobles | todas |
+|---|-------------|-------|
+| ficha trabada | 0,231% | **0,071%** |
+| trancas | 19,4% | 19,0% |
+| fichas montadas / fuera del tablero | 0 | **0** |
+| fichas rozando a una ajena | 259 | 1.955 (2 de cada 100 posiciones) |
+
+El precio es cosmético y minúsculo. Se cambió el test que afirmaba que **nunca** se tocan fichas
+fuera de la cadena: eso dejó de ser cierto a propósito, y ahora comprueba lo que sí tiene que
+seguir siendo cierto — que rozar es raro (tope 10%) y que montarse o salirse **no pasa nunca**.
+
+### El resultado
+
+Sobre **118.817 turnos**: ficha trabada **0,060%**, o sea **1 vez cada 1.673 turnos**. Trancas 18,3%,
+cero fichas montadas, cero fuera del tablero.
+
+De dónde venimos: 24,7% al empezar esta serie, 1,14% tras los arreglos de geometría, 0,338% con el
+sitio libre, y **0,060%** con el cerebro y el rescate. No es cero —queda el caso en que de verdad no
+hay casilla ni rozando— pero es 1 de cada 1.673.
+
+Motor 57/57, backend 87/87, build ok, jugado en el navegador sin errores. Versión **0.0.52**.

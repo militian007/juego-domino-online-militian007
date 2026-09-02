@@ -539,7 +539,17 @@ test('amontonamiento: una ficha nueva no puede tocar otra que no sea su enganche
   }
 });
 
-test('amontonamiento: ninguna partida deja fichas tocandose fuera de la cadena', () => {
+test('amontonamiento: rozar es raro, y nunca se montan ni se salen', () => {
+  // Este test afirmaba que dos fichas NUNCA se tocan fuera de la cadena. Dejo
+  // de ser cierto a proposito: la pasada de rescate (ver placementsFor) permite
+  // rozar cuando la ficha no tendria ningun otro sitio, porque dejar al jugador
+  // trancado teniendo la ficha es peor que una ficha pegada.
+  //
+  // Lo que si tiene que seguir siendo cierto, y es lo que se comprueba aca:
+  // rozar es RARO, y montarse o salirse del tablero no pasa nunca.
+  let posiciones = 0;
+  let conRoce = 0;
+
   for (const fmt of ['domino-1v1-v1', 'domino-2v2-v1']) {
     let s = createGame({ gameFormat: fmt, seed: `contacto-${fmt}`, config: { targetPoints: 60 } });
     let g = 0;
@@ -551,23 +561,43 @@ test('amontonamiento: ninguna partida deja fichas tocandose fuera de la cadena',
       }
       const v = viewFor(s, s.turn);
       s = applyAction(s, chooseAction(v) || v.actions[0]).state;
+      if (s.board.length < 2) continue;
+      posiciones += 1;
+
+      for (const t of s.board) {
+        for (const c of [[t.x, t.y], [t.x2, t.y2]]) {
+          assert.ok(c[0] >= 0 && c[0] < 20 && c[1] >= 0 && c[1] < 20, 'ninguna ficha se sale del tablero');
+        }
+      }
 
       const owner = new Map();
       s.board.forEach((t, i) => {
-        owner.set(`${t.x},${t.y}`, i);
-        owner.set(`${t.x2},${t.y2}`, i);
+        for (const c of [`${t.x},${t.y}`, `${t.x2},${t.y2}`]) {
+          assert.equal(owner.has(c), false, `las fichas ${owner.get(c)} y ${i} se montan en ${c}`);
+          owner.set(c, i);
+        }
       });
+
+      let roza = false;
       s.board.forEach((t, i) => {
         for (const [cx, cy] of [[t.x, t.y], [t.x2, t.y2]]) {
           for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
             const o = owner.get(`${cx + dx},${cy + dy}`);
-            if (o === undefined || o === i) continue;
-            assert.equal(Math.abs(o - i), 1, `las fichas ${i} y ${o} se tocan sin ser vecinas de cadena`);
+            if (o !== undefined && o !== i && Math.abs(o - i) !== 1) roza = true;
           }
         }
       });
+      if (roza) conRoce += 1;
     }
   }
+
+  // Medido sobre 200 partidas por formato: 2 de cada 100 posiciones. Se deja el
+  // limite en 10% para que el test avise si alguna vez se dispara.
+  const porcentaje = (conRoce / posiciones) * 100;
+  assert.ok(
+    porcentaje < 10,
+    `rozar tiene que seguir siendo raro, y va por el ${porcentaje.toFixed(1)}% de las posiciones`
+  );
 });
 
 test('pozo: el jugador elige que ficha levanta', () => {

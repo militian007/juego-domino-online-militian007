@@ -1,7 +1,7 @@
 import { createRng } from './rng.js';
 import { generateSet, tileKey, pips, isDouble } from './tiles.js';
 
-import { espacioEnLaPunta } from './layout.js';
+import { espacioEnLaPunta, aperturaFutura } from './layout.js';
 
 export const DIFFICULTY = {
   NOVATO: 'novato',
@@ -118,6 +118,15 @@ function scorePlay(view, action, unseen) {
   return score;
 }
 
+// El `placement` de una accion viene sin la ficha. `aperturaFutura` necesita
+// una ficha como las que guarda el tablero, con sus dos numeros en el orden
+// correcto: el que engancha del lado de la cadena, el otro hacia afuera.
+function fichaOrientada(view, accion) {
+  const conn = accion.side === 'left' ? view.ends?.left : view.ends?.right;
+  const outer = accion.tile[0] === conn ? accion.tile[1] : accion.tile[0];
+  return accion.side === 'left' ? [outer, conn] : [conn, outer];
+}
+
 export function chooseAction(view, opts = {}) {
   const actions = view.actions || [];
   if (actions.length === 0) return null;
@@ -180,6 +189,19 @@ export function chooseAction(view, opts = {}) {
   if (ext0.tile[0] === ext0.tile[1]) {
     const cruzadas = opciones.filter((a) => a.placement.orientation !== extremoDe(a).orientation);
     if (cruzadas.length > 0) opciones = cruzadas;
+  }
+
+  // El mismo cerebro que usa el jugador (ver layout.js): entre las colocaciones
+  // de esta ficha gana la que deja el tablero mas abierto para la siguiente.
+  // Solo se compara dentro de la MISMA punta: cual punta conviene ya lo decidio
+  // la estrategia de arriba y no se toca.
+  const conPlacement = opciones.filter((a) => a.placement);
+  if (conPlacement.length > 1) {
+    const aperturas = conPlacement.map((a) =>
+      aperturaFutura(view.board, { ...a.placement, tile: fichaOrientada(view, a) }, a.side, view.layout)
+    );
+    const mejor2 = Math.max(...aperturas);
+    opciones = conPlacement.filter((a, i) => aperturas[i] === mejor2);
   }
 
   const mejorAire = Math.max(...opciones.map(aire));
