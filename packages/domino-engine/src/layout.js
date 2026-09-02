@@ -382,10 +382,18 @@ export function straightestPlacement(board, placements, side, layout = DEFAULT_L
   if (!board || board.length === 0) return placements[0];
 
   const grid = layout.grid;
-  const mejorAire = Math.max(...placements.map((p) => aireEnLaPunta(p, side, grid)));
-  const candidatas = placements.filter((p) => aireEnLaPunta(p, side, grid) === mejorAire);
-  placements = candidatas;
   const endTile = side === 'left' ? board[0] : board[board.length - 1];
+
+  // Si el extremo es un doble, salir CRUZADO va primero, antes que el filtro de
+  // no pegarse al borde. Al reves, las cruzadas se descartaban por estar mas
+  // cerca del borde y el doble terminaba en linea igual.
+  if (endTile.tile[0] === endTile.tile[1]) {
+    const cruzadas = placements.filter((p) => p.orientation !== endTile.orientation);
+    if (cruzadas.length > 0) placements = cruzadas;
+  }
+
+  const mejorAire = Math.max(...placements.map((p) => aireEnLaPunta(p, side, grid)));
+  placements = placements.filter((p) => aireEnLaPunta(p, side, grid) === mejorAire);
   const dx = side === 'left' ? endTile.x - endTile.x2 : endTile.x2 - endTile.x;
   const dy = side === 'left' ? endTile.y - endTile.y2 : endTile.y2 - endTile.y;
   const ex = side === 'left' ? endTile.x : endTile.x2;
@@ -402,11 +410,20 @@ export function straightestPlacement(board, placements, side, layout = DEFAULT_L
   // recta: la ficha trabada baja de 0,61% a 0,45%, de 0,75% a 0,49% y de 0,66%
   // a 0,53%. Ojo, el orden importa: aplicar el sitio libre ANTES que la recta
   // la EMPEORA (0,61% -> 0,90%). Ver contexto/README.md seccion 73.
-  const rectas = placements.filter((p) =>
-    side === 'left'
-      ? p.x === cx2 && p.y === cy2 && p.x2 === cx && p.y2 === cy
-      : p.x === cx && p.y === cy && p.x2 === cx2 && p.y2 === cy2
-  );
+  //
+  // Pero si el extremo es un DOBLE, "derecho" es al reves. Un doble esta
+  // cruzado sobre la cadena, asi que la cadena sale por sus costados, no por su
+  // mismo eje. Tomando la direccion del propio doble, la cadena le seguia de
+  // largo y el doble quedaba de pie, en linea, en vez de acostado: eso es lo
+  // que reporto el usuario. Ver contexto/README.md seccion 76.
+  const extremoEsDoble = endTile.tile[0] === endTile.tile[1];
+  const rectas = extremoEsDoble
+    ? placements.filter((p) => p.orientation !== endTile.orientation)
+    : placements.filter((p) =>
+        side === 'left'
+          ? p.x === cx2 && p.y === cy2 && p.x2 === cx && p.y2 === cy
+          : p.x === cx && p.y === cy && p.x2 === cx2 && p.y2 === cy2
+      );
   const pool = rectas.length > 0 ? rectas : placements;
   if (pool.length === 1) return pool[0];
   const espacios = pool.map((p) => espacioEnLaPunta(board, p, side, layout));

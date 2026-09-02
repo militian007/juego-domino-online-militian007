@@ -173,13 +173,27 @@ export function chooseAction(view, opts = {}) {
     const punta = a.side === 'left' ? { x: p.x, y: p.y } : { x: p.x2, y: p.y2 };
     return Math.min(2, punta.x, punta.y, grid - 1 - punta.x, grid - 1 - punta.y);
   };
-  const mejorAire = Math.max(...mejor.opciones.map(aire));
-  const holgadas = mejor.opciones.filter((a) => aire(a) === mejorAire);
+  // Si el extremo es un doble, salir cruzado manda sobre no pegarse al borde.
+  const extremoDe = (a) => (a.side === 'left' ? view.board[0] : view.board[view.board.length - 1]);
+  let opciones = mejor.opciones;
+  const ext0 = extremoDe(opciones[0]);
+  if (ext0.tile[0] === ext0.tile[1]) {
+    const cruzadas = opciones.filter((a) => a.placement.orientation !== extremoDe(a).orientation);
+    if (cruzadas.length > 0) opciones = cruzadas;
+  }
 
-  const extremo = holgadas[0].side === 'left'
-    ? view.board[0]
-    : view.board[view.board.length - 1];
-  const rectas = holgadas.filter((a) => a.placement.orientation === extremo.orientation);
+  const mejorAire = Math.max(...opciones.map(aire));
+  const holgadas = opciones.filter((a) => aire(a) === mejorAire);
+
+  const extremo = extremoDe(holgadas[0]);
+  // Si el extremo es un doble, la cadena sale CRUZADA respecto de el, no por su
+  // mismo eje: un doble va acostado sobre la cadena, no de pie en la fila.
+  const extremoEsDoble = extremo.tile[0] === extremo.tile[1];
+  const rectas = holgadas.filter((a) =>
+    extremoEsDoble
+      ? a.placement.orientation !== extremo.orientation
+      : a.placement.orientation === extremo.orientation
+  );
 
   // Entre las que siguen derecho gana la que deja mas sitio libre alrededor.
   // El orden importa: mirar el sitio libre antes que la recta empeora las cosas.

@@ -373,7 +373,7 @@ test('gameFormat desconocido lanza error claro', () => {
   assert.throws(() => createGame({ gameFormat: 'truco-1v1' }), /gameFormat desconocido/);
 });
 
-import { placementsFor, boardEnds } from '../src/layout.js';
+import { placementsFor, boardEnds, straightestPlacement } from '../src/layout.js';
 
 const L = { grid: 20, cell: 32 };
 
@@ -873,4 +873,35 @@ test('doble en pasillo estrecho: si una ficha normal entra, el doble tambien', (
       );
     }
   }
+});
+
+test('la cadena sale CRUZADA de un doble, no de pie en la misma fila', () => {
+  // El usuario, 2026-09-02: "se ve que el 6 tiene la logica pero se puso mal,
+  // se puso en paralelo o de pie en vez de acostado". Un doble va acostado
+  // sobre la cadena; si la cadena sigue por el eje del propio doble, el doble
+  // queda en linea y parece una ficha mas de la fila.
+  const doble = [
+    { tile: [2, 2], x: 10, y: 10, x2: 10, y2: 11, orientation: 'vertical', side: 'first' }
+  ];
+
+  const opciones = placementsFor(doble, [2, 5], 'right');
+  assert.ok(opciones.length > 0, 'algo tiene que poder engancharse al doble');
+
+  const elegida = straightestPlacement(doble, opciones, 'right');
+  assert.equal(
+    elegida.orientation,
+    'horizontal',
+    'de un doble vertical la cadena tiene que salir horizontal, cruzada'
+  );
+
+  // Y al reves, para que no sea casualidad del eje.
+  const dobleH = [
+    { tile: [3, 3], x: 10, y: 10, x2: 11, y2: 10, orientation: 'horizontal', side: 'first' }
+  ];
+  const elegidaH = straightestPlacement(dobleH, placementsFor(dobleH, [3, 6], 'right'), 'right');
+  assert.equal(
+    elegidaH.orientation,
+    'vertical',
+    'de un doble horizontal la cadena tiene que salir vertical'
+  );
 });

@@ -3052,3 +3052,59 @@ que poner a los rivales en las **esquinas de arriba** en vez de a media altura (
 eso es exactamente lo que el usuario había rechazado en la sección 74.
 
 Motor 56/56, backend 87/87, build ok, sin errores de consola. Versión **0.0.45**.
+
+## 76. El doble que se ponía de pie, y el menú de la mesa en un solo botón (2026-09-02)
+
+### El doble en línea
+
+El usuario: *"se ve que el 6 tiene la lógica pero se puso mal, se puso en paralelo o de pie en vez
+de acostado"*.
+
+Se escribió un detector y se sacó el caso en ASCII, como en la sección 42:
+
+```
+   0: 5|2  (10,8)->(10,9)  vertical
+>> 1: 2|2  (10,10)->(10,11)  vertical   <- el doble, DE PIE
+```
+
+El doble `2|2` y su vecina `5|2` los dos verticales: el doble quedó en fila, como una ficha más, en
+vez de acostado cruzando la cadena.
+
+**La causa estaba en la regla de "seguir derecho".** `straightestPlacement` (y el bot) tomaban la
+dirección de continuación del **eje de la propia ficha del extremo**. Eso está bien para una ficha
+normal, pero un doble está **cruzado** sobre la cadena: la cadena tiene que salir por sus costados,
+no por su mismo eje. Tomando su eje, la cadena le seguía de largo y el doble quedaba de pie.
+
+Se arregló en los dos sitios que eligen colocación: si el extremo es un doble, la continuación
+preferida es la **perpendicular**. Y ese criterio va **antes** que el filtro de no pegarse al borde:
+al revés, las cruzadas se descartaban por estar más cerca del borde y el doble terminaba en línea
+igual (medido: 39% de las posiciones con el orden viejo, 26% con el nuevo).
+
+A/B del motor real, mismas semillas, 67.658 fichas colocadas:
+
+| | sin el arreglo | con el arreglo |
+|---|----------------|----------------|
+| ficha que queda en línea con un doble | 21,97% | **3,73%** |
+| ficha trabada | 0,62% | **0,35%** |
+| trancas | 54,9% | 55,5% |
+| fichas montadas / fuera del tablero | 0 | **0** |
+
+De ese 3,73% que queda, el **72% son casos donde no existía ninguna colocación cruzada**: la
+alternativa habría sido dejar la ficha injugable, que es peor. Queda un test con las dos
+direcciones (doble vertical → sale horizontal, y al revés).
+
+### El menú de la mesa
+
+El usuario: *"el botón para salir, chat y textura quiero que esté arriba a la izquierda y estén en
+una ventana que se despliegue"*.
+
+Los tres controles estaban sueltos por los bordes, compitiendo con las placas de los jugadores.
+Ahora hay **un solo botón arriba a la izquierda** que abre una ventanita con las tres cosas: paño,
+enviar un gesto y salir de la partida (con su confirmación dentro del mismo panel). `MesaThemePicker`
+aprendió un modo `enMenu` para dibujarse plano en vez de traer su propio botón, y la sección
+"Baranda" se esconde sola mientras haya una sola opción.
+
+El botón de emojis salió de la mano; los gestos abren ahora centrados sobre ella. Verificado
+corriendo: cero controles sueltos, los 11 gestos salen, y el menú cierra al elegir.
+
+Motor 57/57, backend 87/87, build ok. Versión **0.0.46**.

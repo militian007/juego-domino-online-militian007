@@ -575,6 +575,7 @@ export default function Game() {
   };
 
   const [confirmandoSalida, setConfirmandoSalida] = useState(false);
+  const [menuMesa, setMenuMesa] = useState(false);
 
   // Salir de verdad: el servidor saca al jugador de la sala y se olvida la
   // partida guardada. El boton de antes solo navegaba, asi que al volver se
@@ -946,52 +947,86 @@ export default function Game() {
                   className="right-0.5 top-1/2 -translate-y-1/2"
                 />
 
-                {/* Los menus van chiquitos al borde y abren su ventanita, para no
-                    competir con la mesa. Al sacar la barra de arriba, ademas, esta
-                    era la unica forma de salir de la partida. */}
-                <div
-                  className="absolute left-1 z-30 flex flex-col gap-1.5"
-                  style={{ bottom: altoMano + 12 }}
-                >
-                  <MesaThemePicker tema={tema} setTema={setTema} />
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setConfirmandoSalida((v) => !v)}
-                      title="Salir de la partida"
-                      aria-label="Salir de la partida"
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-domino-accent/25 bg-black/45 text-domino-cream-dim transition-colors hover:border-domino-accent/70 hover:text-domino-cream"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-                      </svg>
-                    </button>
+                {/* Un solo boton arriba a la izquierda que abre el menu de la
+                    mesa: pañe, gesto y salir. Antes eran tres controles sueltos
+                    por los bordes, compitiendo con las placas y con la cadena. */}
+                <div className="absolute left-1.5 top-1.5 z-40">
+                  <button
+                    type="button"
+                    onClick={() => { setMenuMesa((v) => !v); setConfirmandoSalida(false); }}
+                    title="Menú de la mesa"
+                    aria-label="Menú de la mesa"
+                    aria-expanded={menuMesa}
+                    className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${
+                      menuMesa
+                        ? 'border-domino-accent/70 bg-domino-felt/95 text-domino-cream'
+                        : 'border-domino-accent/25 bg-black/45 text-domino-cream-dim hover:border-domino-accent/70 hover:text-domino-cream'
+                    }`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+                      <path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" />
+                    </svg>
+                  </button>
 
-                    {confirmandoSalida && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setConfirmandoSalida(false)} />
-                        <div className="absolute bottom-0 left-10 z-50 w-52 rounded-xl border border-domino-accent/25 bg-domino-felt/95 p-3 shadow-2xl backdrop-blur">
-                          <p className="mb-2 text-xs text-domino-cream">
-                            ¿Salir de la partida? La mesa se cierra y perdés lo jugado.
-                          </p>
+                  {menuMesa && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => { setMenuMesa(false); setConfirmandoSalida(false); }}
+                      />
+                      <div className="absolute left-0 top-11 z-50 w-56 rounded-xl border border-domino-accent/25 bg-domino-felt/95 p-3 shadow-2xl backdrop-blur">
+                        <p className="mb-2 text-[10px] uppercase tracking-[0.2em] text-domino-accent/70">
+                          Mesa
+                        </p>
+
+                        <MesaThemePicker tema={tema} setTema={setTema} enMenu />
+
+                        <button
+                          type="button"
+                          onClick={() => { setMenuMesa(false); setShowReactionMenu(true); }}
+                          className="mt-2 flex w-full items-center gap-2 rounded-lg border border-domino-accent/20 px-2.5 py-2 text-left text-xs text-domino-cream transition hover:border-domino-accent/60"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-domino-accent">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 12c0 4.556-4.03 8.25-9 8.25a9.76 9.76 0 0 1-2.555-.337A5.97 5.97 0 0 1 5.41 20.97a.75.75 0 0 1-1.074-.765 6 6 0 0 0 1.257-2.907C4.228 15.932 3 14.1 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+                          </svg>
+                          Enviar un gesto
+                        </button>
+
+                        {!confirmandoSalida ? (
                           <button
                             type="button"
-                            onClick={salirDeLaPartida}
-                            className="mb-1.5 w-full rounded-lg bg-domino-crimson/80 px-3 py-1.5 text-xs font-bold text-white hover:bg-domino-crimson"
+                            onClick={() => setConfirmandoSalida(true)}
+                            className="mt-1.5 flex w-full items-center gap-2 rounded-lg border border-domino-crimson/30 px-2.5 py-2 text-left text-xs text-domino-cream/80 transition hover:border-domino-crimson/70 hover:text-domino-cream"
                           >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-domino-crimson">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+                            </svg>
                             Salir de la partida
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => setConfirmandoSalida(false)}
-                            className="w-full rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-300 hover:border-slate-400"
-                          >
-                            Seguir jugando
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                        ) : (
+                          <div className="mt-1.5 rounded-lg border border-domino-crimson/30 p-2">
+                            <p className="mb-2 text-[11px] leading-snug text-domino-cream">
+                              ¿Salir? La mesa se cierra y perdés lo jugado.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={salirDeLaPartida}
+                              className="mb-1.5 w-full rounded-lg bg-domino-crimson/80 px-3 py-1.5 text-xs font-bold text-white hover:bg-domino-crimson"
+                            >
+                              Sí, salir
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmandoSalida(false)}
+                              className="w-full rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-300 hover:border-slate-400"
+                            >
+                              Seguir jugando
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {lastAction && myTurn && (
@@ -1051,38 +1086,28 @@ export default function Game() {
                     <span className={myTurn ? 'font-bold text-emerald-300' : 'text-domino-cream/40'}>
                       {myTurn ? 'tu turno' : 'esperando'}
                     </span>
-                    {/* Icono de Mensaje / Reacción */}
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowReactionMenu(!showReactionMenu)}
-                        className="w-10 h-10 sm:w-12 sm:h-12 bg-domino-card hover:bg-domino-card/80 border-2 border-domino-accent/40 hover:border-domino-accent rounded-lg flex items-center justify-center text-domino-accent transition shadow-lg cursor-pointer"
-                        title="Enviar gesto o emoji"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 sm:w-7 sm:h-7">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a.75.75 0 0 1-1.074-.765 6 6 0 0 0 1.257-2.907C4.228 15.932 3 14.1 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
-                        </svg>
-                      </button>
-
-                      {/* Menú emergente de emojis */}
-                      {showReactionMenu && (
-                        <div className="absolute bottom-12 right-0 bg-domino-felt border-2 border-domino-accent/50 rounded-2xl p-3 shadow-2xl z-50 grid grid-cols-6 gap-2" style={{ minWidth: '240px' }}>
-                          {['😎', '😂', '🤣', '😆', '😭', '😡', '🤬', '🥱', '🤔', '😒', '😮'].map((emoji) => (
-                            <button
-                              key={emoji}
-                              onClick={() => handleSendReaction(emoji)}
-                              className="text-2xl sm:text-3xl hover:scale-125 active:scale-95 transition cursor-pointer p-0.5 flex items-center justify-center"
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
                   </div>
                 </div>
 
-                {/* La mano ocupa todo el ancho: el boton de emojis se mudo arriba
-                    porque le robaba 72px y la septima ficha caia a otra fila. */}
+                {showReactionMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowReactionMenu(false)} />
+                    <div className="absolute bottom-full left-1/2 z-50 mb-2 grid -translate-x-1/2 grid-cols-6 gap-2 rounded-2xl border-2 border-domino-accent/50 bg-domino-felt p-3 shadow-2xl">
+                      {['😎', '😂', '🤣', '😆', '😭', '😡', '🤬', '🥱', '🤔', '😒', '😮'].map((emoji) => (
+                        <button
+                          key={emoji}
+                          onClick={() => handleSendReaction(emoji)}
+                          className="flex cursor-pointer items-center justify-center p-0.5 text-2xl transition hover:scale-125 active:scale-95 sm:text-3xl"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* La mano ocupa todo el ancho: el boton de gestos vive ahora en
+                    el menu de la mesa, arriba a la izquierda. */}
                 <div className="flex w-full items-center">
                   <div className="flex-1 min-w-0">
                     <Hand
