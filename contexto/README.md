@@ -3205,3 +3205,46 @@ la pestaña, monocroma a propósito), el paño abre y cierra, salen los 11 gesto
 confirmación. Cero errores de consola.
 
 Motor 57/57, backend 87/87, build ok. Versión **0.0.49**.
+
+## 80. Los jugadores sin caja, y la pestaña más fina (2026-09-02)
+
+Tres cosas que pidió el usuario mirando la pantalla:
+
+### Los jugadores, sin rectángulo y en horizontal
+
+*"Quita eso que encierras a los iconos de los jugadores en rectángulos, porque aparte de no ser
+uniformes cambian de tamaño por el nombre y están de lado, es una cagada. Deja el icono, debajo de
+la imagen pones el nombre en horizontal, y debajo del nombre el número de piezas, también en
+horizontal."*
+
+Hecho tal cual: se fue la caja (borde y fondo), el nombre ya no va rotado y la placa tiene **ancho
+fijo de 58 px**, así que los tres miden lo mismo pase lo que pase con el nombre. Los largos se
+cortan con puntos suspensivos ("Mama Ju…"), que es el precio de que sean uniformes.
+
+### La pestaña
+
+Más fina (de 28 a **16 px**) y con el fondo mucho más transparente (`bg-black/70` → `bg-black/25`).
+El largo se queda como estaba, que le gustó.
+
+### El icono de salir
+
+*"Esa X es una mierda"*. Vuelve al de la puerta con la flecha (`LogOut` de lucide), que es el que
+había antes de la vuelta de los iconos a color.
+
+### El precio, medido
+
+El nombre en horizontal a los costados necesita más ancho, y en un teléfono el ancho es el que
+manda. `MARGEN_MESA.lados` pasó de 34 a 60 px:
+
+| | antes | ahora |
+|---|-------|-------|
+| ficha de mesa en 2v2 | 30x15 | **25x13** (−17%) |
+
+Verificado jugando: **cero fichas invadiendo a un jugador**, peor invasión 0 px, y en pestaña limpia
+cero errores de consola.
+
+Si el tamaño de la ficha pesa más que el nombre en horizontal, la salida es poner el nombre de los
+rivales **debajo del retrato pero fuera del paño**, sobre la baranda, o volver al nombre vertical.
+Queda anotado.
+
+Motor 57/57, backend 87/87, build ok. Versión **0.0.50**.

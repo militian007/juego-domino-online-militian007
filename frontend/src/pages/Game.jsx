@@ -21,7 +21,7 @@ import TopBanner from '../components/TopBanner.jsx';
 import { connectSocket } from '../services/socket.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { playTileSound, playDrawSound, estaSilenciado, alternarSilencio } from '../utils/soundEffects.js';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, LogOut } from 'lucide-react';
 import IconoColor from '../components/IconoColor.jsx';
 import { salirPantallaCompleta } from '../utils/pantalla.js';
 
@@ -53,13 +53,6 @@ function olvidarPartida() {
   try { localStorage.removeItem(CLAVE_PARTIDA); } catch { /* nada */ }
 }
 
-/**
- * La placa de un jugador, apoyada en el borde de la mesa.
- *
- * Antes el retrato flotaba sobre el paño y la cadena le crecia encima. Ahora
- * cada uno ocupa su lado, como en una mesa de verdad, y las fichas viven en el
- * rectangulo de adentro sin salirse.
- */
 function BotonMesa({ titulo, activo = false, onClick, icono }) {
   return (
     <button
@@ -79,41 +72,37 @@ function BotonMesa({ titulo, activo = false, onClick, icono }) {
   );
 }
 
-function PlacaAsiento({ jugador, fichas, enTurno, esCompanero, lado, className = '' }) {
+/**
+ * El jugador en su borde de la mesa: retrato, debajo el nombre y debajo la
+ * cantidad de fichas, todo en horizontal.
+ *
+ * Sin caja alrededor y de ancho fijo. Antes iba en un rectangulo que cambiaba
+ * de tamaño segun lo largo del nombre y con el texto de costado, que era
+ * justo lo que el usuario no queria.
+ */
+function PlacaAsiento({ jugador, fichas, enTurno, esCompanero, className = '' }) {
   if (!jugador) return null;
-  const vertical = lado === 'izquierda' || lado === 'derecha';
   return (
     <div
-      className={`pointer-events-none absolute z-20 flex items-center gap-1.5 rounded-lg border px-1.5 py-1 backdrop-blur-[2px] ${
-        vertical ? 'flex-col' : 'flex-row'
-      } ${
-        enTurno
-          ? 'border-emerald-400/70 bg-emerald-950/45 shadow-[0_0_12px_rgba(52,211,153,0.35)]'
-          : 'border-domino-accent/25 bg-black/40'
-      } ${className}`}
+      className={`pointer-events-none absolute z-20 flex w-[58px] flex-col items-center gap-0.5 text-center ${className}`}
+      style={{ textShadow: '0 1px 3px rgba(0,0,0,.95)' }}
     >
-      <div className="relative shrink-0">
-        <Avatar semilla={jugador.avatar || jugador.username} tamano={vertical ? 24 : 34} />
+      <div className="relative">
+        <Avatar semilla={jugador.avatar || jugador.username} tamano={38} />
         {enTurno && (
-          <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 animate-pulse rounded-full border-2 border-black/70 bg-emerald-400" />
+          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 animate-pulse rounded-full border-2 border-black/70 bg-emerald-400" />
         )}
       </div>
-      <div
-        className={`flex min-w-0 flex-col ${vertical ? 'items-center gap-1' : 'items-start'}`}
-        style={vertical ? { writingMode: 'vertical-rl', textOrientation: 'mixed' } : undefined}
+      <span
+        className={`w-full truncate text-[10px] font-bold leading-tight ${
+          enTurno ? 'text-emerald-300' : esCompanero ? 'text-sky-200' : 'text-domino-cream'
+        }`}
       >
-        <span
-          className={`truncate text-[10px] font-bold leading-tight ${
-            vertical ? 'max-w-[104px]' : 'max-w-[92px] text-[11px]'
-          } ${enTurno ? 'text-emerald-300' : esCompanero ? 'text-sky-200' : 'text-domino-cream'}`}
-        >
-          {jugador.username}
-        </span>
-        <span className="text-[9px] leading-tight text-domino-cream/55">
-          {fichas ?? 0}
-          {vertical ? '' : esCompanero ? ' · compa' : ' fichas'}
-        </span>
-      </div>
+        {jugador.username}
+      </span>
+      <span className="text-[9px] leading-tight text-domino-cream/60">
+        {fichas ?? 0} {esCompanero ? '· compa' : 'fichas'}
+      </span>
     </div>
   );
 }
@@ -138,7 +127,7 @@ function AsientoLateral({ jugador, fichas, enTurno, esCompanero }) {
 const AUTO_START_MODES = ['1v1bot', '2v2bots'];
 // Cuanto se le quita al paño por cada lado para que quepan las placas de los
 // jugadores. La cadena vive dentro de lo que queda y no se sale de ahi.
-const MARGEN_MESA = { arriba: 44, abajo: 8, lados: 34, borde: 8 };
+const MARGEN_MESA = { arriba: 62, abajo: 8, lados: 60, borde: 8 };
 
 const GUEST_ALLOWED_MODES = ['1v1bot', '2v2bots'];
 
@@ -921,7 +910,7 @@ export default function Game() {
                 : 'border-domino-accent/35 bg-black/50 text-domino-cream-dim hover:border-domino-crimson/80 hover:text-domino-cream'
             }`}
           >
-            <IconoColor nombre="salir" tamano={22} className="drop-shadow-[0_1px_2px_rgba(0,0,0,.7)]" />
+            <LogOut size={18} strokeWidth={1.9} />
           </button>
 
           {confirmandoSalida && (
@@ -995,7 +984,6 @@ export default function Game() {
                   fichas={gameState.handCounts[seatTop?.id]}
                   enTurno={gameState.currentPlayerId === seatTop?.id}
                   esCompanero={esCompanero(seatTop)}
-                  lado="arriba"
                   className="left-1/2 top-2 -translate-x-1/2"
                 />
                 <PlacaAsiento
@@ -1003,7 +991,6 @@ export default function Game() {
                   fichas={gameState.handCounts[seatLeft?.id]}
                   enTurno={gameState.currentPlayerId === seatLeft?.id}
                   esCompanero={esCompanero(seatLeft)}
-                  lado="izquierda"
                   className="left-0.5 top-1/2 -translate-y-1/2"
                 />
                 <PlacaAsiento
@@ -1011,7 +998,6 @@ export default function Game() {
                   fichas={gameState.handCounts[seatRight?.id]}
                   enTurno={gameState.currentPlayerId === seatRight?.id}
                   esCompanero={esCompanero(seatRight)}
-                  lado="derecha"
                   className="right-0.5 top-1/2 -translate-y-1/2"
                 />
 
@@ -1026,7 +1012,7 @@ export default function Game() {
                       title={solapa ? 'Ocultar los controles' : 'Mostrar los controles'}
                       aria-label={solapa ? 'Ocultar los controles' : 'Mostrar los controles'}
                       aria-expanded={solapa}
-                      className={`absolute left-0 top-0 z-0 flex w-7 items-end justify-center rounded-r-xl border border-l-0 border-domino-accent/40 bg-black/70 pb-2 text-domino-accent/70 transition-all hover:bg-black/90 hover:text-domino-accent ${
+                      className={`absolute left-0 top-0 z-0 flex w-4 items-end justify-center rounded-r-lg border border-l-0 border-domino-accent/30 bg-black/25 pb-2 text-domino-accent/70 transition-all hover:bg-black/45 hover:text-domino-accent ${
                         solapa ? 'h-[196px]' : 'h-[104px]'
                       }`}
                     >
@@ -1038,7 +1024,7 @@ export default function Game() {
 
                     <div
                       className={`relative z-10 flex flex-col gap-2 overflow-hidden transition-all duration-200 ${
-                        solapa ? 'ml-1.5 max-w-[52px] opacity-100' : 'ml-0 max-w-0 opacity-0'
+                        solapa ? 'ml-1 max-w-[52px] opacity-100' : 'ml-0 max-w-0 opacity-0'
                       }`}
                     >
                       <BotonMesa
