@@ -830,3 +830,47 @@ test('doble contra el borde: la cadena dobla y el doble entra igual', () => {
   );
   assert.ok(ops.every((p) => p.tile[0] === 3 && p.tile[1] === 3));
 });
+
+test('doble en pasillo estrecho: si una ficha normal entra, el doble tambien', () => {
+  // El caso que reporto el usuario el 2026-09-01: veia sitio de sobra, jugaba
+  // una ficha normal ahi mismo, y el doble no lo dejaba. La cadena deja un
+  // pasillo de una celda entre dos filas: la normal va acostada y no toca nada,
+  // el doble se cruza, sobresale, y la regla de "no rozar" lo rechazaba.
+  const board = [
+    { tile: [1, 4], x: 4, y: 8, x2: 3, y2: 8, orientation: 'horizontal', side: 'left' },
+    { tile: [4, 2], x: 2, y: 8, x2: 2, y2: 9, orientation: 'vertical', side: 'right' },
+    { tile: [2, 6], x: 2, y: 10, x2: 3, y2: 10, orientation: 'horizontal', side: 'right' },
+    { tile: [6, 3], x: 4, y: 10, x2: 5, y2: 10, orientation: 'horizontal', side: 'right' },
+    { tile: [3, 4], x: 6, y: 10, x2: 7, y2: 10, orientation: 'horizontal', side: 'right' },
+    { tile: [4, 6], x: 8, y: 10, x2: 9, y2: 10, orientation: 'horizontal', side: 'right' },
+    { tile: [6, 6], x: 10, y: 10, x2: 11, y2: 10, orientation: 'horizontal', side: 'right' },
+    { tile: [6, 5], x: 12, y: 10, x2: 13, y2: 10, orientation: 'horizontal', side: 'right' },
+    { tile: [5, 5], x: 14, y: 10, x2: 14, y2: 9, orientation: 'vertical', side: 'right' },
+    { tile: [5, 4], x: 14, y: 8, x2: 14, y2: 7, orientation: 'vertical', side: 'right' },
+    { tile: [4, 4], x: 14, y: 6, x2: 13, y2: 6, orientation: 'horizontal', side: 'right' },
+    { tile: [4, 0], x: 12, y: 6, x2: 11, y2: 6, orientation: 'horizontal', side: 'right' },
+    { tile: [0, 5], x: 10, y: 6, x2: 9, y2: 6, orientation: 'horizontal', side: 'right' },
+    { tile: [5, 2], x: 8, y: 6, x2: 7, y2: 6, orientation: 'horizontal', side: 'right' },
+    { tile: [2, 1], x: 6, y: 6, x2: 5, y2: 6, orientation: 'horizontal', side: 'right' },
+    { tile: [1, 3], x: 4, y: 6, x2: 3, y2: 6, orientation: 'horizontal', side: 'right' },
+    { tile: [3, 3], x: 2, y: 6, x2: 2, y2: 5, orientation: 'vertical', side: 'right' },
+    { tile: [3, 2], x: 2, y: 4, x2: 2, y2: 3, orientation: 'vertical', side: 'right' }
+  ];
+
+  const normal = placementsFor(board, [1, 0], 'left');
+  assert.ok(normal.length > 0, 'la ficha normal 1|0 tiene que entrar por la izquierda');
+
+  const doble = placementsFor(board, [1, 1], 'left');
+  assert.ok(doble.length > 0, 'si la normal entra, el doble 1|1 tambien tiene que entrar');
+
+  // El rescate relaja rozar, nunca solapar ni salirse del tablero.
+  for (const p of doble) {
+    for (const c of [[p.x, p.y], [p.x2, p.y2]]) {
+      assert.ok(c[0] >= 0 && c[0] < 20 && c[1] >= 0 && c[1] < 20, 'no puede salirse del tablero');
+      assert.ok(
+        !board.some((t) => (t.x === c[0] && t.y === c[1]) || (t.x2 === c[0] && t.y2 === c[1])),
+        'no puede caer sobre una ficha puesta'
+      );
+    }
+  }
+});

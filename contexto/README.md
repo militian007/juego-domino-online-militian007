@@ -2864,3 +2864,50 @@ ve cortada al entrar a una partida sin pantalla completa, esa es la línea a cam
 Medido: sobra cero, y el botón de JUGAR AHORA entero dentro de la ventana.
 
 Motor 55/55, backend 87/87, build ok. Versión **0.0.40**.
+
+## 71. El doble que no entraba donde sí entraba una ficha normal (2026-09-01)
+
+El usuario, con dos capturas: *"no me dejó jugar el doble porque no tenía camino, pero sí tenía para
+jugarlo abajo, como jugué el 6/3 que sí me dejó"*.
+
+Esa frase es la prueba: **el mismo sitio aceptó una ficha normal y rechazó el doble**. Si el sitio
+existe, la regla del doble está mal.
+
+Se escribió un detector de ese síntoma exacto: para cada punta, si el doble de ese número no tiene
+dónde ir pero alguna ficha normal con ese mismo número sí, es un caso. Sobre **113.497 posiciones**:
+**513 casos, el 0,45%** (1 de cada 222). Reproducido, no supuesto.
+
+### Por qué pasaba
+
+No era la geometría, era la regla de **"no rozar otra ficha"** (§ de placementsFor). Un doble se
+juega **cruzado** sobre la cadena, así que sobresale una celda a cada lado y toca la fila vecina.
+Una ficha normal, acostada, pasa por el mismo pasillo sin tocar nada. En un tablero apretado, con
+filas de la cadena a una celda de distancia, el doble se quedaba sin ninguna casilla mientras la
+normal entraba de sobra. Justo lo que el usuario vio.
+
+Esa regla se había medido en su momento y se dejó porque no bloqueaba nada *en general* y dejaba el
+tablero prolijo. Lo que no se había medido es su efecto **sobre los dobles en particular**.
+
+### El arreglo
+
+Una **pasada de rescate**: si a un doble no le queda ni una casilla, se repasan las mismas
+posiciones permitiendo que roce. Se relaja **solo** rozar; salirse del tablero y solaparse se
+siguen rechazando, así que la ficha entra pegada a la vecina pero nunca encima. En el 99,5% de las
+jugadas no cambia nada, porque la pasada solo corre cuando la alternativa es una ficha injugable.
+
+Medido después, sobre 112.306 posiciones:
+
+| | antes | después |
+|---|-------|---------|
+| doble rechazado donde una normal entra | 0,45% | **0,001%** |
+| ficha trabada ("tengo la ficha y no me deja") | 1,14% | **0,87%** |
+| trancas | 58,8% | 58,3% |
+| fichas montadas | 0 | **0** |
+| fichas fuera del tablero | 0 | **0** |
+
+Queda un caso de 112.306. Es cuando ni rozando hay sitio, que es de verdad no tener camino.
+
+El tablero exacto del ejemplo quedó como test en `engine.test.js`, con la comprobación de que el
+rescate nunca deja una ficha encima de otra ni fuera del tablero. Motor **56/56**.
+
+Motor 56/56, backend 87/87, build ok. Versión **0.0.41**.

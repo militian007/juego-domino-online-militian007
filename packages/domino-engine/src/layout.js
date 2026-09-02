@@ -134,7 +134,7 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
   // Devuelve null si la colocacion es valida, o el motivo del rechazo.
   // Tenerlo separado permite auditar por que se descarta cada opcion
   // (ver `explainPlacements`) en vez de adivinar.
-  const evaluar = (p) => {
+  const evaluar = (p, permitirRozar = false) => {
     const pMinX = minX(p);
     const pMinY = minY(p);
     const pMaxX = maxX(p);
@@ -157,10 +157,12 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
     // el chequeo de solape visual. A cambio deja el tablero limpio: sin la regla
     // quedan 154 fichas apretadas contra vecinas que no son de la cadena, con
     // ella quedan 0. Es gratis, se queda.
-    for (const [cx, cy] of [[p.x, p.y], [p.x2, p.y2]]) {
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-        const owner = ownerOf.get(cx + dx + ',' + (cy + dy));
-        if (owner !== undefined && owner !== anchorIdx) return 'roza-otra-ficha';
+    if (!permitirRozar) {
+      for (const [cx, cy] of [[p.x, p.y], [p.x2, p.y2]]) {
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const owner = ownerOf.get(cx + dx + ',' + (cy + dy));
+          if (owner !== undefined && owner !== anchorIdx) return 'roza-otra-ficha';
+        }
       }
     }
 
@@ -173,13 +175,16 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
     return null;
   };
 
+  // `permitirRozar` solo lo usa la pasada de rescate de los dobles (abajo).
+  let permitirRozar = false;
   const add = (p) => {
-    const motivo = evaluar(p);
+    const motivo = evaluar(p, permitirRozar);
     if (diagnostico) diagnostico.push({ ...p, motivo });
     if (motivo === null) out.push(p);
   };
 
   const endIsDouble = endTile.tile[0] === endTile.tile[1];
+  const esDoble = tile[0] === tile[1];
 
   const sideTile = side === 'left' ? [outerVal, connVal] : [connVal, outerVal];
 
@@ -197,92 +202,112 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
     });
   };
 
-  if (endIsDouble) {
-    // Un doble esta cruzado sobre la cadena, asi que la cadena puede salir por
-    // sus cuatro costados. Antes la direccion se tomaba de si era el extremo
-    // izquierdo o el derecho, y solo se miraban los otros lados cuando el doble
-    // estaba pegado al borde del tablero. Resultado: si esa unica salida estaba
-    // ocupada, la ficha quedaba injugable aunque hubiera sitio de sobra al lado.
-    // Es el mismo error corregido en la seccion 24 para las fichas normales,
-    // que nunca se habia corregido para los dobles.
-    if (endTile.orientation === 'horizontal') {
-      const bx = minX(endTile);
-      const rx = maxX(endTile);
-      for (const col of [bx, rx]) {
-        addAlong('vertical', { x: col, y: ey - 1 }, { x: col, y: ey - 2 });
-        addAlong('vertical', { x: col, y: ey + 1 }, { x: col, y: ey + 2 });
-      }
-      addAlong('horizontal', { x: bx - 1, y: ey }, { x: bx - 2, y: ey });
-      addAlong('horizontal', { x: rx + 1, y: ey }, { x: rx + 2, y: ey });
-    } else {
-      const by = minY(endTile);
-      const ry = maxY(endTile);
-      for (const fila of [by, ry]) {
-        addAlong('horizontal', { x: ex - 1, y: fila }, { x: ex - 2, y: fila });
-        addAlong('horizontal', { x: ex + 1, y: fila }, { x: ex + 2, y: fila });
-      }
-      addAlong('vertical', { x: ex, y: by - 1 }, { x: ex, y: by - 2 });
-      addAlong('vertical', { x: ex, y: ry + 1 }, { x: ex, y: ry + 2 });
-    }
-  } else {
-    // La punta libre del extremo puede apuntar en cualquiera de las 4 direcciones:
-    // la direccion "recta" sale de la geometria de la propia ficha, no del lado de la cadena.
-    const body = side === 'left'
-      ? { x: endTile.x2, y: endTile.y2 }
-      : { x: endTile.x, y: endTile.y };
-    const free = { x: ex, y: ey };
-    const dx = free.x - body.x;
-    const dy = free.y - body.y;
-
-    if (tile[0] === tile[1]) {
-      // Doble: se cruza perpendicular a la cadena. Puede sobresalir hacia un
-      // lado o hacia el otro de la linea, igual que en una mesa de verdad.
-      // Ofrecer una sola de las dos dejaba dobles injugables sin motivo.
+  const generarCandidatos = () => {
+    if (endIsDouble) {
+      // Un doble esta cruzado sobre la cadena, asi que la cadena puede salir por
+      // sus cuatro costados. Antes la direccion se tomaba de si era el extremo
+      // izquierdo o el derecho, y solo se miraban los otros lados cuando el doble
+      // estaba pegado al borde del tablero. Resultado: si esa unica salida estaba
+      // ocupada, la ficha quedaba injugable aunque hubiera sitio de sobra al lado.
+      // Es el mismo error corregido en la seccion 24 para las fichas normales,
+      // que nunca se habia corregido para los dobles.
       if (endTile.orientation === 'horizontal') {
-        const col = free.x + dx;
-        addAlong('vertical', { x: col, y: ey }, { x: col, y: ey - 1 });
-        addAlong('vertical', { x: col, y: ey }, { x: col, y: ey + 1 });
+        const bx = minX(endTile);
+        const rx = maxX(endTile);
+        for (const col of [bx, rx]) {
+          addAlong('vertical', { x: col, y: ey - 1 }, { x: col, y: ey - 2 });
+          addAlong('vertical', { x: col, y: ey + 1 }, { x: col, y: ey + 2 });
+        }
+        addAlong('horizontal', { x: bx - 1, y: ey }, { x: bx - 2, y: ey });
+        addAlong('horizontal', { x: rx + 1, y: ey }, { x: rx + 2, y: ey });
       } else {
-        const row = free.y + dy;
-        addAlong('horizontal', { x: ex, y: row }, { x: ex - 1, y: row });
-        addAlong('horizontal', { x: ex, y: row }, { x: ex + 1, y: row });
+        const by = minY(endTile);
+        const ry = maxY(endTile);
+        for (const fila of [by, ry]) {
+          addAlong('horizontal', { x: ex - 1, y: fila }, { x: ex - 2, y: fila });
+          addAlong('horizontal', { x: ex + 1, y: fila }, { x: ex + 2, y: fila });
+        }
+        addAlong('vertical', { x: ex, y: by - 1 }, { x: ex, y: by - 2 });
+        addAlong('vertical', { x: ex, y: ry + 1 }, { x: ex, y: ry + 2 });
       }
+    } else {
+      // La punta libre del extremo puede apuntar en cualquiera de las 4 direcciones:
+      // la direccion "recta" sale de la geometria de la propia ficha, no del lado de la cadena.
+      const body = side === 'left'
+        ? { x: endTile.x2, y: endTile.y2 }
+        : { x: endTile.x, y: endTile.y };
+      const free = { x: ex, y: ey };
+      const dx = free.x - body.x;
+      const dy = free.y - body.y;
 
-      // Si cruzarse mas alla de la punta no entra —tipicamente porque la punta
-      // quedo contra el borde de la mesa— el doble todavia puede entrar si la
-      // cadena dobla ahi mismo: se cruza respecto de la direccion nueva, que es
-      // perpendicular. Solo se ofrece como salida de emergencia para que el
-      // doble siga viendose cruzado siempre que se pueda.
-      if (out.length === 0) {
+      if (tile[0] === tile[1]) {
+        // Doble: se cruza perpendicular a la cadena. Puede sobresalir hacia un
+        // lado o hacia el otro de la linea, igual que en una mesa de verdad.
+        // Ofrecer una sola de las dos dejaba dobles injugables sin motivo.
         if (endTile.orientation === 'horizontal') {
-          for (const fila of [free.y - 1, free.y + 1]) {
-            addAlong('horizontal', { x: free.x, y: fila }, { x: free.x - 1, y: fila });
-            addAlong('horizontal', { x: free.x, y: fila }, { x: free.x + 1, y: fila });
-          }
+          const col = free.x + dx;
+          addAlong('vertical', { x: col, y: ey }, { x: col, y: ey - 1 });
+          addAlong('vertical', { x: col, y: ey }, { x: col, y: ey + 1 });
         } else {
-          for (const col of [free.x - 1, free.x + 1]) {
-            addAlong('vertical', { x: col, y: free.y }, { x: col, y: free.y - 1 });
-            addAlong('vertical', { x: col, y: free.y }, { x: col, y: free.y + 1 });
+          const row = free.y + dy;
+          addAlong('horizontal', { x: ex, y: row }, { x: ex - 1, y: row });
+          addAlong('horizontal', { x: ex, y: row }, { x: ex + 1, y: row });
+        }
+
+        // Si cruzarse mas alla de la punta no entra —tipicamente porque la punta
+        // quedo contra el borde de la mesa— el doble todavia puede entrar si la
+        // cadena dobla ahi mismo: se cruza respecto de la direccion nueva, que es
+        // perpendicular. Solo se ofrece como salida de emergencia para que el
+        // doble siga viendose cruzado siempre que se pueda.
+        if (out.length === 0) {
+          if (endTile.orientation === 'horizontal') {
+            for (const fila of [free.y - 1, free.y + 1]) {
+              addAlong('horizontal', { x: free.x, y: fila }, { x: free.x - 1, y: fila });
+              addAlong('horizontal', { x: free.x, y: fila }, { x: free.x + 1, y: fila });
+            }
+          } else {
+            for (const col of [free.x - 1, free.x + 1]) {
+              addAlong('vertical', { x: col, y: free.y }, { x: col, y: free.y - 1 });
+              addAlong('vertical', { x: col, y: free.y }, { x: col, y: free.y + 1 });
+            }
           }
         }
-      }
-    } else {
-      // 1. Recta: sigue hacia donde apunta la punta libre
-      addAlong(
-        endTile.orientation,
-        { x: free.x + dx, y: free.y + dy },
-        { x: free.x + 2 * dx, y: free.y + 2 * dy }
-      );
-
-      // 2 y 3. Giros: perpendicular, pivotando sobre la punta libre
-      if (endTile.orientation === 'horizontal') {
-        addAlong('vertical', { x: free.x, y: free.y - 1 }, { x: free.x, y: free.y - 2 });
-        addAlong('vertical', { x: free.x, y: free.y + 1 }, { x: free.x, y: free.y + 2 });
       } else {
-        addAlong('horizontal', { x: free.x - 1, y: free.y }, { x: free.x - 2, y: free.y });
-        addAlong('horizontal', { x: free.x + 1, y: free.y }, { x: free.x + 2, y: free.y });
+        // 1. Recta: sigue hacia donde apunta la punta libre
+        addAlong(
+          endTile.orientation,
+          { x: free.x + dx, y: free.y + dy },
+          { x: free.x + 2 * dx, y: free.y + 2 * dy }
+        );
+
+        // 2 y 3. Giros: perpendicular, pivotando sobre la punta libre
+        if (endTile.orientation === 'horizontal') {
+          addAlong('vertical', { x: free.x, y: free.y - 1 }, { x: free.x, y: free.y - 2 });
+          addAlong('vertical', { x: free.x, y: free.y + 1 }, { x: free.x, y: free.y + 2 });
+        } else {
+          addAlong('horizontal', { x: free.x - 1, y: free.y }, { x: free.x - 2, y: free.y });
+          addAlong('horizontal', { x: free.x + 1, y: free.y }, { x: free.x + 2, y: free.y });
+        }
       }
     }
+  };
+
+  generarCandidatos();
+
+  // Rescate del doble. Un doble se cruza sobre la cadena, asi que sobresale y
+  // toca la fila de al lado; la regla de "no rozar otra ficha" lo rechaza. Una
+  // ficha normal, acostada, pasa por el mismo pasillo sin tocar nada. Resultado:
+  // el jugador veia sitio de sobra, jugaba una normal ahi, y el doble no lo
+  // dejaba. Medido: pasaba en el 0,45% de las posiciones.
+  //
+  // Si al doble no le queda NI UN sitio, se repasan las mismas casillas
+  // permitiendo que roce. Solo se relaja rozar: solaparse y salirse del tablero
+  // se siguen rechazando, asi que la ficha entra pegada pero nunca encima.
+  if (esDoble && out.length === 0) {
+    permitirRozar = true;
+    if (diagnostico) diagnostico.push({ motivo: 'rescate-del-doble' });
+    generarCandidatos();
+    permitirRozar = false;
   }
 
   const seen = new Set();
