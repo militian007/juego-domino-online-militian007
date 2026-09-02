@@ -3,7 +3,32 @@
 
 let audioCtx = null;
 
+// El silencio se recuerda entre partidas: si alguien juega sin sonido, no
+// quiere que vuelva solo la proxima vez.
+const LLAVE = 'domino-silencio';
+let silenciado = false;
+try {
+  silenciado = localStorage.getItem(LLAVE) === '1';
+} catch {
+  // Navegador sin almacenamiento: se juega con sonido y listo.
+}
+
+export function estaSilenciado() {
+  return silenciado;
+}
+
+export function alternarSilencio() {
+  silenciado = !silenciado;
+  try {
+    localStorage.setItem(LLAVE, silenciado ? '1' : '0');
+  } catch {
+    // ignorado
+  }
+  return silenciado;
+}
+
 function getAudioContext() {
+  if (silenciado) return null;
   if (!audioCtx) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (AudioContextClass) {

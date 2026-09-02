@@ -20,7 +20,7 @@ import AdSidebar from '../components/AdSidebar.jsx';
 import TopBanner from '../components/TopBanner.jsx';
 import { connectSocket } from '../services/socket.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { playTileSound, playDrawSound } from '../utils/soundEffects.js';
+import { playTileSound, playDrawSound, estaSilenciado, alternarSilencio } from '../utils/soundEffects.js';
 import { salirPantallaCompleta } from '../utils/pantalla.js';
 
 // La partida en curso se recuerda en el navegador para poder volver a ella al
@@ -58,6 +58,26 @@ function olvidarPartida() {
  * cada uno ocupa su lado, como en una mesa de verdad, y las fichas viven en el
  * rectangulo de adentro sin salirse.
  */
+function BotonMesa({ titulo, activo = false, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={titulo}
+      aria-label={titulo}
+      className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
+        activo
+          ? 'border-domino-accent bg-domino-felt/95 text-domino-accent'
+          : 'border-domino-accent/35 bg-black/50 text-domino-cream-dim hover:border-domino-accent/80 hover:text-domino-cream'
+      }`}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+        {children}
+      </svg>
+    </button>
+  );
+}
+
 function PlacaAsiento({ jugador, fichas, enTurno, esCompanero, lado, className = '' }) {
   if (!jugador) return null;
   const vertical = lado === 'izquierda' || lado === 'derecha';
@@ -575,7 +595,8 @@ export default function Game() {
   };
 
   const [confirmandoSalida, setConfirmandoSalida] = useState(false);
-  const [menuMesa, setMenuMesa] = useState(false);
+  const [abierto, setAbierto] = useState(null);
+  const [silencio, setSilencio] = useState(() => estaSilenciado());
 
   // Salir de verdad: el servidor saca al jugador de la sala y se olvida la
   // partida guardada. El boton de antes solo navegaba, asi que al volver se
@@ -883,14 +904,61 @@ export default function Game() {
         </div>
       )}
 
-      <Tablero
-        mios={gameState.teamScores?.[miEquipo] ?? 0}
-        suyos={gameState.teamScores?.[equipoRival] ?? 0}
-        ronda={gameState.round}
-        objetivo={gameState.targetPoints ?? 100}
-        pozo={gameState.hasPool ? gameState.poolCount : null}
-        sala={gameState.roomCode}
-      />
+      {/* El salir va arriba del todo a la izquierda, separado de los controles
+          de la mesa: es lo unico que no tiene vuelta atras. */}
+      <div className="relative flex shrink-0 items-start gap-1 px-1 pt-1.5">
+        <div className="relative shrink-0">
+          <button
+            type="button"
+            onClick={() => setConfirmandoSalida((v) => !v)}
+            title="Salir de la partida"
+            aria-label="Salir de la partida"
+            className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
+              confirmandoSalida
+                ? 'border-domino-crimson bg-domino-crimson/25 text-domino-cream'
+                : 'border-domino-accent/35 bg-black/50 text-domino-cream-dim hover:border-domino-crimson/80 hover:text-domino-cream'
+            }`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+            </svg>
+          </button>
+
+          {confirmandoSalida && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setConfirmandoSalida(false)} />
+              <div className="absolute left-0 top-11 z-50 w-52 rounded-xl border border-domino-crimson/40 bg-domino-felt/95 p-3 shadow-2xl backdrop-blur">
+                <p className="mb-2 text-[11px] leading-snug text-domino-cream">
+                  ¿Salir? La mesa se cierra y perdés lo jugado.
+                </p>
+                <button
+                  type="button"
+                  onClick={salirDeLaPartida}
+                  className="mb-1.5 w-full rounded-lg bg-domino-crimson/80 px-3 py-1.5 text-xs font-bold text-white hover:bg-domino-crimson"
+                >
+                  Sí, salir
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmandoSalida(false)}
+                  className="w-full rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-300 hover:border-slate-400"
+                >
+                  Seguir jugando
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        <Tablero
+          mios={gameState.teamScores?.[miEquipo] ?? 0}
+          suyos={gameState.teamScores?.[equipoRival] ?? 0}
+          ronda={gameState.round}
+          objetivo={gameState.targetPoints ?? 100}
+          pozo={gameState.hasPool ? gameState.poolCount : null}
+          sala={gameState.roomCode}
+        />
+      </div>
 
       <div className="relative min-h-0 w-full flex-1">
         <div className="relative h-full w-full">
@@ -947,83 +1015,48 @@ export default function Game() {
                   className="right-0.5 top-1/2 -translate-y-1/2"
                 />
 
-                {/* Un solo boton arriba a la izquierda que abre el menu de la
-                    mesa: pañe, gesto y salir. Antes eran tres controles sueltos
-                    por los bordes, compitiendo con las placas y con la cadena. */}
-                <div className="absolute left-1.5 top-1.5 z-40">
-                  <button
-                    type="button"
-                    onClick={() => { setMenuMesa((v) => !v); setConfirmandoSalida(false); }}
-                    title="Menú de la mesa"
-                    aria-label="Menú de la mesa"
-                    aria-expanded={menuMesa}
-                    className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${
-                      menuMesa
-                        ? 'border-domino-accent/70 bg-domino-felt/95 text-domino-cream'
-                        : 'border-domino-accent/25 bg-black/45 text-domino-cream-dim hover:border-domino-accent/70 hover:text-domino-cream'
-                    }`}
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                      <path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" />
-                    </svg>
-                  </button>
+                {/* Los controles de la mesa viven en una columnita al borde, como
+                    en PrivoyTruco: se despliega al tocarla y se recoge sola al
+                    elegir. El salir no va aca: va arriba del todo, aparte, para
+                    no salirse de la partida sin querer. */}
+                <div className="absolute left-1 top-2 z-40 flex items-start gap-1">
+                  <div className="flex flex-col gap-1.5">
+                    <BotonMesa
+                      titulo={silencio ? 'Activar el sonido' : 'Silenciar'}
+                      activo={!silencio}
+                      onClick={() => setSilencio(alternarSilencio())}
+                    >
+                      {silencio ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.5a1.5 1.5 0 0 1-1.5-1.5v-4.5a1.5 1.5 0 0 1 1.5-1.5h2.25Z" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.5a1.5 1.5 0 0 1-1.5-1.5v-4.5a1.5 1.5 0 0 1 1.5-1.5h2.25Z" />
+                      )}
+                    </BotonMesa>
 
-                  {menuMesa && (
+                    {abierto !== 'pano' ? (
+                      <BotonMesa titulo="Color de la mesa" onClick={() => setAbierto('pano')}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9 9 0 1 1 0-18c4.97 0 9 3.694 9 8.25 0 2.07-1.68 3.75-3.75 3.75h-1.5a1.5 1.5 0 0 0-1.06 2.56c.29.29.44.68.44 1.09A2.35 2.35 0 0 1 12 21Z" />
+                      </BotonMesa>
+                    ) : (
+                      <BotonMesa titulo="Cerrar" activo onClick={() => setAbierto(null)}>
+                        <path strokeLinecap="round" d="M6 18 18 6M6 6l12 12" />
+                      </BotonMesa>
+                    )}
+
+                    <BotonMesa
+                      titulo="Enviar un gesto"
+                      activo={showReactionMenu}
+                      onClick={() => { setAbierto(null); setShowReactionMenu((v) => !v); }}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12c0 4.556-4.03 8.25-9 8.25a9.76 9.76 0 0 1-2.555-.337A5.97 5.97 0 0 1 5.41 20.97a.75.75 0 0 1-1.074-.765 6 6 0 0 0 1.257-2.907C4.228 15.932 3 14.1 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+                    </BotonMesa>
+                  </div>
+
+                  {abierto === 'pano' && (
                     <>
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => { setMenuMesa(false); setConfirmandoSalida(false); }}
-                      />
-                      <div className="absolute left-0 top-11 z-50 w-56 rounded-xl border border-domino-accent/25 bg-domino-felt/95 p-3 shadow-2xl backdrop-blur">
-                        <p className="mb-2 text-[10px] uppercase tracking-[0.2em] text-domino-accent/70">
-                          Mesa
-                        </p>
-
+                      <div className="fixed inset-0 -z-10" onClick={() => setAbierto(null)} />
+                      <div className="w-52 rounded-xl border border-domino-accent/25 bg-domino-felt/95 p-3 shadow-2xl backdrop-blur">
                         <MesaThemePicker tema={tema} setTema={setTema} enMenu />
-
-                        <button
-                          type="button"
-                          onClick={() => { setMenuMesa(false); setShowReactionMenu(true); }}
-                          className="mt-2 flex w-full items-center gap-2 rounded-lg border border-domino-accent/20 px-2.5 py-2 text-left text-xs text-domino-cream transition hover:border-domino-accent/60"
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-domino-accent">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 12c0 4.556-4.03 8.25-9 8.25a9.76 9.76 0 0 1-2.555-.337A5.97 5.97 0 0 1 5.41 20.97a.75.75 0 0 1-1.074-.765 6 6 0 0 0 1.257-2.907C4.228 15.932 3 14.1 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
-                          </svg>
-                          Enviar un gesto
-                        </button>
-
-                        {!confirmandoSalida ? (
-                          <button
-                            type="button"
-                            onClick={() => setConfirmandoSalida(true)}
-                            className="mt-1.5 flex w-full items-center gap-2 rounded-lg border border-domino-crimson/30 px-2.5 py-2 text-left text-xs text-domino-cream/80 transition hover:border-domino-crimson/70 hover:text-domino-cream"
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-domino-crimson">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-                            </svg>
-                            Salir de la partida
-                          </button>
-                        ) : (
-                          <div className="mt-1.5 rounded-lg border border-domino-crimson/30 p-2">
-                            <p className="mb-2 text-[11px] leading-snug text-domino-cream">
-                              ¿Salir? La mesa se cierra y perdés lo jugado.
-                            </p>
-                            <button
-                              type="button"
-                              onClick={salirDeLaPartida}
-                              className="mb-1.5 w-full rounded-lg bg-domino-crimson/80 px-3 py-1.5 text-xs font-bold text-white hover:bg-domino-crimson"
-                            >
-                              Sí, salir
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmandoSalida(false)}
-                              className="w-full rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-300 hover:border-slate-400"
-                            >
-                              Seguir jugando
-                            </button>
-                          </div>
-                        )}
                       </div>
                     </>
                   )}

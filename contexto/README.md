@@ -3108,3 +3108,28 @@ El botón de emojis salió de la mano; los gestos abren ahora centrados sobre el
 corriendo: cero controles sueltos, los 11 gestos salen, y el menú cierra al elegir.
 
 Motor 57/57, backend 87/87, build ok. Versión **0.0.46**.
+
+## 77. Los controles de la mesa, al estilo de PrivoyTruco (2026-09-02)
+
+El usuario, con dos capturas de la app de PrivoyTruco: *"me gusta más cómo se ve su ventana, es en
+una esquinita y se despliegan las opciones: sonido, temas o color de mesa, iconos o chat. El botón
+de salir me gustaría que esté arriba a la izquierda"*.
+
+En la sección 76 se habían juntado los tres controles en un solo botón `☰`. Esto lo separa como en
+la referencia:
+
+- **El salir va arriba del todo, a la izquierda y solo**, en la misma fila que el marcador (que pasó
+  a `flex-1`). Está aparte a propósito: es lo único de esa pantalla que no tiene vuelta atrás, y no
+  debe estar a un dedo de distancia del resto. Sigue pidiendo confirmación.
+- **Los demás van en una columnita redonda al borde del paño**: sonido, color de la mesa y gestos.
+  El de paño abre su panelito al lado y se convierte en una `X` para cerrarlo.
+
+**El sonido ahora existe de verdad.** Había `soundEffects.js` con sonidos sintetizados (sin
+archivos), pero no había forma de apagarlos. Se le agregó un interruptor que además **se recuerda**
+en `localStorage`: quien juega en silencio no quiere que el sonido vuelva solo la próxima vez.
+No se puso un botón decorativo: se comprobó primero que hubiera audio que apagar.
+
+Verificado corriendo, los cuatro controles: el sonido alterna y guarda (`domino-silencio` 1/0), el
+paño abre y cierra, salen los 11 gestos, y el salir pide confirmación. Cero errores de consola.
+
+Motor 57/57, backend 87/87, build ok. Versión **0.0.47**.
