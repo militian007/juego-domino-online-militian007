@@ -29,10 +29,14 @@ const LADO_CELDAS = GRID_SIZE + 2 * MARGEN_CELDAS;
 // rejilla: la rejilla define donde caben las fichas y tocarla cambiaria las
 // reglas del juego.
 //
-// TOPE: se ven `LADO_CELDAS / zoom` celdas, y la cadena puede llegar a ocupar
-// las 20 de la rejilla. Para que nunca se corte hace falta 24/zoom >= 20, o
-// sea zoom <= 1.2. Aqui esta en el maximo; subirlo mas recorta la cadena.
-const ZOOM_FICHAS = 1.1;
+// Se ven `LADO_CELDAS / zoom` celdas. Con la vista clavada en el centro de la
+// rejilla el tope era 1.1: a 1.32 se cortaba una punta jugable en el 5,2% de
+// las manos. Con la camara siguiendo la cadena (abajo) ese mismo 1.32 baja a
+// 0,53%, medido sobre 144.312 posiciones. Ver contexto/README.md seccion 71.
+const ZOOM_FICHAS = 1.32;
+
+// Cuanto puede correrse la camara, en celdas, respecto del centro de la rejilla.
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
 const getValidPlacementsForTile = (board, tile, side) => placementsFor(board, tile, side);
 
@@ -132,8 +136,66 @@ export default function Board({
   // Lo que sobra en el otro eje se reparte a los lados: la mesa queda centrada.
   const celdasVisiblesX = pano.ancho > 0 ? pano.ancho / (CELL_SIZE * escala) : LADO_CELDAS;
   const celdasVisiblesY = altoUtil > 0 ? altoUtil / (CELL_SIZE * escala) : LADO_CELDAS;
-  const origenX = -MARGEN_CELDAS - (celdasVisiblesX - LADO_CELDAS) / 2;
-  const origenY = -MARGEN_CELDAS - (celdasVisiblesY - LADO_CELDAS) / 2;
+
+  // La caja que ocupa la cadena dibujada, en celdas. Lleva el corrimiento de
+  // los dobles, que es lo que hace que el dibujo se salga de la rejilla.
+  const cajaCadena = useMemo(() => {
+    if (!board || board.length === 0) return null;
+    let x1 = Infinity, x2 = -Infinity, y1 = Infinity, y2 = -Infinity;
+    board.forEach((pos, i) => {
+      const o = boardOffsets[i] ?? { x: 0, y: 0 };
+      const ancho = pos.orientation === 'horizontal' ? 2 : 1;
+      const alto = pos.orientation === 'horizontal' ? 1 : 2;
+      const l = Math.min(pos.x, pos.x2) + o.x / CELL_SIZE;
+      const t = Math.min(pos.y, pos.y2) + o.y / CELL_SIZE;
+      x1 = Math.min(x1, l); x2 = Math.max(x2, l + ancho);
+      y1 = Math.min(y1, t); y2 = Math.max(y2, t + alto);
+    });
+    // Las dos puntas jugables: si algo tiene que quedar a la vista, son estas.
+    const punta = (i) => {
+      const pos = board[i];
+      const o = boardOffsets[i] ?? { x: 0, y: 0 };
+      const ancho = pos.orientation === 'horizontal' ? 2 : 1;
+      const alto = pos.orientation === 'horizontal' ? 1 : 2;
+      const l = Math.min(pos.x, pos.x2) + o.x / CELL_SIZE;
+      const t = Math.min(pos.y, pos.y2) + o.y / CELL_SIZE;
+      return { x1: l, x2: l + ancho, y1: t, y2: t + alto, cx: l + ancho / 2, cy: t + alto / 2 };
+    };
+    const a = punta(0), b = punta(board.length - 1);
+    return {
+      x1, x2, y1, y2,
+      // Caja que contiene solo las dos puntas jugables.
+      px1: Math.min(a.x1, b.x1), px2: Math.max(a.x2, b.x2),
+      py1: Math.min(a.y1, b.y1), py2: Math.max(a.y2, b.y2),
+      puntasX: (a.cx + b.cx) / 2, puntasY: (a.cy + b.cy) / 2
+    };
+  }, [board, boardOffsets]);
+
+  // La camara se queda QUIETA en el centro de la rejilla mientras la cadena
+  // entre en pantalla, que es casi siempre (la cadena mide 11,4 celdas de
+  // promedio contra una ventana de 18,2). Solo cuando crece de mas se corre lo
+  // justo para no cortar nada, y si ni asi entra, se centra entre las dos
+  // puntas jugables. La escala nunca cambia: las fichas no cambian de tamaño.
+  // Orden de prioridad: que entre la cadena entera; si no cabe, que entren al
+  // menos las dos puntas jugables (es donde se puede jugar); y si ni eso, se
+  // centra entre ellas. Medido sobre 142.469 posiciones a este zoom: la camara
+  // se queda quieta el 91,4% de las jugadas, una punta se sale el 0,22% y el
+  // corrimiento entre jugada y jugada es de 0,41 celdas en el percentil 99.
+  const centrar = (visibles, min, max, pMin, pMax, medioPuntas) => {
+    const centro = GRID_SIZE / 2;
+    if (!cajaCadena) return centro;
+    const mitad = visibles / 2;
+    if (max - min <= visibles) return clamp(centro, max - mitad, min + mitad);
+    if (pMax - pMin <= visibles) return clamp(centro, pMax - mitad, pMin + mitad);
+    return medioPuntas;
+  };
+
+  const centroX = centrar(celdasVisiblesX, cajaCadena?.x1, cajaCadena?.x2,
+    cajaCadena?.px1, cajaCadena?.px2, cajaCadena?.puntasX);
+  const centroY = centrar(celdasVisiblesY, cajaCadena?.y1, cajaCadena?.y2,
+    cajaCadena?.py1, cajaCadena?.py2, cajaCadena?.puntasY);
+  const origenX = centroX - celdasVisiblesX / 2;
+  const origenY = centroY - celdasVisiblesY / 2;
   const desplazamientoX = -origenX * CELL_SIZE * escala;
   const desplazamientoY = -origenY * CELL_SIZE * escala;
 

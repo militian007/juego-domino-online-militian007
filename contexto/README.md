@@ -2911,3 +2911,48 @@ El tablero exacto del ejemplo quedó como test en `engine.test.js`, con la compr
 rescate nunca deja una ficha encima de otra ni fuera del tablero. Motor **56/56**.
 
 Motor 56/56, backend 87/87, build ok. Versión **0.0.41**.
+
+## 72. Las fichas de la mesa, un 20% más grandes: la cámara sigue la cadena (2026-09-01)
+
+El usuario pidió **+20%** en las fichas de la mesa. En la sección 63 se había medido que con la
+vista clavada en el centro de la rejilla el techo era el zoom 1,1, y eso seguía siendo cierto:
+
+| zoom | fichas | **punta jugable cortada** (vista fija) |
+|------|--------|----------------------------------------|
+| 1,10 (el de entonces) | 0% | 0,04% |
+| 1,20 | +9% | 0,62% |
+| 1,32 | +20% | **5,2% — 1 de cada 19 manos** |
+
+O sea, el +20% por la vía simple costaba no ver dónde jugar 1 de cada 19 manos. Inaceptable.
+
+### Lo que faltaba medir
+
+La vista estaba **clavada en el centro de la rejilla**, así que tenía que mostrar el doble de lo que
+más se alejara del centro. Pero la cadena mide **11,4 celdas de promedio** contra una ventana de
+18,2. Sobraba sitio; el problema era dónde apuntaba la ventana, no su tamaño.
+
+La cámara ahora sigue a la cadena, con esta prioridad:
+
+1. Si la cadena entera entra, la ventana se queda **quieta en el centro** y solo se corre lo justo
+   si hace falta para no cortar nada.
+2. Si no entra, se asegura que entren **las dos puntas jugables**, que es donde se puede jugar.
+3. Si ni las puntas entran, se centra entre ellas.
+
+**La escala no cambia nunca**: las fichas no cambian de tamaño mientras se juega, que es lo que el
+usuario rechazó en la sección 46. Esto es desplazamiento, no zoom.
+
+Medido sobre 142.469 posiciones con zoom 1,32:
+
+| | resultado |
+|---|-----------|
+| la cámara se queda quieta | **91,4% de las jugadas** |
+| punta jugable fuera de vista | 0,22% (1 de cada 448) |
+| alguna ficha vieja fuera de vista | 1,21% |
+| corrimiento entre jugadas | 0,41 celdas (p99), 1,91 el máximo |
+
+El paso 2 (asegurar las puntas antes que la cadena entera) es lo que baja el 0,29% al 0,22%: sin él
+la cámara se centraba entre las puntas sin garantizar que entraran.
+
+Verificado corriendo: la ficha de la mesa pasó de **30x15 a 38x19 px** en un teléfono de 375.
+
+Motor 56/56, backend 87/87, build ok. Versión **0.0.42**.
