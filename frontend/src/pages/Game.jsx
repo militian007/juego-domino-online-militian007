@@ -21,7 +21,8 @@ import TopBanner from '../components/TopBanner.jsx';
 import { connectSocket } from '../services/socket.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { playTileSound, playDrawSound, estaSilenciado, alternarSilencio } from '../utils/soundEffects.js';
-import { Volume2, VolumeX, Palette, Smile, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+import IconoColor from '../components/IconoColor.jsx';
 import { salirPantallaCompleta } from '../utils/pantalla.js';
 
 // La partida en curso se recuerda en el navegador para poder volver a ella al
@@ -59,20 +60,21 @@ function olvidarPartida() {
  * cada uno ocupa su lado, como en una mesa de verdad, y las fichas viven en el
  * rectangulo de adentro sin salirse.
  */
-function BotonMesa({ titulo, activo = false, onClick, Icono }) {
+function BotonMesa({ titulo, activo = false, onClick, icono }) {
   return (
     <button
       type="button"
       onClick={onClick}
       title={titulo}
       aria-label={titulo}
-      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border shadow-lg transition-colors ${
+      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
         activo
-          ? 'border-domino-accent bg-domino-felt/95 text-domino-accent'
-          : 'border-domino-accent/35 bg-black/55 text-domino-cream-dim hover:border-domino-accent/80 hover:text-domino-cream'
+          ? 'border-domino-accent bg-domino-felt shadow-[0_0_10px_rgba(212,175,55,0.45)]'
+          : 'border-domino-accent/40 bg-black/60 hover:border-domino-accent hover:bg-domino-felt/80'
       }`}
+      style={{ boxShadow: activo ? undefined : '0 2px 6px rgba(0,0,0,.6)' }}
     >
-      <Icono size={18} strokeWidth={1.9} />
+      <IconoColor nombre={icono} tamano={24} className="drop-shadow-[0_1px_2px_rgba(0,0,0,.7)]" />
     </button>
   );
 }
@@ -919,7 +921,7 @@ export default function Game() {
                 : 'border-domino-accent/35 bg-black/50 text-domino-cream-dim hover:border-domino-crimson/80 hover:text-domino-cream'
             }`}
           >
-            <LogOut size={18} strokeWidth={1.9} />
+            <IconoColor nombre="salir" tamano={22} className="drop-shadow-[0_1px_2px_rgba(0,0,0,.7)]" />
           </button>
 
           {confirmandoSalida && (
@@ -1013,50 +1015,57 @@ export default function Game() {
                   className="right-0.5 top-1/2 -translate-y-1/2"
                 />
 
-                {/* La solapa de controles: normalmente es una pestaña chiquita
-                    pegada al borde y, al tocarla, salen las opciones. Asi la
-                    mesa queda limpia, que es como se ve en PrivoyTruco. */}
+                {/* La solapa de controles. La pestaña va POR DETRAS de los
+                    botones (z menor) y es alargada, para que se lea como una
+                    lengueta que los saca de debajo del borde. */}
                 <div className="absolute left-0 top-3 z-40 flex items-start">
-                  <div
-                    className={`flex flex-col gap-1.5 overflow-hidden transition-all duration-200 ${
-                      solapa ? 'ml-1 max-w-[48px] opacity-100' : 'ml-0 max-w-0 opacity-0'
-                    }`}
-                  >
-                    <BotonMesa
-                      titulo={silencio ? 'Activar el sonido' : 'Silenciar'}
-                      activo={!silencio}
-                      Icono={silencio ? VolumeX : Volume2}
-                      onClick={() => setSilencio(alternarSilencio())}
-                    />
-                    <BotonMesa
-                      titulo="Color de la mesa"
-                      activo={abierto === 'pano'}
-                      Icono={Palette}
-                      onClick={() => setAbierto((v) => (v === 'pano' ? null : 'pano'))}
-                    />
-                    <BotonMesa
-                      titulo="Enviar un gesto"
-                      activo={showReactionMenu}
-                      Icono={Smile}
-                      onClick={() => { setAbierto(null); setShowReactionMenu((v) => !v); }}
-                    />
-                  </div>
+                  <div className="relative flex items-start">
+                    <button
+                      type="button"
+                      onClick={() => { setSolapa((v) => !v); setAbierto(null); }}
+                      title={solapa ? 'Ocultar los controles' : 'Mostrar los controles'}
+                      aria-label={solapa ? 'Ocultar los controles' : 'Mostrar los controles'}
+                      aria-expanded={solapa}
+                      className={`absolute left-0 top-0 z-0 flex w-7 items-end justify-center rounded-r-xl border border-l-0 border-domino-accent/40 bg-black/70 pb-2 text-domino-accent/70 transition-all hover:bg-black/90 hover:text-domino-accent ${
+                        solapa ? 'h-[196px]' : 'h-[104px]'
+                      }`}
+                    >
+                      <ChevronRight
+                        size={13}
+                        className={`transition-transform ${solapa ? 'rotate-180' : ''}`}
+                      />
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => { setSolapa((v) => !v); setAbierto(null); }}
-                    title={solapa ? 'Ocultar los controles' : 'Mostrar los controles'}
-                    aria-label={solapa ? 'Ocultar los controles' : 'Mostrar los controles'}
-                    aria-expanded={solapa}
-                    className="flex h-12 w-5 items-center justify-center rounded-r-lg border border-l-0 border-domino-accent/35 bg-black/55 text-domino-accent/80 transition-colors hover:bg-black/75 hover:text-domino-accent"
-                  >
-                    {solapa ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-                  </button>
+                    <div
+                      className={`relative z-10 flex flex-col gap-2 overflow-hidden transition-all duration-200 ${
+                        solapa ? 'ml-1.5 max-w-[52px] opacity-100' : 'ml-0 max-w-0 opacity-0'
+                      }`}
+                    >
+                      <BotonMesa
+                        titulo={silencio ? 'Activar el sonido' : 'Silenciar'}
+                        activo={!silencio}
+                        icono={silencio ? 'silencio' : 'sonido'}
+                        onClick={() => setSilencio(alternarSilencio())}
+                      />
+                      <BotonMesa
+                        titulo="Color de la mesa"
+                        activo={abierto === 'pano'}
+                        icono="paleta"
+                        onClick={() => setAbierto((v) => (v === 'pano' ? null : 'pano'))}
+                      />
+                      <BotonMesa
+                        titulo="Enviar un gesto"
+                        activo={showReactionMenu}
+                        icono="gesto"
+                        onClick={() => { setAbierto(null); setShowReactionMenu((v) => !v); }}
+                      />
+                    </div>
+                  </div>
 
                   {solapa && abierto === 'pano' && (
                     <>
                       <div className="fixed inset-0 -z-10" onClick={() => setAbierto(null)} />
-                      <div className="ml-1 w-52 rounded-xl border border-domino-accent/25 bg-domino-felt/95 p-3 shadow-2xl backdrop-blur">
+                      <div className="ml-1.5 w-52 rounded-xl border border-domino-accent/25 bg-domino-felt/95 p-3 shadow-2xl backdrop-blur">
                         <MesaThemePicker tema={tema} setTema={setTema} enMenu />
                       </div>
                     </>

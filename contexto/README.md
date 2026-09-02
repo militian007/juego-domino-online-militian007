@@ -3164,3 +3164,44 @@ Verificado corriendo: paño abre y cierra, el sonido guarda en `localStorage`, c
 consola.
 
 Motor 57/57, backend 87/87, build ok. Versión **0.0.48**.
+
+## 79. Iconos a color de verdad, y la pestaña por detrás (2026-09-02)
+
+El usuario: *"quiero diseño de los malditos iconos, eso es una basura, todos son de mejor calidad...
+puedes hacer iconos con color, diseño de alta calidad y que se vea premium"*. Y sobre la solapa:
+*"quiero que el icono de la ventana desplegable quede detrás de los iconos de audio, tema e iconos,
+y que sea más alargada hacia abajo"*.
+
+### Los iconos
+
+`lucide-react` (§78) es **monocromo de trazo**: resolvió lo de no dibujar a mano, pero no lo que él
+pedía, que es color y volumen. Se cambió al set **Fluent Emoji de Microsoft** (`fluent-emoji-flat`),
+que son iconos a color con relieve:
+
+| control | icono |
+|---------|-------|
+| sonido | `speaker-high-volume` / `muted-speaker` |
+| color de mesa | `artist-palette` |
+| gestos | `grinning-face` |
+| salir | `cross-mark` |
+
+El de salir fue primero `cross-mark-button`, que es **verde**, y verde para salir confunde: se pasó
+al `cross-mark` rojo.
+
+**Cómo se cargan sin engordar el paquete:** importar el JSON del set entero mete más de un mega para
+cinco iconos. `frontend/tools/extraer-iconos.cjs` saca solo los que se usan a
+`src/components/iconosColor.js` (4 KB), y `IconoColor.jsx` los pinta. No se dibuja ni un `path`:
+el cuerpo del SVG sale tal cual del paquete. Para agregar o cambiar un icono se edita `QUIERO` en
+ese script y se vuelve a correr.
+
+### La pestaña
+
+Va **por detrás** de los botones (`z-0` contra `z-10`) y **asoma 48 px por debajo** del último, que
+es lo que la hace clicable: con el alto anterior quedaba tapada y no había forma de cerrarla. Mide
+104 px recogida y 196 px desplegada, y la flecha gira 180°.
+
+Verificado corriendo: 4 de los 5 SVG traen degradados o rellenos de color (el quinto es la flecha de
+la pestaña, monocroma a propósito), el paño abre y cierra, salen los 11 gestos, el salir pide
+confirmación. Cero errores de consola.
+
+Motor 57/57, backend 87/87, build ok. Versión **0.0.49**.
