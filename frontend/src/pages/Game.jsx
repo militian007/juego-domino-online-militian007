@@ -1012,8 +1012,8 @@ export default function Game() {
                       title={solapa ? 'Ocultar los controles' : 'Mostrar los controles'}
                       aria-label={solapa ? 'Ocultar los controles' : 'Mostrar los controles'}
                       aria-expanded={solapa}
-                      className={`absolute left-0 top-0 z-0 flex w-4 items-end justify-center rounded-r-lg border border-l-0 border-domino-accent/30 bg-black/25 pb-2 text-domino-accent/70 transition-all hover:bg-black/45 hover:text-domino-accent ${
-                        solapa ? 'h-[196px]' : 'h-[104px]'
+                      className={`absolute left-0 top-0 z-0 flex w-4 items-end justify-center rounded-r-lg border border-l-0 border-domino-accent/40 bg-black/45 pb-2 text-domino-accent/70 transition-all hover:bg-black/65 hover:text-domino-accent ${
+                        solapa ? 'h-[172px]' : 'h-[76px]'
                       }`}
                     >
                       <ChevronRight

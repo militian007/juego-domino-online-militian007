@@ -3248,3 +3248,7 @@ rivales **debajo del retrato pero fuera del paño**, sobre la baranda, o volver 
 Queda anotado.
 
 Motor 57/57, backend 87/87, build ok. Versión **0.0.50**.
+
+**Retoque (v0.0.51):** la pestaña se acortó (172 px desplegada y 76 recogida, contra 196 y 104)
+y su fondo subió de negro al 25% al 45%, para que se despegue del paño sin competir con él.
+Asoma 24 px por debajo de los tres botones, que es lo que la mantiene agarrable.
