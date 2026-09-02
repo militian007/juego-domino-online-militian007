@@ -29,11 +29,20 @@ const LADO_CELDAS = GRID_SIZE + 2 * MARGEN_CELDAS;
 // rejilla: la rejilla define donde caben las fichas y tocarla cambiaria las
 // reglas del juego.
 //
-// Se ven `LADO_CELDAS / zoom` celdas. Con la vista clavada en el centro de la
-// rejilla el tope era 1.1: a 1.32 se cortaba una punta jugable en el 5,2% de
-// las manos. Con la camara siguiendo la cadena (abajo) ese mismo 1.32 baja a
-// 0,53%, medido sobre 144.312 posiciones. Ver contexto/README.md seccion 71.
-const ZOOM_FICHAS = 1.32;
+// Se ven `LADO_CELDAS / zoom` celdas.
+//
+// TODAS las fichas tienen que estar siempre a la vista: el usuario no quiere
+// tener que adivinar donde sigue la cadena. Medido sobre 120.936 posiciones,
+// con la camara siguiendo la cadena hace falta una ventana de 21,5 celdas para
+// que no se salga NUNCA ni una ficha; con menos, se sale:
+//
+//   ventana 18,2 celdas (zoom 1,32) -> 4,50% de las posiciones con algo fuera
+//   ventana 20,0 celdas (zoom 1,20) -> 0,28%
+//   ventana 20,9 celdas (zoom 1,15) -> 0,10%
+//   ventana 21,5 celdas (zoom 1,116) -> CERO
+//
+// Por eso el zoom es 1,116 y no mas. Ver contexto/README.md seccion 82.
+const ZOOM_FICHAS = 1.116;
 
 // Cuanto puede correrse la camara, en celdas, respecto del centro de la rejilla.
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));

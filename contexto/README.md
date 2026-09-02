@@ -3317,3 +3317,57 @@ sitio libre, y **0,060%** con el cerebro y el rescate. No es cero —queda el ca
 hay casilla ni rozando— pero es 1 de cada 1.673.
 
 Motor 57/57, backend 87/87, build ok, jugado en el navegador sin errores. Versión **0.0.52**.
+
+## 82. Ninguna ficha fuera de la pantalla, garantizado (2026-09-02)
+
+El usuario, forzando errores a mano: *"si te vas para los laterales se pone la pieza pero hay parte
+del tablero que se va hacia el otro lado, eso no puede ser, la gente necesita ver siempre todas las
+piezas... lo mejor es hacer un cuadrado con sus límites y que no se pueda pasar de ellos"*.
+
+Tenía razón y la raíz era simple: **la rejilla donde se puede jugar (20 celdas, 24 con el
+corrimiento de los dobles) era más grande que la ventana que se veía (18,2 celdas)**. El motor
+dejaba poner fichas que la pantalla no podía mostrar.
+
+### Se probó primero achicar la rejilla
+
+Que el límite de juego sea el borde visible es la idea correcta, y con el cerebro de la sección 81
+parecía barata. Medido, no lo es:
+
+| rejilla | ficha trabada | celdas a mostrar | ficha |
+|---------|---------------|------------------|-------|
+| **20** | **0,051%** | 24,0 | 29x14 |
+| 18 | 0,220% | 23,0 | 30x15 |
+| 16 | 1,032% | 20,0 | 35x17 |
+| 14 | 3,545% | 18,0 | 39x19 |
+
+Achicar la rejilla multiplica por 20 las fichas trabadas para ganar un 20% de tamaño. No.
+
+### La ventana
+
+La otra vía: agrandar la ventana hasta que la cadena entre siempre. Medido sobre **120.936
+posiciones**, con la cámara siguiendo la cadena:
+
+| ventana | zoom | posiciones con alguna ficha fuera | lo peor |
+|---------|------|-----------------------------------|---------|
+| 18,2 celdas | 1,32 | 4,50% | 3,3 celdas |
+| 20,0 | 1,20 | 0,28% | 1,5 |
+| 20,9 | 1,15 | 0,10% | 1,1 |
+| **21,5** | **1,116** | **0 (cero)** | **0** |
+
+Se puso en **1,116**. Comprobado además jugando en el navegador: **0 px fuera del paño**.
+
+### El precio, y de dónde sale
+
+Las fichas quedan un 15% más chicas: **29x15 en 1v1** y **20x10 en 2v2**.
+
+Esa diferencia entre modos no es casualidad: **las placas de los rivales de los costados se comen
+120 px de los 347 del paño, o sea el 35% del ancho**. En 1v1 no hay placas laterales y la ficha es
+la mitad más grande.
+
+Si el tamaño en 2v2 molesta, la única palanca grande es esa. Poner a los dos rivales en las
+**esquinas de arriba**, flanqueando al compañero, devuelve los 120 px y la ficha pasaría de 20x10 a
+unos **31x15**, con todo igual de visible. Queda anotado a la espera de que el usuario decida, porque
+él ya rechazó una vez tener a los tres arriba (§74) — aunque aquello eran los tres en fila al
+centro, que es otra cosa.
+
+Motor 57/57, backend 87/87, build ok. Versión **0.0.53**.
