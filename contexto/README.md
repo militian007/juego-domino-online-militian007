@@ -2956,3 +2956,51 @@ la cámara se centraba entre las puntas sin garantizar que entraran.
 Verificado corriendo: la ficha de la mesa pasó de **30x15 a 38x19 px** en un teléfono de 375.
 
 Motor 56/56, backend 87/87, build ok. Versión **0.0.42**.
+
+## 73. La cadena se enroscaba sobre sí misma: ahora busca sitio libre (2026-09-01)
+
+El usuario, con el panel de "por qué no podés jugar" en pantalla: *"siempre debe buscar jugar lejos
+para que no se choquen las piezas, porque los jugadores siempre van a intentar romper el juego, hay
+que cubrir todas esas posibilidades"*.
+
+Tenía razón y había un hueco a medio tapar en el código. `aireEnLaPunta`, que decide entre varias
+colocaciones, mide **solo la distancia al borde de la mesa**, con tope 2. No sabe nada de las otras
+fichas. Así la cadena se enrosca sobre sí misma, la punta queda metida en un rincón, y el jugador ve
+sitio de sobra en la mesa mientras la ficha no entra. Es justo el `[1|3] el lugar ya está ocupado`
+de su captura.
+
+### Lo que se midió antes de tocar (regla 10)
+
+Se probaron tres formas de meter el "sitio libre" (casillas seguidas libres alrededor de la punta
+nueva, en las cuatro direcciones, hasta tres por dirección):
+
+| variante | ficha trabada |
+|----------|---------------|
+| A — como estaba (solo borde, luego derecho) | 0,61% |
+| B — sitio libre **antes** que seguir derecho | **0,90% (peor)** |
+| C — seguir derecho manda, sitio libre desempata | **0,45%** |
+| D — sitio libre solo para elegir hacia dónde doblar | 0,57% |
+
+**El orden importa más que la idea.** Poner el sitio libre por delante de "seguir derecho" empeora
+las cosas: la cadena serpentea y se hace más rincones de los que evita. Es la cuarta vez que se
+confirma que la apertura codiciosa sola no sirve (ver §32, §33). Lo que sí sirve es usarla **solo
+para desempatar** entre las opciones que ya van derecho.
+
+C se confirmó en tres tandas independientes de ~120.000 turnos: 0,61→0,45, 0,75→0,49 y 0,66→0,53.
+
+### El resultado, ya dentro del motor
+
+A/B del motor de verdad, mismas semillas, con y sin el cambio:
+
+| | sin el cambio | con el cambio |
+|---|---------------|---------------|
+| ficha trabada | 0,90% (1.268 fichas) | **0,63% (861 fichas)** |
+| trancas | 59,2% | 59,7% |
+| doble rechazado donde una normal entra | 0% | **0%** |
+| fichas montadas | 0 | **0** |
+| fichas fuera del tablero | 0 | **0** |
+
+Un 30% menos de fichas trabadas. La función quedó exportada como `espacioEnLaPunta` y la usan tanto
+`straightestPlacement` (el camino del jugador) como el bot, para que los dos coloquen igual.
+
+Motor 56/56, backend 87/87, build ok. Versión **0.0.43**.

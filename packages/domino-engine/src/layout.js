@@ -336,6 +336,38 @@ function aireEnLaPunta(p, side, grid) {
 }
 
 /**
+ * Cuanto sitio libre le queda a la punta nueva: casillas seguidas libres en las
+ * cuatro direcciones, hasta tres por direccion.
+ *
+ * `aireEnLaPunta` solo mira la distancia al borde de la mesa; esta mira ademas
+ * las otras fichas. Sin ella la cadena se enrosca sobre si misma y se deja sin
+ * salida, que es lo que reporto el usuario: veia sitio de sobra en la mesa y la
+ * ficha no entraba porque la punta habia quedado metida en un rincon.
+ */
+export function espacioEnLaPunta(board, p, side, layout = DEFAULT_LAYOUT) {
+  const grid = layout.grid;
+  const ocupado = new Set();
+  board.forEach((t) => {
+    ocupado.add(t.x + ',' + t.y);
+    ocupado.add(t.x2 + ',' + t.y2);
+  });
+  ocupado.add(p.x + ',' + p.y);
+  ocupado.add(p.x2 + ',' + p.y2);
+
+  const punta = side === 'left' ? { x: p.x, y: p.y } : { x: p.x2, y: p.y2 };
+  let libres = 0;
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    for (let k = 1; k <= 3; k++) {
+      const x = punta.x + dx * k;
+      const y = punta.y + dy * k;
+      if (x < 0 || y < 0 || x >= grid || y >= grid || ocupado.has(x + ',' + y)) break;
+      libres++;
+    }
+  }
+  return libres;
+}
+
+/**
  * Elige donde cae la ficha cuando el jugador no lo dice (el bot, o el servidor
  * si el cliente no manda posicion).
  *
@@ -362,12 +394,24 @@ export function straightestPlacement(board, placements, side, layout = DEFAULT_L
   const cy = ey + dy;
   const cx2 = cx + dx;
   const cy2 = cy + dy;
-  const straight = placements.find((p) =>
+  // Seguir derecho manda: una cadena recta se traba menos que una que
+  // serpentea. Entre las que van derecho (o entre todas si ninguna va derecho)
+  // gana la que deja mas sitio libre alrededor, para no enroscarse.
+  //
+  // Medido en tres tandas de ~120.000 turnos cada una, contra elegir solo la
+  // recta: la ficha trabada baja de 0,61% a 0,45%, de 0,75% a 0,49% y de 0,66%
+  // a 0,53%. Ojo, el orden importa: aplicar el sitio libre ANTES que la recta
+  // la EMPEORA (0,61% -> 0,90%). Ver contexto/README.md seccion 73.
+  const rectas = placements.filter((p) =>
     side === 'left'
       ? p.x === cx2 && p.y === cy2 && p.x2 === cx && p.y2 === cy
       : p.x === cx && p.y === cy && p.x2 === cx2 && p.y2 === cy2
   );
-  return straight || placements[0];
+  const pool = rectas.length > 0 ? rectas : placements;
+  if (pool.length === 1) return pool[0];
+  const espacios = pool.map((p) => espacioEnLaPunta(board, p, side, layout));
+  const mejorEspacio = Math.max(...espacios);
+  return pool[espacios.indexOf(mejorEspacio)];
 }
 
 /**

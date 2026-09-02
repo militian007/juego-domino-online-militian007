@@ -1,6 +1,8 @@
 import { createRng } from './rng.js';
 import { generateSet, tileKey, pips, isDouble } from './tiles.js';
 
+import { espacioEnLaPunta } from './layout.js';
+
 export const DIFFICULTY = {
   NOVATO: 'novato',
   FACIL: 'facil',
@@ -177,8 +179,15 @@ export function chooseAction(view, opts = {}) {
   const extremo = holgadas[0].side === 'left'
     ? view.board[0]
     : view.board[view.board.length - 1];
-  const recta = holgadas.find((a) => a.placement.orientation === extremo.orientation);
-  return recta || holgadas[0];
+  const rectas = holgadas.filter((a) => a.placement.orientation === extremo.orientation);
+
+  // Entre las que siguen derecho gana la que deja mas sitio libre alrededor.
+  // El orden importa: mirar el sitio libre antes que la recta empeora las cosas.
+  // Ver contexto/README.md seccion 73.
+  const pool = rectas.length > 0 ? rectas : holgadas;
+  if (pool.length === 1) return pool[0];
+  const espacios = pool.map((a) => espacioEnLaPunta(view.board, a.placement, a.side, view.layout));
+  return pool[espacios.indexOf(Math.max(...espacios))];
 }
 
 export function createBot(opts = {}) {
