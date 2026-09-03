@@ -3526,3 +3526,56 @@ localhost. Lo que **no** se vio es el cartel de abandono dibujado: para eso hace
 personas registradas en dos navegadores, y no se crean cuentas para probar.
 
 Motor 57/57, backend 87/87.
+
+## 86. Fichas mas grandes: el unico camino que no rompe nada es devolverle alto a la mesa (2026-09-02)
+
+Jonathan pidio agrandar las fichas de la mesa. Los dos botones obvios estan medidos y
+descartados: subir `ZOOM_FICHAS` de 1,116 saca fichas de la pantalla, y achicar la rejilla
+multiplica por 20 las fichas trabadas (§82). Asi que se busco por otro lado.
+
+**El hallazgo:** la escala sale de `min(anchoUtil, altoUtil)`, o sea del lado mas corto de la
+mesa, que en una pantalla de escritorio es el vertical. Y la cantidad de celdas visibles (21,5)
+no depende del tamano del pano: sale de `ZOOM_FICHAS` y se mantiene sola. Entonces **cada pixel
+que se le devuelve al alto agranda todas las fichas sin tocar la garantia de §82**: se ven las
+mismas 21,5 celdas, solo que cada celda mide mas.
+
+Se midio donde se iba el alto y aparecieron dos sobras:
+
+- `MARGEN_MESA.arriba` estaba en 62 px, pero la placa del jugador de enfrente termina a 34.
+  Habia 28 px que no usaba nadie. Se bajo a 44.
+- El bloque de la mano tenia `pt-8`, 32 px de aire entre el borde del pano y el rotulo. Se bajo
+  a `pt-3` (12 px).
+
+Resultado medido, con una ficha puesta en la mesa:
+
+| ventana | rejilla antes | rejilla ahora | ficha |
+|---|---|---|---|
+| 1280x720 | 272 px | 308 px | 27x14 -> 31x15 |
+| 1904x1000 | ~519 px | 561 px | +8% |
+
+Es una mejora real pero moderada: entre 8% y 13% segun la pantalla.
+
+**Por que no se puede mucho mas sin decidir algo.** Mirando la mesa con una sola ficha puesta se
+entiende el fondo del asunto: la ventana muestra siempre 21,5 celdas, tengas una ficha o veinte.
+La ficha no es chica en si —39x19 px en una ventana de 1600— es que la mesa esta casi vacia y el
+tamano no se adapta. Eso es una decision tomada y escrita: *"las fichas nunca cambian de tamano
+mientras jugas: eso lo rechace y no se vuelve"*. Se respeta.
+
+Lo que queda para ganar de verdad, sin romper nada de eso, es el pendiente que ya estaba anotado:
+**acotar el corrimiento visual de los dobles**. Hoy la cadena dibujada necesita 22,5 celdas cuando
+la rejilla mide 20 porque el desplazamiento se acumula; si se acota, la ventana necesaria baja y
+las fichas crecen gratis. Eso pide volver a correr la simulacion de §82 antes y despues.
+
+**Y en el telefono el problema es otro:** ahi manda el ancho (315 px utiles contra 454 de alto), y
+la mesa usa solo el 44% del alto disponible. La rejilla es cuadrada y la pantalla no. Optimizar
+eso pide medir "fichas fuera de pantalla" con ventanas no cuadradas, que es una simulacion nueva.
+
+### Una alarma falsa, anotada para que no la repita otro
+
+Se creyo encontrar que el tablero no se re-escalaba al cambiar el tamano de la ventana: se lo veia
+quedar en 561 px dentro de un pano de 551, desbordando. **Era el navegador de pruebas**, que
+cambia el viewport sin disparar el evento `resize`. Disparandolo a mano, la mesa se recalculo al
+instante. El `ResizeObserver` y las escuchas de `resize` y `orientationchange` de `Board.jsx`
+funcionan bien.
+
+Motor 57/57, backend 87/87.

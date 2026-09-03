@@ -127,7 +127,17 @@ function AsientoLateral({ jugador, fichas, enTurno, esCompanero }) {
 const AUTO_START_MODES = ['1v1bot', '2v2bots'];
 // Cuanto se le quita al paño por cada lado para que quepan las placas de los
 // jugadores. La cadena vive dentro de lo que queda y no se sale de ahi.
-const MARGEN_MESA = { arriba: 62, abajo: 8, lados: 60, borde: 8 };
+// Cuanto se le reserva a cada borde de la mesa, en pixeles.
+//
+// El de arriba estaba en 62 y la placa del jugador de enfrente termina a 34:
+// habia 28 px de aire que no usaba nadie. Y ese borde es el que MANDA: la
+// escala sale del lado mas corto de la mesa, que en cualquier pantalla normal
+// es el vertical. Cada pixel que se devuelve ahi agranda TODAS las fichas.
+//
+// Ojo: esto NO toca la garantia de la seccion 82. La cantidad de celdas que se
+// ven (21,5) sale de ZOOM_FICHAS y no cambia; lo unico que cambia es cuantos
+// pixeles mide cada celda. Mas alto = fichas mas grandes, mismas celdas.
+const MARGEN_MESA = { arriba: 44, abajo: 8, lados: 60, borde: 8 };
 
 const GUEST_ALLOWED_MODES = ['1v1bot', '2v2bots'];
 
@@ -1102,7 +1112,7 @@ export default function Game() {
               </div>
               </div>
 
-              <div ref={manoRef} className="absolute inset-x-0 bottom-0 z-30 px-2 pb-2 pt-8"
+              <div ref={manoRef} className="absolute inset-x-0 bottom-0 z-30 px-2 pb-2 pt-3"
                 style={{
                   background:
                     'linear-gradient(to top, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.90) 62%, rgba(0,0,0,0.55) 84%, rgba(0,0,0,0) 100%)'
