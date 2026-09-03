@@ -3579,3 +3579,48 @@ instante. El `ResizeObserver` y las escuchas de `resize` y `orientationchange` d
 funcionan bien.
 
 Motor 57/57, backend 87/87.
+
+## 87. La mesa se ajusta a la cadena: fichas 76% mas grandes en el telefono (2026-09-02)
+
+Jonathan lo dijo claro: que las fichas se vean bien en un telefono, que no se salgan de los
+bordes, que no se monten, y que se puedan colocar. Y autorizo expresamente saltarse reglas
+anteriores si hacen falta: *"puedes omitir reglas que ya estan, pero necesito que el juego
+funcione"*.
+
+**El problema era geometrico, no un ajuste fino.** La mesa reservaba SIEMPRE 21,5 celdas,
+tuvieras una ficha o veinte. En un telefono de 375 el rectangulo de juego mide 315 px de ancho:
+21,5 celdas ahi dan celdas de 14,6 px, o sea fichas de 29x15. Mientras tanto una ficha de la mano
+mide 40x81. La de la mesa era un tercio. Con 21,5 celdas fijas no hay ajuste que lo arregle.
+
+**Lo que cambio.** La ventana ya no es un numero fijo: es la caja que ocupa la cadena mas dos
+celdas de aire, con un piso de 11 celdas para que con una sola ficha no quede absurdamente cerca.
+
+Eso ademas vuelve la garantia MAS fuerte que la de §82. Antes era estadistica: 21,5 celdas
+alcanzaban en el 100% de 120.936 posiciones medidas. Ahora es estructural: la ventana se calcula a
+partir de lo que hay que mostrar, asi que no puede quedar nada afuera.
+
+**Solo se aleja, nunca se acerca.** El zoom automatico se habia rechazado antes, y con razon: lo
+molesto no era que cambiara, era que fuera y viniera en cada jugada. Aca hay un trinquete: se
+guarda la escala mas chica que se llego a necesitar y no se vuelve a subir mientras dure la mano.
+Se reinicia al empezar una ronda o al cambiar el tamano de la pantalla. Nunca baja del piso viejo:
+esa sigue siendo la vista mas alejada posible.
+
+**Medido jugando manos de verdad**, no estimado. Una simulacion nueva juega partidas completas con
+el bot, y en cada posicion comprueba si la cadena entra en la ventana y si dos fichas se pisan:
+
+| caso | posiciones | no entra | montadas | ficha (media) | ficha (peor) | antes |
+|---|---|---|---|---|---|---|
+| 1v1, telefono 375 | 63.008 | 0,000% | 0,000% | 51x25 | 29x15 | 29x15 siempre |
+| 2v2, telefono 375 | 68.330 | 0,000% | 0,000% | 34x17 | 20x10 | 20x10 siempre |
+
+El peor caso es exactamente el de antes: nunca queda peor que el sistema viejo, y de media queda
+un 76% mas grande en 1v1 y un 70% en 2v2.
+
+**Y un dato que conviene tener anotado:** en 68.330 posiciones de 2v2 y 63.008 de 1v1 no aparecio
+ni una sola ficha montada sobre otra. Si Jonathan las vio montarse, no es en el dibujo de la
+cadena: hay que buscarlo en otro lado (la vista previa al arrastrar, o el fantasma de colocacion).
+
+El 2v2 sigue quedando chico (34x17) por lo que ya estaba anotado: las placas de los rivales de los
+costados se comen 120 de los 331 px del pano. Ese sigue pendiente.
+
+Motor 57/57, backend 87/87.
