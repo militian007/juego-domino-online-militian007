@@ -34,14 +34,21 @@ const LADO_CELDAS = GRID_SIZE + 2 * MARGEN_CELDAS;
 // TODAS las fichas tienen que estar siempre a la vista: el usuario no quiere
 // tener que adivinar donde sigue la cadena. Medido sobre 120.936 posiciones,
 // con la camara siguiendo la cadena hace falta una ventana de 21,5 celdas para
-// que no se salga NUNCA ni una ficha; con menos, se sale:
+// que no se salga NUNCA ni una ficha.
 //
-//   ventana 18,2 celdas (zoom 1,32) -> 4,50% de las posiciones con algo fuera
-//   ventana 20,0 celdas (zoom 1,20) -> 0,28%
-//   ventana 20,9 celdas (zoom 1,15) -> 0,10%
-//   ventana 21,5 celdas (zoom 1,116) -> CERO
+// Vuelto a medir con la rejilla de 16x16 (antes era 20x20), sobre 47.000
+// posiciones de 1v1 y 47.000 de 2v2 jugadas de verdad. La cadena mas grande
+// que aparecio ocupa 17,5 x 17,0 casillas:
 //
-// Por eso el zoom es 1,116 y no mas. Ver contexto/README.md seccion 82.
+//   ventana 14,3 celdas (zoom 1,40) -> 8,37% de las posiciones con algo fuera
+//   ventana 16,0 celdas (zoom 1,25) -> 0,47%
+//   ventana 16,7 celdas (zoom 1,20) -> 0,05%
+//   ventana 17,4 celdas (zoom 1,15) -> 0,004%  (2 de 47.168, en 2v2)
+//   ventana 17,9 celdas (zoom 1,116) -> CERO en los dos modos
+//
+// Sigue siendo 1,116, pero ahora con mas margen: 17,9 celdas a la vista contra
+// una cadena que nunca pasa de 17,5. Las fichas se ven mas grandes no por subir
+// el zoom sino porque la rejilla es mas chica. Ver contexto/README.md 82 y 88.
 const ZOOM_FICHAS = 1.116;
 
 // Cuanto puede correrse la camara, en celdas, respecto del centro de la rejilla.

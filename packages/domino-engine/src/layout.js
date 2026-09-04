@@ -1,4 +1,15 @@
-export const DEFAULT_LAYOUT = { grid: 20, cell: 32 };
+// El tablero: 16x16 casillas.
+//
+// Una ficha ocupa 2 casillas y son 28 fichas: 56 casillas de fichas. Con 20x20
+// habia 400, siete veces lo necesario, y esa rejilla enorme obligaba a dibujar
+// las fichas chiquitas para que entrara entera en la pantalla de un telefono.
+//
+// 16x16 son 256 casillas. Medido jugando manos completas, la cadena mas grande
+// ocupa una caja de 17x17, asi que entra. El precio esta medido y aceptado: la
+// ficha trabada (tengo una que pega con la punta y no la puedo poner) sube de
+// 0,030% a 0,751%, o sea una cada 133. A cambio las fichas se ven un 25% mas
+// grandes, que es lo que hacia el juego incomodo en el telefono.
+export const DEFAULT_LAYOUT = { grid: 16, cell: 32 };
 
 const minX = (t) => Math.min(t.x, t.x2);
 const minY = (t) => Math.min(t.y, t.y2);

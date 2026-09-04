@@ -3579,3 +3579,63 @@ instante. El `ResizeObserver` y las escuchas de `resize` y `orientationchange` d
 funcionan bien.
 
 Motor 57/57, backend 87/87.
+
+## 88. El tablero de 16x16: la base, con la cuenta de Jonathan (2026-09-03)
+
+Jonathan lo planteo asi, y la cuenta es correcta: *"la ficha de domino ocupa 2 cuadros y son 28
+fichas, o sea 56 cuadros. ¿Cuando tiene el tablero para jugar?"*. La rejilla era de 20x20 = 400
+casillas, siete veces lo que ocupan las fichas. Y una rejilla enorme obliga a dibujarla chiquita
+para que entre entera en un telefono.
+
+Pidio empezar por la base: definir bien el tablero, y despues corregir lo demas.
+
+### Lo que se probo y fallo
+
+Antes de achicar nada se intento que la cadena se mantuviera junta, para que cupiera en menos
+espacio: un filtro nuevo que, entre las colocaciones posibles, elige la que deja la caja de la
+cadena mas chica. La idea era que al llegar al borde doblara sola.
+
+**Empeoro, y bastante.** Medido sobre 120 partidas por tamano de rejilla:
+
+| rejilla | trabadas antes | con "mantener junta" |
+|---|---|---|
+| 20x20 | 0,030% | 1,620% |
+| 12x12 | 9,481% | 8,665% |
+| 10x10 | 12,258% | 14,612% |
+
+Y la cadena apenas se encogio: de 20x22 casillas a 19x19,5. Se revirtio. Es la cuarta vez que un
+criterio de "compacidad" o "apertura" puesto por delante de seguir derecho empeora las cosas; ya
+esta en la lista de no reintentar y ahora tiene una medicion mas.
+
+Al hacerlo aparecio algo que conviene tener anotado: **la regla de donde cae la ficha esta escrita
+dos veces**, una en `straightestPlacement` (layout.js) y otra copiada dentro del bot (bot.js). El
+primer intento no hizo nada porque solo se toco una. Habria que unificarlas.
+
+### Lo que si se hizo
+
+**La rejilla pasa de 20x20 a 16x16.** El precio esta medido: la ficha trabada sube de 0,030% a
+0,751%, una cada 133. Jonathan lo acepto explicitamente eligiendo esta opcion.
+
+Se volvio a medir el zoom, como en §82 pero con la rejilla nueva, sobre 47.000 posiciones de 1v1 y
+47.000 de 2v2 jugadas de verdad. La cadena mas grande ocupa **17,5 x 17,0 casillas**:
+
+| zoom | celdas a la vista | posiciones con algo fuera |
+|---|---|---|
+| 1,40 | 14,3 | 8,37% |
+| 1,25 | 16,0 | 0,47% |
+| 1,20 | 16,7 | 0,05% |
+| 1,15 | 17,4 | 0,004% (2 de 47.168, en 2v2) |
+| **1,116** | **17,9** | **cero en los dos modos** |
+
+**El zoom se queda en 1,116**, ahora con mas margen que antes: 17,9 celdas a la vista contra una
+cadena que nunca pasa de 17,5.
+
+La ficha en la mesa, medida en el navegador con un telefono de 375: **de 29x15 a 35x18**, un 21%
+mas grande. No por subir el zoom, sino porque la rejilla es mas chica.
+
+### Lo que queda
+
+- El doble mal colocado que reporto Jonathan con una captura: sin diagnosticar todavia.
+- Unificar la regla de colocacion, que hoy vive en dos archivos.
+
+Motor 57/57, backend 87/87.
