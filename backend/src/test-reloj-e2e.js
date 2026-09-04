@@ -73,6 +73,13 @@ async function main() {
       'Nadie suma puntos por esto'
     );
     check(saltado.status === 'playing', 'La ronda sigue, no se cierra');
+    // La causa del contador que no se borraba: al empezar cualquier turno
+    // "cuanto falta" vale 25000, siempre el mismo numero, y la pantalla no
+    // tenia como notar que era un turno nuevo. Por eso ahora va un id aparte.
+    check(
+      Boolean(saltado.turnoId) && saltado.turnoId !== estado.turnoId,
+      'El turno nuevo se distingue del anterior (si no, la cuenta atras se queda pegada)'
+    );
     // Sin esto el turno cambia solo y parece un error del juego.
     check(
       typeof saltado.saltadoPorTiempo?.username === 'string',

@@ -24,19 +24,74 @@ function center(t, cell) {
   return { x: minX(t) * cell + half, y: minY(t) * cell + cell };
 }
 
+/** Las dos casillas que ocupa una ficha. */
+function celdasDe(t) {
+  return [{ x: t.x, y: t.y }, { x: t.x2, y: t.y2 }];
+}
+
+/**
+ * Por donde se tocan dos fichas: la casilla de cada una que pega con la otra.
+ *
+ * Hace falta para centrar el doble sobre la UNION y no sobre el centro de la
+ * ficha vecina. Cuando la vecina ocupa dos casillas en el eje que importa
+ * (dos fichas verticales al costado, por ejemplo) su centro no es la union, y
+ * centrar sobre el centro deja el doble corrido media ficha.
+ */
+function celdaDeUnion(a, b) {
+  for (const p of celdasDe(a)) {
+    for (const q of celdasDe(b)) {
+      if (Math.abs(p.x - q.x) + Math.abs(p.y - q.y) === 1) return { enA: p, enB: q };
+    }
+  }
+  return null;
+}
+
+const centroDeCelda = (c, cell) => ({ x: c.x * cell + cell / 2, y: c.y * cell + cell / 2 });
+
+/**
+ * ¿Van una detras de la otra, o una al costado de la otra?
+ *
+ * Dos fichas con la misma orientacion pueden estar en linea (la cadena sigue
+ * derecho) o al costado (la cadena doblo). Solo en el segundo caso hay que
+ * centrar el doble, y distinguirlo es lo que evita corromper el dibujo de todas
+ * las cadenas que ya funcionaban.
+ */
+function estanEnLinea(a, b) {
+  if (a.orientation !== b.orientation) return false;
+  return a.orientation === 'vertical'
+    ? minX(a) === minX(b)
+    : minY(a) === minY(b);
+}
+
 function joinOffset(prev, curr, prevOffset, cell) {
   const prevDouble = prev.tile[0] === prev.tile[1];
   const currDouble = curr.tile[0] === curr.tile[1];
-  if (prev.orientation === curr.orientation || (!prevDouble && !currDouble)) {
-    return { x: prevOffset.x, y: prevOffset.y };
+
+  // Sin doble de por medio no hay nada que centrar.
+  if (!prevDouble && !currDouble) return { x: prevOffset.x, y: prevOffset.y };
+
+  // Una detras de la otra: la cadena sigue derecho y tampoco hay que centrar.
+  if (estanEnLinea(prev, curr)) return { x: prevOffset.x, y: prevOffset.y };
+
+  const union = celdaDeUnion(prev, curr);
+  if (!union) return { x: prevOffset.x, y: prevOffset.y };
+
+  // El doble se centra sobre la union, en el eje de su lado largo.
+  if (currDouble) {
+    const objetivo = centroDeCelda(union.enA, cell);
+    const actual = center(curr, cell);
+    return curr.orientation === 'vertical'
+      ? { x: prevOffset.x, y: prevOffset.y + objetivo.y - actual.y }
+      : { x: prevOffset.x + objetivo.x - actual.x, y: prevOffset.y };
   }
-  const pc = center(prev, cell);
-  const cc = center(curr, cell);
-  const theDouble = currDouble ? curr : prev;
-  if (theDouble.orientation === 'vertical') {
-    return { x: prevOffset.x, y: prevOffset.y + pc.y - cc.y };
-  }
-  return { x: prevOffset.x + pc.x - cc.x, y: prevOffset.y };
+
+  // El doble es el anterior: se corre la ficha nueva para que su union quede
+  // sobre el centro del doble.
+  const objetivo = center(prev, cell);
+  const actual = centroDeCelda(union.enB, cell);
+  return prev.orientation === 'vertical'
+    ? { x: prevOffset.x, y: prevOffset.y + objetivo.y - actual.y }
+    : { x: prevOffset.x + objetivo.x - actual.x, y: prevOffset.y };
 }
 
 export function computeBoardOffsets(board, layout = DEFAULT_LAYOUT) {
@@ -188,6 +243,10 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
 
   // `permitirRozar` solo lo usa la pasada de rescate de los dobles (abajo).
   let permitirRozar = false;
+
+  // Solo se enciende en el rescate. Ver mas abajo: ofrecer el giro del doble
+  // siempre hace que se elija en juego normal y deja el tablero mas apretado.
+  let dobleDobla = false;
   const add = (p) => {
     const motivo = evaluar(p, permitirRozar);
     if (diagnostico) diagnostico.push({ ...p, motivo });
@@ -259,15 +318,47 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
           const col = free.x + dx;
           addAlong('vertical', { x: col, y: ey }, { x: col, y: ey - 1 });
           addAlong('vertical', { x: col, y: ey }, { x: col, y: ey + 1 });
+
+          // El doble tambien puede DOBLAR en la punta, igual que una ficha
+          // normal. La cadena gira y el doble se cruza sobre la direccion
+          // nueva, asi que va en la fila de arriba o la de abajo, centrado
+          // sobre la columna de la punta. Solo en el rescate.
+          if (dobleDobla) {
+            for (const row of [ey - 1, ey + 1]) {
+              addAlong('horizontal', { x: ex, y: row }, { x: ex - 1, y: row });
+              addAlong('horizontal', { x: ex, y: row }, { x: ex + 1, y: row });
+            }
+          }
         } else {
           const row = free.y + dy;
           addAlong('horizontal', { x: ex, y: row }, { x: ex - 1, y: row });
           addAlong('horizontal', { x: ex, y: row }, { x: ex + 1, y: row });
+
+          if (dobleDobla) {
+            for (const col of [ex - 1, ex + 1]) {
+              addAlong('vertical', { x: col, y: ey }, { x: col, y: ey - 1 });
+              addAlong('vertical', { x: col, y: ey }, { x: col, y: ey + 1 });
+            }
+          }
         }
 
-        // Si cruzarse pasando la punta no entra —tipicamente porque la punta
-        // quedo contra el borde de la mesa— el doble se corre a un costado,
-        // PERO SIGUE CRUZADO.
+        // ## Por que el doble tambien dobla
+        //
+        // Antes solo se ofrecia pasando la punta. Si la punta quedaba contra la
+        // pared, esa unica salida caia fuera del tablero y el doble era
+        // injugable teniendo sitio de sobra al lado. Lo reporto Jonathan con una
+        // captura: "no me deja poner el doble cero, solo me deja poner el cero
+        // tres". Medido: pasaba en el 1% de las posiciones.
+        //
+        // Una ficha normal ya podia doblar en la punta desde la seccion 24; el
+        // doble no. Ahora si, y sigue cruzado: si la cadena dobla y se va
+        // horizontal, el doble va vertical. Nunca en paralelo, que es lo que el
+        // mismo rechazo en la seccion 90.
+        //
+        // Esto obligo a cambiar el dibujo: `joinOffset` centraba el doble sobre
+        // el CENTRO de la ficha vecina, y al costado esa vecina ocupa dos
+        // casillas en el eje que importa, con lo que el doble quedaba corrido
+        // media ficha. Ahora se centra sobre la UNION.
         //
         // Antes esta salida de emergencia ofrecia el doble en la MISMA
         // direccion que la cadena: con la cadena horizontal, un doble
@@ -275,24 +366,6 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
         // verdad no existe y se ve mal de inmediato. Lo reporto Jonathan con
         // una captura: el doble contra la pared quedaba en paralelo.
         //
-        // La direccion no cambia por estar contra la pared: si la cadena va
-        // horizontal el doble va vertical, entre en la punta o al costado.
-        // Si cruzarse no entra por ningun lado, el doble NO se pone.
-        //
-        // Antes habia una salida de emergencia que lo ofrecia en la MISMA
-        // direccion que la cadena: con la cadena horizontal, un doble
-        // horizontal. Eso es un doble acostado en linea, que en una mesa de
-        // verdad no existe. Jonathan lo marco en una captura: "se puso
-        // horizontal y en paralelo cuando llego al borde, eso esta mal".
-        //
-        // Se probo colgarlo del costado en vez de pasando la punta, pero el
-        // dibujo centra siempre el doble cruzado sobre la union (ver
-        // joinOffset): colgado al costado se monta sobre la cadena y se
-        // rechaza por solape. Cruzado o nada.
-        //
-        // Que no entre es una jugada bloqueada normal, no un error: el propio
-        // Jonathan lo dijo, "esta bien el limite que no puedas seguir".
-
       } else {
         // 1. Recta: sigue hacia donde apunta la punta libre
         addAlong(
@@ -314,6 +387,20 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
   };
 
   generarCandidatos();
+
+  // Primer rescate: el doble dobla en la punta.
+  //
+  // Va como rescate y no como opcion normal por una razon medida. Ofrecerlo
+  // siempre baja los dobles trabados del 4,87% al 2,10%, pero las fichas
+  // NORMALES trabadas suben del 0,348% al 1,204%: el doble atravesado en un
+  // giro deja el tablero mas apretado y estorba a todo lo demas. En total,
+  // peor. Como rescate arregla el caso que reporto Jonathan sin cambiar en
+  // nada las partidas donde el doble ya entraba.
+  if (out.length === 0 && esDoble) {
+    dobleDobla = true;
+    if (diagnostico) diagnostico.push({ motivo: 'rescate-el-doble-dobla' });
+    generarCandidatos();
+  }
 
   // Pasada de rescate. La regla de "no rozar otra ficha" deja el tablero
   // prolijo, pero cuando aprieta rechaza colocaciones que el jugador ve

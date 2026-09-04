@@ -141,6 +141,36 @@ const REGLAS = {
     return null;
   },
 
+  'ningun doble queda en linea con su vecina': (state) => {
+    // Un doble acostado siguiendo la cadena no existe en una mesa de verdad.
+    // Jonathan lo marco dos veces con capturas. La comprobacion mira la
+    // GEOMETRIA y no la orientacion: desde que el doble puede doblar en la
+    // punta, un doble al costado tiene la misma orientacion que su vecina y
+    // esta perfectamente cruzado. Lo que no puede es ir detras, en la misma
+    // fila o columna.
+    const board = state.board || [];
+    const esDoble = (t) => t.tile[0] === t.tile[1];
+
+    for (let i = 1; i < board.length; i++) {
+      const a = board[i - 1];
+      const b = board[i];
+      if (a.orientation !== b.orientation) continue;
+
+      // Se mira la que se puso DESPUES, por el numero de jugada. Un doble bien
+      // cruzado puede quedar en linea con una ficha que vino mucho mas tarde
+      // por su costado corto, y eso no es culpa de como se coloco el doble.
+      const nueva = (a.seq ?? 0) > (b.seq ?? 0) ? a : b;
+      if (!esDoble(nueva)) continue;
+
+      const enLinea = a.orientation === 'vertical'
+        ? Math.min(a.x, a.x2) === Math.min(b.x, b.x2)
+        : Math.min(a.y, a.y2) === Math.min(b.y, b.y2);
+
+      if (enLinea) return `el doble ${JSON.stringify(nueva.tile)} se coloco en linea con la cadena`;
+    }
+    return null;
+  },
+
   'la cadena engancha de verdad': (state) => {
     for (let i = 1; i < state.board.length; i++) {
       const izq = state.board[i - 1];

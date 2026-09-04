@@ -17,11 +17,12 @@ const NOMBRE_DEL_MODO = {
   '2v2': '2 vs 2'
 };
 
+// Como termino la PARTIDA, no la ultima ronda.
+//
+// 'points' es el final normal: alguien llego a los 100. No se escribe nada
+// porque es lo esperable y ensuciaria la lista.
 const MOTIVO = {
-  blocked: 'trancado',
-  timeout: 'sin tiempo',
-  domino: 'dominó',
-  forfeit: 'abandono'
+  forfeit: 'por abandono'
 };
 
 export default function Perfil() {
@@ -91,6 +92,10 @@ export default function Perfil() {
             <h2 className="mt-8 text-xs font-semibold tracking-widest text-domino-cream/50">
               ÚLTIMAS PARTIDAS
             </h2>
+            <p className="mt-1 text-[11px] leading-relaxed text-domino-cream/40">
+              Partidas completas contra otra persona: las que se ganan llegando a los 100
+              puntos. Las rondas sueltas no cuentan.
+            </p>
 
             {datos.historial.length === 0 ? (
               <p className="mt-3 rounded-lg border border-domino-accent/15 bg-black/30 p-4 text-sm leading-relaxed text-domino-cream/60">

@@ -19,23 +19,25 @@ const AVISO_DESDE_S = 10;
  * Se usa `performance.now()` y no `Date.now()` porque no salta si el sistema
  * ajusta la hora a mitad de la cuenta.
  */
-export default function RelojDeTurno({ restanteMs, total, esMiTurno, nombre }) {
+export default function RelojDeTurno({ restanteMs, turnoId, total, esMiTurno, nombre }) {
   const [quedan, setQuedan] = useState(null);
   const ancla = useRef(null);
 
-  // Cada vez que llega un valor nuevo del servidor se vuelve a anclar.
+  // El reloj se vuelve a poner en hora con cada TURNO, no con cada numero.
+  //
+  // Al empezar cualquier turno el servidor manda 25000: siempre el mismo valor.
+  // Anclando por el numero, el turno nuevo se veia identico al viejo, no se
+  // reiniciaba nada, y la cuenta atras seguia corriendo la del turno anterior
+  // aunque el otro ya hubiera jugado. Por eso se mira `turnoId`, que si cambia.
   useEffect(() => {
     if (restanteMs == null) {
       ancla.current = null;
       setQuedan(null);
       return;
     }
+
     ancla.current = performance.now() + restanteMs;
     setQuedan(restanteMs);
-  }, [restanteMs]);
-
-  useEffect(() => {
-    if (ancla.current == null) return;
 
     let vivo = true;
     const tic = () => {
@@ -46,7 +48,9 @@ export default function RelojDeTurno({ restanteMs, total, esMiTurno, nombre }) {
     let id = requestAnimationFrame(tic);
 
     return () => { vivo = false; cancelAnimationFrame(id); };
-  }, [restanteMs]);
+    // `restanteMs` va en la lista para el caso en que se apague el reloj
+    // (pasa a null); el que manda para reiniciar la cuenta es `turnoId`.
+  }, [turnoId, restanteMs == null]);
 
   if (quedan == null || !total) return null;
 

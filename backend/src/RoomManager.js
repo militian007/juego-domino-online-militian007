@@ -347,6 +347,14 @@ export class RoomManager {
     }
 
     room.game.turnDeadline = Date.now() + turnMs;
+
+    // Un identificador que cambia con CADA turno.
+    //
+    // Hace falta porque "cuanto falta" vale 25000 al empezar cualquier turno:
+    // siempre el mismo numero. La pantalla no tenia forma de notar que era un
+    // turno nuevo, no volvia a poner el reloj en hora, y la cuenta atras seguia
+    // corriendo la del turno anterior aunque el otro ya hubiera jugado.
+    room.game.turnoId = `${room.game.state.round}:${seat}:${(room._turnos = (room._turnos ?? 0) + 1)}`;
     room._reloj = setTimeout(() => this._seLeAcaboElTiempo(room, jugador.id), turnMs);
     // Sin esto el proceso no termina nunca al apagar el servidor.
     room._reloj.unref?.();
@@ -468,13 +476,21 @@ export class RoomManager {
 
     room._registrada = true;
 
-    const equipoGanador = room.game.winningTeam;
+    // Se guarda el final de la PARTIDA, no el de la ultima ronda.
+    //
+    // `winningTeam` y `endReason` responden primero por la ronda que acaba de
+    // cerrar, que es lo que hace falta para el cartel de fin de ronda. Para el
+    // historial eso no sirve: guardaba "dominó" o "trancado", que es como
+    // termino la ultima mano, y en el perfil parecia un historial de rondas.
+    // Lo que cuenta para el ranking es quien llego a los 100.
+    const resultado = room.game.state.result ?? null;
+    const equipoGanador = resultado?.winnerTeam ?? room.game.winningTeam;
 
     Partida.registrar({
       roomCode: room.code,
       modo: room.mode,
       equipoGanador,
-      motivo: room.game.endReason,
+      motivo: resultado?.reason ?? room.game.endReason,
       puntos: room.game.teamScores,
       jugadores: room.players.map((p, i) => ({
         userId: p.id,

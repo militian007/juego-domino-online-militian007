@@ -4053,3 +4053,69 @@ desconectarse, cortar el wifi seria la forma de no perder nunca un turno.
 - En pantalla: se vio el circulito contando y el cartel *"A PruebaPerfil se le paso el
   turno"*, con el marcador quieto en 0 a 0.
 - Backend 87/87, perfil 20/20, y los bots rompe-juegos sin fallos en 160 partidas.
+
+---
+
+## 96. Tres fallos que encontro Jonathan jugando
+
+Reclamo suyo, y tiene razon: *"no entiendo por qué no te estás dando cuenta de las cosas,
+que probaras con los bots cada que todo saliera bien"*. Los tres se arreglaron y los tres
+dejaron una prueba automatica detras, para que no vuelvan por la misma puerta.
+
+### 1. El doble contra la pared no se podia jugar
+
+Captura suya: *"no me deja poner el doble cero, solo me deja poner el cero tres"*.
+
+**Causa.** El doble solo se ofrecia **pasando la punta**. Si la punta quedaba contra el
+borde, esa unica salida caia fuera del tablero y el doble era injugable con sitio de sobra
+al lado. Una ficha normal ya podia **doblar** en la punta desde la seccion 24; el doble no.
+
+**Arreglo.** El doble tambien dobla, y sigue cruzado: si la cadena gira y se va horizontal,
+el doble va vertical. Nunca en linea, que es lo que el mismo rechazo en la seccion 90.
+
+Hubo que cambiar tambien el dibujo. `joinOffset` centraba el doble sobre el **centro** de la
+ficha vecina; al costado esa vecina ocupa dos casillas en el eje que importa, con lo que el
+doble quedaba corrido media ficha. Ahora se centra sobre la **union**.
+
+**Y va como rescate, no como opcion normal.** Esto lo decidio la medicion, no el gusto:
+
+| | dobles trabados | fichas normales trabadas | total |
+| --- | --- | --- | --- |
+| antes | 4,870% | 0,348% | 1,000% |
+| ofreciendolo siempre | 2,103% | **1,204%** | **1,331%** (peor) |
+| solo como rescate | **1,738%** | **0,302%** | **0,506%** |
+
+Ofrecerlo siempre lo empeoraba: el doble atravesado en un giro deja el tablero mas apretado
+y estorba a todo lo demas. Como rescate arregla el caso sin tocar las partidas donde el
+doble ya entraba. Medido sobre 200 partidas por formato, ~156.000 situaciones.
+
+**Prueba nueva en los bots rompe-juegos (regla 11):** ningun doble puede quedar en linea
+con la cadena. Mira la ficha que se acaba de poner, por numero de jugada: un doble bien
+cruzado puede quedar en linea con una ficha que llego mucho despues por su costado corto, y
+eso no es culpa de como se coloco el doble. El primer intento de esta regla no lo
+distinguia y daba 198 falsos positivos.
+
+### 2. El perfil parecia mostrar rondas
+
+**Causa.** Lo que se guardaba **si era la partida completa** (una fila por partida, no por
+ronda). Lo que estaba mal era la ETIQUETA: se guardaba `endReason`, que responde por la
+**ultima ronda**, asi que en el perfil se leia "dominó" o "trancado". Eso es como termino la
+ultima mano, no la partida, y hacia parecer que la lista era de rondas.
+
+**Arreglo.** Se guarda el final de la PARTIDA (`state.result`): quien llego a los 100. En
+la lista, el final normal no escribe nada y el abandono dice "por abandono". Debajo del
+titulo se aclara que son partidas completas y que las rondas sueltas no cuentan.
+
+### 3. La cuenta atras no se borraba cuando el otro jugaba
+
+*"El otro jugador juega y el conteo continúa. Una vez que el jugador juegue, el conteo debe
+desaparecer."*
+
+**Causa, y es fina.** El servidor manda **cuanto falta**, y al empezar cualquier turno eso
+vale exactamente `25000`: el mismo numero, turno tras turno. La pantalla anclaba el reloj
+cuando ese valor cambiaba, y como nunca cambiaba, **no volvia a ponerlo en hora** y seguia
+descontando el turno anterior.
+
+**Arreglo.** El servidor manda ademas un `turnoId` que cambia con cada turno, y es eso lo
+que reinicia la cuenta. La prueba de punta a punta comprueba que el id del turno nuevo sea
+distinto del anterior.

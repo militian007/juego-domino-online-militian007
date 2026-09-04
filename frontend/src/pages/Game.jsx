@@ -993,6 +993,7 @@ export default function Game() {
                     sola en los ultimos diez segundos. */}
                 <RelojDeTurno
                   restanteMs={gameState.turnRestanteMs}
+                  turnoId={gameState.turnoId}
                   total={gameState.turnMs}
                   esMiTurno={myTurn}
                   nombre={gameState.players?.find((p) => p.id === gameState.currentPlayerId)?.username}

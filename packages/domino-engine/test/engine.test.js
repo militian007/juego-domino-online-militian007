@@ -690,16 +690,35 @@ test('pozo: la vista nunca revela que fichas hay en el pozo', () => {
   }
 });
 
+/**
+ * ¿El doble quedo EN LINEA con la ficha con la que engancha?
+ *
+ * Esta es la regla que Jonathan marco con una captura: un doble acostado
+ * siguiendo la cadena no existe en una mesa de verdad. Antes se comprobaba
+ * mirando solo la orientacion, pero eso dejo de valer cuando el doble pudo
+ * doblar en la punta: al costado puede tener la MISMA orientacion que la
+ * cadena y estar perfectamente cruzado. Lo que no puede es ir detras, en la
+ * misma fila o columna.
+ */
+const enLineaCon = (ficha, p) => {
+  if (ficha.orientation !== p.orientation) return false;
+  return ficha.orientation === 'vertical'
+    ? Math.min(ficha.x, ficha.x2) === Math.min(p.x, p.x2)
+    : Math.min(ficha.y, ficha.y2) === Math.min(p.y, p.y2);
+};
+
 test('doble: puede cruzarse hacia cualquiera de los dos lados de la cadena', () => {
   const board = [
     { tile: [2, 4], side: 'first', x: 8, y: 10, x2: 9, y2: 10, orientation: 'horizontal' }
   ];
   const ops = placementsFor(board, [4, 4], 'right', L);
-  assert.equal(ops.length, 2, 'un doble tiene dos posiciones cruzadas');
-  assert.ok(ops.every((p) => p.orientation === 'vertical'));
-  assert.ok(ops.every((p) => p.x === 10 && p.x2 === 10), 'ambas en la columna siguiente');
-  assert.ok(ops.some((p) => Math.min(p.y, p.y2) === 9), 'falta la que sobresale hacia arriba');
-  assert.ok(ops.some((p) => Math.min(p.y, p.y2) === 10), 'falta la que sobresale hacia abajo');
+  assert.ok(ops.every((p) => !enLineaCon(board[0], p)), 'un doble jamas va en linea');
+
+  // Pasando la punta, cruzado, en la columna siguiente: las dos.
+  const pasandoLaPunta = ops.filter((p) => p.orientation === 'vertical' && p.x === 10 && p.x2 === 10);
+  assert.equal(pasandoLaPunta.length, 2, 'un doble se cruza hacia los dos lados');
+  assert.ok(pasandoLaPunta.some((p) => Math.min(p.y, p.y2) === 9), 'falta la que sobresale hacia arriba');
+  assert.ok(pasandoLaPunta.some((p) => Math.min(p.y, p.y2) === 10), 'falta la que sobresale hacia abajo');
 });
 
 test('doble: si una posicion cruzada esta tapada, la otra sigue disponible', () => {
@@ -714,8 +733,12 @@ test('doble: si una posicion cruzada esta tapada, la otra sigue disponible', () 
     { tile: [4, 6], side: 'right', x: 10, y: 10, x2: 11, y2: 10, orientation: 'horizontal' }
   ];
   const ops = placementsFor(board, [6, 6], 'right', L);
-  assert.equal(ops.length, 1, 'la de arriba toca la vuelta, la de abajo entra');
-  assert.equal(Math.min(ops[0].y, ops[0].y2), 10, 'debe ser la que sobresale hacia abajo');
+  const ultima = board[board.length - 1];
+
+  const pasandoLaPunta = ops.filter((p) => p.orientation === 'vertical' && p.x === 12);
+  assert.equal(pasandoLaPunta.length, 1, 'la de arriba toca la vuelta, la de abajo entra');
+  assert.equal(Math.min(pasandoLaPunta[0].y, pasandoLaPunta[0].y2), 10, 'debe ser la que sobresale hacia abajo');
+  assert.ok(ops.every((p) => !enLineaCon(ultima, p)), 'ninguna puede ir en linea');
   assert.equal(boardEnds([...board, ops[0]]).right, 6);
 });
 
@@ -724,7 +747,7 @@ test('doble en el medio: sigue siendo perpendicular, nunca en linea', () => {
     { tile: [2, 4], side: 'first', x: 8, y: 10, x2: 9, y2: 10, orientation: 'horizontal' }
   ];
   for (const p of placementsFor(board, [4, 4], 'right', L)) {
-    assert.notEqual(p.orientation, board[0].orientation, 'un doble jamas va en linea');
+    assert.ok(!enLineaCon(board[0], p), 'un doble jamas va en linea');
   }
 });
 
@@ -843,29 +866,30 @@ test('bots: una dificultad desconocida no rompe, cae en normal', () => {
   assert.ok(v.actions.some((x) => JSON.stringify(x) === JSON.stringify(a)), 'y ser legal');
 });
 
-test('doble contra el borde: no entra, pero NUNCA en paralelo', () => {
+test('doble contra el borde: entra doblando, y NUNCA en linea', () => {
   // La cadena sube y su punta libre queda en la fila 0. Cruzarse mas alla de la
   // punta caeria fuera de la mesa.
   //
-  // Antes se ofrecia una salida: el doble en la MISMA direccion que la cadena,
-  // justificada en que la cadena "dobla ahi mismo". Se saco. Jonathan lo marco
-  // en una captura: un doble acostado en linea con la cadena no existe en una
-  // mesa de verdad y se ve mal de inmediato.
+  // Antes esto era una jugada bloqueada: el doble solo se ofrecia pasando la
+  // punta, asi que contra la pared no habia sitio y quedaba injugable teniendo
+  // lugar de sobra al lado. Lo reporto Jonathan con una captura: "no me deja
+  // poner el doble cero, solo me deja poner el cero tres".
   //
-  // Ahora la regla es: cruzado o no entra. Que no entre es una jugada bloqueada
-  // normal. El precio esta medido: la ficha trabada sube de 0,189% a 1,014%.
-  // Ver contexto/README.md seccion 90.
+  // Ahora el doble tambien puede DOBLAR en la punta, igual que una ficha
+  // normal. Lo que sigue prohibido es que quede en linea con la cadena, que es
+  // el doble acostado que el mismo marco como imposible en una mesa de verdad.
   const board = [
     { tile: [5, 4], side: 'first', x: 9, y: 4, x2: 9, y2: 3, orientation: 'vertical' },
     { tile: [4, 2], side: 'right', x: 9, y: 2, x2: 9, y2: 1, orientation: 'vertical' },
     { tile: [2, 3], side: 'right', x: 9, y: 1, x2: 9, y2: 0, orientation: 'vertical' }
   ];
   const ops = placementsFor(board, [3, 3], 'right', L);
+  const ultima = board[board.length - 1];
 
-  // Ninguna opcion puede ir en la misma direccion que la cadena.
+  assert.ok(ops.length > 0, 'contra la pared el doble tiene que poder doblar');
   assert.ok(
-    ops.every((p) => p.orientation !== 'vertical'),
-    'el doble nunca puede quedar en paralelo con la cadena'
+    ops.every((p) => !enLineaCon(ultima, p)),
+    'el doble nunca puede quedar en linea con la cadena'
   );
   assert.ok(
     ops.every((p) => Math.min(p.y, p.y2) >= 0),

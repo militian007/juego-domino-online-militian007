@@ -379,6 +379,9 @@ export class DominoGame {
       // cualquier reloj. Es null cuando el modo no lleva tiempo.
       turnMs: this.config.turnMs ?? null,
       turnRestanteMs: this.turnDeadline ? Math.max(0, this.turnDeadline - Date.now()) : null,
+      // Cambia con cada turno. Es lo que le dice a la pantalla "esto es un
+      // turno nuevo, vuelve a poner el reloj en hora".
+      turnoId: this.turnDeadline ? this.turnoId ?? null : null,
       // Quien se cayo y cuanto le queda para volver. Viaja con el estado en vez
       // de por un evento aparte: asi el que se reconecta se entera igual, sin
       // depender de haber estado escuchando en el momento del corte.
