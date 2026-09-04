@@ -3,6 +3,7 @@ import { elegirBots } from './game/bots.js';
 import { DominoGame } from './game/DominoGame.js';
 import { Bot } from './game/Bot.js';
 import { MODE_CONFIG } from './game/DominoGame.js';
+import * as Partida from './models/Partida.js';
 
 const MODES = MODE_CONFIG;
 
@@ -312,6 +313,49 @@ export class RoomManager {
       const state = room.game.getStateForPlayer(p.id);
       state.boardShape = room.boardShape;
       this.io.to(p.socketId).emit('game:state', state);
+    });
+
+    this._registrarSiTermino(room);
+  }
+
+  /**
+   * Guarda la partida en el historial, una sola vez, cuando termino.
+   *
+   * Se cuelga de broadcastState porque es el unico punto por el que pasan
+   * todos los finales: el normal, el abandono y el que termina por jugada de
+   * un bot. Enganchar cada final por separado seria olvidarse de uno.
+   *
+   * No se espera el resultado: si la base falla, la partida ya se jugo y la
+   * gente tiene que poder seguir. Se anota en el log y sigue.
+   */
+  _registrarSiTermino(room) {
+    if (room._registrada) return;
+    if (!room.game || room.game.status !== 'game-over') return;
+
+    // Decision de Jonathan: solo cuentan las partidas entre personas.
+    if ((room.config?.bots ?? 0) > 0) {
+      room._registrada = true;
+      return;
+    }
+
+    room._registrada = true;
+
+    const equipoGanador = room.game.winningTeam;
+
+    Partida.registrar({
+      roomCode: room.code,
+      modo: room.mode,
+      equipoGanador,
+      motivo: room.game.endReason,
+      puntos: room.game.teamScores,
+      jugadores: room.players.map((p, i) => ({
+        userId: p.id,
+        asiento: p.seat ?? i,
+        equipo: p.team ?? null,
+        gano: equipoGanador != null && p.team === equipoGanador
+      }))
+    }).catch((err) => {
+      console.error('No se pudo guardar la partida', room.code, err.message);
     });
   }
 

@@ -3847,3 +3847,86 @@ En el pano de 331x673 (telefono de 375), con dedos sinteticos:
 | separando mas | `scale(3)`, que es el tope |
 | moviendo los dos dedos | se arrastra, la escala no cambia |
 | al soltar | vuelve a `scale(1)` con la animacion de 220 ms |
+
+---
+
+## 93. Perfil con historial de partidas y chat global en el menu
+
+Pedido de Jonathan: *"has un sistema de perfil donde la persona pueda ver sus partidas
+(ganadas y perdidas) y un chat global donde todos los usuarios puedan chatear que se vea en
+el menu principal"*.
+
+### Lo que se encontro antes de empezar
+
+**No se guardaba ninguna partida.** La tabla `game_history` existia desde el principio pero
+nunca se escribio una fila, `User.updateStats` nunca se llamo, y ademas la tabla no guardaba
+*quien* jugo: solo el codigo de sala y los puntos. Con eso era imposible responder "mis
+partidas". El historial arranca de cero desde este cambio; no hay nada viejo que recuperar.
+
+### Las dos decisiones que tomo Jonathan
+
+1. **Solo cuentan las partidas entre personas.** Las que son contra la maquina no se
+   guardan. Un record que las incluye se infla solo: cualquiera le gana al bot facil toda la
+   noche y el numero deja de servir para comparar.
+2. **En el chat escribe el que tiene cuenta; el invitado lee.** Es por moderacion: sin
+   cuenta no hay a quien callar, porque el que se porta mal se va, vuelve y sigue.
+
+### Como quedo
+
+| pieza | donde |
+| --- | --- |
+| tablas `partidas`, `partida_jugadores`, `chat_global` | `backend/src/config/database.js` |
+| guardar y consultar partidas | `backend/src/models/Partida.js` |
+| guardar y limpiar mensajes | `backend/src/models/ChatGlobal.js` |
+| el enganche que graba al terminar | `RoomManager._registrarSiTermino` |
+| API del perfil | `GET /api/perfil` (con sesion) |
+| eventos del chat | `backend/src/sockets/chatSocket.js` |
+| pantalla del perfil | `frontend/src/pages/Perfil.jsx` |
+| chat del menu | `frontend/src/components/chat/ChatGlobal.jsx` |
+
+El grabado se cuelga de `broadcastState` porque es el **unico punto por el que pasan todos
+los finales**: el normal, el abandono y el que termina por jugada de un bot. Enganchar cada
+final por separado seria olvidarse de uno. Se graba una sola vez, con una marca en la sala.
+
+### Los frenos del chat, todos del lado del servidor
+
+Un chat abierto a internet sin frenos se llena de basura el primer dia. Van tres, y ninguno
+se puede saltear desde el navegador:
+
+- 300 caracteres como maximo
+- un mensaje cada segundo y medio
+- quince por minuto
+
+El contador **no se borra al desconectarse**. El primer intento lo borraba, y asi el freno
+no servia para nada: al que frenaban cerraba la pestaña, volvia a entrar y seguia.
+
+### Tres bugs que aparecieron haciendo esto
+
+1. **El chat tenia su propia copia del secreto de los tokens**, y decia
+   `dev-secret-change-me` mientras el resto del proyecto usa `dev-secret`. En local,
+   ninguna cuenta habria podido escribir. La solucion no fue copiar bien el secreto sino
+   **no repetirlo**: el chat usa lo que ya dejo verificado el middleware del socket.
+2. **Las fechas se guardaban como el texto `CURRENT_DATETIME`.** El conversor a SQLite
+   cambia `TIMESTAMP` por `DATETIME` y de paso pisaba `CURRENT_TIMESTAMP`, que SQLite no
+   conoce. Se arreglo el reemplazo y ademas la fecha ahora se manda desde Node, para no
+   depender de como quedo escrita la tabla en cada base.
+3. **`connectSocket` mataba el socket si otro componente lo pedia mientras se conectaba.**
+   Solo devolvia el socket existente si YA estaba conectado; si estaba a medio conectar lo
+   tiraba y hacia otro, y el primero que lo pidio se quedaba escuchando un socket muerto.
+   Este es de toda la app, no del chat: el chat solo lo dejo a la vista.
+
+### Comprobado
+
+- `npm run test:perfil` — 20 pruebas. Juega partidas enteras entre dos personas con el motor
+  y el RoomManager de verdad, y comprueba que quede guardada, que no se guarde dos veces,
+  que las de bot no entren y que las fechas sean fechas.
+- `npm run test:chat` — 9 pruebas contra el servidor levantado: el invitado lee y no
+  escribe, la cuenta escribe y le llega a todos, el freno frena, y mandar un nombre
+  distinto no sirve para hacerse pasar por otro.
+- Motor 57/57, backend 87/87.
+
+### Lo que falta
+
+- **No hay moderacion.** Hay frenos, pero no hay forma de borrar un mensaje ni de callar a
+  alguien. Con poca gente aguanta; antes de que entre gente de verdad hace falta.
+- Las tablas nuevas se crean solas al arrancar, tambien en produccion.

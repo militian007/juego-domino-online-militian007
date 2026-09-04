@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { connectSocket, disconnectSocket } from '../services/socket.js';
+import ChatGlobal from '../components/chat/ChatGlobal.jsx';
 import { pantallaCompleta } from '../utils/pantalla.js';
 import SelectorModos, { MODOS } from '../components/SelectorModos.jsx';
 import Logo from '../components/Logo.jsx';
@@ -150,6 +151,14 @@ export default function Landing() {
             JUGAR
           </GoldButton>
           {user && (
+            <Link
+              to="/perfil"
+              className="max-w-[7rem] truncate text-xs font-semibold tracking-wider text-domino-accent hover:underline sm:max-w-none sm:text-sm"
+            >
+              {user.username}
+            </Link>
+          )}
+          {user && (
             <button
               onClick={handleLogout}
               className="text-domino-cream/80 hover:text-domino-cream text-xs sm:text-sm tracking-wider px-2"
@@ -207,6 +216,8 @@ export default function Landing() {
           {counts.loggedIn} EN LÍNEA
         </span>
       </div>
+
+      <ChatGlobal />
 
       <ModeModal
         open={modalOpen}

@@ -25,7 +25,17 @@ export function idDeInvitado() {
 }
 
 export const connectSocket = (tokenOverride) => {
-  if (socket && socket.connected) return socket;
+  // Se devuelve el socket que ya hay tambien si TODAVIA se esta conectando.
+  //
+  // Antes solo se devolvia si ya estaba conectado, y si no, se tiraba y se
+  // hacia otro. El problema aparece cuando dos partes de la pantalla piden la
+  // conexion casi a la vez: la primera crea el socket, la segunda lo encuentra
+  // a medio conectar, lo mata y hace uno nuevo. La primera se queda escuchando
+  // un socket muerto y no recibe nunca nada.
+  //
+  // `socket.active` es true mientras el socket esta conectado o intentando
+  // conectarse; solo se rehace cuando de verdad ya no va a volver.
+  if (socket && (socket.connected || socket.active)) return socket;
   if (socket) {
     socket.disconnect();
     socket = null;

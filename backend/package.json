@@ -9,6 +9,8 @@
     "dev": "nodemon src/server.js",
     "test": "node src/game/test.js",
     "test:e2e": "node src/test-e2e-bot.js",
+    "test:perfil": "node src/test-perfil.js",
+    "test:chat": "node src/test-chat.js",
     "test:engine": "npm --prefix ../packages/domino-engine test"
   },
   "dependencies": {

@@ -65,6 +65,48 @@ export async function initDatabase() {
       mode VARCHAR(50),
       played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- Una fila por partida terminada. Solo se guardan las partidas entre
+    -- personas: las que son contra la maquina no cuentan para el record, si no
+    -- cualquiera se lo infla ganandole al bot toda la noche.
+    CREATE TABLE IF NOT EXISTS partidas (
+      id SERIAL PRIMARY KEY,
+      room_code VARCHAR(50) NOT NULL,
+      modo VARCHAR(50) NOT NULL,
+      equipo_ganador INTEGER,
+      motivo VARCHAR(50),
+      puntos_equipo1 INTEGER DEFAULT 0,
+      puntos_equipo2 INTEGER DEFAULT 0,
+      jugada_el TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Una fila por jugador por partida. Es lo que permite responder "mis
+    -- partidas" con una sola consulta, que es lo que la tabla vieja
+    -- (game_history) no podia hacer: no guardaba quien jugo.
+    CREATE TABLE IF NOT EXISTS partida_jugadores (
+      id SERIAL PRIMARY KEY,
+      partida_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      asiento INTEGER NOT NULL,
+      equipo INTEGER,
+      gano INTEGER NOT NULL DEFAULT 0
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_partida_jugadores_user ON partida_jugadores(user_id);
+    CREATE INDEX IF NOT EXISTS idx_partida_jugadores_partida ON partida_jugadores(partida_id);
+
+    -- El chat del menu principal. Escribe el que tiene cuenta; el invitado lee.
+    -- Se guarda el nombre ademas del id porque el mensaje tiene que seguir
+    -- leyendose aunque despues la cuenta cambie de nombre o desaparezca.
+    CREATE TABLE IF NOT EXISTS chat_global (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      username VARCHAR(255) NOT NULL,
+      texto VARCHAR(300) NOT NULL,
+      creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_chat_global_creado ON chat_global(id);
   `;
 
   if (isPostgres) {
@@ -104,7 +146,11 @@ function runSqliteSchema(schema) {
   const sqliteSchema = schema
     .replace(/SERIAL PRIMARY KEY/g, 'INTEGER PRIMARY KEY AUTOINCREMENT')
     .replace(/VARCHAR\(\d+\)/g, 'TEXT')
-    .replace(/TIMESTAMP/g, 'DATETIME');
+    // Ojo con el : sin el, este reemplazo tambien pisaba CURRENT_TIMESTAMP y
+    // lo dejaba en CURRENT_DATETIME, que SQLite no conoce y guarda como texto
+    // literal. El sintoma era una fecha que decia "CURRENT_DATETIME" en vez de
+    // una fecha.
+    .replace(/TIMESTAMP/g, 'DATETIME');
   sqliteDb.exec(`
     PRAGMA journal_mode = WAL;
     PRAGMA foreign_keys = ON;

@@ -38,4 +38,8 @@ export const authApi = {
   changePassword: (data) => api.post('/auth/change-password', data).then((r) => r.data)
 };
 
+export const perfilApi = {
+  mio: () => api.get('/perfil').then((r) => r.data)
+};
+
 export default api;

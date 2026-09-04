@@ -4,8 +4,10 @@ import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
 import authRoutes from './routes/auth.js';
+import perfilRoutes from './routes/perfil.js';
 import { roomManager } from './RoomManager.js';
 import { setupGameSocket } from './sockets/gameSocket.js';
+import { registrarChat } from './sockets/chatSocket.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -25,6 +27,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/perfil', perfilRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', game: 'dominó online', rooms: roomManager.rooms.size });
@@ -55,6 +58,10 @@ const broadcastPresence = () => {
 };
 
 io.on('connection', (socket) => {
+  // El chat del menu principal. Va aparte del juego: se escucha desde el menu,
+  // sin estar en ninguna sala.
+  registrarChat(io, socket);
+
   const userId = socket.userId || `guest-${socket.id}`;
   const username = socket.username || 'Invitado';
   const isGuest = !!socket.isGuest;
