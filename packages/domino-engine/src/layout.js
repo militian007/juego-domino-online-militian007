@@ -265,24 +265,34 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
           addAlong('horizontal', { x: ex, y: row }, { x: ex + 1, y: row });
         }
 
-        // Si cruzarse mas alla de la punta no entra —tipicamente porque la punta
-        // quedo contra el borde de la mesa— el doble todavia puede entrar si la
-        // cadena dobla ahi mismo: se cruza respecto de la direccion nueva, que es
-        // perpendicular. Solo se ofrece como salida de emergencia para que el
-        // doble siga viendose cruzado siempre que se pueda.
-        if (out.length === 0) {
-          if (endTile.orientation === 'horizontal') {
-            for (const fila of [free.y - 1, free.y + 1]) {
-              addAlong('horizontal', { x: free.x, y: fila }, { x: free.x - 1, y: fila });
-              addAlong('horizontal', { x: free.x, y: fila }, { x: free.x + 1, y: fila });
-            }
-          } else {
-            for (const col of [free.x - 1, free.x + 1]) {
-              addAlong('vertical', { x: col, y: free.y }, { x: col, y: free.y - 1 });
-              addAlong('vertical', { x: col, y: free.y }, { x: col, y: free.y + 1 });
-            }
-          }
-        }
+        // Si cruzarse pasando la punta no entra —tipicamente porque la punta
+        // quedo contra el borde de la mesa— el doble se corre a un costado,
+        // PERO SIGUE CRUZADO.
+        //
+        // Antes esta salida de emergencia ofrecia el doble en la MISMA
+        // direccion que la cadena: con la cadena horizontal, un doble
+        // horizontal. Eso es un doble acostado en linea, que en una mesa de
+        // verdad no existe y se ve mal de inmediato. Lo reporto Jonathan con
+        // una captura: el doble contra la pared quedaba en paralelo.
+        //
+        // La direccion no cambia por estar contra la pared: si la cadena va
+        // horizontal el doble va vertical, entre en la punta o al costado.
+        // Si cruzarse no entra por ningun lado, el doble NO se pone.
+        //
+        // Antes habia una salida de emergencia que lo ofrecia en la MISMA
+        // direccion que la cadena: con la cadena horizontal, un doble
+        // horizontal. Eso es un doble acostado en linea, que en una mesa de
+        // verdad no existe. Jonathan lo marco en una captura: "se puso
+        // horizontal y en paralelo cuando llego al borde, eso esta mal".
+        //
+        // Se probo colgarlo del costado en vez de pasando la punta, pero el
+        // dibujo centra siempre el doble cruzado sobre la union (ver
+        // joinOffset): colgado al costado se monta sobre la cadena y se
+        // rechaza por solape. Cruzado o nada.
+        //
+        // Que no entre es una jugada bloqueada normal, no un error: el propio
+        // Jonathan lo dijo, "esta bien el limite que no puedas seguir".
+
       } else {
         // 1. Recta: sigue hacia donde apunta la punta libre
         addAlong(

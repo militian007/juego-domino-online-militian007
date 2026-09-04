@@ -3691,3 +3691,44 @@ baja a **1,10** (18,2 celdas a la vista), que da cero en los dos modos.
 Aun asi la ficha queda mas grande que al principio: en un telefono de 375, **de 29x15 a 35x17**.
 
 Motor 57/57, backend 87/87.
+
+## 90. El doble contra la pared: cruzado o no entra (2026-09-03)
+
+Jonathan mando una captura con el doble marcado en rojo: al llegar al borde se puso **horizontal
+y en paralelo** a la cadena. *"Eso es una estupidez, esta mal hecho"*. Y tiene razon: un doble
+acostado en linea con la cadena no existe en una mesa de verdad.
+
+### De donde salia
+
+De una salida de emergencia en `placementsFor`. Cuando el doble no entraba cruzandose mas alla de
+la punta —tipicamente porque la punta quedo contra el borde— se ofrecia en la MISMA direccion que
+la cadena. La justificacion escrita era que la cadena "dobla ahi mismo", asi que respecto de la
+direccion NUEVA el doble esta cruzado. Es defendible en el papel, pero se ve mal, que es lo unico
+que importa.
+
+### Lo que se probo antes de sacarlo
+
+Colgarlo del costado de la punta, sin dejar de estar cruzado, que es lo que muestran los ejemplos
+que dibujo Jonathan. **No se puede con el dibujo actual**: `joinOffset` centra siempre el doble
+cruzado sobre la union, asi que colgado al costado se corre encima de la cadena y lo rechaza el
+control de solape. Se comprobo con el diagnostico de `placementsFor`, que devolvia
+`solapa-visualmente` para las cuatro candidatas.
+
+Para que esa colocacion exista habria que cambiar como se dibuja un doble cruzado, no como se
+elige. Queda anotado.
+
+### Lo que se hizo
+
+Se quito la salida en paralelo. La regla es ahora: **el doble va cruzado o no entra**. Que no
+entre es una jugada bloqueada normal; el propio Jonathan lo dijo en el mismo mensaje: *"esta bien
+el limite que no puedas seguir"*.
+
+**El precio esta medido y no es chico:** con la rejilla de 16x16, la ficha trabada sube de 0,189%
+a **1,014%**, o sea de una cada 529 a una cada 99. Si eso resulta molesto al jugar, la decision a
+revisar es esta, y la alternativa es cambiar el dibujo del doble cruzado para que pueda colgar del
+costado.
+
+El test `doble contra el borde` guardaba la regla vieja y se reescribio: ahora comprueba que
+ninguna opcion quede en paralelo con la cadena.
+
+Motor 57/57, backend 87/87.
