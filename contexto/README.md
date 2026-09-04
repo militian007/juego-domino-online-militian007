@@ -3965,14 +3965,27 @@ nombre queda arriba a la izquierda (x=258, despues del logo), "Salir" arriba a l
 
 Reglas que pidio Jonathan, **solo para las partidas entre personas**:
 
-- **25 segundos para jugar.** Si no jugas, **pierdes la ronda**, y las fichas que te
-  quedaban en la mano se cuentan como puntos del rival. La partida sigue.
+- **25 segundos para jugar.** Si no jugas, **se te pasa el turno** y juega el siguiente.
+  Nada mas: no se juega solo por vos, no se cierra la ronda, nadie suma puntos.
 - **Los ultimos 10 segundos** se muestran en un circulito que cuenta 10, 9, 8... 1.
 - **Si te caes, tienes 60 segundos para volver**, y al otro le sale el aviso con la cuenta
   atras. Si no vuelves, abandonas la partida (que es lo que ya pasaba al salirse).
 
 Contra la maquina **no hay reloj**: el bot no se cuelga y apurar a quien juega solo no
 tiene sentido.
+
+### El castigo se corrigio despues de verlo funcionando
+
+La primera version hacia que **perdieras la ronda** y que tus fichas se contaran como
+puntos del rival. Se construyo asi, se probo, y al verla Jonathan la cambio:
+
+> *"Yo creo que la cagué con esa regla... no es lo mismo que me dé todos sus puntos.
+> Debería ser que pase automáticamente el turno y juegue la otra persona. Que una persona
+> no juegue un turno es suficiente penalización."*
+
+Tiene razon: perder la ronda entera por dormirse un turno decide la partida por un
+descuido. Queda anotado aca porque el intento anterior explica por que el motor tiene una
+opcion de configuracion en vez de una regla fija.
 
 ### Donde vive cada cosa, y por que
 
@@ -3987,13 +4000,18 @@ resultado con la misma semilla, y un `setTimeout` rompe eso. Asi que el reparto 
 
 La accion `TIMEOUT` ya existia en el motor pero hacia otra cosa: **jugaba sola por vos**.
 No se cambio por las bravas; se agrego `timeoutRule` en la configuracion, con
-`'auto-play'` (lo de antes) por defecto y `'lose-round'` para lo que pidio Jonathan. Asi
-lo viejo sigue funcionando igual y la regla nueva se enciende donde corresponde.
+`'auto-play'` (lo de antes) por defecto y `'skip-turn'` para lo que se usa ahora.
 
-### En 2v2, la pena la paga el que no jugo
+### Perder el turno NO cuenta como pasar
 
-Se cuentan **solo las fichas del que se quedo sin tiempo**, no las de su companiero. En 1
-contra 1 da exactamente lo que pidio; en 2v2 evita castigar a quien si estaba jugando.
+Esto importa mas de lo que parece. Pasar es **declarar que no tenes jugada**, y el motor
+cuenta los pases seguidos para detectar el tranque. Al que se le acaba el tiempo quizas
+tenia jugada y no la hizo. Si el salto contara como pase, **dos descuidos seguidos
+cerrarian la ronda como trancada y se puntuaria por fichas**: exactamente el castigo que
+se acaba de sacar, colado por la puerta de atras.
+
+Tampoco se resetea el contador de pases, para que una ronda de verdad trancada siga
+pudiendo cerrarse aunque alguien este dormido.
 
 ### Tres cosas que se hicieron distinto a lo obvio
 
@@ -4007,27 +4025,31 @@ contra 1 da exactamente lo que pidio; en 2v2 evita castigar a quien si estaba ju
    de que alguien se acuerde de emitir, el PRIMER turno de la partida se quedaria sin
    tiempo: justo el unico que nadie mira. Asi estaba, y asi lo encontro la prueba.
 
-### El aviso decia mentira
+### El turno que salta solo parece un error
 
-El primer intento mostraba **"El juego se tranco"** al perder por tiempo, porque el cartel
-mandaba todo lo que no fuera "domino" o "abandono" al mismo texto. Ahora dice *"A Fulano se
-le acabo el tiempo"*, y para eso el estado lleva `timedOutSeat`. En el perfil el motivo
-aparece como "sin tiempo".
+Cuando a alguien se le acaba el tiempo, el turno cambia sin que nadie haya hecho nada. Sin
+avisar, eso se lee como un fallo del juego. Por eso sale un cartelito de tres segundos y
+medio: *"A Fulano se le paso el turno"*. Lleva un contador ademas del nombre, porque si al
+mismo jugador le saltan dos turnos seguidos el dato seria identico y el aviso no volveria a
+salir.
 
 ### El reloj del turno NO se para cuando alguien se cae
 
 Son dos cosas distintas: los 25 segundos son por no jugar, estes conectado o no; los 60 son
 para no perder la partida entera por un corte de internet. Si se parara el reloj al
-desconectarse, cortar el wifi seria la forma de no perder nunca una ronda.
+desconectarse, cortar el wifi seria la forma de no perder nunca un turno.
 
 ### Comprobado
 
-- Motor: 3 pruebas nuevas (60 en total). Que pierde la ronda, que el rival suma exactamente
-  sus pips, que en 2v2 no paga el companiero, y que sin configurar nada sigue como antes.
-- `npm run test:reloj` — 17 pruebas del servidor: que el reloj corre, que reemitir no
-  regala tiempo, que contra la maquina no hay reloj, que el aviso de caida aparece y
-  desaparece, que si no vuelve abandona, y que el socket viejo no marca ausente a quien ya
-  se reconecto.
-- `npm run test:reloj-e2e` — 11 pruebas con dos jugadores de verdad por socket: se emparejan,
-  nadie juega, y **medio minuto despues la ronda se pierde sola**.
+- Motor: 4 pruebas nuevas (61 en total). Que solo se pierde el turno, que no se juega
+  ninguna ficha, que nadie suma puntos, que **no cuenta como pase**, y que sin configurar
+  nada sigue como antes.
+- `npm run test:reloj` — 20 pruebas del servidor: el reloj corre, reemitir no regala
+  tiempo, al siguiente le empiezan sus 25 segundos, contra la maquina no hay reloj, el
+  aviso de caida aparece y desaparece, si no vuelve abandona, y el socket viejo no marca
+  ausente a quien ya se reconecto.
+- `npm run test:reloj-e2e` — 12 pruebas con dos jugadores de verdad por socket: se
+  emparejan, nadie juega, y **medio minuto despues el turno pasa solo, sin que nadie sume**.
+- En pantalla: se vio el circulito contando y el cartel *"A PruebaPerfil se le paso el
+  turno"*, con el marcador quieto en 0 a 0.
 - Backend 87/87, perfil 20/20, y los bots rompe-juegos sin fallos en 160 partidas.

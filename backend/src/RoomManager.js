@@ -362,11 +362,22 @@ export class RoomManager {
     // no se le quita nada.
     if (room.players[room.game.state.turn]?.id !== playerId) return;
 
+    const jugador = room.players.find((p) => p.id === playerId);
+    const seat = room.game.state.turn;
+
     const r = room.game.timeout(playerId);
     if (r?.ok === false) {
       console.error('No se pudo aplicar el tiempo agotado:', r.error);
       return;
     }
+
+    // Para que en la pantalla se entienda POR QUE salto el turno. Sin esto el
+    // turno cambia solo y parece un error del juego.
+    room.game.saltadoPorTiempo = {
+      seat,
+      username: jugador?.username ?? 'Un jugador',
+      n: (room.game.saltadoPorTiempo?.n ?? 0) + 1
+    };
 
     this.broadcastState(room);
   }

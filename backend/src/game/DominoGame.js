@@ -55,7 +55,7 @@ export class DominoGame {
       // acaba: perder la ronda. El motor no cuenta el tiempo (no tiene relojes
       // por dentro), solo aplica la regla cuando el servidor le avisa.
       config: config.turnMs
-        ? { turnMs: config.turnMs, timeoutRule: 'lose-round' }
+        ? { turnMs: config.turnMs, timeoutRule: 'skip-turn' }
         : {}
     });
 
@@ -172,11 +172,6 @@ export class DominoGame {
     if (this.state.phase === PHASE.GAME_OVER) return this.state.result?.reason ?? null;
 
     return null;
-  }
-
-  /** Asiento al que se le acabo el tiempo, si la ronda cerro asi. */
-  get timedOutSeat() {
-    return this.state.lastRound?.timedOutSeat ?? null;
   }
 
   /** Asiento que abandono, si la partida termino asi. */
@@ -402,7 +397,10 @@ export class DominoGame {
       roundPoints: this.roundPoints,
       endReason: this.endReason,
       forfeitedSeat: this.forfeitedSeat,
-      timedOutSeat: this.timedOutSeat,
+      // El ultimo a quien se le paso el turno por tiempo. Lleva un contador
+      // para que la pantalla pueda avisar dos veces seguidas del mismo
+      // jugador: sin el, React veria el mismo dato y no volveria a avisar.
+      saltadoPorTiempo: this.saltadoPorTiempo ?? null,
       // Al cerrar la ronda se revelan las manos, para que se pueda verificar el puntaje
       revealedHands: this._roundClosed && this.state.lastRound
         ? this.players.map((p, i) => ({

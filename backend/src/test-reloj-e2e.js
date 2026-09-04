@@ -62,18 +62,21 @@ async function main() {
 
   console.log('  … esperando los 25 segundos sin que nadie juegue');
 
-  const perdida = await esperarEstado(uno, (e) => e.endReason === 'timeout', 32000);
-  check(Boolean(perdida), 'La ronda se cierra sola cuando se acaba el tiempo');
+  const turnoInicial = estado.currentPlayerId;
+  const saltado = await esperarEstado(uno, (e) => e.saltadoPorTiempo != null, 32000);
+  check(Boolean(saltado), 'Cuando se acaba el tiempo, el turno pasa solo');
 
-  if (perdida) {
-    const total = (perdida.teamScores?.[1] ?? 0) + (perdida.teamScores?.[2] ?? 0);
-    check(total > 0, `El rival se lleva los puntos de la mano (${total})`);
-    check(perdida.status !== 'game-over', 'Y la partida sigue, no se termina');
-    // Sin esto el cartel de fin de ronda decia "El juego se tranco", que es
-    // mentira: hay que poder nombrar a quien se quedo sin tiempo.
+  if (saltado) {
+    check(saltado.currentPlayerId !== turnoInicial, 'Y le toca al otro jugador');
     check(
-      Number.isInteger(perdida.timedOutSeat),
-      'El estado dice A QUIEN se le acabo el tiempo, para poder decirlo en pantalla'
+      (saltado.teamScores?.[1] ?? 0) + (saltado.teamScores?.[2] ?? 0) === 0,
+      'Nadie suma puntos por esto'
+    );
+    check(saltado.status === 'playing', 'La ronda sigue, no se cierra');
+    // Sin esto el turno cambia solo y parece un error del juego.
+    check(
+      typeof saltado.saltadoPorTiempo?.username === 'string',
+      'El estado dice a quien saltaron, para poder avisarlo en pantalla'
     );
   }
 

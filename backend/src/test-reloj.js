@@ -3,7 +3,6 @@
 // Regla de Jonathan: entre personas hay 25 segundos para jugar. Si no jugas,
 // pierdes la ronda y las fichas que te quedaban se cuentan como puntos del
 // rival, y se sigue jugando. Si te caes, tienes 60 segundos para volver.
-import { handPips } from '@privoytruco/domino-engine';
 import { RoomManager } from './RoomManager.js';
 
 let pasados = 0;
@@ -48,23 +47,37 @@ async function main() {
     'Reemitir el estado no reinicia el reloj (si no, reconectarse daria 25s gratis)'
   );
 
-  // ---- 3. Se acaba el tiempo: pierde la ronda --------------------------
+  // ---- 3. Se acaba el tiempo: solo pierde el turno ---------------------
+  //
+  // Jonathan cambio esta regla despues de verla funcionando: antes perdia la
+  // ronda entera y sus fichas se contaban como puntos del rival, y le parecio
+  // demasiado castigo por dormirse un turno.
   const seat = sala.game.state.turn;
   const quien = sala.players[seat];
   const rival = sala.players[seat === 0 ? 1 : 0];
-  const suyos = handPips(sala.game.state.hands[seat]);
+  const manoAntes = sala.game.state.hands[seat].length;
   const rondaAntes = sala.game.state.round;
 
   m1._seLeAcaboElTiempo(sala, quien.id);
 
-  check(sala.game.state.lastRound?.reason === 'timeout', 'La ronda se cierra por tiempo');
+  check(sala.game.state.turn !== seat, 'El turno pasa al siguiente jugador');
+  check(sala.game.state.hands[seat].length === manoAntes, 'No se juega ninguna ficha por el');
+  check(sala.game.state.scores[rival.team] === 0, 'El rival NO se lleva sus puntos');
+  check(sala.game.state.lastRound == null, 'La ronda no se cierra');
+  check(sala.game.status === 'playing', 'Se sigue jugando con normalidad');
+  check(sala.game.state.round === rondaAntes, 'Y sigue siendo la misma ronda');
   check(
-    sala.game.state.scores[rival.team] === suyos,
-    `Las fichas del que no jugo son puntos del rival (${suyos})`
+    sala.game.saltadoPorTiempo?.username === quien.username,
+    'Queda anotado a quien saltaron, para poder avisarlo en pantalla'
   );
-  check(sala.game.state.scores[quien.team] === 0, 'El que no jugo no suma nada');
-  check(sala.game.status !== 'game-over', 'La partida NO se termina, sigue');
-  check(sala.game.state.round === rondaAntes, 'Sigue siendo la misma ronda hasta que pidan la siguiente');
+
+  // ---- 3b. Y el reloj arranca de nuevo para el que sigue ---------------
+  m1.broadcastState(sala);
+  const nuevo = sala.game.getStateForPlayer(rival.id);
+  check(
+    nuevo.turnRestanteMs > 23000,
+    `Al siguiente le empiezan sus 25 segundos (${Math.round(nuevo.turnRestanteMs / 1000)}s)`
+  );
 
   // ---- 4. Contra la maquina no hay reloj -------------------------------
   const m2 = nuevoManager();

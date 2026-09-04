@@ -949,57 +949,62 @@ test('la cadena sale CRUZADA de un doble, no de pie en la misma fila', () => {
   );
 });
 
-test('con timeoutRule lose-round, quedarse sin tiempo PIERDE la ronda', () => {
+test('con timeoutRule skip-turn, quedarse sin tiempo solo PIERDE EL TURNO', () => {
   const s = createGame({
     gameFormat: 'domino-1v1-v1',
     seed: 'sin-tiempo',
-    config: { timeoutRule: 'lose-round' }
+    config: { timeoutRule: 'skip-turn' }
   });
 
   const seat = s.turn;
-  const rival = seat === 0 ? 1 : 0;
-  const pipsQueLeQuedaban = handPips(s.hands[seat]);
+  const manoAntes = s.hands[seat].length;
+  const puntosAntes = { ...s.scores };
 
   const r = applyAction(s, { type: ACTION.TIMEOUT, seat });
   assert.ok(r.ok, r.error);
 
-  // La ronda se cierra. NO se juega solo por el, que es lo que hacia antes.
-  assert.equal(r.state.phase, PHASE.ROUND_OVER);
+  // Le toca al siguiente y nada mas: no se juega solo por el, no se cierra la
+  // ronda y nadie suma puntos.
+  assert.equal(r.state.phase, PHASE.PLAYING);
+  assert.notEqual(r.state.turn, seat);
   assert.equal(r.state.board.length, 0);
-  assert.equal(r.state.lastRound.reason, 'timeout');
-  assert.equal(r.state.lastRound.timedOutSeat, seat);
-
-  // Sus fichas se cuentan como puntos del rival, ni una mas ni una menos.
-  const equipoRival = r.state.teams[rival];
-  assert.equal(r.state.scores[equipoRival], pipsQueLeQuedaban);
-  assert.equal(r.state.scores[r.state.teams[seat]], 0);
-
-  // Y se sigue jugando: la partida no se termina por esto.
-  assert.equal(isTerminal(r.state), false);
-  const siguiente = applyAction(r.state, { type: ACTION.START_NEXT_ROUND, seat });
-  assert.ok(siguiente.ok, siguiente.error);
-  assert.equal(siguiente.state.phase, PHASE.PLAYING);
+  assert.equal(r.state.hands[seat].length, manoAntes);
+  assert.deepEqual(r.state.scores, puntosAntes);
+  assert.equal(r.events[0].kind, EVENT.TIMEOUT);
 });
 
-test('en 2v2 el tiempo lo paga el que no jugo, no su companiero', () => {
+test('perder el turno por tiempo NO cuenta como pasar', () => {
+  const s = createGame({
+    gameFormat: 'domino-1v1-v1',
+    seed: 'sin-tiempo-no-es-pase',
+    config: { timeoutRule: 'skip-turn' }
+  });
+
+  const pasesAntes = s.passes;
+  const r = applyAction(s, { type: ACTION.TIMEOUT, seat: s.turn });
+  assert.ok(r.ok, r.error);
+
+  // Pasar es declarar que no tenes jugada. Al que se le acaba el tiempo quizas
+  // la tenia. Si contara como pase, dos descuidos seguidos cerrarian la ronda
+  // como trancada y se puntuaria por fichas: justo el castigo que se saco.
+  assert.equal(r.state.passes, pasesAntes);
+  assert.equal(r.state.lastRound, null);
+});
+
+test('en 2v2 el turno pasa al siguiente asiento, que es un rival', () => {
   const s = createGame({
     gameFormat: 'domino-2v2-v1',
     seed: 'sin-tiempo-2v2',
-    config: { timeoutRule: 'lose-round' }
+    config: { timeoutRule: 'skip-turn' }
   });
 
   const seat = s.turn;
-  const companiero = (seat + 2) % 4;
-  const suyos = handPips(s.hands[seat]);
-
   const r = applyAction(s, { type: ACTION.TIMEOUT, seat });
   assert.ok(r.ok, r.error);
 
-  const equipoRival = r.state.teams[seat] === 1 ? 2 : 1;
-  // Solo las fichas del que se quedo sin tiempo. Las del companiero no entran:
-  // la pena es de quien no jugo.
-  assert.equal(r.state.scores[equipoRival], suyos);
-  assert.notEqual(handPips(s.hands[companiero]), null);
+  assert.equal(r.state.turn, (seat + 1) % 4);
+  assert.notEqual(r.state.teams[r.state.turn], r.state.teams[seat]);
+  assert.equal(r.state.phase, PHASE.PLAYING);
 });
 
 test('sin configurar nada, el tiempo se sigue comportando como antes', () => {

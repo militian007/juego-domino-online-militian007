@@ -26,6 +26,7 @@ import IconoColor from '../components/IconoColor.jsx';
 import { salirPantallaCompleta } from '../utils/pantalla.js';
 import RelojDeTurno from '../components/game/RelojDeTurno.jsx';
 import AvisoDeAusente from '../components/game/AvisoDeAusente.jsx';
+import AvisoDeSalto from '../components/game/AvisoDeSalto.jsx';
 
 // La partida en curso se recuerda en el navegador para poder volver a ella al
 // refrescar o al salir a otra app. Solo se olvida cuando la partida termina o
@@ -999,6 +1000,9 @@ export default function Game() {
 
                 {/* "Fulano se desconecto, tiene 60 segundos para volver". */}
                 <AvisoDeAusente ausentes={gameState.ausentes} />
+
+                {/* "A Fulano se le paso el turno", cuando se le acaba el tiempo. */}
+                <AvisoDeSalto salto={gameState.saltadoPorTiempo} />
                 {/* Cada uno en su lado de la mesa. Las placas se apoyan en el
                     borde y el rectangulo de juego (los margenes que recibe
                     Board) empieza justo por dentro, asi que la cadena nunca les
@@ -1285,9 +1289,7 @@ export default function Game() {
                   ? 'Un jugador se quedó sin fichas'
                   : gameState.endReason === 'forfeit'
                     ? `${gameState.players?.[gameState.forfeitedSeat]?.username ?? 'Un jugador'} dejó la partida`
-                    : gameState.endReason === 'timeout'
-                      ? `A ${gameState.players?.[gameState.timedOutSeat]?.username ?? 'un jugador'} se le acabó el tiempo`
-                      : 'El juego se trancó'}
+                    : 'El juego se trancó'}
               </p>
 
               {/* En un abandono no hay ronda cerrada: no hay puntos que sumar

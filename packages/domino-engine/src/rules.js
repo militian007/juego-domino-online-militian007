@@ -22,12 +22,18 @@ export const BASE_RULES = {
 
   // Que pasa cuando se acaba el tiempo:
   //
-  //   'auto-play'  → se juega solo por el jugador (lo de siempre)
-  //   'lose-round' → pierde la ronda, y las fichas que le quedaban en la mano
-  //                  se cuentan como puntos para el rival
+  //   'auto-play' → se juega solo por el jugador (lo de siempre)
+  //   'skip-turn' → se le pasa el turno al siguiente y ya
   //
-  // Jonathan lo quiere en 'lose-round' para las partidas entre personas: si no
-  // jugas, perdes. En las partidas contra la maquina no se usa reloj.
+  // Jonathan lo quiere en 'skip-turn' para las partidas entre personas.
+  //
+  // Primero se hizo que perdiera la ronda y que sus fichas se contaran como
+  // puntos del rival, y el mismo lo corrigio: *"no es lo mismo que me de todos
+  // sus puntos... que una persona no juegue un turno es suficiente
+  // penalizacion"*. Tiene razon: perder la ronda entera por dormirse un turno
+  // decide la partida por un descuido.
+  //
+  // En las partidas contra la maquina no se usa reloj.
   timeoutRule: 'auto-play'
 };
 

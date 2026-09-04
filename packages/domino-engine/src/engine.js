@@ -414,11 +414,15 @@ function doTimeout(state, action) {
 
   push(state, { kind: EVENT.TIMEOUT, seat: action.seat });
 
-  // Se le acabo el tiempo y pierde la ronda. Las fichas que le quedaban en la
-  // mano se cuentan como puntos para el rival, y se sigue jugando la ronda
-  // siguiente: no se termina la partida.
-  if (state.config.timeoutRule === 'lose-round') {
-    endRound(state, 'timeout', null, action.seat);
+  // Se le acabo el tiempo: pierde el turno y juega el siguiente. Nada mas.
+  //
+  // NO se cuenta como "paso". Pasar es declarar que no tenes jugada, y este
+  // quizas la tenia y no la hizo. Si contara, dos descuidos seguidos cerrarian
+  // la ronda como trancada y se puntuaria por fichas, que es justo el castigo
+  // que se quiso sacar.
+  if (state.config.timeoutRule === 'skip-turn') {
+    state.drawsThisTurn = 0;
+    advanceTurn(state);
     return { ok: true };
   }
 
@@ -469,21 +473,13 @@ function advanceTurn(state) {
   }
 }
 
-function endRound(state, reason, winnerSeat, seatSinTiempo = null) {
+function endRound(state, reason, winnerSeat) {
   const cfg = state.config;
   const revealed = state.hands.map((h) => h.slice());
   let winnerTeam = null;
   let points = 0;
 
-  if (reason === 'timeout') {
-    // Se cuentan SOLO las fichas del que se quedo sin tiempo, no las de su
-    // companiero: la pena es de quien no jugo. En 1 contra 1 da exactamente lo
-    // que pidio Jonathan, "las fichas que el tenga se le dan al rival".
-    const suEquipo = state.teams[seatSinTiempo];
-    winnerTeam = suEquipo === 1 ? 2 : 1;
-    points = handPips(state.hands[seatSinTiempo]);
-    winnerSeat = lowestPipSeatOfTeam(state, winnerTeam);
-  } else if (reason === 'domino') {
+  if (reason === 'domino') {
     winnerTeam = state.teams[winnerSeat];
     for (let s = 0; s < cfg.seats; s++) {
       if (state.teams[s] !== winnerTeam) points += handPips(state.hands[s]);
@@ -515,10 +511,7 @@ function endRound(state, reason, winnerSeat, seatSinTiempo = null) {
     winnerTeam,
     points,
     hands: revealed,
-    pips: revealed.map(handPips),
-    // Quien se quedo sin tiempo, para que la pantalla pueda decirlo. Es null en
-    // cualquier otro final.
-    timedOutSeat: reason === 'timeout' ? seatSinTiempo : null
+    pips: revealed.map(handPips)
   };
   state.phase = PHASE.ROUND_OVER;
 
