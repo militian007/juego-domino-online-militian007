@@ -3639,3 +3639,55 @@ mas grande. No por subir el zoom, sino porque la rejilla es mas chica.
 - Unificar la regla de colocacion, que hoy vive en dos archivos.
 
 Motor 57/57, backend 87/87.
+
+## 89. La cadena se iba al rincon: desempate por centrado (2026-09-03)
+
+Con la rejilla nueva de 16x16, Jonathan mando una captura que mostraba el problema entero: la
+cadena metida en la esquina de abajo a la derecha, pegada a las dos paredes, con medio tablero
+vacio arriba; el cartel rojo de **"Colocacion invalida"**; y **15 fichas en la mano**, porque
+estuvo robando sin poder jugar.
+
+Medido, la causa era esa deriva:
+
+| rejilla | se corre del centro | pegada a 1 pared | acorralada en esquina |
+|---|---|---|---|
+| 20x20 | 2,7 casillas | 16,9% | 1,4% |
+| 16x16 | 2,4 casillas | 28,4% | 3,9% |
+
+Con 16x16 la cadena esta contra una pared en mas de una de cada cuatro jugadas. Y contra la pared
+es donde se traba: una vez acorralado te quedas robando, que es lo que le paso.
+
+### El arreglo
+
+Un desempate nuevo al final de la seleccion: entre las colocaciones que quedaron empatadas, gana
+la que deja la cadena **mas cerca del centro** del tablero.
+
+Va en el ultimo lugar a proposito. Adelantarlo es lo que fallo en la §88 con el criterio de
+compacidad: puesto antes de "seguir derecho" empeora, puesto al final ayuda. Es el mismo orden que
+ya estaba medido en §73.
+
+Se agrego en los **dos** lugares donde vive esta regla, `layout.js` y `bot.js`. Que este duplicada
+sigue siendo deuda.
+
+Resultado sobre 120 partidas por tamano:
+
+| rejilla | trabadas antes | con centrado |
+|---|---|---|
+| 20x20 | 0,030% | 0,044% |
+| 18x18 | 0,312% | **0,105%** |
+| 16x16 | 0,751% | **0,189%** |
+| 14x14 | 4,004% | **1,272%** |
+| 12x12 | 9,481% | **4,162%** |
+
+En 16x16 la ficha trabada baja de una cada 133 a **una cada 529**. Y la esquina baja de 3,9% a
+2,8%.
+
+### El zoom baja a 1,10
+
+Enderezar la cadena hacia el centro la estira un poco: llega a **18,0 casillas** donde antes
+llegaba a 17,5. Con el zoom en 1,116 se salian 4 fichas de 46.985 en 1v1. Cero es cero, asi que
+baja a **1,10** (18,2 celdas a la vista), que da cero en los dos modos.
+
+Aun asi la ficha queda mas grande que al principio: en un telefono de 375, **de 29x15 a 35x17**.
+
+Motor 57/57, backend 87/87.

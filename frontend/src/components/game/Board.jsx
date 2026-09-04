@@ -40,16 +40,19 @@ const LADO_CELDAS = GRID_SIZE + 2 * MARGEN_CELDAS;
 // posiciones de 1v1 y 47.000 de 2v2 jugadas de verdad. La cadena mas grande
 // que aparecio ocupa 17,5 x 17,0 casillas:
 //
-//   ventana 14,3 celdas (zoom 1,40) -> 8,37% de las posiciones con algo fuera
-//   ventana 16,0 celdas (zoom 1,25) -> 0,47%
-//   ventana 16,7 celdas (zoom 1,20) -> 0,05%
-//   ventana 17,4 celdas (zoom 1,15) -> 0,004%  (2 de 47.168, en 2v2)
-//   ventana 17,9 celdas (zoom 1,116) -> CERO en los dos modos
+//   ventana 14,3 celdas (zoom 1,40) -> 11,71% de las posiciones con algo fuera
+//   ventana 16,0 celdas (zoom 1,25) ->  0,78%
+//   ventana 17,9 celdas (zoom 1,116) -> 0,009%  (4 de 46.985, en 1v1)
+//   ventana 18,2 celdas (zoom 1,10)  -> CERO en los dos modos
 //
-// Sigue siendo 1,116, pero ahora con mas margen: 17,9 celdas a la vista contra
-// una cadena que nunca pasa de 17,5. Las fichas se ven mas grandes no por subir
-// el zoom sino porque la rejilla es mas chica. Ver contexto/README.md 82 y 88.
-const ZOOM_FICHAS = 1.116;
+// El zoom baja de 1,116 a 1,10. Al enderezar la cadena hacia el centro (§88)
+// se estira un poco mas: llega a 18,0 casillas donde antes llegaba a 17,5, y
+// con 1,116 se salian 4 fichas de 46.985. Cero es cero.
+//
+// Aun asi las fichas quedan mas grandes que antes, porque la rejilla paso de
+// 20x20 a 16x16: en un telefono de 375, de 29x15 a 35x17.
+// Ver contexto/README.md secciones 82 y 88.
+const ZOOM_FICHAS = 1.10;
 
 // Cuanto puede correrse la camara, en celdas, respecto del centro de la rejilla.
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));

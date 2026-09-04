@@ -1,7 +1,7 @@
 import { createRng } from './rng.js';
 import { generateSet, tileKey, pips, isDouble } from './tiles.js';
 
-import { espacioEnLaPunta, aperturaFutura } from './layout.js';
+import { espacioEnLaPunta, aperturaFutura, distanciaAlCentro } from './layout.js';
 
 export const DIFFICULTY = {
   NOVATO: 'novato',
@@ -223,7 +223,14 @@ export function chooseAction(view, opts = {}) {
   const pool = rectas.length > 0 ? rectas : holgadas;
   if (pool.length === 1) return pool[0];
   const espacios = pool.map((a) => espacioEnLaPunta(view.board, a.placement, a.side, view.layout));
-  return pool[espacios.indexOf(Math.max(...espacios))];
+  const mejorEspacio = Math.max(...espacios);
+  const finalistas = pool.filter((a, i) => espacios[i] === mejorEspacio);
+
+  // Mismo desempate que en layout.js: devolver la cadena hacia el centro.
+  if (finalistas.length === 1) return finalistas[0];
+  const distancias = finalistas.map((a) => distanciaAlCentro(view.board, a.placement, view.layout));
+
+  return finalistas[distancias.indexOf(Math.min(...distancias))];
 }
 
 export function createBot(opts = {}) {
