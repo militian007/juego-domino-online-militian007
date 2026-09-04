@@ -142,6 +142,17 @@ export default function Board({
   const anchoUtil = Math.max(pano.ancho - margenes.izquierda - margenes.derecha, 120);
   const altoUtil = Math.max(pano.alto - margenes.arriba - margenes.abajo, 120);
 
+  // La cadena es ANCHA, no cuadrada: 11,0 x 6,9 celdas de media y 18,5 x 16 en
+  // el percentil 99, medido sobre 116.120 posiciones. Por eso el rectangulo de
+  // juego no tiene que ser cuadrado, y manda el eje que quede mas justo.
+  const escala =
+    anchoUtil > 0 && altoUtil > 0
+      ? (Math.min(anchoUtil, altoUtil) / (LADO_CELDAS * CELL_SIZE)) * ZOOM_FICHAS
+      : 1;
+
+  const celdasVisiblesX = anchoUtil > 0 ? anchoUtil / (CELL_SIZE * escala) : LADO_CELDAS;
+  const celdasVisiblesY = altoUtil > 0 ? altoUtil / (CELL_SIZE * escala) : LADO_CELDAS;
+
   // La caja que ocupa la cadena dibujada, en celdas. Lleva el corrimiento de
   // los dobles, que es lo que hace que el dibujo se salga de la rejilla.
   const cajaCadena = useMemo(() => {
@@ -175,72 +186,6 @@ export default function Board({
       puntasX: (a.cx + b.cx) / 2, puntasY: (a.cy + b.cy) / 2
     };
   }, [board, boardOffsets]);
-
-  // La escala: la mesa se ajusta a la cadena que hay, no a la que podria haber.
-  //
-  // Antes se reservaban SIEMPRE 21,5 celdas, tuvieras una ficha o veinte. En un
-  // telefono de 375 eso da celdas de 12 px: la ficha de la mesa quedaba en
-  // 24x12 mientras la de tu mano medía 40x81, un tercio del tamaño. Con 21,5
-  // celdas fijas no hay forma de que se vean bien en un telefono; es geometria,
-  // no un ajuste fino.
-  //
-  // Ahora la ventana es la caja que ocupa la cadena mas un poco de aire. Eso
-  // ademas hace la garantia MAS fuerte que antes: no es que 21,5 celdas alcancen
-  // casi siempre, es que la ventana se calcula a partir de lo que hay que
-  // mostrar, asi que no puede quedar nada afuera.
-  //
-  // SOLO SE ALEJA, NUNCA SE ACERCA. El tamaño baja cuando la cadena crece y no
-  // vuelve a subir. Asi no baila entre jugada y jugada, que es lo que molestaba
-  // del zoom automatico: lo feo no era que cambiara, era que fuera y viniera.
-  const AIRE_CELDAS = 2;
-  const CELDAS_MINIMAS = 11;
-
-  const escalaSuelo = useMemo(
-    () =>
-      anchoUtil > 0 && altoUtil > 0
-        ? (Math.min(anchoUtil, altoUtil) / (LADO_CELDAS * CELL_SIZE)) * ZOOM_FICHAS
-        : 1,
-    [anchoUtil, altoUtil]
-  );
-
-  const escalaCruda = useMemo(() => {
-    if (anchoUtil <= 0 || altoUtil <= 0) return 1;
-    if (!cajaCadena) {
-      // Tablero vacio: se muestra la ventana mas cerrada, que es cuando las
-      // fichas se ven mas grandes y todavia no hay nada que se pueda salir.
-      return Math.min(anchoUtil, altoUtil) / (CELDAS_MINIMAS * CELL_SIZE);
-    }
-
-    const anchoCadena = Math.max(cajaCadena.x2 - cajaCadena.x1, 1) + AIRE_CELDAS;
-    const altoCadena = Math.max(cajaCadena.y2 - cajaCadena.y1, 1) + AIRE_CELDAS;
-
-    // Manda el eje que quede mas justo: si entra el peor, entran los dos.
-    const porAncho = anchoUtil / (Math.max(anchoCadena, CELDAS_MINIMAS) * CELL_SIZE);
-    const porAlto = altoUtil / (Math.max(altoCadena, CELDAS_MINIMAS) * CELL_SIZE);
-
-    return Math.min(porAncho, porAlto);
-  }, [anchoUtil, altoUtil, cajaCadena]);
-
-  // El trinquete: se guarda la escala mas chica que se llego a necesitar y no
-  // se vuelve a subir de ahi mientras dure la mano. Se reinicia cuando el
-  // tablero se vacia (ronda nueva) o cuando cambia el tamaño de la pantalla.
-  const escalaMinimaVista = useRef(Infinity);
-  const firmaDelSuelo = `${Math.round(anchoUtil)}x${Math.round(altoUtil)}`;
-  const firmaAnterior = useRef(firmaDelSuelo);
-
-  if (firmaAnterior.current !== firmaDelSuelo || tableroVacio) {
-    firmaAnterior.current = firmaDelSuelo;
-    escalaMinimaVista.current = Infinity;
-  }
-
-  escalaMinimaVista.current = Math.min(escalaMinimaVista.current, escalaCruda);
-
-  // Nunca por debajo del suelo de siempre: esa es la vista mas alejada que hace
-  // falta aunque la cadena se estire de mas.
-  const escala = Math.max(escalaMinimaVista.current, escalaSuelo);
-
-  const celdasVisiblesX = anchoUtil > 0 ? anchoUtil / (CELL_SIZE * escala) : LADO_CELDAS;
-  const celdasVisiblesY = altoUtil > 0 ? altoUtil / (CELL_SIZE * escala) : LADO_CELDAS;
 
   // La camara se queda QUIETA en el centro de la rejilla mientras la cadena
   // entre en pantalla, que es casi siempre (la cadena mide 11,4 celdas de
