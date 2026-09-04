@@ -13,7 +13,22 @@ export const BASE_RULES = {
   // En el tranque gana el equipo con menos pips y suma los pips que le quedaron
   // al rival. 'difference' (restar los propios) queda disponible como variante.
   blockedScoring: 'total',
-  turnMs: 30000
+
+  // Cuanto dura un turno. El motor NO cuenta el tiempo: no tiene relojes por
+  // dentro a proposito, porque tiene que dar siempre el mismo resultado con la
+  // misma semilla. Este numero es el que le dice a quien SI tiene reloj (el
+  // servidor) cuanto esperar, y al que dibuja, cuanto falta.
+  turnMs: 30000,
+
+  // Que pasa cuando se acaba el tiempo:
+  //
+  //   'auto-play'  → se juega solo por el jugador (lo de siempre)
+  //   'lose-round' → pierde la ronda, y las fichas que le quedaban en la mano
+  //                  se cuentan como puntos para el rival
+  //
+  // Jonathan lo quiere en 'lose-round' para las partidas entre personas: si no
+  // jugas, perdes. En las partidas contra la maquina no se usa reloj.
+  timeoutRule: 'auto-play'
 };
 
 export const FORMATS = {

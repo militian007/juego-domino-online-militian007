@@ -263,6 +263,12 @@ export class RoomManager {
       seed: room.seed
     });
     room.started = true;
+
+    // El reloj arranca aqui y no en quien llame despues. Si dependiera de que
+    // alguien se acuerde de emitir el estado, el PRIMER turno de la partida se
+    // quedaria sin tiempo: justo el unico que nadie mira.
+    this._ajustarReloj(room);
+
     return { room };
   }
 
@@ -306,8 +312,119 @@ export class RoomManager {
     return new Promise((r) => setTimeout(r, ms));
   }
 
+  /**
+   * El reloj del turno: 25 segundos para jugar.
+   *
+   * El reloj vive AQUI y no en el motor. El motor tiene prohibido usar relojes
+   * por dentro porque tiene que dar siempre el mismo resultado con la misma
+   * semilla; cuando se acaba el tiempo, este es el que le avisa.
+   *
+   * Solo corre en las partidas entre personas: los modos con maquina no traen
+   * `turnMs`, y el bot no se cuelga.
+   */
+  _ajustarReloj(room) {
+    const turnMs = room.config?.turnMs;
+    if (!turnMs || !room.game) return;
+
+    const enJuego = room.game.status === 'playing';
+    const seat = room.game.state.turn;
+    const jugador = enJuego ? room.players[seat] : null;
+    const leCorre = Boolean(jugador) && !jugador.isBot;
+
+    // El turno se identifica por ronda y asiento. Mientras sea el mismo, el
+    // reloj NO se reinicia: si no, cada vez que se vuelve a emitir el estado
+    // (por ejemplo cuando alguien se reconecta) se le regalarian 25 segundos.
+    const clave = leCorre ? `${room.game.state.round}:${seat}` : null;
+    if (clave && clave === room._relojDe) return;
+
+    clearTimeout(room._reloj);
+    room._reloj = null;
+    room._relojDe = clave;
+
+    if (!clave) {
+      room.game.turnDeadline = null;
+      return;
+    }
+
+    room.game.turnDeadline = Date.now() + turnMs;
+    room._reloj = setTimeout(() => this._seLeAcaboElTiempo(room, jugador.id), turnMs);
+    // Sin esto el proceso no termina nunca al apagar el servidor.
+    room._reloj.unref?.();
+  }
+
+  _seLeAcaboElTiempo(room, playerId) {
+    room._reloj = null;
+    room._relojDe = null;
+
+    if (!room.game || room.game.status !== 'playing') return;
+
+    // Puede haber jugado justo cuando saltaba el reloj. Si ya no es su turno,
+    // no se le quita nada.
+    if (room.players[room.game.state.turn]?.id !== playerId) return;
+
+    const r = room.game.timeout(playerId);
+    if (r?.ok === false) {
+      console.error('No se pudo aplicar el tiempo agotado:', r.error);
+      return;
+    }
+
+    this.broadcastState(room);
+  }
+
+  /**
+   * Alguien se cayo: tiene 60 segundos para volver.
+   *
+   * Mientras tanto los demas ven el aviso con la cuenta atras. Si no vuelve,
+   * abandona la partida, que es lo que ya pasaba antes al salirse.
+   *
+   * El reloj del turno NO se para por esto. Son dos cosas distintas: si no
+   * jugas, pierdes la ronda, estes conectado o no; los 60 segundos son para no
+   * perder la partida entera por un corte de internet.
+   */
+  marcarDesconectado(code, userId) {
+    const room = this.rooms.get(code);
+    if (!room?.started || !room.game || room.game.status === 'game-over') return;
+
+    const ms = room.config?.reconnectMs;
+    if (!ms) return;
+
+    const jugador = room.players.find((p) => p.id === userId);
+    if (!jugador || jugador.isBot || jugador.desconectadoHasta) return;
+
+    clearTimeout(jugador._vuelta);
+    jugador.desconectadoHasta = Date.now() + ms;
+
+    jugador._vuelta = setTimeout(() => {
+      jugador.desconectadoHasta = null;
+      jugador._vuelta = null;
+      this.abandonarPartida(code, userId);
+      this.broadcastState(room);
+    }, ms);
+    jugador._vuelta.unref?.();
+
+    this.broadcastState(room);
+  }
+
+  /** Volvio antes de que se acabaran los 60 segundos. */
+  marcarConectado(code, userId) {
+    const room = this.rooms.get(code);
+    if (!room) return;
+
+    const jugador = room.players.find((p) => p.id === userId);
+    if (!jugador?.desconectadoHasta) return;
+
+    clearTimeout(jugador._vuelta);
+    jugador._vuelta = null;
+    jugador.desconectadoHasta = null;
+
+    this.broadcastState(room);
+  }
+
   broadcastState(room) {
     if (!this.io || !room.game) return;
+
+    this._ajustarReloj(room);
+
     room.players.forEach((p) => {
       if (p.isBot || !p.socketId) return;
       const state = room.game.getStateForPlayer(p.id);

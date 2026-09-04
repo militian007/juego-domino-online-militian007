@@ -24,6 +24,8 @@ import { playTileSound, playDrawSound, estaSilenciado, alternarSilencio } from '
 import { ChevronRight, LogOut } from 'lucide-react';
 import IconoColor from '../components/IconoColor.jsx';
 import { salirPantallaCompleta } from '../utils/pantalla.js';
+import RelojDeTurno from '../components/game/RelojDeTurno.jsx';
+import AvisoDeAusente from '../components/game/AvisoDeAusente.jsx';
 
 // La partida en curso se recuerda en el navegador para poder volver a ella al
 // refrescar o al salir a otra app. Solo se olvida cuando la partida termina o
@@ -985,6 +987,18 @@ export default function Game() {
                   draggedTile={draggedTile}
                   onSnapChange={handleSnapChange}
                 />
+
+                {/* La cuenta atras del turno, en el centro de la mesa. Aparece
+                    sola en los ultimos diez segundos. */}
+                <RelojDeTurno
+                  restanteMs={gameState.turnRestanteMs}
+                  total={gameState.turnMs}
+                  esMiTurno={myTurn}
+                  nombre={gameState.players?.find((p) => p.id === gameState.currentPlayerId)?.username}
+                />
+
+                {/* "Fulano se desconecto, tiene 60 segundos para volver". */}
+                <AvisoDeAusente ausentes={gameState.ausentes} />
                 {/* Cada uno en su lado de la mesa. Las placas se apoyan en el
                     borde y el rectangulo de juego (los margenes que recibe
                     Board) empieza justo por dentro, asi que la cadena nunca les
@@ -1271,7 +1285,9 @@ export default function Game() {
                   ? 'Un jugador se quedó sin fichas'
                   : gameState.endReason === 'forfeit'
                     ? `${gameState.players?.[gameState.forfeitedSeat]?.username ?? 'Un jugador'} dejó la partida`
-                    : 'El juego se trancó'}
+                    : gameState.endReason === 'timeout'
+                      ? `A ${gameState.players?.[gameState.timedOutSeat]?.username ?? 'un jugador'} se le acabó el tiempo`
+                      : 'El juego se trancó'}
               </p>
 
               {/* En un abandono no hay ronda cerrada: no hay puntos que sumar

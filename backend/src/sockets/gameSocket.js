@@ -84,6 +84,9 @@ export function setupGameSocket(io, roomManager) {
       const room = result.room;
       const me = room.players.find((p) => p.id === socket.userId);
       me.socketId = socket.id;
+      // Volvio antes de que se le acabaran los 60 segundos: se corta la cuenta
+      // atras y se le avisa a los demas.
+      roomManager.marcarConectado(code, socket.userId);
       roomManager.broadcastLobby(room);
 
       // Si la partida ya comenzó, enviarle el estado actual del juego de inmediato
@@ -224,6 +227,16 @@ export function setupGameSocket(io, roomManager) {
     socket.on('disconnect', () => {
       console.log(`👋 ${socket.username} desconectado`);
       roomManager.removeFromMatchmaking(socket.id);
+
+      // Se le abre la ventana para volver, pero solo si el que se cae es la
+      // conexion que ESTA usando. Si ya se habia reconectado por otro socket,
+      // este que muere es el viejo y no hay que marcar a nadie como ausente.
+      for (const [code, room] of roomManager.rooms) {
+        const jugador = room.players.find((p) => p.id === socket.userId);
+        if (jugador?.socketId === socket.id) {
+          roomManager.marcarDesconectado(code, socket.userId);
+        }
+      }
     });
   });
 }

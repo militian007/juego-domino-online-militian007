@@ -19,6 +19,7 @@ const NOMBRE_DEL_MODO = {
 
 const MOTIVO = {
   blocked: 'trancado',
+  timeout: 'sin tiempo',
   domino: 'dominó',
   forfeit: 'abandono'
 };

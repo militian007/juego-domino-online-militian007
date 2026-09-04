@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   createGame,
   applyAction,
+  isTerminal,
   legalActions,
   viewFor,
   spectatorView,
@@ -946,4 +947,67 @@ test('la cadena sale CRUZADA de un doble, no de pie en la misma fila', () => {
     'vertical',
     'de un doble horizontal la cadena tiene que salir vertical'
   );
+});
+
+test('con timeoutRule lose-round, quedarse sin tiempo PIERDE la ronda', () => {
+  const s = createGame({
+    gameFormat: 'domino-1v1-v1',
+    seed: 'sin-tiempo',
+    config: { timeoutRule: 'lose-round' }
+  });
+
+  const seat = s.turn;
+  const rival = seat === 0 ? 1 : 0;
+  const pipsQueLeQuedaban = handPips(s.hands[seat]);
+
+  const r = applyAction(s, { type: ACTION.TIMEOUT, seat });
+  assert.ok(r.ok, r.error);
+
+  // La ronda se cierra. NO se juega solo por el, que es lo que hacia antes.
+  assert.equal(r.state.phase, PHASE.ROUND_OVER);
+  assert.equal(r.state.board.length, 0);
+  assert.equal(r.state.lastRound.reason, 'timeout');
+  assert.equal(r.state.lastRound.timedOutSeat, seat);
+
+  // Sus fichas se cuentan como puntos del rival, ni una mas ni una menos.
+  const equipoRival = r.state.teams[rival];
+  assert.equal(r.state.scores[equipoRival], pipsQueLeQuedaban);
+  assert.equal(r.state.scores[r.state.teams[seat]], 0);
+
+  // Y se sigue jugando: la partida no se termina por esto.
+  assert.equal(isTerminal(r.state), false);
+  const siguiente = applyAction(r.state, { type: ACTION.START_NEXT_ROUND, seat });
+  assert.ok(siguiente.ok, siguiente.error);
+  assert.equal(siguiente.state.phase, PHASE.PLAYING);
+});
+
+test('en 2v2 el tiempo lo paga el que no jugo, no su companiero', () => {
+  const s = createGame({
+    gameFormat: 'domino-2v2-v1',
+    seed: 'sin-tiempo-2v2',
+    config: { timeoutRule: 'lose-round' }
+  });
+
+  const seat = s.turn;
+  const companiero = (seat + 2) % 4;
+  const suyos = handPips(s.hands[seat]);
+
+  const r = applyAction(s, { type: ACTION.TIMEOUT, seat });
+  assert.ok(r.ok, r.error);
+
+  const equipoRival = r.state.teams[seat] === 1 ? 2 : 1;
+  // Solo las fichas del que se quedo sin tiempo. Las del companiero no entran:
+  // la pena es de quien no jugo.
+  assert.equal(r.state.scores[equipoRival], suyos);
+  assert.notEqual(handPips(s.hands[companiero]), null);
+});
+
+test('sin configurar nada, el tiempo se sigue comportando como antes', () => {
+  const s = createGame({ gameFormat: 'domino-1v1-v1', seed: 'tiempo-por-defecto' });
+  assert.equal(s.config.timeoutRule, 'auto-play');
+
+  const seat = s.turn;
+  const r = applyAction(s, { type: ACTION.TIMEOUT, seat });
+  assert.ok(r.ok, r.error);
+  assert.equal(r.state.phase, PHASE.PLAYING);
 });

@@ -15,9 +15,12 @@ import {
 export const GRID_SIZE = 20;
 
 export const MODE_CONFIG = {
-  '1v1': { humans: 2, bots: 0, totalPlayers: 2, teams: false, hasPool: true, label: '1 vs 1', gameFormat: 'domino-1v1-v1' },
+  // `turnMs` y `reconnectMs` solo estan en los modos entre personas. Contra la
+  // maquina no hay reloj: el bot no se cuelga y apurar a quien juega solo no
+  // tiene sentido. Decision de Jonathan.
+  '1v1': { humans: 2, bots: 0, totalPlayers: 2, teams: false, hasPool: true, label: '1 vs 1', gameFormat: 'domino-1v1-v1', turnMs: 25000, reconnectMs: 60000 },
   '1v1bot': { humans: 1, bots: 1, totalPlayers: 2, teams: false, hasPool: true, label: '1 vs 1 (con bot)', gameFormat: 'domino-1v1-v1' },
-  '2v2': { humans: 4, bots: 0, totalPlayers: 4, teams: true, hasPool: false, label: '2 vs 2', gameFormat: 'domino-2v2-v1' },
+  '2v2': { humans: 4, bots: 0, totalPlayers: 4, teams: true, hasPool: false, label: '2 vs 2', gameFormat: 'domino-2v2-v1', turnMs: 25000, reconnectMs: 60000 },
   // Banco de pruebas del 2v2: vos y tres bots. Usa el mismo gameFormat que el
   // 2v2 real, asi lo que se prueba aqui es exactamente lo que corre con humanos.
   '2v2bots': { humans: 1, bots: 3, totalPlayers: 4, teams: true, hasPool: false, label: '2 vs 2 (vos y 3 bots)', gameFormat: 'domino-2v2-v1' }
@@ -47,7 +50,13 @@ export class DominoGame {
     this.state = createGame({
       gameFormat: config.gameFormat,
       seed,
-      players: players.map((p) => ({ id: p.id, name: p.username, isBot: Boolean(p.isBot) }))
+      players: players.map((p) => ({ id: p.id, name: p.username, isBot: Boolean(p.isBot) })),
+      // Si el modo lleva reloj, el motor tiene que saber que hacer cuando se
+      // acaba: perder la ronda. El motor no cuenta el tiempo (no tiene relojes
+      // por dentro), solo aplica la regla cuando el servidor le avisa.
+      config: config.turnMs
+        ? { turnMs: config.turnMs, timeoutRule: 'lose-round' }
+        : {}
     });
 
     this._syncPlayers();
@@ -163,6 +172,11 @@ export class DominoGame {
     if (this.state.phase === PHASE.GAME_OVER) return this.state.result?.reason ?? null;
 
     return null;
+  }
+
+  /** Asiento al que se le acabo el tiempo, si la ronda cerro asi. */
+  get timedOutSeat() {
+    return this.state.lastRound?.timedOutSeat ?? null;
   }
 
   /** Asiento que abandono, si la partida termino asi. */
@@ -362,6 +376,24 @@ export class DominoGame {
       mode: this.mode,
       hasPool: this.hasPool,
       targetPoints: this.state.config.targetPoints,
+      // Cuanto dura un turno y cuanto le QUEDA al que esta en curso.
+      //
+      // Se manda lo que falta, no la hora en que vence. Si se mandara la hora
+      // del servidor, cualquier telefono con el reloj corrido dibujaria una
+      // cuenta atras equivocada; "faltan 8 segundos" se entiende igual en
+      // cualquier reloj. Es null cuando el modo no lleva tiempo.
+      turnMs: this.config.turnMs ?? null,
+      turnRestanteMs: this.turnDeadline ? Math.max(0, this.turnDeadline - Date.now()) : null,
+      // Quien se cayo y cuanto le queda para volver. Viaja con el estado en vez
+      // de por un evento aparte: asi el que se reconecta se entera igual, sin
+      // depender de haber estado escuchando en el momento del corte.
+      ausentes: this.players
+        .filter((p) => !p.isBot && p.desconectadoHasta)
+        .map((p) => ({
+          seat: p.seat ?? this.players.indexOf(p),
+          username: p.username,
+          restanteMs: Math.max(0, p.desconectadoHasta - Date.now())
+        })),
       poolCount: this.state.pool.length,
       status: this.status,
       round: this.state.round,
@@ -370,6 +402,7 @@ export class DominoGame {
       roundPoints: this.roundPoints,
       endReason: this.endReason,
       forfeitedSeat: this.forfeitedSeat,
+      timedOutSeat: this.timedOutSeat,
       // Al cerrar la ronda se revelan las manos, para que se pueda verificar el puntaje
       revealedHands: this._roundClosed && this.state.lastRound
         ? this.players.map((p, i) => ({

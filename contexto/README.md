@@ -3958,3 +3958,76 @@ En telefono de 375: "VER TODOS LOS MODOS" termina en 732 y la barra de abajo emp
 767, o sea 35 px de aire, y cierra en 800 con 12 px hasta el borde. En escritorio de 900 el
 nombre queda arriba a la izquierda (x=258, despues del logo), "Salir" arriba a la derecha
 (x=813) y la barra abajo a la izquierda (x=24).
+
+---
+
+## 95. Reloj de turno: 25 segundos para jugar, 60 para volver
+
+Reglas que pidio Jonathan, **solo para las partidas entre personas**:
+
+- **25 segundos para jugar.** Si no jugas, **pierdes la ronda**, y las fichas que te
+  quedaban en la mano se cuentan como puntos del rival. La partida sigue.
+- **Los ultimos 10 segundos** se muestran en un circulito que cuenta 10, 9, 8... 1.
+- **Si te caes, tienes 60 segundos para volver**, y al otro le sale el aviso con la cuenta
+  atras. Si no vuelves, abandonas la partida (que es lo que ya pasaba al salirse).
+
+Contra la maquina **no hay reloj**: el bot no se cuelga y apurar a quien juega solo no
+tiene sentido.
+
+### Donde vive cada cosa, y por que
+
+El motor tiene **prohibido usar relojes por dentro**: tiene que dar siempre el mismo
+resultado con la misma semilla, y un `setTimeout` rompe eso. Asi que el reparto es:
+
+| quien | que hace |
+| --- | --- |
+| el motor | sabe QUE pasa cuando se acaba el tiempo (`timeoutRule`) |
+| el servidor | cuenta el tiempo y le avisa al motor (`RoomManager._ajustarReloj`) |
+| la pantalla | dibuja lo que falta |
+
+La accion `TIMEOUT` ya existia en el motor pero hacia otra cosa: **jugaba sola por vos**.
+No se cambio por las bravas; se agrego `timeoutRule` en la configuracion, con
+`'auto-play'` (lo de antes) por defecto y `'lose-round'` para lo que pidio Jonathan. Asi
+lo viejo sigue funcionando igual y la regla nueva se enciende donde corresponde.
+
+### En 2v2, la pena la paga el que no jugo
+
+Se cuentan **solo las fichas del que se quedo sin tiempo**, no las de su companiero. En 1
+contra 1 da exactamente lo que pidio; en 2v2 evita castigar a quien si estaba jugando.
+
+### Tres cosas que se hicieron distinto a lo obvio
+
+1. **Se manda cuanto FALTA, no la hora en que vence.** Si se mandara la hora del servidor,
+   un telefono con el reloj corrido dibujaria una cuenta atras equivocada. "Faltan 8
+   segundos" se entiende igual en cualquier reloj.
+2. **Reemitir el estado no reinicia el reloj.** El turno se identifica por ronda y asiento;
+   mientras sea el mismo, el reloj sigue donde estaba. Sin esto, reconectarse regalaria 25
+   segundos limpios cada vez.
+3. **El reloj arranca en `startGame`**, no en quien emita el estado despues. Si dependiera
+   de que alguien se acuerde de emitir, el PRIMER turno de la partida se quedaria sin
+   tiempo: justo el unico que nadie mira. Asi estaba, y asi lo encontro la prueba.
+
+### El aviso decia mentira
+
+El primer intento mostraba **"El juego se tranco"** al perder por tiempo, porque el cartel
+mandaba todo lo que no fuera "domino" o "abandono" al mismo texto. Ahora dice *"A Fulano se
+le acabo el tiempo"*, y para eso el estado lleva `timedOutSeat`. En el perfil el motivo
+aparece como "sin tiempo".
+
+### El reloj del turno NO se para cuando alguien se cae
+
+Son dos cosas distintas: los 25 segundos son por no jugar, estes conectado o no; los 60 son
+para no perder la partida entera por un corte de internet. Si se parara el reloj al
+desconectarse, cortar el wifi seria la forma de no perder nunca una ronda.
+
+### Comprobado
+
+- Motor: 3 pruebas nuevas (60 en total). Que pierde la ronda, que el rival suma exactamente
+  sus pips, que en 2v2 no paga el companiero, y que sin configurar nada sigue como antes.
+- `npm run test:reloj` — 17 pruebas del servidor: que el reloj corre, que reemitir no
+  regala tiempo, que contra la maquina no hay reloj, que el aviso de caida aparece y
+  desaparece, que si no vuelve abandona, y que el socket viejo no marca ausente a quien ya
+  se reconecto.
+- `npm run test:reloj-e2e` — 11 pruebas con dos jugadores de verdad por socket: se emparejan,
+  nadie juega, y **medio minuto despues la ronda se pierde sola**.
+- Backend 87/87, perfil 20/20, y los bots rompe-juegos sin fallos en 160 partidas.
