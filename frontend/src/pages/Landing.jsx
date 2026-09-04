@@ -137,10 +137,24 @@ export default function Landing() {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-black via-black/80 to-transparent md:hidden" />
 
       <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-5 sm:px-10 py-4 sm:py-6">
-        {/* En telefono el logo grande manda en el centro, asi que aca arriba
-            estorbaria. Se muestra solo de escritorio para arriba. */}
-        <Logo variante="linea" className="hidden md:inline-flex" />
-        <span className="md:hidden" />
+        {/* A la izquierda va quien sos. Al lado del nombre queda el hueco para
+            el nivel de ranking, que todavia no existe. En telefono el logo
+            grande manda en el centro de la pantalla, asi que aca arriba
+            estorbaria: se muestra solo de escritorio para arriba. */}
+        <div className="flex min-w-0 items-center gap-3">
+          <Logo variante="linea" className="hidden md:inline-flex" />
+          {user && (
+            <Link
+              to="/perfil"
+              className="flex min-w-0 items-center gap-2 rounded-full border border-domino-accent/30 bg-black/45 px-3 py-1.5 backdrop-blur-sm transition hover:border-domino-accent/70"
+            >
+              <span className="truncate text-xs font-semibold tracking-wider text-domino-accent sm:text-sm">
+                {user.username}
+              </span>
+            </Link>
+          )}
+        </div>
+
         <div className="flex items-center gap-2 sm:gap-3">
           {!user && (
             <GoldButton as={Link} to="/login" variant="outline" size="sm">
@@ -150,14 +164,6 @@ export default function Landing() {
           <GoldButton onClick={() => setModalOpen(true)} size="sm" className="hidden md:inline-flex">
             JUGAR
           </GoldButton>
-          {user && (
-            <Link
-              to="/perfil"
-              className="max-w-[7rem] truncate text-xs font-semibold tracking-wider text-domino-accent hover:underline sm:max-w-none sm:text-sm"
-            >
-              {user.username}
-            </Link>
-          )}
           {user && (
             <button
               onClick={handleLogout}
@@ -170,7 +176,7 @@ export default function Landing() {
       </header>
 
       <main className="absolute inset-0 z-10 flex items-end justify-center pointer-events-none md:items-center md:justify-end">
-        <div className="pointer-events-auto flex w-full max-w-3xl flex-col items-center px-5 pb-6 text-center md:w-auto md:items-start md:pb-0 md:pr-[6%] md:text-left lg:pr-[8%]">
+        <div className="pointer-events-auto flex w-full max-w-3xl flex-col items-center px-5 pb-20 text-center md:w-auto md:items-start md:pb-0 md:pr-[6%] md:text-left lg:pr-[8%]">
           {/* El logo es el titulo. Antes habia un eslogan de pagina web
               ("Domina el arte del dominó"); una pantalla de titulo de juego
               lleva la marca, no un texto de venta. */}
@@ -207,17 +213,25 @@ export default function Landing() {
       </main>
 
 
-      <div className="absolute left-1/2 top-[68px] z-20 flex -translate-x-1/2 items-center gap-2 rounded-full border border-domino-accent/40 bg-black/60 px-3 py-1 shadow-lg backdrop-blur-sm md:left-auto md:right-6 md:top-auto md:bottom-5 md:translate-x-0 md:px-4 md:py-1.5">
-        <span className="relative flex h-2.5 w-2.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
-        </span>
-        <span className="whitespace-nowrap text-[10px] font-semibold tracking-wider text-domino-cream sm:text-sm">
-          {counts.loggedIn} EN LÍNEA
-        </span>
-      </div>
+      {/* La barra de abajo: el chat y los que estan en linea, juntos y por
+          debajo del menu. Antes el contador estaba arriba del todo en telefono
+          y abajo a la derecha en escritorio, o sea en dos sitios distintos
+          segun la pantalla. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-3 z-30 flex items-center justify-center gap-2 px-4 sm:bottom-4 md:justify-start md:px-6">
+        <div className="pointer-events-auto">
+          <ChatGlobal />
+        </div>
 
-      <ChatGlobal />
+        <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-domino-accent/40 bg-black/60 px-3 py-2 shadow-lg backdrop-blur-sm">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+          </span>
+          <span className="whitespace-nowrap text-[10px] font-semibold tracking-wider text-domino-cream sm:text-xs">
+            {counts.loggedIn} EN LÍNEA
+          </span>
+        </div>
+      </div>
 
       <ModeModal
         open={modalOpen}

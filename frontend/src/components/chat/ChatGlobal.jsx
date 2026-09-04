@@ -100,9 +100,11 @@ export default function ChatGlobal() {
 
   if (!abierto) {
     return (
+      // El boton NO se posiciona solo: lo coloca quien lo use. En el menu va en
+      // la barra de abajo, al lado de los jugadores en linea.
       <button
         onClick={() => setAbierto(true)}
-        className="fixed bottom-4 left-4 z-30 flex items-center gap-2 rounded-full border border-domino-accent/40 bg-black/70 px-4 py-2 text-xs font-semibold tracking-wider text-domino-cream shadow-lg backdrop-blur-sm transition hover:border-domino-accent hover:bg-black/85 sm:text-sm"
+        className="flex items-center gap-2 rounded-full border border-domino-accent/40 bg-black/70 px-4 py-2 text-[10px] font-semibold tracking-wider text-domino-cream shadow-lg backdrop-blur-sm transition hover:border-domino-accent hover:bg-black/85 sm:text-xs"
       >
         <span aria-hidden="true">💬</span>
         CHAT

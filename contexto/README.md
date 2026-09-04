@@ -3930,3 +3930,31 @@ no servia para nada: al que frenaban cerraba la pestaña, volvia a entrar y segu
 - **No hay moderacion.** Hay frenos, pero no hay forma de borrar un mensaje ni de callar a
   alguien. Con poca gente aguanta; antes de que entre gente de verdad hace falta.
 - Las tablas nuevas se crean solas al arrancar, tambien en produccion.
+
+---
+
+## 94. El menu principal, reacomodado
+
+Pedido de Jonathan, con captura marcada en rojo: el nombre del usuario arriba a la
+izquierda (dejando sitio al lado para el nivel de ranking, que todavia no existe), "Salir"
+a la derecha, los jugadores en linea abajo y **pegados al chat**, y todo el bloque del menu
+un poco mas arriba. El fondo no se toca.
+
+### Que cambio
+
+| antes | ahora |
+| --- | --- |
+| el nombre iba a la derecha, junto a "Salir" | va a la izquierda, en su propia chapita |
+| "EN LINEA" arriba del todo en telefono y abajo a la derecha en escritorio | abajo, al lado del chat, en las dos pantallas |
+| el boton del chat se posicionaba solo (`fixed`) | lo coloca quien lo usa: no se posiciona solo |
+| el menu pegado al borde de abajo (`pb-6`) | sube y deja sitio a la barra (`pb-20`) |
+
+El contador de gente en linea estaba **en dos sitios distintos segun el tamaño de
+pantalla**. Ahora es uno solo, y vive en la misma barra que el chat.
+
+### Medido, no mirado
+
+En telefono de 375: "VER TODOS LOS MODOS" termina en 732 y la barra de abajo empieza en
+767, o sea 35 px de aire, y cierra en 800 con 12 px hasta el borde. En escritorio de 900 el
+nombre queda arriba a la izquierda (x=258, despues del logo), "Salir" arriba a la derecha
+(x=813) y la barra abajo a la izquierda (x=24).
