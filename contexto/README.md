@@ -3732,3 +3732,72 @@ El test `doble contra el borde` guardaba la regla vieja y se reescribio: ahora c
 ninguna opcion quede en paralelo con la cadena.
 
 Motor 57/57, backend 87/87.
+
+---
+
+## 91. Bots que juegan para romper el juego, no para ganar
+
+Pedido de Jonathan: *"puedo crear un grupo de bot que prueben y busquen roper el juego...
+busquen las fallas antes de que yo las vea... y nosotros repararlas antes de esperar q
+nasca la falla"*.
+
+Si se puede, y ya esta hecho: `packages/domino-engine/tools/romper.mjs`.
+
+```bash
+node tools/romper.mjs 1000
+```
+
+### En que se diferencia de los tests
+
+Los tests comprueban casos que YO pense. Estos bots juegan partidas enteras y despues de
+**cada jugada** revisan que el estado siga siendo valido. Encuentran lo que a nadie se le
+ocurrio probar.
+
+### Las 6 personalidades
+
+Ninguna juega bien a proposito. Juegan raro, que es lo que rompe cosas:
+
+| bot | que hace |
+| --- | --- |
+| `siempre-la-primera` | la primera opcion de la lista, siempre |
+| `siempre-la-ultima` | la ultima |
+| `al-azar` | al azar, pero con semilla (se repite igual) |
+| `obsesionado-con-dobles` | tira dobles apenas puede, que es lo que traba el tablero |
+| `suelta-lo-pesado` | la ficha de mas puntos primero |
+| `roba-todo-lo-que-puede` | roba antes que jugar |
+
+### Las 10 reglas que se comprueban despues de cada jugada
+
+1. Las 28 fichas siempre estan, sin repetidas ni perdidas
+2. Ninguna ficha queda fuera de la rejilla
+3. Ninguna ficha se monta sobre otra
+4. La cadena de verdad pega: cada ficha con la anterior
+5. Las puntas que se informan son las puntas reales
+6. Nadie ve la mano de otro
+7. Los puntajes nunca son negativos
+8. El estado sobrevive guardarlo y volverlo a cargar
+9. No se puede pasar si hay jugada legal
+10. Siempre hay alguna accion posible
+
+Ademas: cada 7 jugadas se mete una accion invalida a proposito (ficha `99`) para
+comprobar que la rechaza sin romperse, y cada 50 partidas se juega la misma semilla dos
+veces para confirmar que da exactamente lo mismo.
+
+### Resultado
+
+**2.000 partidas, ningun fallo.**
+
+### Tres falsos positivos mios, y como se arreglaron
+
+Los tres fueron errores de la herramienta, no del motor. Vale anotarlos porque son la
+misma trampa tres veces: **buscar una ficha como texto dentro de un JSON**.
+
+1. `[1,2]` aparecia dentro de `"teams":[1,2]`. Se paso a comparar estructura.
+2. `revealedHands` trae todas las manos al cerrar la ronda, y eso es a proposito: de ahi
+   sale el desglose del puntaje. Se limito la comprobacion a la ronda en curso.
+3. El `ROUND_END` de la ronda 1 guardaba las sobras `[[2,2]]`. En la ronda 3 al asiento 1
+   le quedaba una sola ficha, justo la `[2,2]`, y coincidieron. Ahora del historial solo
+   se miran los eventos de la ronda que se esta jugando.
+
+Regla que queda: **antes de decir "encontre un bug", reproducir la semilla y mirar el dato
+crudo.** El motor es determinista, asi que cualquier fallo se repite exacto con su semilla.
