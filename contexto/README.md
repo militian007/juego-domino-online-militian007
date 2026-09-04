@@ -3801,3 +3801,49 @@ misma trampa tres veces: **buscar una ficha como texto dentro de un JSON**.
 
 Regla que queda: **antes de decir "encontre un bug", reproducir la semilla y mirar el dato
 crudo.** El motor es determinista, asi que cualquier fallo se repite exacto con su semilla.
+
+---
+
+## 92. La lupa: acercar la mesa con dos dedos y soltar para volver
+
+Pedido de Jonathan: *"que la gente le pueda hacer zoom a la mesa y el zoom sea dinamico y
+que cuando suelte el zoom vuelva a su forma original... el va a hacer zoom con los dedos en
+el telefono y apenas suelte regrese a su forma base"*.
+
+Hecho: `frontend/src/hooks/useLupa.js`, enganchado en `Board.jsx`.
+
+### La decision de fondo
+
+Es una **lupa encima**, no un cambio de tamano del juego. La partida se sigue dibujando
+exactamente igual que antes: misma escala, misma camara, mismas fichas. Lo unico que se
+mueve es una capa de vista que se agranda mientras hay dedos apoyados.
+
+Eso resuelve dos problemas de una:
+
+1. **Nadie se queda trabado.** No hay estado que guardar ni boton de "volver": sueltas y
+   estas donde estabas. Era literalmente lo que pidio.
+2. **El iman no se descoloca.** El calculo de donde cae una ficha sigue usando la escala de
+   siempre, asi que acercar no mueve el punto donde se suelta.
+
+### Detalles que importan
+
+- Se acerca **en el punto donde estan los dedos**, no en el centro de la pantalla. Pones los
+  dedos sobre una punta de la cadena y se agranda esa punta.
+- Con los dos dedos apoyados se puede **arrastrar** la mesa para ir a mirar la otra punta.
+- Tope: 3 veces. Mas que eso no sirve para nada.
+- Al soltar vuelve animado en 220 ms. De golpe se ve como un salto.
+- `touch-action: none` en el paño y `passive: false` en los listeners. Sin las dos cosas el
+  navegador se lleva el gesto y termina acercando **la pagina entera** en vez de la mesa.
+  Con `addEventListener` normal de React no alcanza: React los registra en pasivo.
+
+### Comprobado
+
+En el pano de 331x673 (telefono de 375), con dedos sinteticos:
+
+| momento | lo que hace la mesa |
+| --- | --- |
+| en reposo | `scale(1)`, sin transicion |
+| separando los dedos | `scale(2.25)` anclado en el punto de los dedos |
+| separando mas | `scale(3)`, que es el tope |
+| moviendo los dos dedos | se arrastra, la escala no cambia |
+| al soltar | vuelve a `scale(1)` con la animacion de 220 ms |

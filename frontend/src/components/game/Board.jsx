@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useMemo, useState, useCallback } from 'react';
+import { useLupa } from '../../hooks/useLupa';
 import Tile from './Tile.jsx';
 import {
   DEFAULT_LAYOUT,
@@ -159,6 +160,11 @@ export default function Board({
     anchoUtil > 0 && altoUtil > 0
       ? (Math.min(anchoUtil, altoUtil) / (LADO_CELDAS * CELL_SIZE)) * ZOOM_FICHAS
       : 1;
+
+  // La lupa de dos dedos. Va POR ENCIMA de todo lo de arriba y no lo toca: la
+  // partida se sigue dibujando igual, solo se acerca la vista mientras hay
+  // dedos apoyados.
+  const lupa = useLupa(containerRef);
 
   const celdasVisiblesX = anchoUtil > 0 ? anchoUtil / (CELL_SIZE * escala) : LADO_CELDAS;
   const celdasVisiblesY = altoUtil > 0 ? altoUtil / (CELL_SIZE * escala) : LADO_CELDAS;
@@ -419,6 +425,7 @@ export default function Board({
     <div
       ref={containerRef}
       className={`felt-base ${clasePano} w-full h-full relative overflow-hidden rounded-xl select-none`}
+      style={{ touchAction: 'none' }}
     >
       <div
         className="pointer-events-none absolute inset-0 z-30"
@@ -428,6 +435,7 @@ export default function Board({
             'radial-gradient(135% 105% at 50% 52%, rgba(0,0,0,0) 46%, rgba(0,0,0,0.40) 100%)'
         }}
       />
+      <div style={lupa.estilo}>
       <div
         className="relative origin-top-left"
         style={{
@@ -468,6 +476,7 @@ export default function Board({
 
         {/* Renderizar Siluetas e Imanes */}
         {renderGhostPlacements()}
+      </div>
       </div>
     </div>
     </div>
