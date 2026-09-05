@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { connectSocket, disconnectSocket } from '../services/socket.js';
 import ChatGlobal from '../components/chat/ChatGlobal.jsx';
 import Campana from '../components/notificaciones/Campana.jsx';
+import InstalarApp from '../components/InstalarApp.jsx';
 import RetoEntrante from '../components/notificaciones/RetoEntrante.jsx';
 import { pantallaCompleta } from '../utils/pantalla.js';
 import SelectorModos, { MODOS } from '../components/SelectorModos.jsx';
@@ -223,9 +224,12 @@ export default function Landing() {
       <div className="pointer-events-none absolute inset-x-0 bottom-3 z-30 flex items-center justify-center gap-2 px-4 sm:bottom-4 md:justify-start md:px-6">
         <div className="pointer-events-auto">
           <ChatGlobal />
+        </div>
 
-      {/* "Fulano te reto": va encima de todo porque caduca en un minuto. */}
-      <RetoEntrante />
+        {/* Instalar la app, siempre a la vista. El cartel automatico del
+            navegador aparece cuando el quiere, o no aparece nunca. */}
+        <div className="pointer-events-auto">
+          <InstalarApp />
         </div>
 
         <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-domino-accent/40 bg-black/60 px-3 py-2 shadow-lg backdrop-blur-sm">
@@ -238,6 +242,9 @@ export default function Landing() {
           </span>
         </div>
       </div>
+
+      {/* "Fulano te reto": va encima de todo porque caduca en un minuto. */}
+      <RetoEntrante />
 
       <ModeModal
         open={modalOpen}

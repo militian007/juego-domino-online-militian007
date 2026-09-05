@@ -4191,3 +4191,48 @@ no arrancaba. Queda avisado en el propio archivo.
 - En pantalla: se reto desde el chat y la pagina llevo a la mesa privada; se recibio un
   reto con la cuenta atras y el aviso quedo en la campana.
 - Backend 87/87, reloj 20/20, perfil 20/20, chat 9/9.
+
+---
+
+## 98. Poder instalar la app (y por que no se podia)
+
+Jonathan: *"cuando entro a la página no me da opción, quiero descargar la aplicación para
+ver el icono nuevo... pon que siempre te dé la opción"*.
+
+### Por que no aparecia
+
+**No habia service worker.** Chrome no ofrece instalar una web si no encuentra un service
+worker con manejador de `fetch`. Manifiesto habia, iconos habia, service worker no: por eso
+la opcion no salia nunca, ni iba a salir sola.
+
+### El service worker que se puso
+
+Uno minimo, en `frontend/public/sw.js`, y **a proposito no guarda copias de los archivos
+del juego**. El juego se despliega varias veces al dia, y un service worker que guarda
+copias es la forma mas comun de que alguien se quede con una version vieja pegada sin
+entender por que. Lo unico que guarda es la pagina de arranque, y solo para poder contestar
+algo cuando no hay internet. Todo lo demas va derecho a la red.
+
+Se registra solo en la version publicada: en desarrollo estorba al recargado en caliente.
+
+### El boton
+
+El navegador decide solo si muestra su cartel de instalar, y con frecuencia no lo muestra:
+porque ya lo mostro una vez, porque no le parecio el momento, o porque el aparato no lo
+hace. Por eso hay un boton propio, abajo al lado del chat, que esta siempre.
+
+Dos caminos, porque no hay uno solo:
+
+- **Android y escritorio:** el navegador avisa con `beforeinstallprompt`. Se guarda ese
+  aviso y el boton lo dispara. **Es el unico modo de abrir el cartel de instalar**: no se
+  puede llamar porque si, hay que tener el aviso guardado.
+- **iPhone:** no existe ese aviso ni forma de instalar por codigo. Se instala a mano desde
+  Compartir → Añadir a pantalla de inicio. El boton explica como, que es lo unico que se
+  puede hacer.
+
+Si la app ya esta instalada, el boton no aparece.
+
+### Un aviso que hace falta
+
+Si ya la tenia instalada, **el icono viejo se queda**: el sistema lo guarda al instalar y no
+lo vuelve a pedir. Hay que borrarla y volver a instalarla. El propio cartel lo dice.
