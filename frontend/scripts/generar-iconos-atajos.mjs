@@ -30,7 +30,10 @@ const LADO = 128;
 
 const ICONOS = [
   { origen: 'icono-torneos.png', destino: 'torneos.png' },
-  { origen: 'icono-tabla.png', destino: 'tabla.png' }
+  { origen: 'icono-tabla.png', destino: 'tabla.png' },
+  // El escudo del pase de batalla. Ya esta listo aunque el pase todavia no
+  // exista: cuando se haga, el icono no es lo que va a faltar.
+  { origen: 'icono-pase.png', destino: 'pase.png' }
 ];
 
 /** Encaja el dibujo dentro del cuadrado sin deformarlo. */
