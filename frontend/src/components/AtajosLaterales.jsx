@@ -19,7 +19,7 @@ const ATAJOS = [
 
 export default function AtajosLaterales() {
   return (
-    <div className="pointer-events-none absolute right-3 top-1/3 z-20 flex flex-col gap-3 sm:right-5">
+    <div className="pointer-events-none absolute right-0.5 top-[22%] z-20 flex flex-col gap-3 sm:right-2">
       {ATAJOS.map(({ a, icono, texto }) => (
         <Link
           key={a}
