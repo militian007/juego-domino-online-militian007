@@ -408,3 +408,31 @@
 @media (max-height: 520px) {
   .menu-compacto .logo-menu { display: none; }
 }
+
+/* La pinta "blanco hueso" de las fichas.
+ *
+ * Es la MISMA imagen de siempre, recoloreada. No hay arte nuevo: las fichas
+ * estan recortadas a mano y no se dibujan a mano otras (regla de oro 1.1), y no
+ * habia credito de IA de imagen para generarlas.
+ *
+ * El invertido convierte el cuerpo oscuro en hueso y el dorado en gris. Se
+ * probaron variantes con mas contraste para llevar los puntos a negro y salieron
+ * peor: los puntos son domos con brillo, y al forzar el contraste se deshacen.
+ * Este es el mejor punto que da el recoloreado.
+ */
+:root {
+  --filtro-hueso: invert(1) grayscale(0.55) sepia(0.45) brightness(1.08) contrast(0.95);
+}
+
+/* Las fichas de la mesa, la mano y el pozo. Se excluyen las MUESTRAS del
+ * selector: estan dentro de la mesa, asi que sin este `:not` la muestra de
+ * "Clasicas" tambien salia recoloreada y las dos opciones se veian iguales. */
+.fichas-hueso img:not([data-muestra]) {
+  filter: var(--filtro-hueso);
+}
+
+/* Cada muestra del selector se pinta segun LO QUE ELLA MISMA representa, no
+ * segun lo que este elegido. */
+img[data-muestra='hueso'] {
+  filter: var(--filtro-hueso);
+}

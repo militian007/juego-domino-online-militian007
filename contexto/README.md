@@ -4474,3 +4474,50 @@ Al arrancar en cero, dos comprobaciones dejaron de tener sentido tal como estaba
   tenga puntos: desde cero, el que pierde no baja.
 - **La tabla general** usaba ids inventados. Une con `users`, asi que al vaciar la base se
   quedo sin filas. Ahora usa cuentas de verdad, igual que la semanal.
+
+---
+
+## 103. Pinta de las fichas: clasicas y blanco hueso
+
+Pedido de Jonathan: *"en temas también que se le pueda poner skin a los dominós: el que
+tenemos y el blanco hueso tradicional"*.
+
+En el menu de la mesa, debajo de PAÑO, hay ahora una fila **FICHAS** con dos opciones. Cada
+muestra es una ficha de verdad, no un cuadrito de color: se ve exactamente lo que se elige.
+
+### Como se hizo el blanco hueso, y por que asi
+
+**No es arte nuevo. Es la misma imagen recoloreada con un filtro.**
+
+Las fichas actuales son PNG recortados a mano y estan protegidos (CLAUDE.md §7). Un blanco
+hueso de verdad necesita **28 imagenes nuevas**. Para eso habia dos caminos y ninguno estaba
+disponible:
+
+- **Dibujarlas a mano:** prohibido por la regla de oro 1.1.
+- **Generarlas con IA de imagen:** se consulto el saldo y hay **cero creditos**.
+
+El tercer camino no inventa nada: recolorear el arte que ya existe. Se probaron cinco
+filtros y se eligio el que mejor queda.
+
+### Lo que NO es
+
+**No es el blanco hueso tradicional de puntos negros.** El invertido convierte el cuerpo
+oscuro en marfil y el dorado en gris, no en negro. Se probo forzar el contraste para llevar
+los puntos a negro y sale peor: los puntos son domos con brillo y al subir el contraste se
+deshacen en motitas.
+
+Ademas conserva el marco ornamentado, que una ficha de hueso tradicional no tiene.
+
+Al tamaño de la mano se ve muy bien y se lee como hueso. Pero queda anotado: **para el
+tradicional de verdad hacen falta 28 imagenes nuevas**, sea con credito de IA o con un set
+profesional ya hecho.
+
+### El detalle que se rompio y se arreglo
+
+El filtro va en el contenedor de toda la mesa, para que alcance a la mano, al pozo y a las
+manos de los rivales sin pasarselo a cada uno. El problema es que **el selector tambien esta
+dentro de la mesa**, asi que la muestra de "Clasicas" salia recoloreada y las dos opciones
+se veian iguales.
+
+Se arreglo marcando las muestras con `data-muestra`: el filtro de la mesa las excluye, y
+cada una se pinta segun lo que ella misma representa.

@@ -15,13 +15,30 @@ export const BARANDAS = [
   { id: 'foto', nombre: 'Nogal y latón', clase: 'rail-foto' }
 ];
 
-const DEFECTO = { pano: 'tela', baranda: 'foto' };
+/**
+ * Las pintas de las fichas.
+ *
+ * `clasica` es el arte que ya tenia el juego: fichas oscuras con marco y puntos
+ * dorados, recortadas a mano.
+ *
+ * `hueso` NO es arte nuevo. Es **la misma imagen recoloreada** con un filtro,
+ * para no dibujar fichas a mano (regla de oro 1.1) y sin credito de IA de
+ * imagen para generarlas. Queda una ficha color hueso con el marco y los puntos
+ * en gris oscuro. **No es el blanco hueso tradicional de puntos negros**: eso
+ * necesita 28 imagenes nuevas, y esta anotado como pendiente.
+ */
+export const FICHAS = [
+  { id: 'clasica', nombre: 'Clásicas', clase: '' },
+  { id: 'hueso', nombre: 'Blanco hueso', clase: 'fichas-hueso' }
+];
+
+const DEFECTO = { pano: 'tela', baranda: 'foto', fichas: 'clasica' };
 const CLAVE = 'mesa-tema';
 
 // Se sube cuando entra una mesa nueva que vale la pena mostrarle a todos. Sin
 // esto, quien ya habia elegido mesa se quedaba con la vieja para siempre: el
 // valor por defecto solo aplica a quien no tiene nada guardado.
-const CATALOGO = 2;
+const CATALOGO = 3;
 
 function leer() {
   try {
@@ -29,7 +46,8 @@ function leer() {
     if (!guardado || guardado.catalogo !== CATALOGO) return DEFECTO;
     return {
       pano: PANOS.some((p) => p.id === guardado.pano) ? guardado.pano : DEFECTO.pano,
-      baranda: BARANDAS.some((b) => b.id === guardado.baranda) ? guardado.baranda : DEFECTO.baranda
+      baranda: BARANDAS.some((b) => b.id === guardado.baranda) ? guardado.baranda : DEFECTO.baranda,
+      fichas: FICHAS.some((f) => f.id === guardado.fichas) ? guardado.fichas : DEFECTO.fichas
     };
   } catch {
     return DEFECTO;
@@ -49,12 +67,14 @@ export function useMesaTheme() {
 
   const clasePano = PANOS.find((p) => p.id === tema.pano)?.clase ?? PANOS[0].clase;
   const claseBaranda = BARANDAS.find((b) => b.id === tema.baranda)?.clase ?? BARANDAS[0].clase;
+  const claseFichas = FICHAS.find((f) => f.id === tema.fichas)?.clase ?? FICHAS[0].clase;
 
   return {
     tema,
     setTema,
     clasePano,
-    claseBaranda
+    claseBaranda,
+    claseFichas
   };
 }
 
@@ -96,6 +116,37 @@ export default function MesaThemePicker({ tema, setTema, enMenu = false }) {
           />
         ))}
       </div>
+      <div className="mb-2 mt-3 text-[10px] uppercase tracking-widest text-domino-accent/70">
+        Fichas
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {FICHAS.map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            title={f.nombre}
+            onClick={() => setTema((t) => ({ ...t, fichas: f.id }))}
+            className={`flex flex-col items-center gap-1 rounded-md border p-1.5 transition-all ${
+              tema.fichas === f.id
+                ? 'border-domino-accent ring-2 ring-domino-accent/50'
+                : 'border-black/50 hover:border-domino-accent/60'
+            }`}
+          >
+            {/* La muestra es una ficha de verdad, no un cuadrito de color: asi
+                se ve exactamente lo que se va a elegir. El `data-muestra` la
+                saca del filtro de la mesa, para que cada una se vea como lo que
+                representa y no como lo que hay elegido. */}
+            <img
+              src="/tiles/tile_6_6.png"
+              alt=""
+              data-muestra={f.id}
+              className="h-6 w-12 rounded-sm"
+            />
+            <span className="text-[9px] text-domino-cream-dim">{f.nombre}</span>
+          </button>
+        ))}
+      </div>
+
       {BARANDAS.length > 1 && (
         <>
           <div className="mb-2 mt-3 text-[10px] uppercase tracking-widest text-domino-accent/70">

@@ -178,7 +178,7 @@ export default function Game() {
   const [reactions, setReactions] = useState({});
   const [showReactionMenu, setShowReactionMenu] = useState(false);
 
-  const { tema, setTema, clasePano, claseBaranda } = useMesaTheme();
+  const { tema, setTema, clasePano, claseBaranda, claseFichas } = useMesaTheme();
   const [explicacion, setExplicacion] = useState(null);
 
   // Espejo de draggedTile para poder leerlo desde manejadores que corren fuera
@@ -911,7 +911,10 @@ export default function Game() {
   // Sin barra de navegacion, sin banner y sin scroll, para que lo que se ve
   // grande sea lo que importa.
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden bg-black">
+    // La pinta de las fichas va aca arriba, en el contenedor de toda la mesa:
+    // asi alcanza a la mano, a la mesa, al pozo y a las manos de los rivales sin
+    // tener que pasarsela a cada uno.
+    <div className={`flex h-[100dvh] flex-col overflow-hidden bg-black ${claseFichas}`}>
 
       {error && (
         <div className="bg-red-500/20 border-b border-red-500/50 text-red-300 px-4 py-2 text-center text-sm">
