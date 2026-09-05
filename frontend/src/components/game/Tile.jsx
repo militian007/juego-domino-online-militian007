@@ -1,3 +1,5 @@
+import { useCarpetaDeFichas } from './MesaTheme.jsx';
+
 export default function Tile({
   tile,
   orientation = 'horizontal',
@@ -9,12 +11,16 @@ export default function Tile({
   className = '',
   isNewest = false
 }) {
+  // El hook va antes del `return` temprano: los hooks no pueden quedar detras
+  // de un `if`, o React se pierde con el orden entre renders.
+  const carpeta = useCarpetaDeFichas();
+
   if (!tile) return null;
   const [a, b] = tile;
 
   const min = Math.min(a, b);
   const max = Math.max(a, b);
-  const imgSrc = `/tiles/tile_${min}_${max}.png`;
+  const imgSrc = `${carpeta}/tile_${min}_${max}.png`;
 
   const finalSize = size === 'md' && small ? 'sm' : size;
 

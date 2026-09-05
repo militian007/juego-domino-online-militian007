@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 export const PANOS = [
   { id: 'tela', nombre: 'Paño de tela', clase: 'felt-tela' },
@@ -16,21 +16,33 @@ export const BARANDAS = [
 ];
 
 /**
- * Las pintas de las fichas.
+ * Las pintas de las fichas. Cada una es una CARPETA de imagenes.
  *
- * `clasica` es el arte que ya tenia el juego: fichas oscuras con marco y puntos
- * dorados, recortadas a mano.
+ * - `clasica`: el arte que ya tenia el juego, fichas oscuras con marco y puntos
+ *   dorados, recortadas a mano.
+ * - `hueso`: el blanco hueso tradicional, puntos negros. Se arma con
+ *   `scripts/generar-fichas-hueso.mjs` a partir de dos imagenes que genero
+ *   Jonathan con Gemini: la ficha vacia y un punto.
  *
- * `hueso` NO es arte nuevo. Es **la misma imagen recoloreada** con un filtro,
- * para no dibujar fichas a mano (regla de oro 1.1) y sin credito de IA de
- * imagen para generarlas. Queda una ficha color hueso con el marco y los puntos
- * en gris oscuro. **No es el blanco hueso tradicional de puntos negros**: eso
- * necesita 28 imagenes nuevas, y esta anotado como pendiente.
+ * Hubo un intento anterior que recoloreaba la ficha clasica con un filtro CSS.
+ * Se saco en cuanto hubo imagenes de verdad: el filtro dejaba los puntos grises
+ * en vez de negros y conservaba el marco ornamentado, que una ficha de hueso no
+ * tiene.
  */
 export const FICHAS = [
-  { id: 'clasica', nombre: 'Clásicas', clase: '' },
-  { id: 'hueso', nombre: 'Blanco hueso', clase: 'fichas-hueso' }
+  { id: 'clasica', nombre: 'Clásicas', carpeta: '/tiles' },
+  { id: 'hueso', nombre: 'Blanco hueso', carpeta: '/tiles-hueso' }
 ];
+
+/**
+ * De que carpeta salen las fichas.
+ *
+ * Va por contexto y no por propiedad porque `Tile` se usa en cinco sitios
+ * distintos (mesa, mano, pozo, desglose, selector de punta) y pasarles la
+ * carpeta a todos seria arrastrarla por media aplicacion.
+ */
+export const ContextoFichas = createContext('/tiles');
+export const useCarpetaDeFichas = () => useContext(ContextoFichas);
 
 const DEFECTO = { pano: 'tela', baranda: 'foto', fichas: 'clasica' };
 const CLAVE = 'mesa-tema';
@@ -67,14 +79,14 @@ export function useMesaTheme() {
 
   const clasePano = PANOS.find((p) => p.id === tema.pano)?.clase ?? PANOS[0].clase;
   const claseBaranda = BARANDAS.find((b) => b.id === tema.baranda)?.clase ?? BARANDAS[0].clase;
-  const claseFichas = FICHAS.find((f) => f.id === tema.fichas)?.clase ?? FICHAS[0].clase;
+  const carpetaFichas = FICHAS.find((f) => f.id === tema.fichas)?.carpeta ?? FICHAS[0].carpeta;
 
   return {
     tema,
     setTema,
     clasePano,
     claseBaranda,
-    claseFichas
+    carpetaFichas
   };
 }
 
@@ -132,16 +144,9 @@ export default function MesaThemePicker({ tema, setTema, enMenu = false }) {
                 : 'border-black/50 hover:border-domino-accent/60'
             }`}
           >
-            {/* La muestra es una ficha de verdad, no un cuadrito de color: asi
-                se ve exactamente lo que se va a elegir. El `data-muestra` la
-                saca del filtro de la mesa, para que cada una se vea como lo que
-                representa y no como lo que hay elegido. */}
-            <img
-              src="/tiles/tile_6_6.png"
-              alt=""
-              data-muestra={f.id}
-              className="h-6 w-12 rounded-sm"
-            />
+            {/* La muestra es la ficha de verdad de cada carpeta: se ve
+                exactamente lo que se va a elegir. */}
+            <img src={`${f.carpeta}/tile_6_6.png`} alt="" className="h-6 w-12 rounded-sm" />
             <span className="text-[9px] text-domino-cream-dim">{f.nombre}</span>
           </button>
         ))}

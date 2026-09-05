@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
 import Board from '../components/game/Board.jsx';
-import MesaThemePicker, { useMesaTheme } from '../components/game/MesaTheme.jsx';
+import MesaThemePicker, { useMesaTheme, ContextoFichas } from '../components/game/MesaTheme.jsx';
 import Pool from '../components/game/Pool.jsx';
 import RoundBreakdown from '../components/game/RoundBreakdown.jsx';
 import { Marcador, Jugador, Mesa } from '../components/game/Hud.jsx';
@@ -178,7 +178,7 @@ export default function Game() {
   const [reactions, setReactions] = useState({});
   const [showReactionMenu, setShowReactionMenu] = useState(false);
 
-  const { tema, setTema, clasePano, claseBaranda, claseFichas } = useMesaTheme();
+  const { tema, setTema, clasePano, claseBaranda, carpetaFichas } = useMesaTheme();
   const [explicacion, setExplicacion] = useState(null);
 
   // Espejo de draggedTile para poder leerlo desde manejadores que corren fuera
@@ -911,10 +911,10 @@ export default function Game() {
   // Sin barra de navegacion, sin banner y sin scroll, para que lo que se ve
   // grande sea lo que importa.
   return (
-    // La pinta de las fichas va aca arriba, en el contenedor de toda la mesa:
-    // asi alcanza a la mano, a la mesa, al pozo y a las manos de los rivales sin
-    // tener que pasarsela a cada uno.
-    <div className={`flex h-[100dvh] flex-col overflow-hidden bg-black ${claseFichas}`}>
+    // La pinta de las fichas se ofrece aqui arriba: asi la toman la mesa, la
+    // mano, el pozo y el desglose sin tener que pasarsela a cada uno.
+    <ContextoFichas.Provider value={carpetaFichas}>
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-black">
 
       {error && (
         <div className="bg-red-500/20 border-b border-red-500/50 text-red-300 px-4 py-2 text-center text-sm">
@@ -1403,5 +1403,6 @@ export default function Game() {
       </div>
     </div>
     </div>
+    </ContextoFichas.Provider>
   );
 }

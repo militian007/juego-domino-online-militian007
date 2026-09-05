@@ -4580,3 +4580,52 @@ aparece en la ficha y se puede recortar sin tocar el marfil.
 Lo que si se puede: si Jonathan saca una **clave de API** en Google AI Studio, se escribe un
 script en el proyecto que genere las imagenes sin copiar y pegar. **Ojo:** pagar la app de
 Gemini NO da credito de API; son cobros distintos. La clave iria en `.env`, nunca al codigo.
+
+---
+
+## 105. Las fichas blanco hueso, de verdad
+
+Jonathan genero con Gemini las dos imagenes que se le pidieron en la seccion 104. Con eso,
+el blanco hueso dejo de ser un recoloreado y paso a ser **arte de verdad**: marfil con
+puntos negros y la linea del medio, como una ficha de hueso tradicional.
+
+    npm run fichas-hueso    (desde frontend/)
+
+Lee `arte-fuente/hueso-ficha.png` y `arte-fuente/hueso-punto.png` y escribe las 28 en
+`public/tiles-hueso/`.
+
+### Dos trampas de lo que devuelve Gemini
+
+1. **Los archivos son JPEG aunque digan `.png`.** JPEG no tiene canal alfa.
+2. **El cuadriculado de "transparencia" viene PINTADO dentro de la imagen.** No es
+   transparencia: son cuadritos blancos y grises de verdad, parte de la foto.
+
+Por eso el script recorta el fondo el mismo. Lo hace por **dos señas juntas**: el pixel es
+gris neutro (rojo, verde y azul casi iguales) **y** se llega a el desde el borde de la
+imagen. Con una sola de las dos no alcanza: por gris neutro solo se comeria zonas claras de
+la ficha, y por borde solo se comeria la ficha entera.
+
+Hizo falta un decodificador de JPEG, `jpeg-js`. Es JavaScript puro, sin compilar nada, y va
+como dependencia **de desarrollo**: la regla de cero dependencias es del motor, no de las
+herramientas.
+
+### La geometria la pone el codigo
+
+El script coloca los puntos y traza la linea del medio. La linea va por codigo y no en la
+imagen de origen para que caiga exactamente en el centro y las dos mitades queden iguales.
+Los puntos van en la disposicion de toda la vida, la misma que tienen las fichas clasicas:
+el seis en tres columnas por dos filas, porque la ficha esta acostada y cada mitad es un
+cuadrado.
+
+### Como llega la pinta a las fichas
+
+Antes se probo con un filtro CSS sobre el contenedor de la mesa. **Se saco.** Ahora cada
+pinta es una CARPETA (`/tiles` y `/tiles-hueso`) y `Tile` la toma de un contexto de React,
+porque `Tile` se usa en cinco sitios (mesa, mano, pozo, desglose y selector de punta) y
+pasarles la carpeta a todos seria arrastrarla por media aplicacion.
+
+### El arte de origen vive fuera de `public`
+
+En `frontend/arte-fuente/`. Si estuviera dentro de `public`, Vite lo copiaria al sitio
+publicado y se subirian cinco megas de imagenes que ningun jugador descarga. Solo hacen
+falta para volver a generar las fichas.
