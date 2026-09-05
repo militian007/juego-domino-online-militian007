@@ -190,6 +190,21 @@ export async function initDatabase() {
 
     CREATE UNIQUE INDEX IF NOT EXISTS idx_torneo_inscrito_uno ON torneo_inscritos(torneo_id, user_id);
     CREATE INDEX IF NOT EXISTS idx_torneo_inscritos_torneo ON torneo_inscritos(torneo_id);
+
+    -- Lo que cada uno tiene desbloqueado: pintas de fichas, paños, avatares,
+    -- titulos, lo que venga. Una fila por cosa.
+    --
+    -- Va en el SERVIDOR y no en el navegador porque es lo que se gana jugando.
+    -- Guardado en el telefono, cualquiera se lo regala editando el navegador, y
+    -- un premio que se puede regalar no es un premio.
+    CREATE TABLE IF NOT EXISTS desbloqueos (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      clave VARCHAR(80) NOT NULL,
+      obtenido_en TIMESTAMP
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_desbloqueo_uno ON desbloqueos(user_id, clave);
   `;
 
   if (isPostgres) {

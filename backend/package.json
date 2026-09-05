@@ -16,6 +16,7 @@
     "test:retos": "node src/test-retos.js",
     "test:ranking": "node src/test-ranking.js",
     "test:torneos": "node src/test-torneos.js",
+    "test:desbloqueos": "node src/test-desbloqueos.js",
     "reiniciar-clasificacion": "node src/reiniciar-clasificacion.js",
     "test:engine": "npm --prefix ../packages/domino-engine test"
   },

@@ -4766,3 +4766,52 @@ Con el corte en 16 hay muchisimo margen.
 **Donde NO se puede usar:** en las fichas. El punto negro tambien es gris, y borrar todo lo
 gris se lo llevaria. Queda escrito en el comentario de la funcion para que nadie lo active
 ahi por comodidad.
+
+---
+
+## 110. Premios bloqueados: la base del pase de batalla
+
+Jonathan, sobre la pinta negra y dorada: *"que salga bloqueada, solo se obtiene con el pase
+de batalla y se desbloquea cuando cumplas los requisitos"*.
+
+Queda hecho el **sistema**, que es lo que el pase va a usar para repartir todos sus premios.
+
+### Los desbloqueos viven en el SERVIDOR
+
+Tabla `desbloqueos`: una fila por persona y por cosa ganada. Las claves llevan prefijo por
+tipo (`fichas:oro`, `pano:marmol`, `titulo:tranquero`), asi se agregan premios nuevos sin
+tocar la tabla.
+
+Podria haberse guardado en el navegador, que es mas simple. **No se hizo**: cualquiera se
+regalaria los premios editando lo que su telefono tiene guardado, y **un premio que se puede
+regalar no es un premio**. El servidor manda (regla 8).
+
+Dar un premio dos veces no rompe nada ni lo duplica: el pase va a poder repetir el aviso sin
+miedo.
+
+### En la pantalla
+
+El selector de fichas muestra las tres pintas. La bloqueada **se ve igual, apagada y con un
+candado**, y debajo dice de donde sale. Se muestra a proposito: hay que ver lo que uno se
+esta perdiendo, si no el premio no motiva a nadie.
+
+Si alguien tiene elegida una pinta que no le corresponde —porque se la quitaron, o porque
+toco los datos de su navegador— **se cae sola a las clasicas**.
+
+### Dos cosas que solo aparecieron corriendo
+
+1. **`puedeUsar is not defined`.** El selector es un componente aparte del hook, y quien
+   sabe lo que el jugador tiene ganado es el hook. Compilaba igual; reventaba al abrir el
+   menu. Ahora se le pasa como propiedad.
+2. **La muestra de la pinta bloqueada salia rota**, porque sus imagenes todavia no existen.
+   Ahora la imagen se esconde sola y queda el candado sobre el hueco oscuro.
+
+### Lo que falta para que la pinta exista
+
+Las imagenes de origen: el **punto dorado quedo perfecto**, pero la **ficha no sirve** —
+Gemini la devolvio vertical en vez de acostada, y con el tercio de abajo tapado por una
+nube blanca. Hay que repetirla.
+
+`npm run test:desbloqueos` — 10 pruebas: que quien no jugo no tiene nada, que se da y queda,
+que darlo dos veces no duplica, que se acumulan, que lo de uno no se le pega a otro y que se
+puede quitar.

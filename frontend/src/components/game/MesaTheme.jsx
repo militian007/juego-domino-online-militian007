@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { Lock } from 'lucide-react';
+import { desbloqueosApi } from '../../services/api.js';
 
 export const PANOS = [
   { id: 'tela', nombre: 'Paño de tela', clase: 'felt-tela' },
@@ -31,7 +33,16 @@ export const BARANDAS = [
  */
 export const FICHAS = [
   { id: 'clasica', nombre: 'Clásicas', carpeta: '/tiles' },
-  { id: 'hueso', nombre: 'Blanco hueso', carpeta: '/tiles-hueso' }
+  { id: 'hueso', nombre: 'Blanco hueso', carpeta: '/tiles-hueso' },
+  {
+    id: 'oro',
+    nombre: 'Negro y oro',
+    carpeta: '/tiles-oro',
+    // Esta no se elige: se gana. La `clave` es lo que el pase de batalla va a
+    // escribir en la tabla de desbloqueos el dia que alguien llegue al nivel.
+    clave: 'fichas:oro',
+    comoSeGana: 'Premio del pase de batalla'
+  }
 ];
 
 /**
@@ -63,7 +74,7 @@ const CLAVE = 'mesa-tema';
 // Se sube cuando entra una mesa nueva que vale la pena mostrarle a todos. Sin
 // esto, quien ya habia elegido mesa se quedaba con la vieja para siempre: el
 // valor por defecto solo aplica a quien no tiene nada guardado.
-const CATALOGO = 3;
+const CATALOGO = 4;
 
 function leer() {
   try {
@@ -82,6 +93,19 @@ function leer() {
 export function useMesaTheme() {
   const [tema, setTema] = useState(leer);
 
+  // Lo que este jugador tiene ganado. Se pregunta al SERVIDOR: guardado en el
+  // telefono, cualquiera se regalaria los premios editando su navegador.
+  const [desbloqueadas, setDesbloqueadas] = useState([]);
+
+  useEffect(() => {
+    let vivo = true;
+    desbloqueosApi.mios()
+      .then((r) => { if (vivo) setDesbloqueadas(r.claves ?? []); })
+      // Sin sesion la peticion falla, y esta bien: un invitado no tiene nada.
+      .catch(() => { if (vivo) setDesbloqueadas([]); });
+    return () => { vivo = false; };
+  }, []);
+
   useEffect(() => {
     try {
       localStorage.setItem(CLAVE, JSON.stringify({ ...tema, catalogo: CATALOGO }));
@@ -92,14 +116,22 @@ export function useMesaTheme() {
 
   const clasePano = PANOS.find((p) => p.id === tema.pano)?.clase ?? PANOS[0].clase;
   const claseBaranda = BARANDAS.find((b) => b.id === tema.baranda)?.clase ?? BARANDAS[0].clase;
-  const carpetaFichas = FICHAS.find((f) => f.id === tema.fichas)?.carpeta ?? FICHAS[0].carpeta;
+  const puedeUsar = (f) => !f.clave || desbloqueadas.includes(f.clave);
+
+  // Si tiene elegida una pinta que no le corresponde, se cae a las clasicas.
+  // Puede pasar si la gano, se le quito, o si tocara los datos de su navegador.
+  const fichaElegida = FICHAS.find((f) => f.id === tema.fichas);
+  const fichaValida = fichaElegida && puedeUsar(fichaElegida) ? fichaElegida : FICHAS[0];
+  const carpetaFichas = fichaValida.carpeta;
 
   return {
     tema,
     setTema,
     clasePano,
     claseBaranda,
-    carpetaFichas
+    carpetaFichas,
+    desbloqueadas,
+    puedeUsar
   };
 }
 
@@ -124,7 +156,13 @@ function Muestra({ clase, activo, titulo, onClick, alto = 'h-9' }) {
  * El selector de paño. Con `enMenu` se dibuja plano, para vivir dentro del
  * menu de la mesa; sin el, lleva su propio boton y su ventanita.
  */
-export default function MesaThemePicker({ tema, setTema, enMenu = false }) {
+/**
+ * @param puedeUsar dice si una pinta esta desbloqueada. Viene del hook y no se
+ *   calcula aqui: quien sabe lo que el jugador tiene ganado es `useMesaTheme`,
+ *   que es el que le pregunta al servidor. Por defecto, todo abierto, para que
+ *   el selector siga funcionando si alguien lo usa suelto.
+ */
+export default function MesaThemePicker({ tema, setTema, enMenu = false, puedeUsar = () => true }) {
   const [abierto, setAbierto] = useState(false);
 
   const cuerpo = (
@@ -144,26 +182,57 @@ export default function MesaThemePicker({ tema, setTema, enMenu = false }) {
       <div className="mb-2 mt-3 text-[10px] uppercase tracking-widest text-domino-accent/70">
         Fichas
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        {FICHAS.map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            title={f.nombre}
-            onClick={() => setTema((t) => ({ ...t, fichas: f.id }))}
-            className={`flex flex-col items-center gap-1 rounded-md border p-1.5 transition-all ${
-              tema.fichas === f.id
-                ? 'border-domino-accent ring-2 ring-domino-accent/50'
-                : 'border-black/50 hover:border-domino-accent/60'
-            }`}
-          >
-            {/* La muestra es la ficha de verdad de cada carpeta: se ve
-                exactamente lo que se va a elegir. */}
-            <img src={`${f.carpeta}/tile_6_6.png`} alt="" className="h-6 w-12 rounded-sm" />
-            <span className="text-[9px] text-domino-cream-dim">{f.nombre}</span>
-          </button>
-        ))}
+      <div className="grid grid-cols-3 gap-1.5">
+        {FICHAS.map((f) => {
+          const abierta = puedeUsar(f);
+          return (
+            <button
+              key={f.id}
+              type="button"
+              disabled={!abierta}
+              title={abierta ? f.nombre : `${f.nombre} — ${f.comoSeGana}`}
+              onClick={() => abierta && setTema((t) => ({ ...t, fichas: f.id }))}
+              className={`relative flex flex-col items-center gap-1 rounded-md border p-1.5 transition-all ${
+                tema.fichas === f.id && abierta
+                  ? 'border-domino-accent ring-2 ring-domino-accent/50'
+                  : 'border-black/50'
+              } ${abierta ? 'hover:border-domino-accent/60' : 'cursor-not-allowed'}`}
+            >
+              {/* La muestra es la ficha de verdad de cada carpeta: se ve
+                  exactamente lo que se va a elegir. La bloqueada se muestra
+                  igual, apagada: hay que ver lo que uno se esta perdiendo, si
+                  no el premio no motiva a nadie. */}
+              <span className="relative block h-6 w-12 rounded-sm bg-black/40">
+                {/* Si la pinta todavia no tiene sus imagenes, la muestra se
+                    esconde sola y queda el candado sobre el hueco oscuro. Sin
+                    esto se veria el icono de imagen rota. */}
+                <img
+                  src={`${f.carpeta}/tile_6_6.png`}
+                  alt=""
+                  onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+                  className={`h-6 w-12 rounded-sm ${abierta ? '' : 'opacity-30 grayscale'}`}
+                />
+                {!abierta && (
+                  <Lock
+                    size={12}
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-domino-accent drop-shadow"
+                    aria-hidden="true"
+                  />
+                )}
+              </span>
+              <span className={`text-[8px] leading-tight ${abierta ? 'text-domino-cream-dim' : 'text-domino-cream-dim/50'}`}>
+                {f.nombre}
+              </span>
+            </button>
+          );
+        })}
       </div>
+
+      {FICHAS.some((f) => !puedeUsar(f)) && (
+        <p className="mt-1.5 text-[9px] leading-tight text-domino-cream-dim/60">
+          Las que tienen candado se ganan en el pase de batalla.
+        </p>
+      )}
 
       {BARANDAS.length > 1 && (
         <>

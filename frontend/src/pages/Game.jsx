@@ -178,7 +178,7 @@ export default function Game() {
   const [reactions, setReactions] = useState({});
   const [showReactionMenu, setShowReactionMenu] = useState(false);
 
-  const { tema, setTema, clasePano, claseBaranda, carpetaFichas } = useMesaTheme();
+  const { tema, setTema, clasePano, claseBaranda, carpetaFichas, puedeUsar } = useMesaTheme();
   const [explicacion, setExplicacion] = useState(null);
 
   // Espejo de draggedTile para poder leerlo desde manejadores que corren fuera
@@ -1095,7 +1095,7 @@ export default function Game() {
                     <>
                       <div className="fixed inset-0 -z-10" onClick={() => setAbierto(null)} />
                       <div className="ml-1.5 w-52 rounded-xl border border-domino-accent/25 bg-domino-felt/95 p-3 shadow-2xl backdrop-blur">
-                        <MesaThemePicker tema={tema} setTema={setTema} enMenu />
+                        <MesaThemePicker tema={tema} setTema={setTema} puedeUsar={puedeUsar} enMenu />
                       </div>
                     </>
                   )}

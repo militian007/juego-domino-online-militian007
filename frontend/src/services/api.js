@@ -52,4 +52,8 @@ export const torneosApi = {
   mios: () => api.get('/torneos/mios').then((r) => r.data)
 };
 
+export const desbloqueosApi = {
+  mios: () => api.get('/desbloqueos').then((r) => r.data)
+};
+
 export default api;
