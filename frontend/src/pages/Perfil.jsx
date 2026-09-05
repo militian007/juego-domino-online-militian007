@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { perfilApi } from '../services/api.js';
+import Rango from '../components/ranking/Rango.jsx';
 
 /**
  * El perfil: quien sos y como te fue.
@@ -74,6 +75,57 @@ export default function Perfil() {
               <p className="mt-1 text-xs text-domino-cream/50">
                 En el club desde el {fecha(datos.usuario.desde)}
               </p>
+            )}
+
+            {datos.ranking && (
+              <div className="mt-5 rounded-xl border border-domino-accent/20 bg-black/35 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <Rango
+                    rango={datos.ranking.rango}
+                    distincion={datos.ranking.distincion}
+                    tamano="lg"
+                  />
+                  <div className="text-right">
+                    <div className="text-2xl font-bold tabular-nums text-domino-cream">
+                      {datos.ranking.puntos}
+                    </div>
+                    <div className="text-[10px] tracking-widest text-domino-cream/40">PUNTOS</div>
+                  </div>
+                </div>
+
+                {/* Cuanto falta para el rango siguiente, con la barra. Al
+                    Retador no se le muestra: ya no le falta nada. */}
+                {datos.ranking.siguiente ? (
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-[11px] text-domino-cream/55">
+                      <span>
+                        Te faltan{' '}
+                        <span className="font-semibold text-domino-accent">
+                          {datos.ranking.siguiente.faltan}
+                        </span>{' '}
+                        para {datos.ranking.siguiente.rango}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-domino-accent"
+                        style={{ width: `${anchoDeLaBarra(datos.ranking)}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-[11px] leading-relaxed text-domino-cream/55">
+                    Llegaste a lo más alto. Tu puesto entre los Retadores se mueve con cada
+                    partida.
+                  </p>
+                )}
+
+                {datos.ranking.mejorPuntos > datos.ranking.puntos && (
+                  <p className="mt-3 text-[10px] text-domino-cream/35">
+                    Tu mejor marca: {datos.ranking.mejorPuntos} puntos
+                  </p>
+                )}
+              </div>
             )}
 
             <div className="mt-6 grid grid-cols-3 gap-3">
@@ -153,4 +205,25 @@ function Numero({ valor, etiqueta, acento = false }) {
       </div>
     </div>
   );
+}
+
+/**
+ * Cuanto de la barra hay que pintar.
+ *
+ * Se mide sobre el tramo del rango ACTUAL, no sobre el total: si se midiera
+ * sobre el total, alguien en Novato veria la barra casi vacia toda su vida y no
+ * daria ninguna sensacion de avance.
+ *
+ * Los dos umbrales vienen del servidor. El primer intento los adivinaba con una
+ * cuenta inventada y la barra habria quedado mal.
+ */
+function anchoDeLaBarra({ puntos, siguiente }) {
+  if (!siguiente) return 100;
+
+  const largo = siguiente.desde - siguiente.desdeActual;
+  if (!Number.isFinite(largo) || largo <= 0) return 0;
+
+  const avance = ((puntos - siguiente.desdeActual) / largo) * 100;
+  // Nunca del todo vacia: una barra en cero se lee como que algo fallo.
+  return Math.max(4, Math.min(100, Math.round(avance)));
 }

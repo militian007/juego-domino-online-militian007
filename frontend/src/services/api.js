@@ -42,4 +42,9 @@ export const perfilApi = {
   mio: () => api.get('/perfil').then((r) => r.data)
 };
 
+export const rankingApi = {
+  tabla: (cuantos) => api.get('/ranking', { params: { cuantos } }).then((r) => r.data),
+  mio: () => api.get('/ranking/mio').then((r) => r.data)
+};
+
 export default api;

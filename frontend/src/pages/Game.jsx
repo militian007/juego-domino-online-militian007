@@ -27,6 +27,7 @@ import { salirPantallaCompleta } from '../utils/pantalla.js';
 import RelojDeTurno from '../components/game/RelojDeTurno.jsx';
 import AvisoDeAusente from '../components/game/AvisoDeAusente.jsx';
 import AvisoDeSalto from '../components/game/AvisoDeSalto.jsx';
+import Rango from '../components/ranking/Rango.jsx';
 
 // La partida en curso se recuerda en el navegador para poder volver a ella al
 // refrescar o al salir a otra app. Solo se olvida cuando la partida termina o
@@ -155,6 +156,13 @@ export default function Game() {
 
   const [socket, setSocket] = useState(null);
   const [gameState, setGameState] = useState(null);
+
+  // Cuanto se movio el ranking con esta partida.
+  //
+  // Llega por su propio evento y no dentro del estado porque el servidor lo
+  // calcula DESPUES de que la partida termino: el estado ya se emitio y no se
+  // vuelve a emitir.
+  const [cambioDeRanking, setCambioDeRanking] = useState(null);
   const [lobby, setLobby] = useState(null);
   const [selectedTile, setSelectedTile] = useState(null);
   const [draggedTile, setDraggedTile] = useState(null); // { index, tile, currentX, currentY, isSnapped, activePlacement }
@@ -340,6 +348,9 @@ export default function Game() {
     };
 
     s.on('lobby:update', onLobby);
+    const onRanking = (c) => setCambioDeRanking(c);
+
+    s.on('ranking:cambio', onRanking);
     s.on('game:state', onGameState);
     s.on('connect_error', onConnectError);
     s.on('game:reaction', onReaction);
@@ -348,6 +359,7 @@ export default function Game() {
 
     return () => {
       s.off('lobby:update', onLobby);
+      s.off('ranking:cambio', onRanking);
       s.off('game:state', onGameState);
       s.off('connect_error', onConnectError);
       s.off('game:reaction', onReaction);
@@ -1343,6 +1355,43 @@ export default function Game() {
                     )} a ${Math.min(gameState.teamScores[1], gameState.teamScores[2])}`
                   : 'Empate técnico'}
               </p>
+              {/* Lo que se movio el ranking. Solo aparece en las partidas
+                  entre personas: contra la maquina no suma nada, y ahi el
+                  servidor no manda ningun cambio. */}
+              {cambioDeRanking && (
+                <div className="mb-6 rounded-xl border border-domino-accent/25 bg-black/40 p-4">
+                  <div className="flex items-center justify-center gap-3">
+                    <span
+                      className={`text-3xl font-black tabular-nums ${
+                        cambioDeRanking.cambio > 0 ? 'text-green-400' : 'text-red-400'
+                      }`}
+                    >
+                      {cambioDeRanking.cambio > 0 ? '+' : ''}{cambioDeRanking.cambio}
+                    </span>
+                    <div className="text-left">
+                      <div className="text-lg font-bold tabular-nums text-domino-cream">
+                        {cambioDeRanking.despues}
+                      </div>
+                      <div className="text-[10px] tracking-widest text-domino-cream/40">PUNTOS</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex justify-center">
+                    <Rango rango={cambioDeRanking.rango} tamano="sm" />
+                  </div>
+
+                  {cambioDeRanking.subioDeRango && (
+                    <p className="mt-2 text-xs font-semibold text-domino-accent">
+                      ¡Subiste a {cambioDeRanking.rango}!
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <Link to="/ranking" className="mb-2 block text-xs tracking-widest text-domino-cream/55 underline-offset-4 hover:text-domino-accent hover:underline">
+                VER EL RANKING
+              </Link>
+
               <Link to="/dashboard" className="btn-primary w-full block">
                 Volver al dashboard
               </Link>

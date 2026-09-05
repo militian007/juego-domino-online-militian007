@@ -4,6 +4,7 @@ import { DominoGame } from './game/DominoGame.js';
 import { Bot } from './game/Bot.js';
 import { MODE_CONFIG } from './game/DominoGame.js';
 import * as Partida from './models/Partida.js';
+import * as Ranking from './models/Ranking.js';
 
 const MODES = MODE_CONFIG;
 
@@ -486,21 +487,49 @@ export class RoomManager {
     const resultado = room.game.state.result ?? null;
     const equipoGanador = resultado?.winnerTeam ?? room.game.winningTeam;
 
+    const jugadores = room.players.map((p, i) => ({
+      userId: p.id,
+      asiento: p.seat ?? i,
+      equipo: p.team ?? null,
+      gano: equipoGanador != null && p.team === equipoGanador
+    }));
+
     Partida.registrar({
       roomCode: room.code,
       modo: room.mode,
       equipoGanador,
       motivo: resultado?.reason ?? room.game.endReason,
       puntos: room.game.teamScores,
-      jugadores: room.players.map((p, i) => ({
-        userId: p.id,
-        asiento: p.seat ?? i,
-        equipo: p.team ?? null,
-        gano: equipoGanador != null && p.team === equipoGanador
-      }))
+      jugadores
     }).catch((err) => {
       console.error('No se pudo guardar la partida', room.code, err.message);
     });
+
+    // Los puntos del ranking. Solo si hubo ganador: una partida que termino
+    // empatada o a medias no mueve el marcador de nadie.
+    if (equipoGanador != null) {
+      Ranking.aplicarPartida(jugadores)
+        .then((cambios) => this._avisarCambiosDeRanking(room, cambios))
+        .catch((err) => {
+          console.error('No se pudo actualizar el ranking', room.code, err.message);
+        });
+    }
+  }
+
+  /**
+   * Le dice a cada uno cuanto se movio su marcador.
+   *
+   * Va por el socket y no en el estado de la partida porque llega DESPUES de
+   * que la partida termino: el estado ya se emitio y no se vuelve a emitir.
+   */
+  _avisarCambiosDeRanking(room, cambios) {
+    if (!this.io || !cambios?.length) return;
+
+    for (const c of cambios) {
+      const jugador = room.players.find((p) => Number(p.id) === c.userId);
+      if (!jugador?.socketId) continue;
+      this.io.to(jugador.socketId).emit('ranking:cambio', c);
+    }
   }
 
   broadcastLobby(room) {

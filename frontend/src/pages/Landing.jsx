@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { connectSocket, disconnectSocket } from '../services/socket.js';
+import { rankingApi } from '../services/api.js';
 import ChatGlobal from '../components/chat/ChatGlobal.jsx';
 import Campana from '../components/notificaciones/Campana.jsx';
 import InstalarApp from '../components/InstalarApp.jsx';
+import Rango from '../components/ranking/Rango.jsx';
 import RetoEntrante from '../components/notificaciones/RetoEntrante.jsx';
 import { pantallaCompleta } from '../utils/pantalla.js';
 import SelectorModos, { MODOS } from '../components/SelectorModos.jsx';
@@ -100,7 +102,22 @@ export default function Landing() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
+
+  // El rango propio, para la insignia de la cabecera. Se pide aparte del perfil
+  // porque aca solo hace falta eso: traer el historial entero para pintar una
+  // insignia seria pedirle a la base mucho mas de lo necesario.
+  const [miRango, setMiRango] = useState(null);
   const counts = useOnlineCount();
+
+  useEffect(() => {
+    if (!user) { setMiRango(null); return; }
+
+    let vivo = true;
+    rankingApi.mio()
+      .then((r) => { if (vivo) setMiRango(r); })
+      .catch(() => { if (vivo) setMiRango(null); });
+    return () => { vivo = false; };
+  }, [user]);
 
   const goToMode = (mode) => {
     const modeId = typeof mode === 'string' ? mode : mode?.id;
@@ -140,11 +157,11 @@ export default function Landing() {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-black via-black/80 to-transparent md:hidden" />
 
       <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-5 sm:px-10 py-4 sm:py-6">
-        {/* A la izquierda va quien sos. Al lado del nombre queda el hueco para
-            el nivel de ranking, que todavia no existe. En telefono el logo
+        {/* A la izquierda va quien sos, y al lado tu rango. El nombre lleva al
+            perfil; el rango, a la tabla de posiciones. En telefono el logo
             grande manda en el centro de la pantalla, asi que aca arriba
             estorbaria: se muestra solo de escritorio para arriba. */}
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <Logo variante="linea" className="hidden md:inline-flex" />
           {user && (
             <Link
@@ -154,6 +171,11 @@ export default function Landing() {
               <span className="truncate text-xs font-semibold tracking-wider text-domino-accent sm:text-sm">
                 {user.username}
               </span>
+            </Link>
+          )}
+          {user && miRango && (
+            <Link to="/ranking" className="transition hover:brightness-125">
+              <Rango rango={miRango.rango} distincion={miRango.distincion} tamano="sm" />
             </Link>
           )}
         </div>

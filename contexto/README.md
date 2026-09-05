@@ -4236,3 +4236,93 @@ Si la app ya esta instalada, el boton no aparece.
 
 Si ya la tenia instalada, **el icono viejo se queda**: el sistema lo guarda al instalar y no
 lo vuelve a pedir. Hay que borrarla y volver a instalarla. El propio cartel lo dice.
+
+---
+
+## 99. El ranking del club
+
+Pedido de Jonathan: *"el último tiene que ser Retador, ese es el máximo, donde todos
+aspiran llegar. Y ahí tendrá un top 100, un top 500, y el resto sería Retador pero 501,
+así sucesivamente, dependiendo de las personas que lleguen a Retador"*.
+
+### Las dos decisiones que tomo
+
+1. **Los puntos se mueven segun quien sea el rival.** Ganarle a alguien mejor da mas;
+   ganarle a uno muy por debajo da poquito. Asi el ranking mide como jugas y no cuantas
+   horas tenes libres, y nadie sube machacando siempre al mismo novato.
+2. **Un solo ranking, sin temporadas.** No se reinicia nunca.
+
+### La escalera
+
+| rango | desde |
+| --- | --- |
+| Retador | 1750 |
+| Gran Maestro | 1600 |
+| Maestro | 1450 |
+| Veterano | 1300 |
+| Jugador de Club | 1150 |
+| Aficionado | 1000 |
+| Novato | 0 |
+
+Se arranca con **1000**. De ahi a Retador son 750 puntos: unas 60 victorias netas contra
+rivales parejos. Es una subida de verdad pero alcanzable, no un muro.
+
+**Retador es el unico rango con puesto.** Al pasar los 1750 aparece tu numero entre todos
+los Retadores: `Top 100`, `Top 500`, y del 501 en adelante el numero que te toque. Abajo de
+Retador no se muestra puesto: no significa nada y solo confunde.
+
+### Detalles que importan
+
+- **Las primeras 10 partidas mueven el doble** (48 en vez de 24). Es la forma de que
+  alguien nuevo llegue rapido al lugar que le corresponde en vez de pasarse meses subiendo
+  de a poquito desde el medio.
+- **Ganar siempre suma al menos 1 y perder siempre resta al menos 1**, aunque el redondeo
+  de cero. Si no, ganarle a alguien muy por debajo no daria nada y se sentiria como que el
+  juego no registro la partida.
+- **En 2v2 cada uno se mide contra el promedio del equipo contrario**, no contra el suyo:
+  lo que importa es contra quien jugaste, no con quien.
+- **Los promedios se calculan ANTES de escribir nada.** Si se fuera guardando sobre la
+  marcha, el segundo jugador se mediria contra los puntos ya modificados del primero y la
+  misma partida daria distinto segun el orden. Hay una prueba solo para eso.
+- **Consultar el perfil no crea fila.** Una fila por cada cuenta que solo miro el ranking
+  no le sirve a nadie.
+- **Nadie baja de 100 puntos.** Un numero ridiculo no motiva.
+- **Los invitados no entran.** Si de un lado no hay nadie con cuenta, no se reparte nada:
+  no hay contra quien medir.
+
+### Donde se ve
+
+| donde | que muestra |
+| --- | --- |
+| cabecera del menu | la insignia del rango al lado del nombre; lleva a la tabla |
+| `/ranking` | la tabla de posiciones y la escalera completa. **Se ve sin cuenta** |
+| perfil | rango, puntos, cuanto falta para el siguiente y tu mejor marca |
+| final de partida | cuanto se movio el marcador, y si subiste de rango |
+
+La tabla se ve **sin iniciar sesion** a proposito: el que entra de visita tiene que poder
+ver quienes son los mejores. Es la mitad de la gracia de tener ranking.
+
+### Dos cosas que se rompieron haciendo esto
+
+1. **La pagina del menu quedo en blanco.** El efecto que pide el rango se inserto dentro
+   del hook equivocado, donde la variable del usuario no existe. Compilaba igual: era un
+   error de ejecucion, no de compilacion. Solo aparecio al abrir la pagina de verdad.
+2. **La prueba del puesto daba por sentado que la tabla estaba vacia.** En cuanto hubo
+   jugadores de verdad, fallo. Ahora comprueba la regla —el puesto es cuantos tienen mas
+   puntos, mas uno— y no una posicion concreta.
+
+### Lo que hay que saber para cuando haya poca gente
+
+Con pocos jugadores el **Top 500 no significa nada**: si llegan 30 personas a Retador,
+todas estan en el "Top 100". No se rompe, pero se ve flojo hasta que haya cientos. Queda
+avisado.
+
+### Comprobado
+
+`npm run test:ranking` — 45 pruebas: que el rival importa en los dos sentidos, que ganar
+siempre suma, que el orden de los jugadores no cambia el resultado, que los invitados no
+entran, la escalera entera, el puesto y las distinciones, el piso, el mejor puntaje, **una
+partida completa de verdad con el RoomManager y el motor** que mueve los puntos de los dos
+y les avisa, y que una partida contra la maquina no mueve nada.
+
+Motor 61/61, backend 87/87, perfil 20/20, reloj 20/20.

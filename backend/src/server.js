@@ -5,6 +5,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import authRoutes from './routes/auth.js';
 import perfilRoutes from './routes/perfil.js';
+import rankingRoutes from './routes/ranking.js';
 import { roomManager } from './RoomManager.js';
 import { setupGameSocket } from './sockets/gameSocket.js';
 import { registrarChat } from './sockets/chatSocket.js';
@@ -29,6 +30,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/perfil', perfilRoutes);
+app.use('/api/ranking', rankingRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', game: 'dominó online', rooms: roomManager.rooms.size });

@@ -5,6 +5,7 @@ import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Perfil from './pages/Perfil.jsx';
+import Ranking from './pages/Ranking.jsx';
 import ChangePassword from './pages/ChangePassword.jsx';
 import Game from './pages/Game.jsx';
 import Version from './components/Version.jsx';
@@ -23,6 +24,9 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+      {/* El ranking se ve sin cuenta: el que entra de visita tiene que poder
+          ver quienes son los mejores. */}
+      <Route path="/ranking" element={<Ranking />} />
       <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
       <Route path="/cambiar-clave" element={<PrivateRoute><ChangePassword /></PrivateRoute>} />
       <Route path="/game" element={<Game />} />

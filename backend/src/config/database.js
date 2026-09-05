@@ -127,6 +127,22 @@ export async function initDatabase() {
     );
 
     CREATE INDEX IF NOT EXISTS idx_notificaciones_user ON notificaciones(user_id);
+
+    -- El ranking. Una fila por jugador, con sus puntos de club.
+    --
+    -- Va en su propia tabla y no como columnas de users porque el esquema se
+    -- crea con CREATE TABLE IF NOT EXISTS: a una tabla que ya existe no se le
+    -- agregan columnas solas, y users ya existe en produccion.
+    CREATE TABLE IF NOT EXISTS ranking (
+      user_id INTEGER PRIMARY KEY,
+      puntos INTEGER NOT NULL DEFAULT 1000,
+      partidas INTEGER NOT NULL DEFAULT 0,
+      ganadas INTEGER NOT NULL DEFAULT 0,
+      mejor_puntos INTEGER NOT NULL DEFAULT 1000,
+      actualizado_en TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_ranking_puntos ON ranking(puntos);
   `;
 
   if (isPostgres) {

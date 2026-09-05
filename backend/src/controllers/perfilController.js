@@ -1,5 +1,6 @@
 import * as User from '../models/User.js';
 import * as Partida from '../models/Partida.js';
+import * as Ranking from '../models/Ranking.js';
 
 /**
  * El perfil de quien esta con la sesion iniciada.
@@ -11,10 +12,11 @@ export const miPerfil = async (req, res) => {
   try {
     const userId = req.userId;
 
-    const [usuario, resumen, historial] = await Promise.all([
+    const [usuario, resumen, historial, ficha] = await Promise.all([
       User.findById(userId),
       Partida.resumenDe(userId),
-      Partida.historialDe(userId, req.query.limite)
+      Partida.historialDe(userId, req.query.limite),
+      Ranking.de(userId)
     ]);
 
     if (!usuario) {
@@ -35,6 +37,8 @@ export const miPerfil = async (req, res) => {
       };
     });
 
+    const puesto = await Ranking.puestoDeRetador(userId, ficha.puntos);
+
     res.json({
       usuario: {
         id: usuario.id,
@@ -42,7 +46,17 @@ export const miPerfil = async (req, res) => {
         desde: usuario.created_at
       },
       resumen,
-      historial: conRivales
+      historial: conRivales,
+      ranking: {
+        puntos: ficha.puntos,
+        rango: ficha.rango,
+        mejorPuntos: ficha.mejorPuntos,
+        // Solo tiene puesto quien llego a Retador. Abajo de ahi no significa
+        // nada y mostrarlo confunde.
+        puesto,
+        distincion: Ranking.distincionDeRetador(puesto),
+        siguiente: Ranking.faltaParaElSiguiente(ficha.puntos)
+      }
     });
   } catch (err) {
     console.error('Error armando el perfil:', err.message);
