@@ -53,9 +53,28 @@ const en = (img, x, y) => (y * img.ancho + x) * 4;
  *
  * Se recorre desde los bordes hacia adentro (relleno por inundacion). Un pixel
  * es fondo si es GRIS NEUTRO y ademas se llega a el desde el borde. Pedir las
- * dos cosas es lo que evita comerse partes claras de la ficha.
+ * dos cosas a la vez es lo que evita comerse la ficha.
+ *
+ * ## Los numeros salen de medir, no de tantear
+ *
+ * En las imagenes que mando Jonathan:
+ *
+ *   fondo cuadriculado   dif 0 a 3     (gris puro)
+ *   marfil de la ficha   dif 24 a 57   (siempre calido)
+ *   punto negro          dif 0 a 3, pero OSCURO (min 12 a 49)
+ *
+ * El primer intento uso dif <= 26 y **se comio el borde de la ficha**, que
+ * ronda dif 25: la ficha salia cortada recta por la izquierda y con las
+ * esquinas mordidas. Con 16 hay margen de sobra para los dos lados.
+ *
+ * El limite de brillo solo vale para el PUNTO: ahi el fondo es claro y el punto
+ * oscuro, asi que hace falta para no borrar el punto. En la FICHA no se usa,
+ * porque su borde de abajo es oscuro (min 132) y el limite se lo comia.
+ *
+ * @param difMax    cuanto puede alejarse del gris puro para seguir siendo fondo
+ * @param minBrillo si se pasa, solo se borra lo que ademas sea claro
  */
-function quitarElFondo(img, toleranciaGris = 26) {
+function quitarElFondo(img, { difMax = 16, minBrillo = null } = {}) {
   const { ancho, alto, px } = img;
   const visto = new Uint8Array(ancho * alto);
   const pila = [];
@@ -64,8 +83,8 @@ function quitarElFondo(img, toleranciaGris = 26) {
     const r = px[i], g = px[i + 1], b = px[i + 2];
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
-    // Neutro (sin color) y ademas claro: el cuadriculado es blanco y gris.
-    return max - min <= toleranciaGris && min >= 150;
+    if (max - min > difMax) return false;
+    return minBrillo == null || min >= minBrillo;
   };
 
   const meter = (x, y) => {
@@ -268,8 +287,13 @@ function main() {
   console.log('');
   console.log('  leyendo las dos imagenes de origen...');
 
-  const ficha = recortar(quitarElFondo(leer(path.join(FUENTE, 'hueso-ficha.png'))));
-  const punto = recortar(quitarElFondo(leer(path.join(FUENTE, 'hueso-punto.png'))));
+  // La ficha: sin limite de brillo, porque su borde de abajo es oscuro.
+  const ficha = recortar(quitarElFondo(leer(path.join(FUENTE, 'hueso-ficha.png')), { difMax: 16 }));
+
+  // El punto: con limite de brillo, o se borraria el punto, que tambien es gris.
+  const punto = recortar(
+    quitarElFondo(leer(path.join(FUENTE, 'hueso-punto.png')), { difMax: 20, minBrillo: 140 })
+  );
 
   console.log(`    ficha ${ficha.ancho}x${ficha.alto}   punto ${punto.ancho}x${punto.alto}`);
 

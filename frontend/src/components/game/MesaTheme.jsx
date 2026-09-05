@@ -42,6 +42,19 @@ export const FICHAS = [
  * carpeta a todos seria arrastrarla por media aplicacion.
  */
 export const ContextoFichas = createContext('/tiles');
+
+/**
+ * Se sube cuando cambia el DIBUJO de alguna ficha sin cambiar su nombre.
+ *
+ * Los archivos se llaman siempre igual (`tile_6_6.png`), asi que el navegador
+ * se queda con el que ya tenia guardado y no ve el nuevo. Este numero viaja
+ * pegado a la direccion y lo obliga a pedirlo otra vez.
+ *
+ * 2 = se rehicieron las blanco hueso: la primera tanda salio con el borde
+ *     izquierdo cortado y las esquinas mordidas.
+ */
+export const VERSION_FICHAS = 2;
+
 export const useCarpetaDeFichas = () => useContext(ContextoFichas);
 
 const DEFECTO = { pano: 'tela', baranda: 'foto', fichas: 'clasica' };

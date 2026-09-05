@@ -4629,3 +4629,43 @@ pasarles la carpeta a todos seria arrastrarla por media aplicacion.
 En `frontend/arte-fuente/`. Si estuviera dentro de `public`, Vite lo copiaria al sitio
 publicado y se subirian cinco megas de imagenes que ningun jugador descarga. Solo hacen
 falta para volver a generar las fichas.
+
+
+---
+
+## 106. El recorte estaba mal, y por que
+
+Jonathan, viendo la primera tanda: *"se ve feo, mal recortado o mal difuminado"*. Tenia
+razon: la ficha salia **cortada recta por la izquierda** y con las esquinas mordidas.
+
+### La causa, medida
+
+Se midieron los colores de verdad en vez de tantear:
+
+| | separacion del gris puro (`dif`) | brillo minimo |
+| --- | --- | --- |
+| fondo cuadriculado | 0 a 3 | 205 a 255 |
+| marfil de la ficha | **24 a 57** | 132 en el borde de abajo |
+| punto negro | 0 a 3 | 12 a 49 |
+
+El recorte usaba `dif <= 26`. El borde de la ficha ronda **25**, asi que **se lo comia**, y
+al recortar despues a lo que quedaba visible la ficha salia cortada recta.
+
+Habia un segundo error escondido: se exigia ademas `brillo >= 150`, y **el borde de abajo de
+la ficha es oscuro (132)**, asi que ese tambien se perdia.
+
+### El arreglo
+
+- **Ficha:** `dif <= 16` y **sin** limite de brillo. Con el marfil en 24 hay margen de sobra
+  para los dos lados, y el borde oscuro de abajo se conserva.
+- **Punto:** `dif <= 20` **con** limite de brillo, porque ahi el fondo es claro y el punto
+  oscuro: sin el limite se borraria el punto, que tambien es gris.
+
+La leccion es la de siempre en este proyecto: **medir antes de tocar**. Un numero puesto a
+ojo (26) que estaba a un pelo del real (24) se llevo por delante todas las fichas.
+
+### Y la cache
+
+Los archivos se llaman igual que antes, asi que el navegador se quedaba con las feas
+guardadas. Las direcciones llevan ahora un numero de version (`?v=2`) que lo obliga a
+pedirlas de nuevo. Se sube cada vez que cambie el dibujo sin cambiar el nombre.
