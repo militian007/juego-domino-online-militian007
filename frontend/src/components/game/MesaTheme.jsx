@@ -23,7 +23,7 @@ export const BARANDAS = [
  * - `clasica`: el arte que ya tenia el juego, fichas oscuras con marco y puntos
  *   dorados, recortadas a mano.
  * - `hueso`: el blanco hueso tradicional, puntos negros. Se arma con
- *   `scripts/generar-fichas-hueso.mjs` a partir de dos imagenes que genero
+ *   `scripts/generar-fichas.mjs` a partir de dos imagenes que genero
  *   Jonathan con Gemini: la ficha vacia y un punto.
  *
  * Hubo un intento anterior que recoloreaba la ficha clasica con un filtro CSS.
@@ -63,8 +63,10 @@ export const ContextoFichas = createContext('/tiles');
  *
  * 2 = se rehicieron las blanco hueso: la primera tanda salio con el borde
  *     izquierdo cortado y las esquinas mordidas.
+ * 3 = entraron las negro y oro, y de paso se rehicieron las de hueso con el
+ *     script nuevo, que arma las dos pintas con la misma geometria.
  */
-export const VERSION_FICHAS = 2;
+export const VERSION_FICHAS = 3;
 
 export const useCarpetaDeFichas = () => useContext(ContextoFichas);
 

@@ -4589,7 +4589,7 @@ Jonathan genero con Gemini las dos imagenes que se le pidieron en la seccion 104
 el blanco hueso dejo de ser un recoloreado y paso a ser **arte de verdad**: marfil con
 puntos negros y la linea del medio, como una ficha de hueso tradicional.
 
-    npm run fichas-hueso    (desde frontend/)
+    npm run fichas    (desde frontend/)
 
 Lee `arte-fuente/hueso-ficha.png` y `arte-fuente/hueso-punto.png` y escribe las 28 en
 `public/tiles-hueso/`.
@@ -4815,3 +4815,50 @@ nube blanca. Hay que repetirla.
 `npm run test:desbloqueos` — 10 pruebas: que quien no jugo no tiene nada, que se da y queda,
 que darlo dos veces no duplica, que se acumulan, que lo de uno no se le pega a otro y que se
 puede quitar.
+
+## 111. La pinta negro y oro, hecha y bajo llave (2026-09-05)
+
+La ficha de origen que faltaba en la §110 ya esta: Jonathan la repitio y la segunda salio
+acostada, sin nube, con el marco dorado y la barra del medio dibujados. Se guardo como
+`frontend/arte-fuente/oro-ficha.png`.
+
+### El script dejo de ser "el de las hueso" y paso a ser el de todas
+
+Antes `generar-fichas-hueso.mjs` tenia los numeros de la pinta de hueso escritos por dentro.
+Se renombro a **`generar-fichas.mjs`** (`npm run fichas`) y ahora recorre un array `PINTAS`:
+cada pinta trae **donde caben sus puntos**, **de que tamaño van**, **como se recorta su
+fondo** y **si la raya del medio ya viene dibujada**. Agregar una pinta nueva es agregar una
+entrada, no tocar el dibujo.
+
+Se hizo asi porque las dos pintas no se parecen en nada por dentro: la de hueso es lisa y los
+puntos usan casi toda la mitad; la de oro tiene un marco grueso y los puntos tienen que caer
+**dentro del panel negro**, si no se montan sobre el oro.
+
+### Los numeros de la pinta de oro estan medidos, no calculados a ojo
+
+Se recorrio la imagen contando pixeles antes de escribir nada (regla 10):
+
+- El **oro** tiene `dif` (max de rojo/verde/azul menos el minimo) entre **44 y 106**.
+- El **onix** del panel, entre **2 y 7**.
+- El panel negro de la mitad izquierda va de **0,06 a 0,46** de ancho y de **0,14 a 0,87**
+  de alto.
+
+Con esa separacion tan grande, el corte del fondo en `dif <= 16` no se come nada del oro.
+
+La mitad derecha es la izquierda **reflejada** (`x = ANCHO - x`), no una copia corrida: asi
+las dos mitades quedan simetricas de verdad contra el marco.
+
+### `VERSION_FICHAS` a 3
+
+Los archivos se siguen llamando igual (`tile_6_6.png`), asi que el navegador se queda con el
+que ya tenia. El numero viaja pegado a la direccion y lo obliga a pedirlas de nuevo. Sube a
+**3** porque entraron las de oro y, de paso, se rehicieron las de hueso con el script nuevo.
+
+### Como se ve
+
+Verificado corriendo en localhost: el selector de FICHAS muestra las tres muestras reales
+—clasicas, blanco hueso y negro y oro— y la de oro sale apagada con el candado encima y el
+texto *"Las que tienen candado se ganan en el pase de batalla."*
+
+Lo que sigue es el **pase de batalla** en si (misiones y experiencia). Jonathan: *"deja eso
+listo para luego seguir"*.
