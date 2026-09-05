@@ -30,16 +30,29 @@ const BAJADA = {
 };
 
 /** El numero grande de cada uno, que cambia segun la vista. */
-const marcador = (f, vista) =>
-  vista === 'semana'
-    ? `${f.puntos > 0 ? '+' : ''}${f.puntos}`
-    : `${f.puntos}`;
+const marcador = (f, vista) => {
+  if (vista === 'semana') return `${f.puntos > 0 ? '+' : ''}${f.puntos}`;
+  if (vista === 'torneos') return `${f.copas}`;
+  return `${f.puntos}`;
+};
+
+/** La unidad que va al lado del numero. */
+const unidad = (vista, f) => {
+  if (vista === 'semana') return '';
+  if (vista === 'torneos') return f?.copas === 1 ? 'copa' : 'copas';
+  return 'pts';
+};
 
 /** El renglon chico de abajo, tambien distinto en cada vista. */
-const detalle = (f, vista) =>
-  vista === 'semana'
-    ? `${f.victorias} ${f.victorias === 1 ? 'victoria' : 'victorias'} esta semana`
-    : `${f.ganadas} ${f.ganadas === 1 ? 'victoria' : 'victorias'} · ${f.partidas} ${f.partidas === 1 ? 'jugada' : 'jugadas'} · ${f.porcentaje}%`;
+const detalle = (f, vista) => {
+  if (vista === 'semana') {
+    return `${f.victorias} ${f.victorias === 1 ? 'victoria' : 'victorias'} esta semana`;
+  }
+  if (vista === 'torneos') {
+    return `${f.ganadas} ${f.ganadas === 1 ? 'victoria' : 'victorias'} de vida`;
+  }
+  return `${f.ganadas} ${f.ganadas === 1 ? 'victoria' : 'victorias'} · ${f.partidas} ${f.partidas === 1 ? 'jugada' : 'jugadas'} · ${f.porcentaje}%`;
+};
 
 export default function Ranking() {
   const { user } = useAuth();
@@ -107,22 +120,17 @@ export default function Ranking() {
         {error && <p className="mt-6 text-sm text-red-400">{error}</p>}
         {!datos && !error && <p className="mt-6 text-sm text-domino-cream/50">Cargando...</p>}
 
-        {datos && vista === 'torneos' && (
-          <p className="mt-6 rounded-xl border border-domino-accent/15 bg-black/30 p-4 text-sm leading-relaxed text-domino-cream/60">
-            Todavía no hay torneos en el dominó, así que no hay copas que repartir. Cuando
-            los haya, los campeones van a aparecer acá.
-          </p>
-        )}
-
-        {datos && vista !== 'torneos' && tabla.length === 0 && (
+        {datos && tabla.length === 0 && (
           <p className="mt-6 rounded-xl border border-domino-accent/15 bg-black/30 p-4 text-sm leading-relaxed text-domino-cream/60">
             {vista === 'semana'
               ? 'Esta semana todavía no jugó nadie. El primero que gane una partida encabeza la tabla.'
-              : 'Todavía no hay nadie clasificado. Se entra jugando una partida contra otra persona.'}
+              : vista === 'torneos'
+                ? 'Todavía no hay campeones. El primero que gane un torneo queda acá.'
+                : 'Todavía no hay nadie clasificado. Se entra jugando una partida contra otra persona.'}
           </p>
         )}
 
-        {datos && vista !== 'torneos' && tabla.length > 0 && (
+        {datos && tabla.length > 0 && (
           <>
             <div className="mt-6 grid grid-cols-3 items-end gap-2 sm:gap-3">
               {ordenDelPodio.map((f, i) =>
@@ -168,7 +176,7 @@ export default function Ranking() {
                       <span className="shrink-0 text-sm font-bold tabular-nums">
                         {marcador(f, vista)}
                         <span className="ml-1 text-[11px] font-semibold text-domino-dark/50">
-                          {vista === 'semana' ? '' : 'pts'}
+                          {unidad(vista, f)}
                         </span>
                       </span>
                     </li>
@@ -219,8 +227,10 @@ function Plaqueta({ jugador, vista, primero, soyYo }) {
       >
         {marcador(jugador, vista)}
       </p>
-      {vista !== 'semana' && (
-        <p className="text-[9px] font-bold tracking-widest text-domino-accent/70">PTS</p>
+      {unidad(vista, jugador) && (
+        <p className="text-[9px] font-bold uppercase tracking-widest text-domino-accent/70">
+          {unidad(vista, jugador)}
+        </p>
       )}
 
       <p className="mt-1.5 text-[9px] leading-tight text-domino-cream/50">

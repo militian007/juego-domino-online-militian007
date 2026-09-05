@@ -1,4 +1,5 @@
 import * as Notificacion from '../models/Notificacion.js';
+import * as Torneo from '../models/Torneo.js';
 import { TIPO } from '../models/Notificacion.js';
 
 /** Cuanto vive un reto sin contestar. */
@@ -91,6 +92,36 @@ export function registrarRetos(io, socket, roomManager) {
       callback?.({ ok: true });
     } catch {
       callback?.({ ok: false });
+    }
+  });
+
+  // ------------------------------------------------------------ torneos
+  socket.on('torneo:anotarse', async ({ torneoId, anotarse } = {}, callback) => {
+    const yo = quienSoy();
+    if (!yo) return callback?.({ ok: false, error: 'Iniciá sesión para anotarte' });
+
+    try {
+      const torneo = await Torneo.porId(torneoId);
+      if (!torneo) return callback?.({ ok: false, error: 'Ese torneo no existe' });
+
+      // Solo se entra y se sale de los que todavia no empezaron. Anotarse a uno
+      // que ya arranco seria meterse en un cuadro a medio jugar.
+      if (torneo.estado !== Torneo.ESTADO.ANUNCIADO) {
+        return callback?.({ ok: false, error: 'Ese torneo ya empezó' });
+      }
+
+      if (anotarse === false) {
+        await Torneo.borrarse(torneoId, yo.id);
+      } else {
+        await Torneo.anotar(torneoId, yo.id);
+      }
+
+      const actualizado = await Torneo.porId(torneoId);
+      io.emit('torneo:actualizado', { torneoId, anotados: actualizado.anotados });
+      callback?.({ ok: true, anotado: anotarse !== false, anotados: actualizado.anotados });
+    } catch (err) {
+      console.error('Error al anotarse en el torneo:', err.message);
+      callback?.({ ok: false, error: 'No se pudo anotar' });
     }
   });
 

@@ -253,6 +253,25 @@ export const aplicarPartida = async (jugadores) => {
 };
 
 /**
+ * Suma puntos sueltos, fuera de una partida. Hoy lo usa el premio del torneo.
+ *
+ * Cuenta como una victoria de la semana para que el premio del torneo se vea en
+ * la tabla semanal, que es donde la gente mira si esta pasando algo.
+ */
+export const sumarPuntos = async (userId, cuantos) => {
+  const ficha = await de(userId);
+  const despues = await guardar({
+    userId,
+    puntos: ficha.puntos + cuantos,
+    partidas: ficha.partidas,
+    ganadas: ficha.ganadas,
+    mejorPuntos: ficha.mejorPuntos
+  });
+  await sumarALaSemana(userId, despues - ficha.puntos, false);
+  return { antes: ficha.puntos, despues, cambio: despues - ficha.puntos };
+};
+
+/**
  * En que puesto de la tabla general va alguien con esos puntos.
  *
  * Es cuantos tienen mas puntos, mas uno.

@@ -47,4 +47,9 @@ export const rankingApi = {
   mio: () => api.get('/ranking/mio').then((r) => r.data)
 };
 
+export const torneosApi = {
+  vitrina: () => api.get('/torneos').then((r) => r.data),
+  mios: () => api.get('/torneos/mios').then((r) => r.data)
+};
+
 export default api;

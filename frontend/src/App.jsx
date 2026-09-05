@@ -10,6 +10,7 @@ import Torneos from './pages/Torneos.jsx';
 import ChangePassword from './pages/ChangePassword.jsx';
 import Game from './pages/Game.jsx';
 import Version from './components/Version.jsx';
+import AvisoDeTorneo from './components/notificaciones/AvisoDeTorneo.jsx';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -35,6 +36,9 @@ function App() {
       <Route path="/game/:roomCode" element={<Game />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+
+      {/* La mesa del torneo puede tocarte en cualquier pantalla. */}
+      <AvisoDeTorneo />
     <Version />
     </>
   );

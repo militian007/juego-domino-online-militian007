@@ -161,6 +161,35 @@ export async function initDatabase() {
 
     CREATE UNIQUE INDEX IF NOT EXISTS idx_ranking_semana_uno ON ranking_semana(user_id, semana);
     CREATE INDEX IF NOT EXISTS idx_ranking_semana_tabla ON ranking_semana(semana, puntos);
+
+    -- Los torneos, con la misma forma que los de PrivoyTruco: uno cada media
+    -- hora, gratis, se anota quien quiera y el que gana la llave se lleva el
+    -- premio. Aca el premio son puntos y una copa, no plata: todavia no hay
+    -- pasarela de pago. Decision de Jonathan.
+    CREATE TABLE IF NOT EXISTS torneos (
+      id SERIAL PRIMARY KEY,
+      nombre VARCHAR(80) NOT NULL,
+      empieza_en TIMESTAMP NOT NULL,
+      estado VARCHAR(20) NOT NULL DEFAULT 'anunciado',
+      premio_puntos INTEGER NOT NULL DEFAULT 100,
+      campeon_id INTEGER,
+      terminado_en TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_torneos_empieza ON torneos(empieza_en);
+    CREATE INDEX IF NOT EXISTS idx_torneos_estado ON torneos(estado);
+
+    -- Quien esta anotado en cada torneo y hasta que ronda llego.
+    CREATE TABLE IF NOT EXISTS torneo_inscritos (
+      id SERIAL PRIMARY KEY,
+      torneo_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      ronda INTEGER NOT NULL DEFAULT 0,
+      eliminado INTEGER NOT NULL DEFAULT 0
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_torneo_inscrito_uno ON torneo_inscritos(torneo_id, user_id);
+    CREATE INDEX IF NOT EXISTS idx_torneo_inscritos_torneo ON torneo_inscritos(torneo_id);
   `;
 
   if (isPostgres) {

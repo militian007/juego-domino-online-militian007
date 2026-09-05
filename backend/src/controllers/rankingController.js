@@ -1,4 +1,5 @@
 import * as Ranking from '../models/Ranking.js';
+import * as Torneo from '../models/Torneo.js';
 
 /**
  * La clasificacion, con las tres vistas de PrivoyTruco.
@@ -13,9 +14,11 @@ export const clasificacion = async (req, res) => {
 
   try {
     if (vista === 'torneos') {
-      // Los torneos todavia no existen en el domino. Se contesta la vista vacia
-      // y con el aviso, en vez de inventar copas que nadie gano.
-      return res.json({ vista, tabla: [], clasificados: 0, hayTorneos: false });
+      const [tabla, clasificados] = await Promise.all([
+        Torneo.tablaDeCopas(req.query.cuantos),
+        Ranking.cuantosClasificados()
+      ]);
+      return res.json({ vista, tabla, clasificados });
     }
 
     const [tabla, clasificados] = await Promise.all([

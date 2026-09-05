@@ -4344,9 +4344,77 @@ los atajos quedaron en la esquina inferior, no en el borde derecho. Es el mismo 
 la seccion 97 con el modal de retos: pegar un componente al lado de `<ChatGlobal />` lo mete
 dentro de la barra. Van al nivel de la pantalla.
 
+---
+
+## 101. Torneos, copiando "El Relampago" de PrivoyTruco
+
+Jonathan: *"de una vez copia en privo y truco sistema: torneo, perfil"*.
+
+### Lo que hace el suyo
+
+"El Relampago": uno **cada media hora**, gratis, te anotas, se arma la llave y el que gana
+se lleva el pozo. En su pantalla se ve el proximo horario, cuantos anotados hay, la lista de
+los siguientes y el boton ENTRAR; debajo, **EL PALMARES** con los ultimos campeones.
+
+### La unica diferencia: el premio
+
+**Su pozo es en bolivares. Aca no hay pasarela de pago.** Se le pregunto antes de construir
+nada, y eligio: **puntos de clasificacion y una copa** que queda en el palmares y en la
+vista "Torneos" de la clasificacion. Todo lo demas es igual.
+
+### Como funciona la llave
+
+Eliminacion directa. Se empareja de a dos, el que gana pasa y el que pierde queda afuera. Si
+en una ronda queda un numero impar, **uno pasa de arriba sin jugar** (el bye de toda la
+vida). El ultimo en pie es el campeon.
+
+### Dos cosas sin las que un torneo no termina nunca
+
+1. **Las mesas del torneo arrancan solas** cuando entran los dos. En un torneo nadie tiene
+   por que apretar "empezar", y si uno se distrae se traba el cuadro entero.
+2. **Hay un reloj para presentarse** (45 segundos). El que no entra a su mesa **pierde por no
+   presentarse**, como en un torneo de verdad. Sin esto, uno que se anota y no aparece deja
+   el torneo colgado para siempre.
+
+### El reloj del servidor
+
+Cada diez segundos: deja anunciados los proximos ocho torneos en franjas limpias (en punto y
+media) y arranca los que ya les llego la hora. **Con menos de dos anotados el torneo se
+cancela** y se les avisa: es mas honesto que dejarlos esperando.
+
+Todo es configurable por variable de entorno (`TORNEO_CADA_MIN`, `TORNEO_PREMIO`,
+`TORNEO_ESPERA_MS`), que es lo que permite probarlo sin esperar media hora.
+
+### Donde se ve
+
+| donde | que |
+| --- | --- |
+| `/torneos` | la vitrina: proximo torneo, horarios, anotarse, y el palmares |
+| clasificacion, vista "Torneos" | la tabla de copas, con "N victorias de vida" |
+| aviso encima de todo | "Te toca jugar contra X", con la cuenta atras para entrar |
+| campana | te avisa cuando te toca, cuando ganas la mesa y cuando ganas el torneo |
+
+El aviso de la mesa **no entra solo**: se penso, pero sacar a alguien de golpe de lo que
+esta haciendo es peor que perderse un torneo gratis.
+
+### Comprobado
+
+`npm run test:torneos` — 25 pruebas, y la que importa es que **un torneo entero se juega
+solo**: se programan, con una sola persona se cancela, con tres arranca, uno pasa de arriba,
+la mesa arranca sola cuando entran los dos, se juega, se arma la final, hay campeon, el
+campeon cobra sus puntos y su copa, aparece en el palmares y en la tabla de copas, y el que
+perdio queda afuera.
+
+Backend 87/87, clasificacion 37/37, perfil 20/20, reloj 20/20.
+
+### Lo que falta: el perfil de ellos
+
+**No se pudo copiar.** Su perfil esta detras de la cuenta: sin sesion sale el formulario de
+registro. No se creo una cuenta a su nombre porque eso pide cedula, telefono y aceptar
+terminos. Hace falta que Jonathan mande capturas de su perfil ahi, **tapando cedula, fecha
+de nacimiento y telefono**, y sin tocar la seccion BANCA.
+
 ### La pantalla de torneos
 
-`/torneos` existe con **la forma final de la de PrivoyTruco** (cabecera "LA VITRINA", titulo,
-tarjetas claras, EL PALMARES), pero **dice que todavia no hay torneos** en vez de mostrar
-horarios inventados con un boton que no lleva a ningun lado. Cuando el sistema este, la
-pantalla se llena y no cambia de forma.
+`/torneos` nacio como una pantalla con la forma final pero sin torneos detras. En la misma
+tanda se construyo el sistema completo: ver la seccion 101.

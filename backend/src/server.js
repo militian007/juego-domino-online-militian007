@@ -6,10 +6,12 @@ import { Server } from 'socket.io';
 import authRoutes from './routes/auth.js';
 import perfilRoutes from './routes/perfil.js';
 import rankingRoutes from './routes/ranking.js';
+import torneosRoutes from './routes/torneos.js';
 import { roomManager } from './RoomManager.js';
 import { setupGameSocket } from './sockets/gameSocket.js';
 import { registrarChat } from './sockets/chatSocket.js';
 import { registrarRetos } from './sockets/retosSocket.js';
+import * as torneos from './services/torneos.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -31,6 +33,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/perfil', perfilRoutes);
 app.use('/api/ranking', rankingRoutes);
+app.use('/api/torneos', torneosRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', game: 'dominó online', rooms: roomManager.rooms.size });
@@ -44,6 +47,10 @@ const io = new Server(server, {
 });
 
 roomManager.setIO(io);
+
+// El reloj de los torneos: deja anunciados los proximos y arranca los que les
+// llego la hora.
+torneos.encender(io, roomManager);
 setupGameSocket(io, roomManager);
 
 const presence = new Map();

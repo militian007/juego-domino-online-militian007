@@ -5,6 +5,7 @@ import { Bot } from './game/Bot.js';
 import { MODE_CONFIG } from './game/DominoGame.js';
 import * as Partida from './models/Partida.js';
 import * as Ranking from './models/Ranking.js';
+import * as torneos from './services/torneos.js';
 
 const MODES = MODE_CONFIG;
 
@@ -504,6 +505,15 @@ export class RoomManager {
     }).catch((err) => {
       console.error('No se pudo guardar la partida', room.code, err.message);
     });
+
+    // Si la mesa es de un torneo, hay que seguir la llave: el que perdio queda
+    // afuera y el que gano espera su proxima mesa.
+    if (room.torneoId && equipoGanador != null) {
+      const gano = jugadores.find((j) => j.gano);
+      const perdio = jugadores.find((j) => !j.gano);
+      torneos.alTerminarPartida(room, gano?.userId ?? null, perdio?.userId ?? null)
+        .catch((err) => console.error('Error avisando al torneo:', err.message));
+    }
 
     // Los puntos del ranking. Solo si hubo ganador: una partida que termino
     // empatada o a medias no mueve el marcador de nadie.

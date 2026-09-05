@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { HUMAN_DELAY_MS } from '../RoomManager.js';
+import * as torneos from '../services/torneos.js';
 
 const MODOS_INVITADO = ['1v1bot', '2v2bots'];
 
@@ -88,6 +89,11 @@ export function setupGameSocket(io, roomManager) {
       // atras y se le avisa a los demas.
       roomManager.marcarConectado(code, socket.userId);
       roomManager.broadcastLobby(room);
+
+      // Las mesas de torneo arrancan solas cuando estan los dos: en un torneo
+      // nadie tiene por que apretar "empezar", y si alguien se distrae se traba
+      // el cuadro entero.
+      torneos.intentarArrancar(room);
 
       // Si la partida ya comenzó, enviarle el estado actual del juego de inmediato
       if (room.started && room.game) {
