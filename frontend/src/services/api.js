@@ -56,4 +56,9 @@ export const desbloqueosApi = {
   mios: () => api.get('/desbloqueos').then((r) => r.data)
 };
 
+export const paseApi = {
+  mio: () => api.get('/pase').then((r) => r.data),
+  elegirTitulo: (clave) => api.post('/pase/titulo', { clave }).then((r) => r.data)
+};
+
 export default api;

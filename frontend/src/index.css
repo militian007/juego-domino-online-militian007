@@ -198,6 +198,30 @@
       radial-gradient(ellipse 92% 92% at 50% 50%, transparent 34%, rgba(0, 0, 0, 0.6) 100%);
   }
 
+  /* Los tres de abajo son premios del pase de batalla. Misma receta que los
+     demas —una luz arriba y la viñeta oscura alrededor— cambiando el color
+     base, para que se vean de la misma familia y no de otro juego. */
+  .felt-medianoche {
+    background-color: #101d3a;
+    background-image:
+      radial-gradient(ellipse 70% 55% at 50% 26%, rgba(190, 215, 255, 0.13), transparent 74%),
+      radial-gradient(ellipse 92% 92% at 50% 50%, transparent 36%, rgba(0, 0, 0, 0.62) 100%);
+  }
+
+  .felt-purpura {
+    background-color: #33163f;
+    background-image:
+      radial-gradient(ellipse 70% 55% at 50% 26%, rgba(238, 205, 255, 0.13), transparent 74%),
+      radial-gradient(ellipse 92% 92% at 50% 50%, transparent 36%, rgba(0, 0, 0, 0.6) 100%);
+  }
+
+  .felt-oroviejo {
+    background-color: #4a3411;
+    background-image:
+      radial-gradient(ellipse 70% 55% at 50% 26%, rgba(255, 231, 168, 0.16), transparent 74%),
+      radial-gradient(ellipse 92% 92% at 50% 50%, transparent 36%, rgba(0, 0, 0, 0.62) 100%);
+  }
+
   /* ── Baranda de cuero ───────────────────────────────────────────────
      Un solo borde. La estructura es siempre la misma y cada variante solo
      cambia las 4 variables de color:

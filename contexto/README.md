@@ -4862,3 +4862,125 @@ texto *"Las que tienen candado se ganan en el pase de batalla."*
 
 Lo que sigue es el **pase de batalla** en si (misiones y experiencia). Jonathan: *"deja eso
 listo para luego seguir"*.
+
+## 112. El pase de batalla (2026-09-05)
+
+Jonathan: *"dale full a lo del paso de batalla, crea de una vez las recompensas y la skin de
+las fichas. Una de las misiones que sea que por invitar a 3 amigos y logueen subes varios
+puntos, así atraemos a más gente"*.
+
+Queda hecho entero: experiencia, niveles, premios que se entregan solos, misiones diarias,
+semanales y de temporada, y el sistema de invitaciones.
+
+### Las dos monedas, y por que son dos
+
+- **Puntos de club** (el ranking): dicen quien juega **mejor**. Se ganan y se pierden segun
+  contra quien juegues, con la formula de Elo.
+- **Experiencia del pase**: dice quien juega **mas**. Solo sube, nunca baja, y se reinicia
+  cada temporada.
+
+Si fueran la misma, el que se pasa el dia jugando le pasaria por encima al que juega mejor y
+la tabla dejaria de significar algo. Por eso el pase reparte **pocos** puntos de club: unos
+270 en seis semanas, un premio simbolico y no un atajo. El numero se cambia en un solo sitio,
+`PUNTOS_POR_TRAMO` en `backend/src/models/Pase.js`.
+
+### La temporada se calcula sola
+
+No hay tabla de temporadas ni nadie que tenga que crear la siguiente. Hay una fecha de
+arranque (`EPOCA`, el lunes 31 de agosto de 2026) y una duracion (seis semanas). Todo lo
+demas sale de ahi: el dia que termina la T1 empieza la T2 sin que nadie haga nada. Es el
+mismo truco que ya usaba la clasificacion semanal.
+
+**40 niveles, 100 de experiencia cada uno.** Seis semanas para 4000 de experiencia son unos
+95 al dia: se llega jugando un rato, no viviendo ahi.
+
+### De donde sale la experiencia
+
+| De que | Cuanta |
+| --- | --- |
+| Ganar contra una persona | 25 |
+| Perder contra una persona | 10 |
+| Ganar contra el bot | 6, con **tope de 30 al dia** |
+| Perder contra el bot | 3, dentro del mismo tope |
+| Misiones diarias | 15 a 45 cada una, tres por dia |
+| Misiones semanales | 100 a 200 cada una, tres por semana |
+| Cada pana que traigas y juegue | **150** |
+| Traer tres panas | **300 mas** y el titulo "Padrino" |
+
+El tope de los bots existe porque sin el alguien deja el telefono ganandole a la maquina toda
+la noche y termina la temporada en una tarde. Las **misiones** si las completa el bot, a
+proposito: son la tarea del dia y cada una se cobra una sola vez, asi que no hay nada que
+repetir. Lo que no se puede es seguir sacando experiencia por jugar sin parar.
+
+Perder tambien suma. El que pierde tambien jugo, y un pase que solo premia al que gana echa
+justamente al que mas necesita quedarse.
+
+### La mision de los panas: la unica que hace crecer el juego
+
+Es la mas gorda de todas: siete niveles y medio de golpe. El link es
+`.../register?ref=TuNombre` — **el codigo es el propio nombre de usuario**, no un codigo
+aparte: los nombres ya son unicos, el link se entiende de una y se dicta por telefono sin
+equivocarse, cosa que un "K7X2QF" no.
+
+**Se cobra cuando el invitado juega su primera partida, no cuando se registra.** Si contara
+el registro, cualquiera se crea diez cuentas de mentira y cobra sin traer a nadie.
+
+La pantalla del pase trae el link, un boton de copiar y otro de compartir (usa el compartir
+del telefono si lo hay, y si no abre WhatsApp), y la lista de los panas con quien ya jugo.
+
+### Los premios: cosas que existen de verdad
+
+Nada de premios de mentira. Los 40 niveles reparten:
+
+- **Puntos de club** en la mayoria, subiendo de 5 a 12 segun el tramo.
+- **Cinco titulos** (niveles 5, 12, 20, 28 y 36) — se ven al lado del nombre **en el chat**,
+  y se eligen desde el perfil. Es puro alarde, que es justamente para lo que sirven.
+- **Tres paños nuevos** (10, 22 y 34): azul medianoche, purpura real y oro viejo. Misma
+  receta que los que ya habia, para que se vean de la misma familia.
+- **Las fichas negro y oro en el nivel 40**, que es el premio que ya estaba esperando desde
+  la §111.
+
+Los seis paños viejos siguen abiertos para todo el mundo: un premio no puede ser quitarle
+algo a quien ya lo tenia.
+
+**No hay nada que reclamar.** Al subir de nivel el premio ya esta entregado. Los pases que
+obligan a entrar a apretar un boton solo consiguen que alguien se quede sin lo suyo por
+olvido.
+
+### El pase pago esta definido y APAGADO
+
+`PASE_ORO_ACTIVO = false`. La fila dorada se ve en la pantalla, punteada y con el cartel
+"próximamente", pero el servidor no entrega nada de ella y no hay forma de comprarla: en
+Venezuela todavia no hay pasarela de pago (decision de Jonathan, ya tomada para los torneos).
+El dia que haya cobro se cambia el interruptor y la fila empieza a pagar.
+
+### Que se toco del juego
+
+- `RoomManager` ahora avisa al pase de **todas** las partidas, tambien las que son contra la
+  maquina. El historial y el ranking siguen contando **solo** las que son entre personas,
+  como siempre: son dos preguntas distintas.
+- Los torneos avisan al armar la mesa (jugar cuenta desde que te presentas) y al coronar.
+- El chat avisa cuando alguien escribe, y de paso muestra el titulo de quien habla.
+- El registro acepta `ref` y deja anotado quien trajo a quien.
+
+Todos los eventos los dispara el **servidor** cuando el hecho ya ocurrio. El cliente no puede
+pedir experiencia ni completar una mision mandando un mensaje: si pudiera, cualquiera se
+completaria el pase sin jugar (regla 8).
+
+### Pruebas
+
+`npm run test:pase` — 62. Incluye una partida **de verdad**: se arma una mesa con el
+RoomManager, se juega entera contra el bot y se comprueba que la experiencia llego, que la
+mision conto la partida y que esa partida **no** entro al historial. Es el unico eslabon que
+las pruebas de unidad no tocan.
+
+Verificado corriendo en localhost: la pantalla del pase con nivel 10, el link de invitacion
+con un pana confirmado, las nueve misiones, la escalera con sus muestras (el paño se ve con
+su tela, las fichas con su ficha, los titulos con su medalla) y el selector de la mesa con
+"azul medianoche" ya desbloqueado y los otros dos con candado.
+
+### Lo que quedo pendiente
+
+- El pase no reparte **copas**: eso sigue siendo solo de los torneos.
+- El chat sigue **sin moderacion**. Con el pase empujando a la gente a escribir, hace mas
+  falta que antes.

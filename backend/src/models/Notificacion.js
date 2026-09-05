@@ -17,7 +17,8 @@ export const TIPO = {
   RETO_ACEPTADO: 'reto-aceptado',
   RETO_RECHAZADO: 'reto-rechazado',
   RETO_VENCIDO: 'reto-vencido',
-  TORNEO: 'torneo'
+  TORNEO: 'torneo',
+  PASE: 'pase'
 };
 
 const armar = (r) => ({

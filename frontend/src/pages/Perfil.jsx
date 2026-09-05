@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { perfilApi } from '../services/api.js';
+import { perfilApi, paseApi } from '../services/api.js';
 
 /**
  * El perfil: quien sos y como te fue.
@@ -28,6 +28,7 @@ const MOTIVO = {
 export default function Perfil() {
   const [datos, setDatos] = useState(null);
   const [error, setError] = useState(null);
+  const [pase, setPase] = useState(null);
 
   useEffect(() => {
     let vivo = true;
@@ -37,8 +38,31 @@ export default function Perfil() {
       .then((d) => { if (vivo) setDatos(d); })
       .catch(() => { if (vivo) setError('No se pudo cargar el perfil'); });
 
+    // Los titulos del pase se piden aparte: si el pase falla, el perfil se
+    // tiene que ver igual.
+    paseApi
+      .mio()
+      .then((d) => { if (vivo) setPase(d); })
+      .catch(() => { if (vivo) setPase(null); });
+
     return () => { vivo = false; };
   }, []);
+
+  // Los titulos que ya gano, con el que tiene puesto.
+  const misTitulos = pase
+    ? Object.entries(pase.titulos).filter(([clave]) => pase.mios.includes(clave))
+    : [];
+
+  const elegirTitulo = async (clave) => {
+    const nuevo = clave === pase.tituloElegido ? null : clave;
+    setPase((p) => ({ ...p, tituloElegido: nuevo }));
+    try {
+      await paseApi.elegirTitulo(nuevo);
+    } catch {
+      // Si el servidor lo rechaza, se vuelve a preguntar en vez de mentirle.
+      paseApi.mio().then(setPase).catch(() => {});
+    }
+  };
 
   const fecha = (cuando) => {
     const d = new Date(cuando);
@@ -144,6 +168,37 @@ export default function Perfil() {
                 Ganás el <span className="font-semibold text-domino-accent">{datos.resumen.porcentaje}%</span> de
                 las que jugás
               </p>
+            )}
+
+            {/* Los titulos del pase de batalla. Solo aparecen si gano alguno:
+                una seccion vacia con "todavia no tenés ninguno" solo ocupa
+                sitio. */}
+            {misTitulos.length > 0 && (
+              <>
+                <h2 className="mt-8 text-xs font-semibold tracking-widest text-domino-cream/50">
+                  MIS TÍTULOS
+                </h2>
+                <p className="mt-1 text-[11px] leading-relaxed text-domino-cream/40">
+                  El que elijas se ve al lado de tu nombre en el chat. Tocalo otra vez para
+                  quitártelo.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {misTitulos.map(([clave, nombre]) => (
+                    <button
+                      key={clave}
+                      type="button"
+                      onClick={() => elegirTitulo(clave)}
+                      className={`rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition ${
+                        pase.tituloElegido === clave
+                          ? 'bg-domino-accent text-domino-dark'
+                          : 'bg-domino-accent/15 text-domino-accent hover:bg-domino-accent/25'
+                      }`}
+                    >
+                      {nombre}
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
 
             <h2 className="mt-8 text-xs font-semibold tracking-widest text-domino-cream/50">

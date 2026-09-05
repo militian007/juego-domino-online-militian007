@@ -8,11 +8,13 @@ import perfilRoutes from './routes/perfil.js';
 import rankingRoutes from './routes/ranking.js';
 import torneosRoutes from './routes/torneos.js';
 import desbloqueosRoutes from './routes/desbloqueos.js';
+import paseRoutes from './routes/pase.js';
 import { roomManager } from './RoomManager.js';
 import { setupGameSocket } from './sockets/gameSocket.js';
 import { registrarChat } from './sockets/chatSocket.js';
 import { registrarRetos } from './sockets/retosSocket.js';
 import * as torneos from './services/torneos.js';
+import * as pase from './services/pase.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -36,6 +38,7 @@ app.use('/api/perfil', perfilRoutes);
 app.use('/api/ranking', rankingRoutes);
 app.use('/api/torneos', torneosRoutes);
 app.use('/api/desbloqueos', desbloqueosRoutes);
+app.use('/api/pase', paseRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', game: 'dominó online', rooms: roomManager.rooms.size });
@@ -53,6 +56,10 @@ roomManager.setIO(io);
 // El reloj de los torneos: deja anunciados los proximos y arranca los que les
 // llego la hora.
 torneos.encender(io, roomManager);
+
+// El pase de batalla necesita el io para avisar en el momento de que alguien
+// subio de nivel o cumplio una mision.
+pase.conectar(io);
 setupGameSocket(io, roomManager);
 
 const presence = new Map();

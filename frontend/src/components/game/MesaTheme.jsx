@@ -2,13 +2,41 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { Lock } from 'lucide-react';
 import { desbloqueosApi } from '../../services/api.js';
 
+/**
+ * Los paños de la mesa.
+ *
+ * Los que llevan `clave` no se eligen: se ganan en el pase de batalla. Los
+ * primeros seis siguen abiertos para todo el mundo, como siempre: un premio no
+ * puede ser quitarle algo a quien ya lo tenia.
+ */
 export const PANOS = [
   { id: 'tela', nombre: 'Paño de tela', clase: 'felt-tela' },
   { id: 'verde', nombre: 'Verde casino', clase: 'felt-verde' },
   { id: 'oscuro', nombre: 'Verde profundo', clase: 'felt-oscuro' },
   { id: 'torneo', nombre: 'Torneo', clase: 'felt-torneo' },
   { id: 'vino', nombre: 'Borgoña', clase: 'felt-vino' },
-  { id: 'negro', nombre: 'Negro', clase: 'felt-negro' }
+  { id: 'negro', nombre: 'Negro', clase: 'felt-negro' },
+  {
+    id: 'medianoche',
+    nombre: 'Azul medianoche',
+    clase: 'felt-medianoche',
+    clave: 'pano:medianoche',
+    comoSeGana: 'Nivel 10 del pase de batalla'
+  },
+  {
+    id: 'purpura',
+    nombre: 'Púrpura real',
+    clase: 'felt-purpura',
+    clave: 'pano:purpura',
+    comoSeGana: 'Nivel 22 del pase de batalla'
+  },
+  {
+    id: 'oroviejo',
+    nombre: 'Oro viejo',
+    clase: 'felt-oroviejo',
+    clave: 'pano:oroviejo',
+    comoSeGana: 'Nivel 34 del pase de batalla'
+  }
 ];
 
 // Solo queda la baranda que usamos. Las de cuero eran de la epoca del CSS
@@ -116,9 +144,13 @@ export function useMesaTheme() {
     }
   }, [tema]);
 
-  const clasePano = PANOS.find((p) => p.id === tema.pano)?.clase ?? PANOS[0].clase;
   const claseBaranda = BARANDAS.find((b) => b.id === tema.baranda)?.clase ?? BARANDAS[0].clase;
   const puedeUsar = (f) => !f.clave || desbloqueadas.includes(f.clave);
+
+  // Lo mismo que con las fichas: si tiene puesto un paño que no le corresponde,
+  // se cae al primero.
+  const panoElegido = PANOS.find((p) => p.id === tema.pano);
+  const clasePano = (panoElegido && puedeUsar(panoElegido) ? panoElegido : PANOS[0]).clase;
 
   // Si tiene elegida una pinta que no le corresponde, se cae a las clasicas.
   // Puede pasar si la gano, se le quito, o si tocara los datos de su navegador.
@@ -137,19 +169,27 @@ export function useMesaTheme() {
   };
 }
 
-function Muestra({ clase, activo, titulo, onClick, alto = 'h-9' }) {
+function Muestra({ clase, activo, titulo, onClick, alto = 'h-9', abierta = true }) {
   return (
     <button
       type="button"
       title={titulo}
+      disabled={!abierta}
       onClick={onClick}
-      className={`${clase} ${alto} w-full rounded-md border transition-all ${
-        activo
+      className={`${clase} ${alto} relative w-full rounded-md border transition-all ${
+        activo && abierta
           ? 'border-domino-accent ring-2 ring-domino-accent/50 scale-105'
-          : 'border-black/50 hover:border-domino-accent/60'
-      }`}
+          : 'border-black/50'
+      } ${abierta ? 'hover:border-domino-accent/60' : 'cursor-not-allowed opacity-40'}`}
     >
       <span className="sr-only">{titulo}</span>
+      {!abierta && (
+        <Lock
+          size={12}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-domino-accent drop-shadow"
+          aria-hidden="true"
+        />
+      )}
     </button>
   );
 }
@@ -171,15 +211,19 @@ export default function MesaThemePicker({ tema, setTema, enMenu = false, puedeUs
     <>
       <div className="mb-2 text-[10px] uppercase tracking-widest text-domino-accent/70">Paño</div>
       <div className="grid grid-cols-6 gap-1.5">
-        {PANOS.map((p) => (
-          <Muestra
-            key={p.id}
-            clase={p.clase}
-            titulo={p.nombre}
-            activo={tema.pano === p.id}
-            onClick={() => setTema((t) => ({ ...t, pano: p.id }))}
-          />
-        ))}
+        {PANOS.map((p) => {
+          const abierta = puedeUsar(p);
+          return (
+            <Muestra
+              key={p.id}
+              clase={p.clase}
+              abierta={abierta}
+              titulo={abierta ? p.nombre : `${p.nombre} — ${p.comoSeGana}`}
+              activo={tema.pano === p.id}
+              onClick={() => abierta && setTema((t) => ({ ...t, pano: p.id }))}
+            />
+          );
+        })}
       </div>
       <div className="mb-2 mt-3 text-[10px] uppercase tracking-widest text-domino-accent/70">
         Fichas
@@ -230,7 +274,7 @@ export default function MesaThemePicker({ tema, setTema, enMenu = false, puedeUs
         })}
       </div>
 
-      {FICHAS.some((f) => !puedeUsar(f)) && (
+      {[...FICHAS, ...PANOS].some((f) => !puedeUsar(f)) && (
         <p className="mt-1.5 text-[9px] leading-tight text-domino-cream-dim/60">
           Las que tienen candado se ganan en el pase de batalla.
         </p>

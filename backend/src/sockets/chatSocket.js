@@ -1,4 +1,7 @@
 import * as ChatGlobal from '../models/ChatGlobal.js';
+import * as Preferencia from '../models/Preferencia.js';
+import { nombreDe } from '../models/Titulo.js';
+import * as pase from '../services/pase.js';
 
 /**
  * El chat del menu principal.
@@ -83,6 +86,17 @@ const puedeEscribir = (userId) => {
  * ya verifico el middleware. Si se confiara en lo que llega, cualquiera
  * escribiria haciendose pasar por otro con solo cambiar un campo.
  */
+/**
+ * Le pega a cada mensaje el titulo que eligio mostrar quien lo escribio.
+ *
+ * Va en una sola consulta para toda la tanda: preguntar uno por uno seria una
+ * consulta por mensaje cada vez que alguien abre el chat.
+ */
+const conTitulos = async (mensajes) => {
+  const claves = await Preferencia.titulosDe(mensajes.map((m) => m.userId));
+  return mensajes.map((m) => ({ ...m, titulo: nombreDe(claves[Number(m.userId)]) }));
+};
+
 const identificar = (socket) => {
   if (socket.isGuest) return null;
   if (!socket.userId || !socket.username) return null;
@@ -96,7 +110,7 @@ export function registrarChat(io, socket) {
       socket.join('chat-global');
       const mensajes = await ChatGlobal.ultimos();
       socket.emit('chat:historial', {
-        mensajes,
+        mensajes: await conTitulos(mensajes),
         puedoEscribir: Boolean(identificar(socket))
       });
     } catch (err) {
@@ -128,7 +142,13 @@ export function registrarChat(io, socket) {
         texto: limpio
       });
 
-      io.to('chat-global').emit('chat:mensaje', mensaje);
+      io.to('chat-global').emit('chat:mensaje', {
+        ...mensaje,
+        titulo: nombreDe(await Preferencia.leer(quien.userId, Preferencia.TITULO))
+      });
+
+      // Saludar en el chat es una de las misiones diarias del pase.
+      pase.alEscribirEnElChat(quien.userId).catch(() => {});
 
       // De vez en cuando se tira lo viejo. No en cada mensaje: seria una
       // escritura de mas por cada cosa que alguien dice.

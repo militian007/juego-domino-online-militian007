@@ -2,6 +2,7 @@ import * as Torneo from '../models/Torneo.js';
 import * as Ranking from '../models/Ranking.js';
 import * as Notificacion from '../models/Notificacion.js';
 import { TIPO } from '../models/Notificacion.js';
+import * as pase from './pase.js';
 
 /**
  * El motor de los torneos.
@@ -114,6 +115,12 @@ const armarMesa = async (torneo, unoId, unoNombre, dosId, dosNombre) => {
       cuerpo: `Contra ${contra}. Entrá a la mesa antes de que se te pase.`,
       datos: { torneoId: torneo.id, code: sala.code }
     });
+  }
+
+  // Para el pase de batalla, jugar el torneo cuenta desde que se arma la mesa:
+  // el que se anoto y se presento ya hizo su parte, gane o pierda.
+  for (const id of [unoId, dosId]) {
+    pase.alJugarTorneo(id).catch(() => {});
   }
 
   // El reloj para presentarse. Si al vencer la partida no arranco, gana el que
@@ -230,6 +237,8 @@ async function coronar(torneo, campeon) {
     cuerpo: `+${torneo.premioPuntos} puntos y una copa para el palmarés.`,
     datos: { torneoId: torneo.id, puntos: premio.despues }
   });
+
+  await pase.alGanarTorneo(campeon.userId).catch(() => {});
 
   io?.emit('torneo:campeon', {
     torneoId: torneo.id,

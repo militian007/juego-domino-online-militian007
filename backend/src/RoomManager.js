@@ -6,6 +6,7 @@ import { MODE_CONFIG } from './game/DominoGame.js';
 import * as Partida from './models/Partida.js';
 import * as Ranking from './models/Ranking.js';
 import * as torneos from './services/torneos.js';
+import * as pase from './services/pase.js';
 
 const MODES = MODE_CONFIG;
 
@@ -470,13 +471,9 @@ export class RoomManager {
     if (room._registrada) return;
     if (!room.game || room.game.status !== 'game-over') return;
 
-    // Decision de Jonathan: solo cuentan las partidas entre personas.
-    if ((room.config?.bots ?? 0) > 0) {
-      room._registrada = true;
-      return;
-    }
-
     room._registrada = true;
+
+    const conBots = (room.config?.bots ?? 0) > 0;
 
     // Se guarda el final de la PARTIDA, no el de la ultima ronda.
     //
@@ -495,20 +492,30 @@ export class RoomManager {
       gano: equipoGanador != null && p.team === equipoGanador
     }));
 
-    Partida.registrar({
-      roomCode: room.code,
-      modo: room.mode,
-      equipoGanador,
-      motivo: resultado?.reason ?? room.game.endReason,
-      puntos: room.game.teamScores,
-      jugadores
-    }).catch((err) => {
-      console.error('No se pudo guardar la partida', room.code, err.message);
-    });
+    // Decision de Jonathan: en el historial y en el ranking solo cuentan las
+    // partidas entre personas. Contra la maquina se juega, pero no se anota.
+    if (!conBots) {
+      Partida.registrar({
+        roomCode: room.code,
+        modo: room.mode,
+        equipoGanador,
+        motivo: resultado?.reason ?? room.game.endReason,
+        puntos: room.game.teamScores,
+        jugadores
+      }).catch((err) => {
+        console.error('No se pudo guardar la partida', room.code, err.message);
+      });
+    }
+
+    // El pase de batalla si cuenta las dos, con distinta vara: contra la
+    // maquina da mucho menos y con tope diario. Se hace aparte del historial
+    // porque son dos preguntas distintas: el historial dice quien es mejor, el
+    // pase dice quien esta jugando.
+    this._avisarAlPase(room, conBots, equipoGanador);
 
     // Si la mesa es de un torneo, hay que seguir la llave: el que perdio queda
     // afuera y el que gano espera su proxima mesa.
-    if (room.torneoId && equipoGanador != null) {
+    if (!conBots && room.torneoId && equipoGanador != null) {
       const gano = jugadores.find((j) => j.gano);
       const perdio = jugadores.find((j) => !j.gano);
       torneos.alTerminarPartida(room, gano?.userId ?? null, perdio?.userId ?? null)
@@ -517,13 +524,42 @@ export class RoomManager {
 
     // Los puntos del ranking. Solo si hubo ganador: una partida que termino
     // empatada o a medias no mueve el marcador de nadie.
-    if (equipoGanador != null) {
+    if (!conBots && equipoGanador != null) {
       Ranking.aplicarPartida(jugadores)
         .then((cambios) => this._avisarCambiosDeRanking(room, cambios))
         .catch((err) => {
           console.error('No se pudo actualizar el ranking', room.code, err.message);
         });
     }
+  }
+
+  /**
+   * Le pasa la partida al pase de batalla.
+   *
+   * Solo van las personas: un bot no tiene pase. Y va con los puntos que hizo
+   * el rival, que es lo que necesita la mision de la paliza.
+   */
+  _avisarAlPase(room, conBots, equipoGanador) {
+    const marcador = room.game.teamScores ?? [];
+
+    const jugadores = room.players
+      .filter((p) => !p.isBot && p.id)
+      .map((p) => ({
+        userId: p.id,
+        gano: equipoGanador != null && p.team === equipoGanador
+      }));
+
+    if (!jugadores.length) return;
+
+    const puntosDelRival = {};
+    for (const p of room.players) {
+      if (p.isBot || !p.id) continue;
+      const otro = p.team === 0 ? 1 : 0;
+      puntosDelRival[p.id] = Number(marcador[otro] ?? 0);
+    }
+
+    pase.alTerminarPartida({ jugadores, modo: room.mode, conBots, puntosDelRival })
+      .catch((err) => console.error('El pase no pudo con la partida:', err.message));
   }
 
   /**

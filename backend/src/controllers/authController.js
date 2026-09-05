@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import * as User from '../models/User.js';
+import * as pase from '../services/pase.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
@@ -14,7 +15,8 @@ const generateToken = (user) => {
 
 export const register = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    // `ref` es el nombre de quien lo invito, si llego por el link de un pana.
+    const { username, email, password, ref } = req.body;
 
     if (!username || !email || !password) {
       return res.status(400).json({ error: 'Todos los campos son obligatorios' });
@@ -40,6 +42,11 @@ export const register = async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await User.create({ username, email, passwordHash });
+
+    // Queda anotado quien lo trajo. El premio no se paga aqui: se paga cuando
+    // este juegue su primera partida, para que no valga inventarse cuentas.
+    await pase.alRegistrarse(user.id, ref);
+
     const token = generateToken(user);
 
     res.status(201).json({

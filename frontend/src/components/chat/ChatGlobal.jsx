@@ -178,6 +178,13 @@ export default function ChatGlobal() {
                   {m.username}
                 </span>
               )}
+              {/* El titulo que se gano en el pase. Es puro alarde, pero es
+                  justamente lo que hace que la gente quiera subir de nivel. */}
+              {m.titulo && (
+                <span className="ml-1.5 rounded bg-domino-accent/15 px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-domino-accent">
+                  {m.titulo}
+                </span>
+              )}
               <span className="ml-1.5 text-[10px] text-domino-cream/40">{hora(m.creadoEn)}</span>
               {/* React escapa el texto solo: nadie puede meter HTML por aca. */}
               <p className="break-words text-domino-cream/80">{m.texto}</p>

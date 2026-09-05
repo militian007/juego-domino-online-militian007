@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -12,6 +12,11 @@ export default function Register() {
   const location = useLocation();
   const redirectTo = location.state?.from || '/dashboard';
 
+  // Quien lo invito, si vino por el link de un pana (.../register?ref=Nombre).
+  // Se le muestra en pantalla para que se vea que el link funciono.
+  const [parametros] = useSearchParams();
+  const invitadoPor = parametros.get('ref');
+
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
@@ -22,7 +27,7 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      await register(form.username, form.email, form.password);
+      await register(form.username, form.email, form.password, invitadoPor);
       navigate(redirectTo, { replace: true });
     } catch (err) {
       setError(err.response?.data?.error || 'Error al registrarse');
@@ -40,6 +45,13 @@ export default function Register() {
           <p className="text-slate-400 text-center mb-6 sm:mb-8 text-sm sm:text-base">
             Únete y empieza a jugar
           </p>
+
+          {invitadoPor && (
+            <p className="mb-6 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-center text-sm text-emerald-200">
+              Te invitó <strong>{invitadoPor}</strong>. Jugá tu primera partida y le sumás
+              experiencia en su pase.
+            </p>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-semibold mb-2">Usuario</label>

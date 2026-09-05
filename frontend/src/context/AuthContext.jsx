@@ -56,8 +56,9 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const register = async (username, email, password) => {
-    const data = await authApi.register({ username, email, password });
+  // `ref` es el nombre de quien lo invito, si llego por el link de un pana.
+  const register = async (username, email, password, ref = null) => {
+    const data = await authApi.register({ username, email, password, ref });
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
     setUser(data.user);

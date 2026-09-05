@@ -205,6 +205,76 @@ export async function initDatabase() {
     );
 
     CREATE UNIQUE INDEX IF NOT EXISTS idx_desbloqueo_uno ON desbloqueos(user_id, clave);
+
+    -- El pase de batalla. Una fila por persona y por temporada.
+    --
+    -- La temporada va como texto ("T1", "T2") por lo mismo que la semana del
+    -- ranking: dos partidas de la misma temporada caen en la misma fila sin
+    -- calcular rangos de fechas, y la temporada nueva simplemente todavia no
+    -- tiene filas.
+    --
+    -- nivel_cobrado es hasta que nivel ya se entregaron los premios. Sin esa
+    -- columna, subir de nivel dos veces en la misma partida entregaria el
+    -- premio del primero dos veces o ninguno.
+    CREATE TABLE IF NOT EXISTS pase_progreso (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      temporada VARCHAR(20) NOT NULL,
+      xp INTEGER NOT NULL DEFAULT 0,
+      nivel_cobrado INTEGER NOT NULL DEFAULT 0,
+      actualizado_en TIMESTAMP
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_pase_progreso_uno ON pase_progreso(user_id, temporada);
+
+    -- El avance de cada mision.
+    --
+    -- periodo dice de cuando es: un dia ("2026-09-05"), una semana ("2026-W36")
+    -- o una temporada ("T1"). Asi la mision de hoy y la de manana son dos filas
+    -- distintas y no hace falta borrar nada a medianoche.
+    CREATE TABLE IF NOT EXISTS pase_misiones (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      clave VARCHAR(60) NOT NULL,
+      periodo VARCHAR(20) NOT NULL,
+      progreso INTEGER NOT NULL DEFAULT 0,
+      cobrada INTEGER NOT NULL DEFAULT 0
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_pase_mision_uno ON pase_misiones(user_id, clave, periodo);
+    CREATE INDEX IF NOT EXISTS idx_pase_misiones_user ON pase_misiones(user_id, periodo);
+
+    -- Quien trajo a quien.
+    --
+    -- confirmada se pone en 1 cuando el invitado juega su primera partida, no
+    -- cuando se registra: si contara el registro, cualquiera se crea diez
+    -- cuentas vacias y cobra el premio.
+    CREATE TABLE IF NOT EXISTS invitaciones (
+      id SERIAL PRIMARY KEY,
+      invitador_id INTEGER NOT NULL,
+      invitado_id INTEGER NOT NULL,
+      confirmada INTEGER NOT NULL DEFAULT 0,
+      creada_en TIMESTAMP,
+      confirmada_en TIMESTAMP
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_invitacion_invitado ON invitaciones(invitado_id);
+    CREATE INDEX IF NOT EXISTS idx_invitacion_invitador ON invitaciones(invitador_id);
+
+    -- Los ajustes de cada uno que no caben en users.
+    --
+    -- users ya existe en produccion y el esquema se crea con CREATE TABLE IF
+    -- NOT EXISTS, que a una tabla que ya existe no le agrega columnas. Hoy
+    -- guarda cual titulo eligio mostrar; manana, lo que venga.
+    CREATE TABLE IF NOT EXISTS preferencias (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      clave VARCHAR(40) NOT NULL,
+      valor VARCHAR(80),
+      actualizado_en TIMESTAMP
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_preferencia_uno ON preferencias(user_id, clave);
   `;
 
   if (isPostgres) {

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 
 /**
- * Los dos atajos del borde derecho: torneos y clasificacion.
+ * Los atajos del borde derecho: torneos, clasificacion y pase de batalla.
  *
  * Van ahi porque lo marco Jonathan en una captura, y porque en el telefono el
  * borde derecho es donde llega el pulgar sin tapar nada de la mesa. Sin
@@ -14,7 +14,8 @@ import { Link } from 'react-router-dom';
 
 const ATAJOS = [
   { a: '/torneos', icono: '/iconos/torneos.png', texto: 'TORNEOS' },
-  { a: '/ranking', icono: '/iconos/tabla.png', texto: 'TABLA' }
+  { a: '/ranking', icono: '/iconos/tabla.png', texto: 'TABLA' },
+  { a: '/pase', icono: '/iconos/pase.png', texto: 'PASE' }
 ];
 
 export default function AtajosLaterales() {
