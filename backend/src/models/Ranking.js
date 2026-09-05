@@ -1,20 +1,26 @@
 import { query } from '../config/database.js';
 
 /**
- * El ranking del club.
+ * La clasificacion del club.
  *
- * Decisiones de Jonathan (5 de septiembre de 2026):
+ * Esta hecha **igual a la de PrivoyTruco** (revisada en su web el 5 de
+ * septiembre de 2026, con 1208 jugadores clasificados), que es la plataforma
+ * donde va a vivir el motor. Decision de Jonathan.
  *
- *  - Los puntos se mueven **segun quien sea el rival**. Ganarle a alguien mejor
- *    da mas; ganarle a uno muy por debajo da poquito. Asi el ranking mide como
- *    jugas y no cuantas horas tenes libres, y nadie sube machacando siempre al
- *    mismo novato.
- *  - **Un solo ranking, sin temporadas.** No se reinicia nunca.
- *  - El rango mas alto es **Retador**, y ahi adentro cada uno tiene su puesto:
- *    Top 100, Top 500, y de ahi en adelante el numero que le toque.
+ * Lo que eso significa, y lo que NO significa:
  *
- * Solo cuentan las partidas entre personas, igual que el historial: contra la
- * maquina no suma nada.
+ *  - Es una tabla de **puntos y puesto**. No hay rangos con nombre. Hubo un
+ *    intento anterior con una escalera (Novato → Retador); se saco porque la
+ *    plataforma no la tiene y el domino tiene que verse igual.
+ *  - Cada fila muestra **victorias, jugadas y porcentaje**, no solo el puntaje.
+ *  - Hay tres vistas: **General**, **Esta semana** y **Torneos**.
+ *
+ * Los puntos se mueven **segun quien sea el rival**: ganarle a alguien mejor da
+ * mas y ganarle a uno muy por debajo da poquito. Asi la tabla mide como jugas y
+ * no cuantas horas tenes libres, y nadie sube machacando siempre al mismo
+ * novato. Tambien decision de Jonathan.
+ *
+ * Solo cuentan las partidas entre personas: contra la maquina no suma nada.
  */
 
 /** Con cuantos puntos entra alguien nuevo. */
@@ -35,49 +41,21 @@ const MOVIMIENTO_AL_PRINCIPIO = 48;
 const MOVIMIENTO_NORMAL = 24;
 
 /**
- * La escalera, de abajo hacia arriba. Cada rango empieza en sus puntos.
+ * La semana en curso, contando de lunes a lunes.
  *
- * Retador no tiene techo: es el ultimo.
+ * Se guarda como texto "2026-W36" en vez de una fecha porque asi dos partidas
+ * de la misma semana caen en la misma fila sin tener que calcular rangos de
+ * fechas en cada consulta.
  */
-export const RANGOS = [
-  { nombre: 'Novato', desde: 0 },
-  { nombre: 'Aficionado', desde: 1000 },
-  { nombre: 'Jugador de Club', desde: 1150 },
-  { nombre: 'Veterano', desde: 1300 },
-  { nombre: 'Maestro', desde: 1450 },
-  { nombre: 'Gran Maestro', desde: 1600 },
-  { nombre: 'Retador', desde: 1750 }
-];
-
-export const PUNTOS_DE_RETADOR = RANGOS[RANGOS.length - 1].desde;
-
-/** Que rango le toca a esos puntos. */
-export const rangoDe = (puntos) => {
-  let actual = RANGOS[0];
-  for (const r of RANGOS) if (puntos >= r.desde) actual = r;
-  return actual.nombre;
-};
-
-/**
- * Cuanto falta para el rango siguiente, o null si ya es Retador.
- *
- * Se devuelven tambien los DOS umbrales, el del rango actual y el del siguiente.
- * Sin ellos la pantalla no puede dibujar la barra de avance: necesita saber
- * donde empieza el tramo, no solo cuanto falta para el final.
- */
-export const faltaParaElSiguiente = (puntos) => {
-  const siguiente = RANGOS.find((r) => puntos < r.desde);
-  if (!siguiente) return null;
-
-  let desdeActual = RANGOS[0].desde;
-  for (const r of RANGOS) if (puntos >= r.desde) desdeActual = r.desde;
-
-  return {
-    rango: siguiente.nombre,
-    desde: siguiente.desde,
-    desdeActual,
-    faltan: siguiente.desde - puntos
-  };
+export const semanaActual = (fecha = new Date()) => {
+  const d = new Date(Date.UTC(fecha.getFullYear(), fecha.getMonth(), fecha.getDate()));
+  // Se corre al jueves de esa semana: es el truco estandar para que el numero
+  // de semana no baile en los cambios de anio.
+  const dia = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dia);
+  const inicioDeAnio = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const numero = Math.ceil(((d - inicioDeAnio) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(numero).padStart(2, '0')}`;
 };
 
 /**
@@ -108,13 +86,17 @@ export const calcularCambio = (mios, delRival, gano, jugadas) => {
   return cambio;
 };
 
+/** El porcentaje de victorias, como lo muestra PrivoyTruco. */
+export const porcentaje = (ganadas, partidas) =>
+  partidas > 0 ? Math.round((ganadas / partidas) * 100) : 0;
+
 const armar = (r) => ({
   userId: Number(r.user_id),
   puntos: Number(r.puntos),
   partidas: Number(r.partidas),
   ganadas: Number(r.ganadas),
   mejorPuntos: Number(r.mejor_puntos),
-  rango: rangoDe(Number(r.puntos))
+  porcentaje: porcentaje(Number(r.ganadas), Number(r.partidas))
 });
 
 const fichaNueva = (userId) => ({
@@ -123,14 +105,14 @@ const fichaNueva = (userId) => ({
   partidas: 0,
   ganadas: 0,
   mejorPuntos: PUNTOS_INICIALES,
-  rango: rangoDe(PUNTOS_INICIALES)
+  porcentaje: 0
 });
 
 /**
  * La ficha de alguien.
  *
  * Si nunca jugo, se devuelve la de arranque SIN escribir nada en la base: una
- * fila por cada cuenta que solo miro el perfil no le sirve a nadie.
+ * fila por cada cuenta que solo miro la tabla no le sirve a nadie.
  */
 export const de = async (userId) => {
   const { rows } = await query(
@@ -184,6 +166,24 @@ export const guardar = async ({ userId, puntos, partidas, ganadas, mejorPuntos }
   return limpio;
 };
 
+/** Suma lo de esta partida al marcador de la semana. */
+const sumarALaSemana = async (userId, cambio, gano) => {
+  const semana = semanaActual();
+
+  const { rows } = await query(
+    `UPDATE ranking_semana SET puntos = puntos + ?, victorias = victorias + ?
+     WHERE user_id = ? AND semana = ? RETURNING id`,
+    [cambio, gano ? 1 : 0, Number(userId), semana]
+  );
+
+  if (!rows || rows.length === 0) {
+    await query(
+      'INSERT INTO ranking_semana (user_id, semana, puntos, victorias) VALUES (?, ?, ?, ?)',
+      [Number(userId), semana, cambio, gano ? 1 : 0]
+    );
+  }
+};
+
 /**
  * Reparte los puntos de una partida terminada.
  *
@@ -195,7 +195,7 @@ export const guardar = async ({ userId, puntos, partidas, ganadas, mejorPuntos }
  * puntos contra un fantasma seria inventar.
  *
  * @param jugadores [{ userId, equipo, gano }]
- * @returns [{ userId, antes, despues, cambio, rango }]
+ * @returns [{ userId, antes, despues, cambio, puestoNuevo }]
  */
 export const aplicarPartida = async (jugadores) => {
   const conCuenta = jugadores.filter((j) => Number.isInteger(Number(j.userId)) && Number(j.userId) > 0);
@@ -234,59 +234,42 @@ export const aplicarPartida = async (jugadores) => {
       mejorPuntos: ficha.mejorPuntos
     });
 
+    await sumarALaSemana(j.userId, despues - ficha.puntos, j.gano);
+
     cambios.push({
       userId: Number(j.userId),
       antes: ficha.puntos,
       despues,
       cambio: despues - ficha.puntos,
-      rango: rangoDe(despues),
-      subioDeRango: rangoDe(despues) !== rangoDe(ficha.puntos) && despues > ficha.puntos
+      partidas: ficha.partidas + 1,
+      ganadas: ficha.ganadas + (j.gano ? 1 : 0)
     });
   }
+
+  // El puesto se calcula al final, con todos los puntos ya escritos.
+  for (const c of cambios) c.puesto = await puestoDe(c.despues);
 
   return cambios;
 };
 
 /**
- * En que puesto va alguien entre TODOS los Retadores.
+ * En que puesto de la tabla general va alguien con esos puntos.
  *
- * Devuelve null si todavia no llego: abajo de Retador el puesto no significa
- * nada y mostrarlo solo confunde.
+ * Es cuantos tienen mas puntos, mas uno.
  */
-export const puestoDeRetador = async (userId, puntos) => {
-  if (puntos < PUNTOS_DE_RETADOR) return null;
-
-  const { rows } = await query(
-    'SELECT COUNT(*) AS n FROM ranking WHERE puntos >= ? AND puntos > ?',
-    [PUNTOS_DE_RETADOR, Number(puntos)]
-  );
+export const puestoDe = async (puntos) => {
+  const { rows } = await query('SELECT COUNT(*) AS n FROM ranking WHERE puntos > ?', [Number(puntos)]);
   return Number(rows[0]?.n ?? 0) + 1;
 };
 
-/** Cuantos llegaron a Retador. */
-export const cuantosRetadores = async () => {
-  const { rows } = await query(
-    'SELECT COUNT(*) AS n FROM ranking WHERE puntos >= ?',
-    [PUNTOS_DE_RETADOR]
-  );
+/** Cuanta gente hay en la tabla. PrivoyTruco lo muestra arriba del todo. */
+export const cuantosClasificados = async () => {
+  const { rows } = await query('SELECT COUNT(*) AS n FROM ranking');
   return Number(rows[0]?.n ?? 0);
 };
 
-/**
- * La distincion que se muestra al lado del nombre de un Retador.
- *
- * Pedido de Jonathan: dentro de Retador hay un Top 100, un Top 500, y de ahi en
- * adelante el numero que le toque a cada uno.
- */
-export const distincionDeRetador = (puesto) => {
-  if (puesto == null) return null;
-  if (puesto <= 100) return 'Top 100';
-  if (puesto <= 500) return 'Top 500';
-  return `#${puesto}`;
-};
-
-/** La tabla de posiciones. */
-export const tabla = async (cuantos = 100) => {
+/** La tabla general: los puntos de siempre. */
+export const tablaGeneral = async (cuantos = 100) => {
   const tope = Math.min(Math.max(Number(cuantos) || 100, 1), 500);
 
   const { rows } = await query(
@@ -304,6 +287,49 @@ export const tabla = async (cuantos = 100) => {
     puntos: Number(r.puntos),
     partidas: Number(r.partidas),
     ganadas: Number(r.ganadas),
-    rango: rangoDe(Number(r.puntos))
+    porcentaje: porcentaje(Number(r.ganadas), Number(r.partidas))
   }));
+};
+
+/**
+ * La tabla de la semana. Arranca de cero cada lunes.
+ *
+ * Es la que le da chance a alguien que entro ayer: en la general nunca va a
+ * alcanzar al que lleva mil partidas, pero la semana la puede ganar cualquiera.
+ */
+export const tablaSemanal = async (cuantos = 100) => {
+  const tope = Math.min(Math.max(Number(cuantos) || 100, 1), 500);
+
+  const { rows } = await query(
+    `SELECT s.user_id, s.puntos, s.victorias, u.username
+     FROM ranking_semana s JOIN users u ON u.id = s.user_id
+     WHERE s.semana = ?
+     ORDER BY s.puntos DESC, s.victorias DESC, s.user_id ASC
+     LIMIT ?`,
+    [semanaActual(), tope]
+  );
+
+  return rows.map((r, i) => ({
+    puesto: i + 1,
+    userId: Number(r.user_id),
+    username: r.username,
+    puntos: Number(r.puntos),
+    victorias: Number(r.victorias)
+  }));
+};
+
+/**
+ * Lo de la semana de una persona.
+ *
+ * Devuelve ceros si todavia no jugo esta semana, sin crear fila.
+ */
+export const semanaDe = async (userId) => {
+  const { rows } = await query(
+    'SELECT puntos, victorias FROM ranking_semana WHERE user_id = ? AND semana = ?',
+    [Number(userId), semanaActual()]
+  );
+  return {
+    puntos: Number(rows[0]?.puntos ?? 0),
+    victorias: Number(rows[0]?.victorias ?? 0)
+  };
 };

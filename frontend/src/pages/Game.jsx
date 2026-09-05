@@ -27,7 +27,6 @@ import { salirPantallaCompleta } from '../utils/pantalla.js';
 import RelojDeTurno from '../components/game/RelojDeTurno.jsx';
 import AvisoDeAusente from '../components/game/AvisoDeAusente.jsx';
 import AvisoDeSalto from '../components/game/AvisoDeSalto.jsx';
-import Rango from '../components/ranking/Rango.jsx';
 
 // La partida en curso se recuerda en el navegador para poder volver a ella al
 // refrescar o al salir a otra app. Solo se olvida cuando la partida termina o
@@ -1376,20 +1375,20 @@ export default function Game() {
                     </div>
                   </div>
 
-                  <div className="mt-3 flex justify-center">
-                    <Rango rango={cambioDeRanking.rango} tamano="sm" />
-                  </div>
-
-                  {cambioDeRanking.subioDeRango && (
-                    <p className="mt-2 text-xs font-semibold text-domino-accent">
-                      ¡Subiste a {cambioDeRanking.rango}!
+                  {cambioDeRanking.puesto && (
+                    <p className="mt-3 text-xs text-domino-cream/60">
+                      Quedaste{' '}
+                      <span className="font-bold text-domino-accent">
+                        #{cambioDeRanking.puesto}
+                      </span>{' '}
+                      en la clasificación
                     </p>
                   )}
                 </div>
               )}
 
               <Link to="/ranking" className="mb-2 block text-xs tracking-widest text-domino-cream/55 underline-offset-4 hover:text-domino-accent hover:underline">
-                VER EL RANKING
+                VER LA CLASIFICACIÓN
               </Link>
 
               <Link to="/dashboard" className="btn-primary w-full block">

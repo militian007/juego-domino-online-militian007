@@ -43,7 +43,7 @@ export const perfilApi = {
 };
 
 export const rankingApi = {
-  tabla: (cuantos) => api.get('/ranking', { params: { cuantos } }).then((r) => r.data),
+  tabla: (vista, cuantos) => api.get('/ranking', { params: { vista, cuantos } }).then((r) => r.data),
   mio: () => api.get('/ranking/mio').then((r) => r.data)
 };
 

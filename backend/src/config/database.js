@@ -143,6 +143,24 @@ export async function initDatabase() {
     );
 
     CREATE INDEX IF NOT EXISTS idx_ranking_puntos ON ranking(puntos);
+
+    -- Los puntos de la semana, aparte.
+    --
+    -- La clasificacion semanal arranca de cero cada lunes, asi que no se puede
+    -- guardar en la misma fila que los puntos de siempre: haria falta borrarla
+    -- todos los lunes y alguien que no juegue esa semana perderia su historial.
+    -- Con una fila por persona y por semana, la semana nueva simplemente no
+    -- tiene filas todavia.
+    CREATE TABLE IF NOT EXISTS ranking_semana (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      semana VARCHAR(10) NOT NULL,
+      puntos INTEGER NOT NULL DEFAULT 0,
+      victorias INTEGER NOT NULL DEFAULT 0
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_ranking_semana_uno ON ranking_semana(user_id, semana);
+    CREATE INDEX IF NOT EXISTS idx_ranking_semana_tabla ON ranking_semana(semana, puntos);
   `;
 
   if (isPostgres) {

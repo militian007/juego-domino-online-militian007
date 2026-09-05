@@ -4239,90 +4239,88 @@ lo vuelve a pedir. Hay que borrarla y volver a instalarla. El propio cartel lo d
 
 ---
 
-## 99. El ranking del club
+## 99. La clasificacion, hecha igual a la de PrivoyTruco
 
-Pedido de Jonathan: *"el último tiene que ser Retador, ese es el máximo, donde todos
-aspiran llegar. Y ahí tendrá un top 100, un top 500, y el resto sería Retador pero 501,
-así sucesivamente, dependiendo de las personas que lleguen a Retador"*.
+Jonathan pidio primero una escalera de rangos con **Retador** arriba y un Top 100 / Top 500
+adentro. Se construyo. Despues dijo: *"haz el sistema de ranking igual al de PrivoyTruco,
+revisa como es en ese link"*.
 
-### Las dos decisiones que tomo
+### Lo que se encontro en PrivoyTruco (revisado el 5 de septiembre de 2026)
 
-1. **Los puntos se mueven segun quien sea el rival.** Ganarle a alguien mejor da mas;
-   ganarle a uno muy por debajo da poquito. Asi el ranking mide como jugas y no cuantas
-   horas tenes libres, y nadie sube machacando siempre al mismo novato.
-2. **Un solo ranking, sin temporadas.** No se reinicia nunca.
+Pantalla **"EL CUADRO DE HONOR · CLASIFICACION"**, con 1208 jugadores clasificados:
 
-### La escalera
-
-| rango | desde |
+| pestaña | que muestra |
 | --- | --- |
-| Retador | 1750 |
-| Gran Maestro | 1600 |
-| Maestro | 1450 |
-| Veterano | 1300 |
-| Jugador de Club | 1150 |
-| Aficionado | 1000 |
-| Novato | 0 |
+| **General** | los puntos de siempre: `2893 pts` + "927 victorias · 1687 jugadas · 55%" |
+| **Esta semana** | *"Arranca de cero cada lunes — cualquiera puede ganarla"*: `+1722` + "174 victorias esta semana" |
+| **Torneos** | *"Los campeones y sus copas"*: `13 copas` + "360 victorias de vida" |
 
-Se arranca con **1000**. De ahi a Retador son 750 puntos: unas 60 victorias netas contra
-rivales parejos. Es una subida de verdad pero alcanzable, no un muro.
+Arriba, un **podio de tres**: el segundo a la izquierda, el **primero en el centro, mas alto
+y con corona**, el tercero a la derecha. Debajo, la lista corrida sobre un panel claro.
 
-**Retador es el unico rango con puesto.** Al pasar los 1750 aparece tu numero entre todos
-los Retadores: `Top 100`, `Top 500`, y del 501 en adelante el numero que te toque. Abajo de
-Retador no se muestra puesto: no significa nada y solo confunde.
+**Y el dato que cambio el plan: su clasificacion NO tiene rangos con nombre.** Nada de
+Retador, Maestro ni Gran Maestro. Es una tabla de puntos y puesto, y ya.
 
-### Detalles que importan
+Se le dijo antes de tocar nada, porque contradecia su propia idea. Eligio copiar el modelo
+de PrivoyTruco tal cual. **La escalera de rangos se saco.**
 
-- **Las primeras 10 partidas mueven el doble** (48 en vez de 24). Es la forma de que
-  alguien nuevo llegue rapido al lugar que le corresponde en vez de pasarse meses subiendo
-  de a poquito desde el medio.
-- **Ganar siempre suma al menos 1 y perder siempre resta al menos 1**, aunque el redondeo
-  de cero. Si no, ganarle a alguien muy por debajo no daria nada y se sentiria como que el
-  juego no registro la partida.
-- **En 2v2 cada uno se mide contra el promedio del equipo contrario**, no contra el suyo:
-  lo que importa es contra quien jugaste, no con quien.
+### Como quedo
+
+- **Tres vistas**, con los mismos textos y la misma forma que las suyas.
+- **Podio de tres** con el primero en el centro.
+- Cada fila: puesto, nombre, **victorias · jugadas · porcentaje**, y el puntaje.
+- La cabecera del menu muestra **`#6` y `1355 pts`** al lado del nombre, y lleva a la tabla.
+- El perfil muestra el puesto, los puntos, lo de la semana y la mejor marca.
+- Al terminar una partida: **cuanto se movio el marcador y en que puesto quedaste**.
+
+**Los torneos todavia no existen en el domino.** La pestaña esta, y dice la verdad en vez de
+inventar copas que nadie gano.
+
+### Los puntos
+
+Se mueven **segun quien sea el rival** (formula de Elo, la del ajedrez): ganarle a alguien
+mejor da mas, ganarle a uno muy por debajo da poquito. Asi la tabla mide como jugas y no
+cuantas horas tenes libres, y nadie sube machacando siempre al mismo novato. Decision de
+Jonathan, y se mantiene: es como se ganan los puntos, no como se muestran.
+
+Detalles que importan:
+
+- **Las primeras 10 partidas mueven el doble** (48 en vez de 24), para que el que entra
+  llegue rapido a su lugar en vez de subir de a poquito durante meses.
+- **Ganar siempre suma al menos 1 y perder siempre resta al menos 1.** Si no, ganarle a
+  alguien muy por debajo daria cero y se sentiria como que el juego no registro la partida.
+- **En 2v2 cada uno se mide contra el promedio del equipo contrario**, no contra el suyo.
 - **Los promedios se calculan ANTES de escribir nada.** Si se fuera guardando sobre la
   marcha, el segundo jugador se mediria contra los puntos ya modificados del primero y la
   misma partida daria distinto segun el orden. Hay una prueba solo para eso.
-- **Consultar el perfil no crea fila.** Una fila por cada cuenta que solo miro el ranking
-  no le sirve a nadie.
-- **Nadie baja de 100 puntos.** Un numero ridiculo no motiva.
-- **Los invitados no entran.** Si de un lado no hay nadie con cuenta, no se reparte nada:
-  no hay contra quien medir.
+- **Nadie baja de 100 puntos** y **los invitados no entran**.
 
-### Donde se ve
+### La semana va en su propia tabla
 
-| donde | que muestra |
-| --- | --- |
-| cabecera del menu | la insignia del rango al lado del nombre; lleva a la tabla |
-| `/ranking` | la tabla de posiciones y la escalera completa. **Se ve sin cuenta** |
-| perfil | rango, puntos, cuanto falta para el siguiente y tu mejor marca |
-| final de partida | cuanto se movio el marcador, y si subiste de rango |
+`ranking_semana`, una fila por persona y por semana (`2026-W36`). No se pudo guardar en la
+misma fila que los puntos de siempre porque la semanal **arranca de cero cada lunes**: habria
+que borrarla todos los lunes, y quien no juegue esa semana perderia su historial. Con una
+fila por semana, la semana nueva simplemente todavia no tiene filas.
 
-La tabla se ve **sin iniciar sesion** a proposito: el que entra de visita tiene que poder
-ver quienes son los mejores. Es la mitad de la gracia de tener ranking.
+### Dos cosas que se rompieron por el camino
 
-### Dos cosas que se rompieron haciendo esto
-
-1. **La pagina del menu quedo en blanco.** El efecto que pide el rango se inserto dentro
-   del hook equivocado, donde la variable del usuario no existe. Compilaba igual: era un
-   error de ejecucion, no de compilacion. Solo aparecio al abrir la pagina de verdad.
-2. **La prueba del puesto daba por sentado que la tabla estaba vacia.** En cuanto hubo
-   jugadores de verdad, fallo. Ahora comprueba la regla —el puesto es cuantos tienen mas
-   puntos, mas uno— y no una posicion concreta.
-
-### Lo que hay que saber para cuando haya poca gente
-
-Con pocos jugadores el **Top 500 no significa nada**: si llegan 30 personas a Retador,
-todas estan en el "Top 100". No se rompe, pero se ve flojo hasta que haya cientos. Queda
-avisado.
+1. **La pagina del menu quedo en blanco.** El efecto que pide el puesto se inserto dentro del
+   hook equivocado, donde la variable del usuario no existe. Compilaba igual: era error de
+   ejecucion, no de compilacion, y solo aparecio al abrir la pagina de verdad.
+2. **Las pruebas de las tablas fallaban con ids inventados.** Las tablas unen con `users`, asi
+   que alguien que no existe como cuenta se guarda pero no aparece. La prueba ahora crea
+   cuentas de verdad para eso.
 
 ### Comprobado
 
-`npm run test:ranking` — 45 pruebas: que el rival importa en los dos sentidos, que ganar
+`npm run test:ranking` — 37 pruebas: que el rival importa en los dos sentidos, que ganar
 siempre suma, que el orden de los jugadores no cambia el resultado, que los invitados no
-entran, la escalera entera, el puesto y las distinciones, el piso, el mejor puntaje, **una
-partida completa de verdad con el RoomManager y el motor** que mueve los puntos de los dos
-y les avisa, y que una partida contra la maquina no mueve nada.
+entran, el puesto, la tabla general ordenada, los porcentajes, la tabla de la semana (que
+suma, que resta al que pierde y que acumula dos partidas en la misma fila), el piso, la mejor
+marca, **una partida completa de verdad con el RoomManager y el motor**, y que una partida
+contra la maquina no mueve nada.
 
-Motor 61/61, backend 87/87, perfil 20/20, reloj 20/20.
+En pantalla se vieron las tres pestañas con el podio, la cabecera con `#6 · 1355 pts` y el
+perfil con el puesto y lo de la semana.
+
+Backend 87/87, perfil 20/20, reloj 20/20.

@@ -37,7 +37,10 @@ export const miPerfil = async (req, res) => {
       };
     });
 
-    const puesto = await Ranking.puestoDeRetador(userId, ficha.puntos);
+    const [puesto, semana] = await Promise.all([
+      Ranking.puestoDe(ficha.puntos),
+      Ranking.semanaDe(userId)
+    ]);
 
     res.json({
       usuario: {
@@ -49,13 +52,12 @@ export const miPerfil = async (req, res) => {
       historial: conRivales,
       ranking: {
         puntos: ficha.puntos,
-        rango: ficha.rango,
         mejorPuntos: ficha.mejorPuntos,
-        // Solo tiene puesto quien llego a Retador. Abajo de ahi no significa
-        // nada y mostrarlo confunde.
-        puesto,
-        distincion: Ranking.distincionDeRetador(puesto),
-        siguiente: Ranking.faltaParaElSiguiente(ficha.puntos)
+        porcentaje: ficha.porcentaje,
+        // Sin partidas jugadas el puesto no significa nada: estaria empatado
+        // con todos los que tampoco jugaron.
+        puesto: ficha.partidas > 0 ? puesto : null,
+        semana
       }
     });
   } catch (err) {

@@ -1,58 +1,63 @@
 import * as Ranking from '../models/Ranking.js';
 
 /**
- * La tabla de posiciones.
+ * La clasificacion, con las tres vistas de PrivoyTruco.
  *
  * Va SIN sesion a proposito: un invitado que entra tiene que poder ver quienes
- * son los mejores. Es la mitad de la gracia de tener ranking.
+ * son los mejores. Es la mitad de la gracia de tener clasificacion.
  */
-export const tablaDePosiciones = async (req, res) => {
+export const clasificacion = async (req, res) => {
+  const vista = ['general', 'semana', 'torneos'].includes(req.query.vista)
+    ? req.query.vista
+    : 'general';
+
   try {
-    const [tabla, retadores] = await Promise.all([
-      Ranking.tabla(req.query.cuantos),
-      Ranking.cuantosRetadores()
+    if (vista === 'torneos') {
+      // Los torneos todavia no existen en el domino. Se contesta la vista vacia
+      // y con el aviso, en vez de inventar copas que nadie gano.
+      return res.json({ vista, tabla: [], clasificados: 0, hayTorneos: false });
+    }
+
+    const [tabla, clasificados] = await Promise.all([
+      vista === 'semana' ? Ranking.tablaSemanal(req.query.cuantos) : Ranking.tablaGeneral(req.query.cuantos),
+      Ranking.cuantosClasificados()
     ]);
 
-    res.json({
-      tabla: tabla.map((f) => ({
-        ...f,
-        // El puesto de la tabla general solo es "puesto de Retador" para los
-        // que llegaron; para el resto es su lugar en la lista y nada mas.
-        distincion: f.puntos >= Ranking.PUNTOS_DE_RETADOR
-          ? Ranking.distincionDeRetador(f.puesto)
-          : null
-      })),
-      retadores,
-      rangos: Ranking.RANGOS,
-      puntosDeRetador: Ranking.PUNTOS_DE_RETADOR
-    });
+    res.json({ vista, tabla, clasificados, semana: Ranking.semanaActual() });
   } catch (err) {
-    console.error('Error armando la tabla de posiciones:', err.message);
-    res.status(500).json({ error: 'No se pudo cargar el ranking' });
+    console.error('Error armando la clasificacion:', err.message);
+    res.status(500).json({ error: 'No se pudo cargar la clasificación' });
   }
 };
 
 /**
- * Solo el rango de quien esta con la sesion iniciada.
+ * Lo propio: puntos, puesto y lo de la semana.
  *
- * Existe aparte de `/api/perfil` porque la cabecera del menu necesita el rango
- * y nada mas: traer el historial completo de partidas para pintar una insignia
- * seria pedirle a la base mucho mas de lo que hace falta.
+ * Existe aparte de `/api/perfil` porque la cabecera del menu necesita esto y
+ * nada mas: traer el historial completo de partidas para pintar un puesto seria
+ * pedirle a la base mucho mas de lo que hace falta.
  */
-export const miRango = async (req, res) => {
+export const miPuesto = async (req, res) => {
   try {
     const ficha = await Ranking.de(req.userId);
-    const puesto = await Ranking.puestoDeRetador(req.userId, ficha.puntos);
+    const [puesto, semana] = await Promise.all([
+      Ranking.puestoDe(ficha.puntos),
+      Ranking.semanaDe(req.userId)
+    ]);
 
     res.json({
       puntos: ficha.puntos,
-      rango: ficha.rango,
-      puesto,
-      distincion: Ranking.distincionDeRetador(puesto),
-      siguiente: Ranking.faltaParaElSiguiente(ficha.puntos)
+      partidas: ficha.partidas,
+      ganadas: ficha.ganadas,
+      porcentaje: ficha.porcentaje,
+      mejorPuntos: ficha.mejorPuntos,
+      // Sin partidas jugadas el puesto no significa nada: estaria empatado con
+      // todos los que tampoco jugaron.
+      puesto: ficha.partidas > 0 ? puesto : null,
+      semana
     });
   } catch (err) {
-    console.error('Error leyendo el rango:', err.message);
-    res.status(500).json({ error: 'No se pudo cargar el rango' });
+    console.error('Error leyendo el puesto:', err.message);
+    res.status(500).json({ error: 'No se pudo cargar tu puesto' });
   }
 };

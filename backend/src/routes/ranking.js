@@ -1,10 +1,10 @@
 import express from 'express';
 import { authMiddleware } from '../middleware/auth.js';
-import { tablaDePosiciones, miRango } from '../controllers/rankingController.js';
+import { clasificacion, miPuesto } from '../controllers/rankingController.js';
 
 const router = express.Router();
 
-router.get('/', tablaDePosiciones);
-router.get('/mio', authMiddleware, miRango);
+router.get('/', clasificacion);
+router.get('/mio', authMiddleware, miPuesto);
 
 export default router;

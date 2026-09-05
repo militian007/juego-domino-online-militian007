@@ -1,8 +1,8 @@
-// El ranking del club.
+// La clasificacion del club.
 //
-// Reglas de Jonathan: los puntos se mueven segun quien sea el rival, no hay
-// temporadas, y el rango mas alto es Retador, donde cada uno tiene su puesto
-// (Top 100, Top 500, y de ahi el numero que le toque).
+// Hecha igual a la de PrivoyTruco: puntos y puesto, sin rangos con nombre, con
+// tres vistas (General, Esta semana, Torneos). Los puntos se mueven segun quien
+// sea el rival. Decisiones de Jonathan.
 import { applyAction, currentSeat, legalActions, isTerminal, PHASE, ACTION } from '@privoytruco/domino-engine';
 import { initDatabase, query } from './config/database.js';
 import { RoomManager } from './RoomManager.js';
@@ -21,6 +21,23 @@ const id = (n) => BASE + n;
 
 async function limpiar() {
   await query('DELETE FROM ranking WHERE user_id >= ?', [BASE]);
+  await query('DELETE FROM ranking_semana WHERE user_id >= ?', [BASE]);
+}
+
+/**
+ * Crea una cuenta de verdad y devuelve su id.
+ *
+ * Las tablas unen con `users`, asi que un id inventado no aparece en ellas.
+ * Para probar las tablas hace falta gente que exista.
+ */
+async function cuentaDePrueba(nombre) {
+  const { rows } = await query('SELECT id FROM users WHERE username = ?', [nombre]);
+  if (rows[0]) return Number(rows[0].id);
+  const creado = await query(
+    'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?) RETURNING id',
+    [nombre, `${nombre.toLowerCase()}@prueba.local`, 'x']
+  );
+  return Number(creado.rows[0].id);
 }
 
 async function main() {
@@ -30,7 +47,6 @@ async function main() {
   // ---- 1. Quien nunca jugo -------------------------------------------
   const nuevo = await Ranking.de(id(1));
   check(nuevo.puntos === 1000, 'Quien nunca jugo arranca con 1000 puntos');
-  check(nuevo.rango === 'Aficionado', `Y con el rango que le toca (${nuevo.rango})`);
   check(nuevo.partidas === 0, 'Sin partidas jugadas');
 
   const { rows } = await query('SELECT COUNT(*) AS n FROM ranking WHERE user_id = ?', [id(1)]);
@@ -105,57 +121,77 @@ async function main() {
   ]);
   check(conInvitado.length === 0, 'Si el rival es un invitado, no se reparten puntos');
 
-  // ---- 7. La escalera --------------------------------------------------
-  check(Ranking.rangoDe(0) === 'Novato', 'Con 0 puntos, Novato');
-  check(Ranking.rangoDe(1000) === 'Aficionado', 'Con 1000, Aficionado');
-  check(Ranking.rangoDe(1749) === 'Gran Maestro', 'Con 1749, Gran Maestro');
-  check(Ranking.rangoDe(1750) === 'Retador', 'Con 1750, Retador');
-  check(Ranking.rangoDe(99999) === 'Retador', 'Retador no tiene techo');
-
-  const falta = Ranking.faltaParaElSiguiente(1000);
-  check(falta?.rango === 'Jugador de Club' && falta.faltan === 150, 'Dice cuanto falta para el siguiente');
-  check(Ranking.faltaParaElSiguiente(2000) === null, 'Al Retador no le falta nada: es el ultimo');
-
-  // ---- 8. El puesto dentro de Retador ---------------------------------
+  // ---- 7. El puesto sale de los puntos --------------------------------
   await limpiar();
-  // Tres retadores con puntajes distintos y uno que no llego.
   await Ranking.guardar({ userId: id(30), puntos: 2100, partidas: 40, ganadas: 30, mejorPuntos: 2100 });
   await Ranking.guardar({ userId: id(31), puntos: 1900, partidas: 40, ganadas: 25, mejorPuntos: 1900 });
   await Ranking.guardar({ userId: id(32), puntos: 1800, partidas: 40, ganadas: 22, mejorPuntos: 1800 });
-  await Ranking.guardar({ userId: id(33), puntos: 1200, partidas: 40, ganadas: 15, mejorPuntos: 1200 });
 
-  // El puesto se comprueba CONTRA LO QUE HAYA en la base, no suponiendo que
-  // esta vacia. El primer intento daba por sentado que los unicos retadores
-  // eran los de prueba, y fallaba en cuanto habia jugadores de verdad.
+  // Se comprueba CONTRA LO QUE HAYA en la base, no suponiendo que esta vacia.
   const arribaDe = async (puntos) => {
-    const { rows: r } = await query(
-      'SELECT COUNT(*) AS n FROM ranking WHERE puntos >= ? AND puntos > ?',
-      [Ranking.PUNTOS_DE_RETADOR, puntos]
-    );
+    const { rows: r } = await query('SELECT COUNT(*) AS n FROM ranking WHERE puntos > ?', [puntos]);
     return Number(r[0].n);
   };
 
-  const puesto30 = await Ranking.puestoDeRetador(id(30), 2100);
-  const puesto31 = await Ranking.puestoDeRetador(id(31), 1900);
-  const puesto32 = await Ranking.puestoDeRetador(id(32), 1800);
+  const puesto30 = await Ranking.puestoDe(2100);
+  const puesto31 = await Ranking.puestoDe(1900);
+  const puesto32 = await Ranking.puestoDe(1800);
 
   check(puesto30 === (await arribaDe(2100)) + 1, 'El puesto es cuantos tienen mas puntos, mas uno');
-  check(puesto31 === (await arribaDe(1900)) + 1, 'Lo mismo para el segundo');
-  check(puesto32 === (await arribaDe(1800)) + 1, 'Y para el tercero');
-
-  // Entre ellos puede haber jugadores de verdad, asi que los puestos no tienen
-  // por que ir seguidos; lo que si tiene que cumplirse es el orden.
   check(puesto30 < puesto31 && puesto31 < puesto32, 'A menos puntos, peor puesto');
-  check(await Ranking.puestoDeRetador(id(33), 1200) === null, 'Quien no llego a Retador no tiene puesto');
-  check(await Ranking.cuantosRetadores() >= 3, 'Se cuenta cuantos llegaron a Retador');
 
-  // ---- 9. Las distinciones --------------------------------------------
-  check(Ranking.distincionDeRetador(1) === 'Top 100', 'El puesto 1 es Top 100');
-  check(Ranking.distincionDeRetador(100) === 'Top 100', 'El 100 todavia es Top 100');
-  check(Ranking.distincionDeRetador(101) === 'Top 500', 'El 101 pasa a Top 500');
-  check(Ranking.distincionDeRetador(500) === 'Top 500', 'El 500 todavia es Top 500');
-  check(Ranking.distincionDeRetador(501) === '#501', 'Del 501 en adelante va el numero');
-  check(Ranking.distincionDeRetador(1234) === '#1234', 'Y sigue con el que le toque');
+  // ---- 8. La tabla general --------------------------------------------
+  const general = await Ranking.tablaGeneral(10);
+  check(general.length > 0, 'La tabla general trae gente');
+  check(
+    general.every((f, k) => k === 0 || general[k - 1].puntos >= f.puntos),
+    'Y viene ordenada de mas a menos puntos'
+  );
+  check(
+    general[0].puesto === 1 && typeof general[0].porcentaje === 'number',
+    'Cada fila trae su puesto y su porcentaje de victorias'
+  );
+
+  // ---- 9. Los porcentajes ---------------------------------------------
+  check(Ranking.porcentaje(55, 100) === 55, 'El porcentaje se calcula bien');
+  check(Ranking.porcentaje(0, 0) === 0, 'Sin partidas, el porcentaje es cero y no se rompe');
+
+  // ---- 9b. La tabla de la semana ---------------------------------------
+  //
+  // Con cuentas de verdad, porque las tablas unen con `users`: un id inventado
+  // se guarda igual pero no aparece en la tabla, que es justo lo que se quiere
+  // comprobar aca.
+  const gana = await cuentaDePrueba('SemanaGana');
+  const pierde = await cuentaDePrueba('SemanaPierde');
+  await query('DELETE FROM ranking WHERE user_id IN (?, ?)', [gana, pierde]);
+  await query('DELETE FROM ranking_semana WHERE user_id IN (?, ?)', [gana, pierde]);
+
+  await Ranking.aplicarPartida([
+    { userId: gana, equipo: 1, gano: true },
+    { userId: pierde, equipo: 2, gano: false }
+  ]);
+
+  const miSemana = await Ranking.semanaDe(gana);
+  check(miSemana.puntos > 0 && miSemana.victorias === 1, 'La semana cuenta los puntos y la victoria');
+
+  const perdedorSemana = await Ranking.semanaDe(pierde);
+  check(perdedorSemana.puntos < 0 && perdedorSemana.victorias === 0, 'Al que pierde le resta y no le suma victoria');
+
+  const semanal = await Ranking.tablaSemanal(200);
+  check(semanal.some((f) => f.userId === gana), 'Y aparece en la tabla de la semana');
+
+  // Dos partidas en la misma semana se acumulan en la misma fila.
+  await Ranking.aplicarPartida([
+    { userId: gana, equipo: 1, gano: true },
+    { userId: pierde, equipo: 2, gano: false }
+  ]);
+  const dosPartidas = await Ranking.semanaDe(gana);
+  check(dosPartidas.victorias === 2, 'Dos partidas en la misma semana se suman en la misma fila');
+
+  await query('DELETE FROM ranking WHERE user_id IN (?, ?)', [gana, pierde]);
+  await query('DELETE FROM ranking_semana WHERE user_id IN (?, ?)', [gana, pierde]);
+
+  check(/^\d{4}-W\d{2}$/.test(Ranking.semanaActual()), `La semana se identifica bien (${Ranking.semanaActual()})`);
 
   // ---- 10. No se baja de cierto piso ----------------------------------
   await Ranking.guardar({ userId: id(40), puntos: -500, partidas: 5, ganadas: 0, mejorPuntos: 1000 });
