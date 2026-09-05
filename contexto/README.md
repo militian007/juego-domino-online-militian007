@@ -4324,3 +4324,29 @@ En pantalla se vieron las tres pestañas con el podio, la cabecera con `#6 · 13
 perfil con el puesto y lo de la semana.
 
 Backend 87/87, perfil 20/20, reloj 20/20.
+
+---
+
+## 100. Atajos de torneos y tabla en el borde derecho
+
+Pedido de Jonathan sobre una captura marcada: *"quita eso que se ven los puntos arriba, pon
+al lado de la derecha el icono de torneo y ranking"*.
+
+- **Fuera el chip de puntos** de la cabecera. El puesto ya se ve en la clasificacion y en el
+  perfil; arriba estorbaba.
+- **Dos atajos en el borde derecho**, uno debajo del otro: TORNEOS y TABLA. Ahi es donde
+  llega el pulgar en el telefono sin tapar la mesa.
+- Iconos de `lucide-react` (`Trophy`, `BarChart3`), comprobando antes que los nombres
+  existan en la version instalada. Regla de oro 1.1: nada de dibujar SVG a mano.
+
+**Se pusieron mal la primera vez.** El ancla del cambio cayo dentro de la barra de abajo y
+los atajos quedaron en la esquina inferior, no en el borde derecho. Es el mismo tropiezo de
+la seccion 97 con el modal de retos: pegar un componente al lado de `<ChatGlobal />` lo mete
+dentro de la barra. Van al nivel de la pantalla.
+
+### La pantalla de torneos
+
+`/torneos` existe con **la forma final de la de PrivoyTruco** (cabecera "LA VITRINA", titulo,
+tarjetas claras, EL PALMARES), pero **dice que todavia no hay torneos** en vez de mostrar
+horarios inventados con un boton que no lleva a ningun lado. Cuando el sistema este, la
+pantalla se llena y no cambia de forma.

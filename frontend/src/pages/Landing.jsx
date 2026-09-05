@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { connectSocket, disconnectSocket } from '../services/socket.js';
-import { rankingApi } from '../services/api.js';
 import ChatGlobal from '../components/chat/ChatGlobal.jsx';
 import Campana from '../components/notificaciones/Campana.jsx';
 import InstalarApp from '../components/InstalarApp.jsx';
+import AtajosLaterales from '../components/AtajosLaterales.jsx';
 import RetoEntrante from '../components/notificaciones/RetoEntrante.jsx';
 import { pantallaCompleta } from '../utils/pantalla.js';
 import SelectorModos, { MODOS } from '../components/SelectorModos.jsx';
@@ -102,21 +102,7 @@ export default function Landing() {
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
 
-  // El puesto propio, para la cabecera. Se pide aparte del perfil porque aca
-  // solo hace falta eso: traer el historial entero para pintar un numero seria
-  // pedirle a la base mucho mas de lo necesario.
-  const [miPuesto, setMiPuesto] = useState(null);
   const counts = useOnlineCount();
-
-  useEffect(() => {
-    if (!user) { setMiPuesto(null); return; }
-
-    let vivo = true;
-    rankingApi.mio()
-      .then((r) => { if (vivo) setMiPuesto(r); })
-      .catch(() => { if (vivo) setMiPuesto(null); });
-    return () => { vivo = false; };
-  }, [user]);
 
   const goToMode = (mode) => {
     const modeId = typeof mode === 'string' ? mode : mode?.id;
@@ -170,18 +156,6 @@ export default function Landing() {
               <span className="truncate text-xs font-semibold tracking-wider text-domino-accent sm:text-sm">
                 {user.username}
               </span>
-            </Link>
-          )}
-          {/* El puesto y los puntos, que es lo que muestra PrivoyTruco. Antes
-              habia una insignia de rango con nombre; se saco porque la
-              plataforma no los tiene. */}
-          {user && miPuesto?.puesto && (
-            <Link
-              to="/ranking"
-              className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-domino-accent/30 bg-black/45 px-2.5 py-1.5 text-[10px] font-semibold backdrop-blur-sm transition hover:border-domino-accent/70 sm:text-xs"
-            >
-              <span className="text-domino-accent">#{miPuesto.puesto}</span>
-              <span className="text-domino-cream/70">{miPuesto.puntos} pts</span>
             </Link>
           )}
         </div>
@@ -270,6 +244,11 @@ export default function Landing() {
           </span>
         </div>
       </div>
+
+      {/* Los atajos de torneos y clasificacion, pegados al borde derecho. Van
+          al nivel de la pantalla y no dentro de la barra de abajo: metidos ahi
+          quedaban en la esquina, que no es donde los marco Jonathan. */}
+      <AtajosLaterales />
 
       {/* "Fulano te reto": va encima de todo porque caduca en un minuto. */}
       <RetoEntrante />
