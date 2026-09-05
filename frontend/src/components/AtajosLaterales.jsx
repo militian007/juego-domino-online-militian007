@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
 
 /**
- * Los atajos del borde derecho: torneos, clasificacion y pase de batalla.
+ * Los atajos del borde derecho: pase de batalla, torneos y clasificacion.
+ *
+ * El pase va primero, arriba del todo, a pedido de Jonathan: es lo que hay que
+ * mirar todos los dias, los torneos y la tabla son de rato en rato.
  *
  * Van ahi porque lo marco Jonathan en una captura, y porque en el telefono el
  * borde derecho es donde llega el pulgar sin tapar nada de la mesa. Sin
@@ -13,9 +16,9 @@ import { Link } from 'react-router-dom';
  */
 
 const ATAJOS = [
+  { a: '/pase', icono: '/iconos/pase.png', texto: 'PASE' },
   { a: '/torneos', icono: '/iconos/torneos.png', texto: 'TORNEOS' },
-  { a: '/ranking', icono: '/iconos/tabla.png', texto: 'TABLA' },
-  { a: '/pase', icono: '/iconos/pase.png', texto: 'PASE' }
+  { a: '/ranking', icono: '/iconos/tabla.png', texto: 'TABLA' }
 ];
 
 export default function AtajosLaterales() {

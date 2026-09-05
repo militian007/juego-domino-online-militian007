@@ -14,6 +14,7 @@ import * as Desbloqueo from './models/Desbloqueo.js';
 import * as Preferencia from './models/Preferencia.js';
 import * as Ranking from './models/Ranking.js';
 import { TITULOS, esTitulo } from './models/Titulo.js';
+import * as Sticker from './models/Sticker.js';
 import * as pase from './services/pase.js';
 
 let pasados = 0;
@@ -317,6 +318,46 @@ async function main() {
   const deVarios = await Preferencia.titulosDe([padrino, panas[0]]);
   check(deVarios[padrino] === 'titulo:padrino', 'Y se leen de a varios para pintar el chat');
   check(deVarios[panas[0]] === undefined, 'El que no eligio ninguno no aparece');
+
+  // ---- 10.5 Los stickers -----------------------------------------------
+  const stickersEnLaEscalera = Pase.PREMIOS.flatMap((p) => p.gratis)
+    .filter((p) => p.clave?.startsWith('sticker:'))
+    .map((p) => p.clave);
+  check(
+    stickersEnLaEscalera.length > 0 && stickersEnLaEscalera.every(Sticker.esSticker),
+    `Todos los stickers que reparte el pase existen en el catalogo (${stickersEnLaEscalera.length})`
+  );
+  check(
+    Sticker.PREMIADOS.every((s) => stickersEnLaEscalera.includes(s.clave)),
+    'Y ningun sticker del catalogo se quedo sin nivel que lo reparta'
+  );
+
+  const sinNada = await cuenta('PaseSinNada');
+  await limpiar(sinNada);
+
+  check(await Sticker.puedeTirar(sinNada, '😂'), 'Los stickers de siempre los tira cualquiera');
+  check(
+    (await Sticker.puedeTirar(sinNada, '🔥')) === false,
+    'El del pase no se puede tirar sin haberlo ganado'
+  );
+  check(
+    (await Sticker.puedeTirar(sinNada, 'te voy a ganar bobo')) === false,
+    'Y lo que no es un sticker no se manda: antes se reenviaba cualquier texto'
+  );
+
+  await Desbloqueo.dar(sinNada, 'sticker:candela');
+  check(await Sticker.puedeTirar(sinNada, '🔥'), 'Una vez ganado, si se puede tirar');
+
+  const catalogo = await Sticker.catalogoPara(sinNada);
+  check(catalogo.base.length === Sticker.BASE.length, 'El catalogo trae los de siempre');
+  check(
+    catalogo.premiados.find((s) => s.clave === 'sticker:candela')?.mio === true,
+    'Y marca cual ya es suyo'
+  );
+  check(
+    catalogo.premiados.filter((s) => !s.mio).length === Sticker.PREMIADOS.length - 1,
+    'Los demas salen bloqueados'
+  );
 
   // ---- 11. Una partida DE VERDAD llega al pase -------------------------
   //

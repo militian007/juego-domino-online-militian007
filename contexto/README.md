@@ -4984,3 +4984,47 @@ su tela, las fichas con su ficha, los titulos con su medalla) y el selector de l
 - El pase no reparte **copas**: eso sigue siendo solo de los torneos.
 - El chat sigue **sin moderacion**. Con el pase empujando a la gente a escribir, hace mas
   falta que antes.
+
+## 113. Stickers en los premios, y el agujero que taparon (2026-09-05)
+
+Jonathan: *"hay que meterle stickers en los premios, y el icono del pase ponlo arriba del
+torneo"*.
+
+### Siete stickers nuevos, repartidos por la escalera
+
+Van en los niveles **2, 7, 15, 18, 25, 31 y 38** — todos niveles que antes solo daban puntos,
+asi que la escalera no perdio nada y gano variedad. Son 🔥 Candela, 👑 Corona, 🍀 Suerte,
+🐐 El Chivo, 🧠 Cerebro, 🫡 Respeto y 💎 Diamante.
+
+Los **once de siempre siguen gratis** para todo el mundo. En el menu de la mesa, los del pase
+se ven igual: apagados y con candado sobre un circulo oscuro, para que se sepa lo que uno se
+esta perdiendo.
+
+### Y de paso se tapo un agujero de verdad
+
+El servidor **no miraba** lo que le mandaban en el campo `emoji`: reenviaba a la mesa de
+todos lo que llegara. Con las herramientas del navegador, cualquiera podia mandar el texto
+que se le antojara —un insulto, un link— y salia flotando encima de la mesa.
+
+Ahora `game:reaction` comprueba tres cosas antes de reenviar: que sea un sticker del catalogo,
+que si es de los que se ganan quien lo manda lo tenga, y que quien lo manda tenga cuenta.
+Probado: `'te voy a ganar bobo'` ya no sale.
+
+Es un caso mas de la regla 8: **el servidor manda**. Lo que el cliente diga es una intencion,
+no un hecho.
+
+### Un detalle a tener en cuenta
+
+Cambiar la escalera a mitad de temporada **no reparte hacia atras**: quien ya paso el nivel 2
+no recibe el sticker nuevo, porque `nivel_cobrado` dice que ese nivel ya se pago. Hoy no
+afecta a nadie —nadie tiene nivel todavia en produccion—, pero si mañana se agrega un premio
+a un nivel bajo, hay que bajarle el `nivel_cobrado` a mano a quien ya paso por ahi.
+
+### El atajo del pase, primero
+
+El icono del pase va **arriba del de torneos** en la barra del borde derecho. Es lo que hay
+que mirar todos los dias; los torneos y la tabla son de rato en rato.
+
+`npm run test:pase` — 71 pruebas. Las nuevas comprueban que todo sticker de la escalera existe
+en el catalogo y al reves (que ninguno se quede sin nivel que lo reparta), y que no se puede
+tirar uno que no se gano.

@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { HUMAN_DELAY_MS } from '../RoomManager.js';
 import * as torneos from '../services/torneos.js';
+import * as Sticker from '../models/Sticker.js';
 
 const MODOS_INVITADO = ['1v1bot', '2v2bots'];
 
@@ -220,9 +221,22 @@ export function setupGameSocket(io, roomManager) {
       });
     });
 
-    socket.on('game:reaction', ({ code, emoji }) => {
+    // El sticker se comprueba ANTES de reenviarlo. Antes se reenviaba tal cual
+    // lo que llegara, sin mirarlo: con las herramientas del navegador,
+    // cualquiera podia mandar el texto que quisiera y salia flotando en la mesa
+    // de todos. Ahora tiene que ser un sticker del catalogo, y de los que se
+    // ganan, uno que esa persona tenga.
+    socket.on('game:reaction', async ({ code, emoji }) => {
       const room = roomManager.rooms.get(code);
       if (!room) return;
+
+      try {
+        if (!(await Sticker.puedeTirar(socket.userId, emoji))) return;
+      } catch (err) {
+        console.error('No se pudo comprobar el sticker:', err.message);
+        return;
+      }
+
       io.to(code).emit('game:reaction', {
         playerId: socket.userId,
         username: socket.username,

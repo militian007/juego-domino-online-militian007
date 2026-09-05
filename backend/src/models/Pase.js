@@ -67,6 +67,16 @@ export const diaActual = (fecha = new Date()) => fecha.toISOString().slice(0, 10
 const puntos = (cantidad) => ({ tipo: 'puntos', cantidad, nombre: `${cantidad} puntos de club` });
 const cosa = (clave, nombre) => ({ tipo: 'desbloqueo', clave, nombre });
 
+// El sticker lleva su emoji aparte del nombre para que la pantalla lo pueda
+// dibujar sin tener que adivinarlo partiendo el texto.
+const sticker = (clave, emoji, nombre) => ({
+  tipo: 'desbloqueo',
+  clave,
+  emoji,
+  nombre: `Sticker ${emoji} ${nombre}`,
+  corto: nombre
+});
+
 /**
  * Cuantos puntos de club da un nivel que no tiene premio propio.
  *
@@ -88,14 +98,21 @@ const PUNTOS_POR_TRAMO = [
  * cerca.
  */
 const ESPECIALES = {
+  2: [sticker('sticker:candela', '🔥', 'Candela')],
   5: [cosa('titulo:tranquero', 'Título "Tranquero"')],
+  7: [sticker('sticker:corona', '👑', 'Corona')],
   10: [cosa('pano:medianoche', 'Paño azul medianoche')],
   12: [cosa('titulo:chivo', 'Título "Chivo"')],
+  15: [sticker('sticker:suerte', '🍀', 'Suerte')],
+  18: [sticker('sticker:chivo', '🐐', 'El Chivo')],
   20: [cosa('titulo:matador', 'Título "Matador"')],
   22: [cosa('pano:purpura', 'Paño púrpura real')],
+  25: [sticker('sticker:cerebro', '🧠', 'Cerebro')],
   28: [cosa('titulo:cabezafria', 'Título "Cabeza Fría"')],
+  31: [sticker('sticker:respeto', '🫡', 'Respeto')],
   34: [cosa('pano:oroviejo', 'Paño oro viejo')],
   36: [cosa('titulo:elduro', 'Título "El Duro"')],
+  38: [sticker('sticker:diamante', '💎', 'Diamante')],
   40: [cosa('fichas:oro', 'Fichas negro y oro'), puntos(100)]
 };
 

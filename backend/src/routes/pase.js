@@ -4,6 +4,7 @@ import * as pase from '../services/pase.js';
 import * as Desbloqueo from '../models/Desbloqueo.js';
 import * as Preferencia from '../models/Preferencia.js';
 import { TITULOS, esTitulo } from '../models/Titulo.js';
+import * as Sticker from '../models/Sticker.js';
 
 const router = express.Router();
 
@@ -56,6 +57,22 @@ router.post('/titulo', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('Error guardando el título:', err.message);
     res.status(500).json({ error: 'No se pudo guardar' });
+  }
+});
+
+/**
+ * Los stickers que puede tirar quien tiene la sesion abierta.
+ *
+ * Lo pide la mesa para pintar el menu de gestos. Va aparte del estado del pase
+ * porque la mesa no necesita la escalera entera ni las misiones: seria mandarle
+ * cuarenta niveles para dibujar once caritas.
+ */
+router.get('/stickers', authMiddleware, async (req, res) => {
+  try {
+    res.json(await Sticker.catalogoPara(req.userId));
+  } catch (err) {
+    console.error('Error leyendo los stickers:', err.message);
+    res.status(500).json({ error: 'No se pudo cargar' });
   }
 });
 

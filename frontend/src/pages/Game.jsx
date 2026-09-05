@@ -19,9 +19,19 @@ import SidePicker from '../components/game/SidePicker.jsx';
 import AdSidebar from '../components/AdSidebar.jsx';
 import TopBanner from '../components/TopBanner.jsx';
 import { connectSocket } from '../services/socket.js';
+import { paseApi } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { playTileSound, playDrawSound, estaSilenciado, alternarSilencio } from '../utils/soundEffects.js';
-import { ChevronRight, LogOut } from 'lucide-react';
+import { ChevronRight, Lock, LogOut } from 'lucide-react';
+
+/**
+ * Los stickers de siempre, por si el servidor no contesta.
+ *
+ * Sin esto, a un invitado o a alguien con mala señal se le quedaba el menu de
+ * gestos vacio. La lista de verdad la manda el servidor, que es el que sabe
+ * cuales tiene ganados cada uno.
+ */
+const BASE_DE_EMERGENCIA = ['😎', '😂', '🤣', '😆', '😭', '😡', '🤬', '🥱', '🤔', '😒', '😮'];
 import IconoColor from '../components/IconoColor.jsx';
 import { salirPantallaCompleta } from '../utils/pantalla.js';
 import RelojDeTurno from '../components/game/RelojDeTurno.jsx';
@@ -177,6 +187,20 @@ export default function Game() {
 
   const [reactions, setReactions] = useState({});
   const [showReactionMenu, setShowReactionMenu] = useState(false);
+
+  // Los stickers: los de siempre y los que se ganan en el pase. Viene del
+  // servidor porque es el servidor el que sabe cuales tiene ganados esta
+  // persona, y ademas es el que va a comprobarlo al mandarlos.
+  const [stickers, setStickers] = useState({ base: [], premiados: [] });
+
+  useEffect(() => {
+    let vivo = true;
+    paseApi.stickers()
+      .then((r) => { if (vivo) setStickers(r); })
+      // Un invitado no tiene stickers ganados; se queda con los de siempre.
+      .catch(() => { if (vivo) setStickers({ base: BASE_DE_EMERGENCIA, premiados: [] }); });
+    return () => { vivo = false; };
+  }, []);
 
   const { tema, setTema, clasePano, claseBaranda, carpetaFichas, puedeUsar } = useMesaTheme();
   const [explicacion, setExplicacion] = useState(null);
@@ -1165,13 +1189,39 @@ export default function Game() {
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowReactionMenu(false)} />
                     <div className="absolute bottom-full left-1/2 z-50 mb-2 grid -translate-x-1/2 grid-cols-6 gap-2 rounded-2xl border-2 border-domino-accent/50 bg-domino-felt p-3 shadow-2xl">
-                      {['😎', '😂', '🤣', '😆', '😭', '😡', '🤬', '🥱', '🤔', '😒', '😮'].map((emoji) => (
+                      {stickers.base.map((emoji) => (
                         <button
                           key={emoji}
                           onClick={() => handleSendReaction(emoji)}
                           className="flex cursor-pointer items-center justify-center p-0.5 text-2xl transition hover:scale-125 active:scale-95 sm:text-3xl"
                         >
                           {emoji}
+                        </button>
+                      ))}
+
+                      {/* Los del pase. El que todavia no se gano se ve igual,
+                          apagado y con candado: hay que ver lo que uno se esta
+                          perdiendo, si no el premio no motiva a nadie. */}
+                      {stickers.premiados.map((s) => (
+                        <button
+                          key={s.clave}
+                          disabled={!s.mio}
+                          title={s.mio ? s.nombre : `${s.nombre} — se gana en el pase de batalla`}
+                          onClick={() => s.mio && handleSendReaction(s.emoji)}
+                          className={`relative flex items-center justify-center p-0.5 text-2xl transition sm:text-3xl ${
+                            s.mio
+                              ? 'cursor-pointer hover:scale-125 active:scale-95'
+                              : 'cursor-not-allowed opacity-30 grayscale'
+                          }`}
+                        >
+                          {s.emoji}
+                          {/* El candado va sobre un circulo oscuro: encima del
+                              emoji apagado, a solas, no se distinguia. */}
+                          {!s.mio && (
+                            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/80 p-1">
+                              <Lock size={12} className="block text-domino-accent" aria-hidden="true" />
+                            </span>
+                          )}
                         </button>
                       ))}
                     </div>

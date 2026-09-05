@@ -27,6 +27,7 @@ const dias = (hasta) => {
 /** El texto corto de un premio, para que entre en la casilla del nivel. */
 const corto = (premio) => {
   if (premio.tipo === 'puntos') return `${premio.cantidad} pts`;
+  if (premio.corto) return premio.corto;
   return premio.nombre.replace(/^(Título|Paño|Fichas) /, '');
 };
 
@@ -48,6 +49,10 @@ function MuestraDelPremio({ premio, ganado }) {
         +{premio.cantidad}
       </span>
     );
+  }
+
+  if (premio.emoji) {
+    return <span className={`text-3xl ${apagado}`}>{premio.emoji}</span>;
   }
 
   const pano = PANOS.find((p) => p.clave === premio.clave);

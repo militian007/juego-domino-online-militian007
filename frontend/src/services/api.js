@@ -58,6 +58,7 @@ export const desbloqueosApi = {
 
 export const paseApi = {
   mio: () => api.get('/pase').then((r) => r.data),
+  stickers: () => api.get('/pase/stickers').then((r) => r.data),
   elegirTitulo: (clave) => api.post('/pase/titulo', { clave }).then((r) => r.data)
 };
 
