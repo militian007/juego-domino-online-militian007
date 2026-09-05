@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "fichas-hueso": "node scripts/generar-fichas-hueso.mjs",
-    "icono": "node scripts/generar-icono.mjs"
+    "icono": "node scripts/generar-icono.mjs",
+    "iconos-atajos": "node scripts/generar-iconos-atajos.mjs"
   },
   "dependencies": {
     "@iconify-json/flat-color-icons": "^1.2.3",

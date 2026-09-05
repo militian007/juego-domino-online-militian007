@@ -4706,3 +4706,35 @@ girar dos pixeles de origen caen en el mismo de destino.
 
 **El favicon de la pestaña se queda como esta**, con una sola ficha: a 16 pixeles, dos
 fichas cruzadas no se distinguen.
+
+---
+
+## 108. Los iconos de torneos y tabla, hechos a medida
+
+Jonathan pidio un prompt para generarlos con Gemini y los creo: una **copa dorada** y un
+**podio de tres**, los dos en el mismo oro de la marca y con fichas de domino labradas.
+
+Reemplazan a los de `lucide-react`. La regla de oro 1.1 pide una libreria **antes que
+dibujar a mano**; arte propio bien hecho esta por encima de las dos cosas, y estos pegan con
+el oro del logo, que una libreria generica no hace.
+
+### El script
+
+`npm run iconos-atajos` — lee `arte-fuente/icono-torneos.png` y `arte-fuente/icono-tabla.png`
+y escribe `public/iconos/torneos.png` y `tabla.png` a 128x128.
+
+Se achican **en el script y no con CSS**: una imagen de dos mil pixeles metida en un hueco de
+veintidos pesa dos megas para nada y tarda en cargar. A 128 se ve nitido hasta en pantallas
+finas y pesa 20 KB.
+
+### Un modulo compartido
+
+Las funciones de imagen (leer JPEG, recortar el fondo, escalar, escribir PNG) salieron a
+`scripts/imagen.mjs`. Las usan **dos** scripts —el de las fichas y el de los iconos— y
+copiarlas seria arreglar cada cosa dos veces.
+
+### Un detalle del arte que conviene saber
+
+Gemini le metio texto que no se le pidio: **"CLUB DE DOMINÓ DE VENEZUELA · FUND. 1978"**. A
+32 pixeles no se lee y funciona como textura, pero **la fecha es inventada**. Si alguna vez
+estos dibujos se usan en grande —una camiseta, un cartel—, ese texto hay que quitarlo.
