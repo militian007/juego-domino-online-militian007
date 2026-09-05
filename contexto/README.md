@@ -4521,3 +4521,62 @@ se veian iguales.
 
 Se arreglo marcando las muestras con `data-muestra`: el filtro de la mesa las excluye, y
 cada una se pinta segun lo que ella misma representa.
+
+---
+
+## 104. Los prompts para generar las fichas blanco hueso
+
+Jonathan paga Gemini y pidio el prompt para generar lo que hace falta.
+
+### La decision de fondo: dos imagenes, no veintiocho
+
+Un modelo de imagen **no cuenta bien los puntos**. Pedirle las 28 fichas garantiza que la
+mitad salga con el numero equivocado y haya que rehacerlas una por una, y aun asi no quedan
+identicas entre si.
+
+Por eso se le pide **el material** —la ficha vacia y un punto— y **la geometria la pone el
+codigo**: un script coloca los puntos en su sitio y arma las 28. El numero siempre sale bien
+y las fichas quedan iguales. El arte sigue siendo profesional, que es lo que exige la regla
+de oro 1.1.
+
+### Prompt 1: la ficha vacia
+
+> A single blank domino tile, traditional bone/ivory white. Photographed perfectly straight
+> from above: top-down orthographic view, no perspective, no tilt, no rotation. Rectangular,
+> exactly twice as wide as it is tall. Softly rounded corners. Polished bone material with a
+> very subtle natural ivory grain, warm off-white (#F2EBD8). Slight bevel on the edges
+> catching soft studio light. Completely blank: NO pips, NO dots, NO dividing line, NO
+> numbers, NO text, NO logo. Isolated on a fully transparent background, PNG with alpha
+> channel. Centered, filling the frame edge to edge. Studio product photography, ultra sharp,
+> high resolution.
+
+### Prompt 2: un punto
+
+> A single domino pip on a fully transparent background. One perfectly circular matte black
+> dot with a very subtle darker inner shadow along its upper edge, as if drilled into ivory
+> rather than printed on it. Nothing else in the image: no tile, no background, no border, no
+> shadow on the ground. Square frame, the dot centered and filling about 80 percent of it.
+> PNG with alpha channel. Macro product photography, ultra sharp, high resolution.
+
+### Donde van
+
+`frontend/public/tiles-fuente/`, con los nombres `hueso-ficha.png` y `hueso-punto.png`.
+Hay un `LEEME.md` ahi mismo que lo repite.
+
+### Si el fondo no sale transparente
+
+Es lo que mas falla. Si Gemini devuelve fondo blanco, la ficha blanca se pierde contra el.
+En ese caso hay que volver a pedirlo agregando al final:
+
+> The background must be 100% transparent alpha, not white.
+
+Y si aun asi no lo hace, pedirlo con **fondo magenta puro (#FF00FF)**, que es un color que no
+aparece en la ficha y se puede recortar sin tocar el marfil.
+
+### Conectar Gemini directamente
+
+**No hay conector de Gemini disponible.** Se busco en el registro y no existe.
+
+Lo que si se puede: si Jonathan saca una **clave de API** en Google AI Studio, se escribe un
+script en el proyecto que genere las imagenes sin copiar y pegar. **Ojo:** pagar la app de
+Gemini NO da credito de API; son cobros distintos. La clave iria en `.env`, nunca al codigo.
