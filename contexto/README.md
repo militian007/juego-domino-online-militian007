@@ -4738,3 +4738,31 @@ copiarlas seria arreglar cada cosa dos veces.
 Gemini le metio texto que no se le pidio: **"CLUB DE DOMINÓ DE VENEZUELA · FUND. 1978"**. A
 32 pixeles no se lee y funciona como textura, pero **la fecha es inventada**. Si alguna vez
 estos dibujos se usan en grande —una camiseta, un cartel—, ese texto hay que quitarlo.
+
+
+---
+
+## 109. El fondo atrapado dentro de las asas
+
+Jonathan, sobre el icono de torneos: *"dentro de las asas para agarrar la copa quedo un
+blanco feo"*.
+
+**La causa.** El recorte del fondo entra **desde el borde de la imagen** hacia adentro. El
+aro de un asa es un agujero cerrado: el fondo de ahi dentro no se toca con el borde, el
+relleno no llega, y quedaba el cuadriculado a la vista.
+
+**El arreglo.** Una opcion nueva que borra el gris **este donde este**, sin pedir que se
+alcance desde el borde.
+
+**Por que es seguro aqui, medido:**
+
+| | separacion del gris puro |
+| --- | --- |
+| fondo atrapado en el asa | 0 a 3 |
+| oro de la copa, hasta en sus brillos | **70 a 137** |
+
+Con el corte en 16 hay muchisimo margen.
+
+**Donde NO se puede usar:** en las fichas. El punto negro tambien es gris, y borrar todo lo
+gris se lo llevaria. Queda escrito en el comentario de la funcion para que nadie lo active
+ahi por comodidad.

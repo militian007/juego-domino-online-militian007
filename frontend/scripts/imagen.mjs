@@ -41,10 +41,24 @@ export const en = (img, x, y) => (y * img.ancho + x) * 4;
  * oscuro, asi que hace falta para no borrar el punto. En la FICHA no se usa,
  * porque su borde de abajo es oscuro (min 132) y el limite se lo comia.
  *
- * @param difMax    cuanto puede alejarse del gris puro para seguir siendo fondo
- * @param minBrillo si se pasa, solo se borra lo que ademas sea claro
+ * ## Cuando el fondo queda ATRAPADO
+ *
+ * Si el dibujo tiene un agujero cerrado —el aro de un asa, por ejemplo— el
+ * fondo de adentro no se toca con el borde y el relleno no llega: queda una
+ * mancha clara dentro del dibujo. Jonathan lo vio en la copa: *"dentro de las
+ * asas quedo un blanco feo"*.
+ *
+ * Para eso esta `porTodaLaImagen`. Borra TODO lo gris, este donde este, sin
+ * pedir que se llegue desde el borde. Solo sirve cuando el dibujo no tiene
+ * ninguna parte gris: en la copa y el podio el oro nunca baja de dif 70, asi
+ * que no hay riesgo. En una ficha de domino NO se puede usar, porque el punto
+ * negro tambien es gris.
+ *
+ * @param difMax          cuanto puede alejarse del gris puro para ser fondo
+ * @param minBrillo       si se pasa, solo se borra lo que ademas sea claro
+ * @param porTodaLaImagen borrar el gris este o no pegado al borde
  */
-export function quitarElFondo(img, { difMax = 16, minBrillo = null } = {}) {
+export function quitarElFondo(img, { difMax = 16, minBrillo = null, porTodaLaImagen = false } = {}) {
   const { ancho, alto, px } = img;
   const visto = new Uint8Array(ancho * alto);
   const pila = [];
@@ -65,6 +79,11 @@ export function quitarElFondo(img, { difMax = 16, minBrillo = null } = {}) {
     visto[k] = 1;
     pila.push(x, y);
   };
+
+  if (porTodaLaImagen) {
+    for (let k = 0; k < visto.length; k++) if (esNeutro(k * 4)) px[k * 4 + 3] = 0;
+    return img;
+  }
 
   for (let x = 0; x < ancho; x++) { meter(x, 0); meter(x, alto - 1); }
   for (let y = 0; y < alto; y++) { meter(0, y); meter(ancho - 1, y); }

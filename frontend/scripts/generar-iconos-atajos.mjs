@@ -65,10 +65,18 @@ function main() {
   console.log('');
 
   for (const { origen, destino } of ICONOS) {
-    // Sin limite de brillo: el dibujo es dorado y lleva contornos marron muy
-    // oscuros. El fondo cuadriculado es gris puro, asi que basta con mirar
-    // cuanto se aleja del gris.
-    const img = recortar(quitarElFondo(leer(path.join(FUENTE, origen)), { difMax: 16 }));
+    // `porTodaLaImagen` borra el gris este donde este, no solo el que se toca
+    // con el borde. Hace falta por el fondo que queda ATRAPADO dentro del aro
+    // de las asas de la copa: ahi el relleno desde el borde no llega y quedaba
+    // una mancha clara.
+    //
+    // Es seguro porque el dorado nunca se acerca al gris: medido, no baja de
+    // dif 70, y el corte esta en 16.
+    //
+    // Sin limite de brillo: el dibujo lleva contornos marron muy oscuros.
+    const img = recortar(
+      quitarElFondo(leer(path.join(FUENTE, origen)), { difMax: 16, porTodaLaImagen: true })
+    );
     const buf = aPng(encajar(img, LADO));
     fs.writeFileSync(path.join(SALIDA, destino), buf);
     console.log(`  ${destino.padEnd(14)} ${LADO}x${LADO}  ${(buf.length / 1024).toFixed(1)} KB   (origen ${img.ancho}x${img.alto})`);
