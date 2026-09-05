@@ -13,6 +13,7 @@
     "test:chat": "node src/test-chat.js",
     "test:reloj": "node src/test-reloj.js",
     "test:reloj-e2e": "node src/test-reloj-e2e.js",
+    "test:retos": "node src/test-retos.js",
     "test:engine": "npm --prefix ../packages/domino-engine test"
   },
   "dependencies": {

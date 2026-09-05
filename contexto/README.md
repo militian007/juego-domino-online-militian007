@@ -4119,3 +4119,75 @@ descontando el turno anterior.
 **Arreglo.** El servidor manda ademas un `turnoId` que cambia con cada turno, y es eso lo
 que reinicia la cuenta. La prueba de punta a punta comprueba que el id del turno nuevo sea
 distinto del anterior.
+
+---
+
+## 97. Icono nuevo, retos desde el chat y buzon de avisos
+
+Cuatro pedidos de Jonathan en una tanda: cambiar el icono al doble seis, poder retar a
+alguien desde el chat, un sistema de notificaciones, y que avise de torneos y retos.
+
+### El icono: el doble seis, de pie
+
+El favicon era un **2-1 acostado**. Ahora es el doble seis, de pie: es como se pone un doble
+en la mesa (cruzado) y en un cuadrado se ve mas grande. Ademas el juego es dominó
+venezolano **doble seis**, que ya lo dice la propia portada.
+
+Los PNG de la app (192, 512 y el "maskable") se generan con
+`node scripts/generar-icono.mjs`, en `frontend/scripts/`. **Sin librerias de imagen**: el
+PNG se escribe a mano con `zlib`, que ya viene con Node, igual que el motor no tiene
+dependencias. Se dibuja al cuadruple y se reduce dos veces, que es como se consiguen los
+bordes suaves sin un motor de dibujo. El "maskable" lleva mas aire porque el sistema
+operativo le recorta las esquinas.
+
+### Retar desde el chat
+
+Se toca el nombre de quien escribio y sale "¿Retar a Fulano?". El otro recibe el reto
+encima de todo, con un minuto para contestar. Si acepta, se arma una **mesa privada** y a
+los dos les llega el mismo codigo.
+
+Reglas, y el porque de cada una:
+
+| regla | por que |
+| --- | --- |
+| solo cuentas pueden retar | igual que el chat: sin cuenta no hay a quien reclamarle |
+| solo a quien este en linea | un reto a quien no esta no lo contesta nadie |
+| un minuto de vigencia | un reto de ayer no sirve |
+| un reto vivo por pareja | si no, se le llena el buzon al otro |
+| cinco segundos entre retos | para que no se pueda acosar |
+
+**Los retos NO se guardan en la base.** Viven un minuto: guardarlos seria llenar una tabla
+de cosas muertas y tener que limpiarlas. Lo que si se guarda es el **aviso**: si te retaron
+mientras no estabas, al volver lo ves aunque el reto ya no sirva.
+
+### El buzon
+
+Campana arriba a la derecha con el contador de los que no leiste. Los avisos **se guardan
+en la base**: uno que solo existe mientras mirabas la pantalla no sirve de nada.
+
+Tipos: `reto`, `reto-aceptado`, `reto-rechazado`, `reto-vencido` y **`torneo`**.
+
+**Los torneos todavia no existen.** El tipo esta previsto para que, cuando se hagan, solo
+tengan que escribir una fila en la tabla y le llegue a la campana sin tocar nada mas.
+
+### Como se le manda algo a una PERSONA
+
+Cada cuenta entra a una sala de socket propia, `user:<id>`. Es lo que permite mandarle algo
+a alguien sin saber en que pestaña esta ni cuantas tiene abiertas, y tambien es como se
+sabe si esta en linea: si la sala tiene a alguien dentro, esta.
+
+### Un tropiezo tonto que costo una corrida
+
+El esquema de la base vive dentro de una plantilla de JavaScript. Un comentario SQL que
+mencionaba una columna entre comillas invertidas **corto la plantilla en dos** y el servidor
+no arrancaba. Queda avisado en el propio archivo.
+
+### Comprobado
+
+- `npm run test:retos` — 16 pruebas por socket con dos cuentas de verdad: el invitado no
+  puede retar, nadie se reta a si mismo, no se puede retar a quien no esta, el reto llega
+  al momento y ademas al buzon, no se puede retar dos veces al mismo, aceptar arma **la
+  misma mesa para los dos**, y un reto ya contestado no se contesta otra vez.
+- En pantalla: se reto desde el chat y la pagina llevo a la mesa privada; se recibio un
+  reto con la cuenta atras y el aviso quedo en la campana.
+- Backend 87/87, reloj 20/20, perfil 20/20, chat 9/9.

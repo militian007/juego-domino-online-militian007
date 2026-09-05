@@ -107,6 +107,26 @@ export async function initDatabase() {
     );
 
     CREATE INDEX IF NOT EXISTS idx_chat_global_creado ON chat_global(id);
+
+    -- El buzon de cada uno: retos que le hacen, torneos, y lo que venga.
+    -- La columna datos lleva un JSON con lo que necesite cada tipo (el id del
+    -- reto, el codigo de la sala...). Va como texto a proposito: los tipos
+    -- nuevos no tienen que obligar a cambiar la tabla.
+    --
+    -- (Sin comillas invertidas en estos comentarios: el esquema vive dentro de
+    --  una plantilla de JavaScript y una comilla invertida la corta en dos.)
+    CREATE TABLE IF NOT EXISTS notificaciones (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      tipo VARCHAR(50) NOT NULL,
+      titulo VARCHAR(200) NOT NULL,
+      cuerpo VARCHAR(500),
+      datos TEXT,
+      leida INTEGER NOT NULL DEFAULT 0,
+      creada_en TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_notificaciones_user ON notificaciones(user_id);
   `;
 
   if (isPostgres) {

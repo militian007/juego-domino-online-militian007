@@ -1,7 +1,15 @@
+<!-- La ficha del doble seis, de pie: es como se pone un doble en la mesa, y en
+     un cuadrado se ve mas grande. Antes habia un 2-1 acostado. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect x="5" y="30" width="90" height="40" rx="6" fill="#1e293b" stroke="#f59e0b" stroke-width="3"/>
-  <line x1="50" y1="30" x2="50" y2="70" stroke="#f59e0b" stroke-width="2"/>
-  <circle cx="27" cy="42" r="4" fill="#fef3c7"/>
-  <circle cx="27" cy="58" r="4" fill="#fef3c7"/>
-  <circle cx="73" cy="50" r="4" fill="#fef3c7"/>
+  <rect width="100" height="100" rx="18" fill="#0f4a36"/>
+  <rect x="30" y="10" width="40" height="80" rx="6" fill="#1a202c" stroke="#d4af37" stroke-width="3.5"/>
+  <line x1="34" y1="50" x2="66" y2="50" stroke="#d4af37" stroke-width="3"/>
+  <g fill="#fef3c7">
+    <circle cx="42" cy="21" r="3.6"/><circle cx="58" cy="21" r="3.6"/>
+    <circle cx="42" cy="32" r="3.6"/><circle cx="58" cy="32" r="3.6"/>
+    <circle cx="42" cy="43" r="3.6"/><circle cx="58" cy="43" r="3.6"/>
+    <circle cx="42" cy="57" r="3.6"/><circle cx="58" cy="57" r="3.6"/>
+    <circle cx="42" cy="68" r="3.6"/><circle cx="58" cy="68" r="3.6"/>
+    <circle cx="42" cy="79" r="3.6"/><circle cx="58" cy="79" r="3.6"/>
+  </g>
 </svg>

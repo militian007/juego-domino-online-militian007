@@ -8,6 +8,7 @@ import perfilRoutes from './routes/perfil.js';
 import { roomManager } from './RoomManager.js';
 import { setupGameSocket } from './sockets/gameSocket.js';
 import { registrarChat } from './sockets/chatSocket.js';
+import { registrarRetos } from './sockets/retosSocket.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -61,6 +62,9 @@ io.on('connection', (socket) => {
   // El chat del menu principal. Va aparte del juego: se escucha desde el menu,
   // sin estar en ninguna sala.
   registrarChat(io, socket);
+
+  // Retos entre jugadores y el buzon de avisos.
+  registrarRetos(io, socket, roomManager);
 
   const userId = socket.userId || `guest-${socket.id}`;
   const username = socket.username || 'Invitado';

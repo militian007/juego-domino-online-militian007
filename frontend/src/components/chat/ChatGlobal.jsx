@@ -26,6 +26,10 @@ export default function ChatGlobal() {
   const [aviso, setAviso] = useState(null);
   const [sinLeer, setSinLeer] = useState(0);
 
+  // A quien se esta por retar, y como salio el ultimo intento.
+  const [aRetar, setARetar] = useState(null);
+  const [avisoDelReto, setAvisoDelReto] = useState(null);
+
   const finDeLaLista = useRef(null);
   const abiertoRef = useRef(abierto);
   abiertoRef.current = abierto;
@@ -80,6 +84,20 @@ export default function ChatGlobal() {
     const id = setTimeout(() => setAviso(null), 4000);
     return () => clearTimeout(id);
   }, [aviso]);
+
+  useEffect(() => {
+    if (!avisoDelReto) return;
+    const id = setTimeout(() => setAvisoDelReto(null), 4000);
+    return () => clearTimeout(id);
+  }, [avisoDelReto]);
+
+  const retar = () => {
+    if (!aRetar) return;
+    connectSocket()?.emit('reto:enviar', { paraId: aRetar.userId, paraNombre: aRetar.username }, (r) => {
+      setARetar(null);
+      setAvisoDelReto(r?.ok ? `Lo retaste. ${aRetar.username} tiene un minuto para contestar.` : (r?.error || 'No se pudo retar'));
+    });
+  };
 
   const enviar = (e) => {
     e.preventDefault();
@@ -140,15 +158,26 @@ export default function ChatGlobal() {
         ) : (
           mensajes.map((m) => (
             <div key={m.id} className="text-sm leading-snug">
-              <span
-                className={
-                  Number(m.userId) === Number(user?.id)
-                    ? 'font-semibold text-domino-accent'
-                    : 'font-semibold text-domino-cream/90'
-                }
-              >
-                {m.username}
-              </span>
+              {/* El nombre de otro es un boton: se toca y se lo puede retar.
+                  El propio no, que retarse a uno mismo no tiene sentido. */}
+              {user && Number(m.userId) !== Number(user.id) ? (
+                <button
+                  onClick={() => { setAvisoDelReto(null); setARetar({ userId: m.userId, username: m.username }); }}
+                  className="font-semibold text-domino-cream/90 underline decoration-dotted underline-offset-2 transition hover:text-domino-accent"
+                >
+                  {m.username}
+                </button>
+              ) : (
+                <span
+                  className={
+                    Number(m.userId) === Number(user?.id)
+                      ? 'font-semibold text-domino-accent'
+                      : 'font-semibold text-domino-cream/90'
+                  }
+                >
+                  {m.username}
+                </span>
+              )}
               <span className="ml-1.5 text-[10px] text-domino-cream/40">{hora(m.creadoEn)}</span>
               {/* React escapa el texto solo: nadie puede meter HTML por aca. */}
               <p className="break-words text-domino-cream/80">{m.texto}</p>
@@ -162,6 +191,32 @@ export default function ChatGlobal() {
         <p className="border-t border-red-500/30 bg-red-500/10 px-4 py-1.5 text-xs text-red-300">
           {aviso}
         </p>
+      )}
+
+      {avisoDelReto && (
+        <p className="border-t border-domino-accent/25 bg-domino-accent/10 px-4 py-1.5 text-xs text-domino-cream/80">
+          {avisoDelReto}
+        </p>
+      )}
+
+      {aRetar && (
+        <div className="flex items-center gap-2 border-t border-domino-accent/25 bg-black/60 px-3 py-2">
+          <span className="min-w-0 flex-1 truncate text-xs text-domino-cream/80">
+            ¿Retar a <span className="font-semibold text-domino-accent">{aRetar.username}</span>?
+          </span>
+          <button
+            onClick={() => setARetar(null)}
+            className="rounded-lg border border-white/15 px-2.5 py-1 text-xs text-domino-cream/70"
+          >
+            No
+          </button>
+          <button
+            onClick={retar}
+            className="rounded-lg bg-domino-accent px-2.5 py-1 text-xs font-semibold text-black"
+          >
+            Retar
+          </button>
+        </div>
       )}
 
       {user ? (
