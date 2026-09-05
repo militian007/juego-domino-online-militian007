@@ -25,10 +25,19 @@ export default function AtajosLaterales() {
         <Link
           key={a}
           to={a}
-          className="pointer-events-auto flex w-14 flex-col items-center gap-1 rounded-xl border border-domino-accent/40 bg-black/60 px-2 py-2.5 text-domino-cream shadow-lg backdrop-blur-sm transition hover:border-domino-accent hover:bg-black/80"
+          className="pointer-events-auto flex w-14 flex-col items-center gap-1 text-domino-cream transition hover:brightness-125"
         >
-          <Icono size={20} className="text-domino-accent" aria-hidden="true" />
-          <span className="text-[8px] font-semibold tracking-wider">{texto}</span>
+          {/* Sin recuadro, solo el icono y el nombre: lo pidio asi Jonathan.
+              La sombra en el texto y el trazo del icono son lo que los hace
+              legibles sobre la foto de la mesa, que tiene zonas claras. */}
+          <Icono
+            size={22}
+            className="text-domino-accent drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
+            aria-hidden="true"
+          />
+          <span className="text-[8px] font-semibold tracking-wider drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]">
+            {texto}
+          </span>
         </Link>
       ))}
     </div>

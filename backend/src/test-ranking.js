@@ -46,7 +46,7 @@ async function main() {
 
   // ---- 1. Quien nunca jugo -------------------------------------------
   const nuevo = await Ranking.de(id(1));
-  check(nuevo.puntos === 1000, 'Quien nunca jugo arranca con 1000 puntos');
+  check(nuevo.puntos === 0, 'Quien nunca jugo arranca en cero');
   check(nuevo.partidas === 0, 'Sin partidas jugadas');
 
   const { rows } = await query('SELECT COUNT(*) AS n FROM ranking WHERE user_id = ?', [id(1)]);
@@ -75,6 +75,13 @@ async function main() {
   check(primeras > despues, `El que recien empieza se ubica rapido (${primeras} vs ${despues})`);
 
   // ---- 4. Una partida de verdad --------------------------------------
+  //
+  // Se les dan puntos primero: desde cero el que pierde no baja nada, porque
+  // nadie baja de cero, y no se podria comprobar que lo que gana uno es lo que
+  // pierde el otro.
+  await Ranking.guardar({ userId: id(1), puntos: 500, partidas: 20, ganadas: 10, mejorPuntos: 500 });
+  await Ranking.guardar({ userId: id(2), puntos: 500, partidas: 20, ganadas: 10, mejorPuntos: 500 });
+
   const cambios = await Ranking.aplicarPartida([
     { userId: id(1), equipo: 1, gano: true },
     { userId: id(2), equipo: 2, gano: false }
@@ -92,18 +99,24 @@ async function main() {
 
   const guardado = await Ranking.de(id(1));
   check(guardado.puntos === ganador.despues, 'Los puntos quedan guardados');
-  check(guardado.partidas === 1 && guardado.ganadas === 1, 'Y se cuentan sus partidas');
+  check(guardado.partidas === 21 && guardado.ganadas === 11, 'Y se cuentan sus partidas');
 
   // ---- 5. El orden no cambia el resultado ----------------------------
   //
   // Si se fuera guardando sobre la marcha, el segundo se mediria contra los
   // puntos ya cambiados del primero y la misma partida daria distinto.
-  await limpiar();
+  const conPuntos = async () => {
+    await limpiar();
+    await Ranking.guardar({ userId: id(10), puntos: 700, partidas: 30, ganadas: 15, mejorPuntos: 700 });
+    await Ranking.guardar({ userId: id(11), puntos: 400, partidas: 30, ganadas: 12, mejorPuntos: 400 });
+  };
+
+  await conPuntos();
   const alDerecho = await Ranking.aplicarPartida([
     { userId: id(10), equipo: 1, gano: true },
     { userId: id(11), equipo: 2, gano: false }
   ]);
-  await limpiar();
+  await conPuntos();
   const alReves = await Ranking.aplicarPartida([
     { userId: id(11), equipo: 2, gano: false },
     { userId: id(10), equipo: 1, gano: true }
@@ -122,10 +135,18 @@ async function main() {
   check(conInvitado.length === 0, 'Si el rival es un invitado, no se reparten puntos');
 
   // ---- 7. El puesto sale de los puntos --------------------------------
+  //
+  // Con cuentas de verdad: las tablas unen con `users`, asi que alguien que no
+  // existe como cuenta se guarda pero no aparece en la tabla.
   await limpiar();
-  await Ranking.guardar({ userId: id(30), puntos: 2100, partidas: 40, ganadas: 30, mejorPuntos: 2100 });
-  await Ranking.guardar({ userId: id(31), puntos: 1900, partidas: 40, ganadas: 25, mejorPuntos: 1900 });
-  await Ranking.guardar({ userId: id(32), puntos: 1800, partidas: 40, ganadas: 22, mejorPuntos: 1800 });
+  const alto = await cuentaDePrueba('TablaAlto');
+  const medio = await cuentaDePrueba('TablaMedio');
+  const bajo = await cuentaDePrueba('TablaBajo');
+  await query('DELETE FROM ranking WHERE user_id IN (?, ?, ?)', [alto, medio, bajo]);
+
+  await Ranking.guardar({ userId: alto, puntos: 2100, partidas: 40, ganadas: 30, mejorPuntos: 2100 });
+  await Ranking.guardar({ userId: medio, puntos: 1900, partidas: 40, ganadas: 25, mejorPuntos: 1900 });
+  await Ranking.guardar({ userId: bajo, puntos: 1800, partidas: 40, ganadas: 22, mejorPuntos: 1800 });
 
   // Se comprueba CONTRA LO QUE HAYA en la base, no suponiendo que esta vacia.
   const arribaDe = async (puntos) => {
@@ -175,7 +196,7 @@ async function main() {
   check(miSemana.puntos > 0 && miSemana.victorias === 1, 'La semana cuenta los puntos y la victoria');
 
   const perdedorSemana = await Ranking.semanaDe(pierde);
-  check(perdedorSemana.puntos < 0 && perdedorSemana.victorias === 0, 'Al que pierde le resta y no le suma victoria');
+  check(perdedorSemana.victorias === 0, 'Al que pierde no le suma victoria');
 
   const semanal = await Ranking.tablaSemanal(200);
   check(semanal.some((f) => f.userId === gana), 'Y aparece en la tabla de la semana');
@@ -194,15 +215,18 @@ async function main() {
   check(/^\d{4}-W\d{2}$/.test(Ranking.semanaActual()), `La semana se identifica bien (${Ranking.semanaActual()})`);
 
   // ---- 10. No se baja de cierto piso ----------------------------------
-  await Ranking.guardar({ userId: id(40), puntos: -500, partidas: 5, ganadas: 0, mejorPuntos: 1000 });
+  await Ranking.guardar({ userId: id(40), puntos: -500, partidas: 5, ganadas: 0, mejorPuntos: 300 });
   const hundido = await Ranking.de(id(40));
-  check(hundido.puntos > 0, `Nadie baja a numeros ridiculos (quedo en ${hundido.puntos})`);
+  check(hundido.puntos === 0, 'Nadie baja de cero, aunque pierda mucho');
 
   // ---- 11. El mejor puntaje se guarda ---------------------------------
   await Ranking.guardar({ userId: id(41), puntos: 1500, partidas: 20, ganadas: 12, mejorPuntos: 1500 });
   await Ranking.guardar({ userId: id(41), puntos: 1300, partidas: 21, ganadas: 12, mejorPuntos: 1500 });
-  const bajo = await Ranking.de(id(41));
-  check(bajo.puntos === 1300 && bajo.mejorPuntos === 1500, 'Se recuerda el mejor puntaje que alcanzo');
+  const trasBajar = await Ranking.de(id(41));
+  check(
+    trasBajar.puntos === 1300 && trasBajar.mejorPuntos === 1500,
+    'Se recuerda el mejor puntaje que alcanzo'
+  );
 
   // ---- 12. Una partida completa de verdad -----------------------------
   //
@@ -249,10 +273,9 @@ async function main() {
   const dos = await Ranking.de(id(51));
 
   check(uno.partidas === 1 && dos.partidas === 1, 'A los dos se les cuenta la partida');
-  check(uno.puntos !== 1000 && dos.puntos !== 1000, 'A los dos se les movieron los puntos');
   check(
-    (uno.puntos > 1000) !== (dos.puntos > 1000),
-    'Uno subio y el otro bajo, no los dos para el mismo lado'
+    (uno.puntos > 0) !== (dos.puntos > 0),
+    'Solo el que gano suma; desde cero, perder no cuesta nada'
   );
   check(avisos.length === 2, 'Y a cada uno le llega el aviso de cuanto se movio');
 
@@ -285,6 +308,7 @@ async function main() {
   check(trasElBot.partidas === 0, 'Una partida contra la maquina NO mueve el ranking');
 
   await limpiar();
+  await query('DELETE FROM ranking WHERE user_id IN (?, ?, ?)', [alto, medio, bajo]);
 
   console.log('');
   console.log('========================================');

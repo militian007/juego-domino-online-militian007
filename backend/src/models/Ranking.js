@@ -23,11 +23,21 @@ import { query } from '../config/database.js';
  * Solo cuentan las partidas entre personas: contra la maquina no suma nada.
  */
 
-/** Con cuantos puntos entra alguien nuevo. */
-export const PUNTOS_INICIALES = 1000;
+/**
+ * Con cuantos puntos entra alguien nuevo: **cero**.
+ *
+ * Antes se arrancaba con 1000, que es lo normal en Elo. Jonathan lo cambio:
+ * *"que todos tengan cero puntos y cero partidas jugadas"*. Tiene sentido para
+ * lo que se ve: con 1000 de arranque, alguien que no jugo nunca aparece con mil
+ * puntos y parece que ya hizo algo. Desde cero, **los puntos se ven ganar**.
+ *
+ * La cuenta de Elo no se rompe: lo que importa es la DIFERENCIA entre dos, no
+ * el numero en si.
+ */
+export const PUNTOS_INICIALES = 0;
 
-/** Por debajo de esto no se baja. Un numero ridiculo no motiva a nadie. */
-const PISO = 100;
+/** Por debajo de esto no se baja. Nadie tiene puntos en negativo. */
+const PISO = 0;
 
 /**
  * Cuanto se mueve el marcador en cada partida.

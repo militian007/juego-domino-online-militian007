@@ -183,8 +183,8 @@ async function main() {
 
   const ficha = await Ranking.de(terminado.campeonId);
   check(
-    ficha.puntos > 1000,
-    `El campeon se llevo los puntos del premio (${ficha.puntos})`
+    ficha.puntos >= terminado.premioPuntos,
+    `El campeon se llevo al menos los ${terminado.premioPuntos} puntos del premio (quedo en ${ficha.puntos})`
   );
 
   // ---- 7. El que perdio quedo afuera -----------------------------------

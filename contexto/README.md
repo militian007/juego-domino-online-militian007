@@ -4418,3 +4418,59 @@ de nacimiento y telefono**, y sin tocar la seccion BANCA.
 
 `/torneos` nacio como una pantalla con la forma final pero sin torneos detras. En la misma
 tanda se construyo el sistema completo: ver la seccion 101.
+
+---
+
+## 102. Todos arrancan en cero
+
+Pedido de Jonathan: *"el icono de torneo y tabla solo quiero que esté el icono y el nombre,
+no quiero que esté dentro de un cuadro. Y reinicia los perfiles, que todos tengan cero
+puntos y cero partidas jugadas"*.
+
+### Los atajos, sin recuadro
+
+Solo el icono y el nombre. Lo que los mantiene legibles sobre la foto de la mesa, que tiene
+zonas claras, es una sombra en el texto y en el trazo del icono, no una caja.
+
+### Se arranca en cero, no en mil
+
+Antes se entraba con **1000 puntos**, que es lo normal en Elo. Ahora se entra con **cero**.
+
+El motivo es lo que se ve: con mil de arranque, alguien que no jugo nunca aparece con mil
+puntos y parece que ya hizo algo. Desde cero, **los puntos se ven ganar**.
+
+La cuenta de Elo no se rompe: lo que importa es la DIFERENCIA entre dos jugadores, no el
+numero en si.
+
+**Consecuencia que hay que saber:** nadie baja de cero, asi que **perder cuando todavia no
+tenes puntos no te cuesta nada**. El que recien entra solo puede subir. Es coherente con
+arrancar en cero, y las pruebas lo comprueban explicitamente.
+
+### El comando de reinicio
+
+`npm run reiniciar-clasificacion`
+
+- Sin nada, **no borra**: dice a que base apunta y cuantas filas hay de cada cosa.
+- Con `-- --hazlo`, borra de verdad.
+
+Trabaja sobre la base **que este configurada**: en una maquina sin `DATABASE_URL` es la
+SQLite local; en el servidor seria la de produccion. Por eso avisa a cual apunta antes de
+tocar nada.
+
+**Las cuentas no se tocan.** Nadie pierde su usuario ni su clave: solo se van los puntos,
+las partidas, los torneos y las copas.
+
+### Produccion ya estaba en cero
+
+Se consulto la API publica de produccion: **0 clasificados**. Nadie habia jugado todavia una
+partida entre personas alla, asi que no hubo nada que reiniciar. Lo que se limpio fue la
+base de esta maquina, que tenia los jugadores de prueba.
+
+### Las pruebas tuvieron que cambiar
+
+Al arrancar en cero, dos comprobaciones dejaron de tener sentido tal como estaban:
+
+- **"lo que gana uno es lo que pierde el otro"** solo se puede comprobar con gente que ya
+  tenga puntos: desde cero, el que pierde no baja.
+- **La tabla general** usaba ids inventados. Une con `users`, asi que al vaciar la base se
+  quedo sin filas. Ahora usa cuentas de verdad, igual que la semanal.
