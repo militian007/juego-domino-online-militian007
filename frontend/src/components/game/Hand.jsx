@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import Tile from './Tile.jsx';
+import { useCarpetaDeFichas, VERSION_FICHAS } from './MesaTheme.jsx';
 
 export default function Hand({
   tiles,
@@ -12,6 +13,12 @@ export default function Hand({
   onDragUpdate,
   onDragEnd
 }) {
+  // La ficha que se arrastra tambien tiene que salir con la pinta elegida. Se
+  // dibuja aparte de `Tile`, con su propia etiqueta de imagen, y por eso se
+  // habia quedado con la ruta vieja fija: al arrastrar aparecia la clasica
+  // aunque la mano fuera de hueso.
+  const carpeta = useCarpetaDeFichas();
+
   const handRef = useRef(null);
 
   // Cleanup & window event handlers for active dragging
@@ -122,7 +129,7 @@ export default function Hand({
       {/* Vista previa de arrastre flotante: solo se muestra si NO está imantada a un imán */}
       {draggedTile && !draggedTile.isSnapped && (
         <img
-          src={`/tiles/tile_${Math.min(draggedTile.tile[0], draggedTile.tile[1])}_${Math.max(draggedTile.tile[0], draggedTile.tile[1])}.png`}
+          src={`${carpeta}/tile_${Math.min(draggedTile.tile[0], draggedTile.tile[1])}_${Math.max(draggedTile.tile[0], draggedTile.tile[1])}.png?v=${VERSION_FICHAS}`}
           alt=""
           style={{
             position: 'fixed',

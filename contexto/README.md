@@ -4669,3 +4669,40 @@ ojo (26) que estaba a un pelo del real (24) se llevo por delante todas las ficha
 Los archivos se llaman igual que antes, asi que el navegador se quedaba con las feas
 guardadas. Las direcciones llevan ahora un numero de version (`?v=2`) que lo obliga a
 pedirlas de nuevo. Se sube cada vez que cambie el dibujo sin cambiar el nombre.
+
+---
+
+## 107. La ficha arrastrada, y el icono de la app
+
+Dos cosas que reporto Jonathan con capturas.
+
+### La ficha que se arrastra salia con la pinta vieja
+
+La mano y la mesa se veian de hueso, pero **la ficha que llevabas en el dedo salia clasica**.
+
+La causa: la vista previa del arrastre no usa `Tile`, se dibuja con su propia etiqueta de
+imagen en `Hand.jsx`, y ahi la ruta habia quedado escrita a mano (`/tiles/...`). Cuando las
+pintas pasaron a ser carpetas, esa se quedo apuntando a la vieja.
+
+Comprobado simulando el arrastre: ahora pide `/tiles-hueso/tile_2_6.png`.
+
+**La leccion:** cuando algo se dibuja "por fuera" del componente que le corresponde, se
+queda atras en el primer cambio. Vale la pena buscar rutas escritas a mano cada vez que algo
+pasa a ser configurable.
+
+### El icono de la app: las dos fichas del logo
+
+Estaba una sola ficha, dibujada con circulos por codigo. Jonathan lo vio instalado en su
+telefono y pidio el del logo: *"pon el que hicimos, que esta brutal, el de las 2 fichas"*.
+
+Ahora el icono **lee las fichas de verdad** de `public/tiles/` (la 6-6 y la 3-6, las mismas
+del logo) y las gira con los mismos angulos. Asi el icono y la marca son la misma cosa y no
+dos dibujos parecidos.
+
+Para eso el script aprendio a **leer** PNG, no solo a escribirlos: unos ochenta renglones
+con `zlib`, sin dependencias, igual que el que ya escribia. Y a girar una imagen recorriendo
+el destino y preguntando de donde sale cada pixel; hacerlo al reves deja agujeros, porque al
+girar dos pixeles de origen caen en el mismo de destino.
+
+**El favicon de la pestaña se queda como esta**, con una sola ficha: a 16 pixeles, dos
+fichas cruzadas no se distinguen.
