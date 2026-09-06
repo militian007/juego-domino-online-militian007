@@ -5376,3 +5376,70 @@ que solo molesta.
 La animacion es una transicion de `left`/`top` en las fichas de la mesa: cuando la cadena se
 vuelve a trazar, se deslizan a su sitio nuevo en vez de saltar. En el juego normal no hace
 nada, porque una ficha ya puesta no se mueve. Con `prefers-reduced-motion` no anima.
+
+## 121. Chat en la partida (2026-09-06)
+
+Jonathan: *"mete chat en la partida entre jugadores"*.
+
+### En que se diferencia del chat global
+
+| | global | de mesa |
+| --- | --- | --- |
+| quien lo ve | cualquiera que entre al menu | los que estan sentados en esa mesa |
+| donde se guarda | en la base de datos | en memoria, y muere con la mesa |
+| quien escribe | el que tiene cuenta | los que estan jugando esa partida |
+
+**No se guarda en la base.** Lo que se dice en una mesa muere con la mesa: es conversacion de
+partida, no historial. Guardar cada "juega rapido pana" llenaria la base de ruido que nadie va
+a volver a leer. Queda una copia corta en memoria (25 mensajes) para el que se reconecta: si se
+le fue el internet un momento, al volver ve lo que se dijo. Se borra sola cuando la mesa se
+cierra, enganchada a los mismos `rooms.delete` que ya existian.
+
+### Se ve de dos formas, y las dos hacen falta
+
+1. **La burbuja.** Lo que alguien acaba de decir sale unos segundos al lado de su sitio en la
+   mesa. Es lo que hace que el chat sirva: en plena partida nadie va a estar abriendo un panel
+   cada dos jugadas para ver si le hablaron.
+2. **El panel.** Se abre con el boton y trae lo dicho y donde escribir. Y el boton lleva un
+   contador de sin leer, por lo mismo: para no tener que abrirlo a ver si hay algo.
+
+### Solo entre personas
+
+Contra la maquina el boton **ni se dibuja**. No hay con quien hablar, y ofrecer un boton para
+despues negarlo es peor que no ofrecerlo. El servidor tambien lo rechaza, que es donde de
+verdad se decide.
+
+### Los frenos, todos en el servidor
+
+Un chat sin frenos se llena de basura el primer dia, y si estuvieran en la pantalla cualquiera
+los saltea desde el navegador. Van: largo maximo de 160, un mensaje cada segundo y dos, doce
+por minuto, y —lo mas importante— **solo escribe quien esta sentado en esa mesa**, comprobado
+contra el RoomManager y no contra lo que diga el navegador. El nombre sale del token que ya
+verifico el middleware: mandar un `username` distinto no sirve de nada.
+
+### Dos cosas que solo aparecieron corriendo
+
+1. **La burbuja salia torcida y corrida.** Reusaba la animacion de las fichas (`tile-place`),
+   que termina en `transform: scale(1) rotate(0)` y le borraba el `-translate-x-1/2` con el que
+   se centra. Ahora tiene una animacion propia que **solo toca la opacidad**.
+2. **La burbuja propia quedaba tapada por la mano.** El contenedor de la mesa sigue por detras
+   de las fichas. Ahora se coloca a `altoMano + 12` del borde.
+
+### Pruebas
+
+`npm run test:mesa-chat` — 17, contra el servidor levantado. Dos cuentas se sientan en una mesa
+y se hablan; se comprueba que al de al lado le llega, que el nombre lo pone el servidor y no el
+navegador, que **el que no esta sentado no escribe ni lee**, que un invitado tampoco, que el
+historial le llega al que se reconecta, que los frenos frenan, que contra la maquina no hay
+chat, y que **lo que se dice en una mesa no se oye en otra**.
+
+Verificado ademas en pantalla con una partida de verdad entre dos cuentas: la burbuja centrada
+bajo el nombre del rival, el contador de sin leer en el boton, y el panel enviando y recibiendo.
+
+### Una trampa del entorno, anotada para no repetirla
+
+Para probarlo hace falta un segundo jugador, y las dos pestañas del navegador **comparten
+localStorage**, asi que no se pueden tener dos cuentas abiertas a la vez. Se hizo con el
+navegador de un lado y un socket de Node del otro. Y ese script **no puede vivir dentro de
+`backend/`**: nodemon vigila esa carpeta, al escribir el archivo reinicia el servidor, y con el
+reinicio se pierden las mesas, que viven en memoria. Costo tres intentos entenderlo.

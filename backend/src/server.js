@@ -12,6 +12,7 @@ import paseRoutes from './routes/pase.js';
 import { roomManager } from './RoomManager.js';
 import { setupGameSocket } from './sockets/gameSocket.js';
 import { registrarChat } from './sockets/chatSocket.js';
+import { registrarChatDeMesa } from './sockets/mesaChat.js';
 import { registrarRetos } from './sockets/retosSocket.js';
 import * as torneos from './services/torneos.js';
 import * as pase from './services/pase.js';
@@ -83,6 +84,9 @@ io.on('connection', (socket) => {
 
   // Retos entre jugadores y el buzon de avisos.
   registrarRetos(io, socket, roomManager);
+
+  // El chat de la mesa, para hablar con los que estan jugando la partida.
+  registrarChatDeMesa(io, socket, roomManager);
 
   const userId = socket.userId || `guest-${socket.id}`;
   const username = socket.username || 'Invitado';

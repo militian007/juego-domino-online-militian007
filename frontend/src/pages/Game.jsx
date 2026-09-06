@@ -21,6 +21,7 @@ import TopBanner from '../components/TopBanner.jsx';
 import { connectSocket } from '../services/socket.js';
 import { paseApi } from '../services/api.js';
 import CargandoFichas from '../components/CargandoFichas.jsx';
+import PanelDeChat, { BurbujaDeChat, useChatDeMesa } from '../components/game/ChatDeMesa.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { playTileSound, playDrawSound, estaSilenciado, alternarSilencio } from '../utils/soundEffects.js';
 import { ChevronRight, Lock, LogOut } from 'lucide-react';
@@ -227,6 +228,7 @@ export default function Game() {
 
   const [reactions, setReactions] = useState({});
   const [showReactionMenu, setShowReactionMenu] = useState(false);
+  const [chatAbierto, setChatAbierto] = useState(false);
 
   // Los stickers: los de siempre y los que se ganan en el pase. Viene del
   // servidor porque es el servidor el que sabe cuales tiene ganados esta
@@ -568,6 +570,14 @@ export default function Game() {
     if (!gameState || !myPlayerId) return null;
     return gameState.players.find((p) => p.id === myPlayerId);
   }, [gameState, myPlayerId]);
+
+  // El chat de la mesa solo existe entre personas: contra la maquina no hay con
+  // quien hablar y el boton solo estorbaria.
+  const mesaEntrePersonas = useMemo(
+    () => Boolean(gameState?.players?.length) && gameState.players.every((p) => !p.isBot),
+    [gameState]
+  );
+  const chat = useChatDeMesa(actualRoomCode, mesaEntrePersonas);
 
   const myTurn = gameState?.currentPlayerId && myPlayerId
     ? gameState.currentPlayerId === myPlayerId
@@ -1108,6 +1118,42 @@ export default function Game() {
 
                 {/* "A Fulano se le paso el turno", cuando se le acaba el tiempo. */}
                 <AvisoDeSalto salto={gameState.saltadoPorTiempo} />
+
+                {/* Lo que alguien acaba de decir, al lado de su sitio en la
+                    mesa. Sin esto el chat no sirve: en plena partida nadie va a
+                    estar abriendo un panel para ver si le hablaron. */}
+                {chat.ultimos.map((m) => {
+                  const mio = String(m.userId) === String(myPlayerId);
+                  const donde = mio
+                    ? 'left-1/2 -translate-x-1/2'
+                    : String(m.userId) === String(seatTop?.id)
+                      ? 'left-1/2 top-16 -translate-x-1/2'
+                      : String(m.userId) === String(seatLeft?.id)
+                        ? 'left-2 top-1/2 -translate-y-1/2'
+                        : String(m.userId) === String(seatRight?.id)
+                          ? 'right-2 top-1/2 -translate-y-1/2'
+                          : null;
+                  if (!donde) return null;
+                  // La propia va JUSTO ENCIMA de la mano. El contenedor de la
+                  // mesa sigue por detras de las fichas, asi que pegada al
+                  // borde de abajo quedaba tapada por la mano.
+                  return (
+                    <BurbujaDeChat
+                      key={m.id}
+                      mensaje={m}
+                      className={donde}
+                      style={mio ? { bottom: altoMano + 12 } : undefined}
+                    />
+                  );
+                })}
+
+                <PanelDeChat
+                  abierto={chatAbierto}
+                  onCerrar={() => setChatAbierto(false)}
+                  mensajes={chat.mensajes}
+                  enviar={chat.enviar}
+                  miId={myPlayerId}
+                />
                 {/* Cada uno en su lado de la mesa. Las placas se apoyan en el
                     borde y el rectangulo de juego (los margenes que recibe
                     Board) empieza justo por dentro, asi que la cadena nunca les
@@ -1178,6 +1224,30 @@ export default function Game() {
                         icono="gesto"
                         onClick={() => { setAbierto(null); setShowReactionMenu((v) => !v); }}
                       />
+                      {/* El chat solo aparece si hay con quien hablar. */}
+                      {mesaEntrePersonas && (
+                        <span className="relative">
+                          <BotonMesa
+                            titulo="Chat de la mesa"
+                            activo={chatAbierto}
+                            icono="chat"
+                            onClick={() => {
+                              setAbierto(null);
+                              setShowReactionMenu(false);
+                              setChatAbierto((v) => !v);
+                              chat.marcarLeidos();
+                            }}
+                          />
+                          {/* El contador de sin leer: sin esto uno abre el chat
+                              a ver si le hablaron, que es justo lo que no
+                              queremos que pase en medio de una partida. */}
+                          {!chatAbierto && chat.sinLeer > 0 && (
+                            <span className="pointer-events-none absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-domino-accent px-1 text-[9px] font-black text-domino-dark">
+                              {chat.sinLeer > 9 ? '9+' : chat.sinLeer}
+                            </span>
+                          )}
+                        </span>
+                      )}
                     </div>
                   </div>
 

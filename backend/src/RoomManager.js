@@ -7,6 +7,7 @@ import * as Partida from './models/Partida.js';
 import * as Ranking from './models/Ranking.js';
 import * as torneos from './services/torneos.js';
 import * as pase from './services/pase.js';
+import { olvidarMesa } from './sockets/mesaChat.js';
 
 const MODES = MODE_CONFIG;
 
@@ -185,6 +186,7 @@ export class RoomManager {
 
       if (resultado.error) {
         this.rooms.delete(room.code);
+        olvidarMesa(room.code);
         devolverALaCola(`no se pudo unir a ${p.username}: ${resultado.error}`);
         return;
       }
@@ -196,6 +198,7 @@ export class RoomManager {
 
     if (inicio.error) {
       this.rooms.delete(room.code);
+      olvidarMesa(room.code);
       devolverALaCola(inicio.error);
       return;
     }
@@ -234,6 +237,7 @@ export class RoomManager {
     room.players = room.players.filter((p) => p.id !== userId);
     if (room.players.length === 0) {
       this.rooms.delete(code);
+      olvidarMesa(code);
     }
   }
 

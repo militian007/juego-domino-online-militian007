@@ -11,6 +11,7 @@
     "test:e2e": "node src/test-e2e-bot.js",
     "test:perfil": "node src/test-perfil.js",
     "test:chat": "node src/test-chat.js",
+    "test:mesa-chat": "node src/test-mesa-chat.js",
     "test:reloj": "node src/test-reloj.js",
     "test:reloj-e2e": "node src/test-reloj-e2e.js",
     "test:retos": "node src/test-retos.js",

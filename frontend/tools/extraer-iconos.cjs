@@ -15,7 +15,8 @@ const QUIERO = {
   silencio: 'muted-speaker',
   paleta: 'artist-palette',
   gesto: 'grinning-face',
-  salir: 'cross-mark'
+  salir: 'cross-mark',
+  chat: 'speech-balloon'
 };
 
 const salida = {};
