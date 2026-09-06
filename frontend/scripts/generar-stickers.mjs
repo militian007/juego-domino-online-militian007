@@ -21,11 +21,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import jpeg from 'jpeg-js';
-import { leer, quitarElFondoPorColor, recortar, escalar, aPng } from './imagen.mjs';
+import { leer, quitarElFondoPorColor, recortar, escalar, desenfocar, aPng } from './imagen.mjs';
 
 const RAIZ = process.cwd();
 const FUENTE = path.join(RAIZ, 'arte-fuente');
 const SALIDA = path.join(RAIZ, 'public', 'stickers');
+const SALIDA_ICONOS = path.join(RAIZ, 'public', 'iconos');
 
 /**
  * El alto al que se guardan.
@@ -55,8 +56,33 @@ const STICKERS = ['candela', 'corona', 'suerte', 'chivo', 'cerebro', 'respeto', 
  */
 const FRANJA_DE_ARRIBA = 0.58;
 
+/**
+ * Los iconos de los menus. Mismo tratamiento que los stickers —magenta y
+ * recorte a la cara— porque en las tarjetas se ven igual de chiquitos.
+ */
+const ICONOS = ['modo-casa', 'modo-gente', 'busqueda-rapida', 'sala-privada', 'esperando'];
+
 /** El ancho del banner ya listo. La imagen de origen es enorme y no hace falta. */
 const ANCHO_BANNER = 1200;
+
+/**
+ * El fondo de los menus.
+ *
+ * Va en JPEG y no en PNG por lo mismo que el banner: es una escena con
+ * degradados, y en PNG pesa varios megas. Y se guarda a 900 de ancho porque es
+ * un fondo desenfocado detras del contenido, no algo que nadie mire de cerca.
+ */
+const ANCHO_FONDO = 900;
+
+/**
+ * Cuanto se desenfoca el fondo.
+ *
+ * No es solo estetica. Gemini pinto la franja oscura del medio como un
+ * rectangulo, con dos bordes verticales duros que en pantalla se veian como una
+ * raya. Con este desenfoque el escalon se derrite y parece una sombra, y de
+ * paso el texto de encima se lee mejor.
+ */
+const DESENFOQUE_FONDO = 7;
 
 /**
  * El banner sale en JPEG y no en PNG.
@@ -96,15 +122,44 @@ function main() {
   for (const id of [...STICKERS, 'panita']) {
     const origen = path.join(FUENTE, id === 'panita' ? 'panita.png' : `sticker-${id}.png`);
     if (!fs.existsSync(origen)) {
-      console.log(`  ${id.padEnd(10)} falta ${path.basename(origen)}`);
+      console.log(`  ${id.padEnd(16)} falta ${path.basename(origen)}`);
       continue;
     }
 
     // La mascota se guarda entera: se usa grande, no en el menu de la mesa.
     const img = prepararSticker(origen, id !== 'panita');
     const peso = guardar(path.join(SALIDA, `${id}.png`), img);
-    console.log(`  ${id.padEnd(10)} ${img.ancho}x${img.alto}  ${(peso / 1024).toFixed(1)} KB`);
+    console.log(`  ${id.padEnd(16)} ${img.ancho}x${img.alto}  ${(peso / 1024).toFixed(1)} KB`);
     hechos++;
+  }
+
+  // Los iconos de los menus.
+  fs.mkdirSync(SALIDA_ICONOS, { recursive: true });
+  for (const id of ICONOS) {
+    const origen = path.join(FUENTE, `${id}.png`);
+    if (!fs.existsSync(origen)) {
+      console.log(`  ${id.padEnd(16)} falta ${id}.png`);
+      continue;
+    }
+    const img = prepararSticker(origen);
+    const peso = guardar(path.join(SALIDA_ICONOS, `${id}.png`), img);
+    console.log(`  ${id.padEnd(16)} ${img.ancho}x${img.alto}  ${(peso / 1024).toFixed(1)} KB`);
+  }
+
+  // El fondo de los menus: escena entera, sin magenta.
+  const fondo = path.join(FUENTE, 'fondo-menu.png');
+  if (fs.existsSync(fondo)) {
+    const arte = leer(fondo);
+    const alto = Math.round((arte.alto / arte.ancho) * ANCHO_FONDO);
+    const chico = desenfocar(escalar(arte, ANCHO_FONDO, alto), DESENFOQUE_FONDO);
+    const { data } = jpeg.encode(
+      { data: Buffer.from(chico.px), width: chico.ancho, height: chico.alto },
+      78
+    );
+    fs.writeFileSync(path.join(RAIZ, 'public', 'fondo-menu.jpg'), data);
+    console.log(`  ${'fondo'.padEnd(16)} ${ANCHO_FONDO}x${alto}  ${(data.length / 1024).toFixed(1)} KB`);
+  } else {
+    console.log('  fondo            falta fondo-menu.png');
   }
 
   // El banner no lleva magenta: es una escena entera, con su fondo.
@@ -118,7 +173,7 @@ function main() {
       CALIDAD_BANNER
     );
     fs.writeFileSync(path.join(RAIZ, 'public', 'pase-banner.jpg'), data);
-    console.log(`  ${'banner'.padEnd(10)} ${ANCHO_BANNER}x${alto}  ${(data.length / 1024).toFixed(1)} KB`);
+    console.log(`  ${'banner'.padEnd(16)} ${ANCHO_BANNER}x${alto}  ${(data.length / 1024).toFixed(1)} KB`);
   } else {
     console.log('  banner     falta pase-banner.png');
   }

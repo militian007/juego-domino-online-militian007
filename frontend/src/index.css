@@ -198,6 +198,24 @@
       radial-gradient(ellipse 92% 92% at 50% 50%, transparent 34%, rgba(0, 0, 0, 0.6) 100%);
   }
 
+  /* El telon de los menus.
+     La imagen ya viene con la franja del medio oscura, hecha a proposito para
+     que el contenido se lea encima. Igual se le pone una capa negra a medias:
+     la foto sola tiene el verde muy vivo en los costados y el texto blanco se
+     ensucia.
+
+     Sin background-attachment: fixed. En el telefono no sirve: Safari de iOS lo
+     ignora a medias y en Android tironea al desplazar. Movil primero (regla 6). */
+  .telon-menu {
+    background-color: #0a1414;
+    background-image:
+      linear-gradient(rgba(6, 14, 12, 0.55), rgba(6, 14, 12, 0.72)),
+      url('/fondo-menu.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
   /* La fila de fichas que se cae mientras se espera.
      El giro es sobre la esquina de abajo a la derecha, que es donde apoya la
      ficha al caer sobre la siguiente. Setenta y dos grados y no noventa: a

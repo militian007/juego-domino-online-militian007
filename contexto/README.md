@@ -5133,3 +5133,55 @@ Cae 72 grados y no 90: a 90 queda tumbada del todo y la fila se ve rota. Y con
 Los prompts para el resto de las visuales de los menus (el fondo, los iconos de modo y los de
 busqueda) quedaron en `contexto/prompts/visuales-de-los-menus.md`, cada uno completo y listo
 para copiar.
+
+## 117. Las visuales de los menus, puestas (2026-09-05)
+
+Llegaron las seis ilustraciones y estan las seis en pantalla. Antes de tocar nada se midieron:
+el fondo del magenta queda a menos de 60 del magenta puro y lo mas cercano del dibujo a mas de
+120, con **0,22% a 0,33%** de pixeles en la franja dudosa. Se recortan limpio.
+
+### El fondo venia con una raya
+
+El prompt pedia "la franja del medio oscura y vacia" y Gemini la pinto **literal**: un
+rectangulo oscuro con dos **bordes verticales duros** que en pantalla se veian como una raya
+pintada, no como una sombra.
+
+Se arreglo desenfocando el fondo al prepararlo (`desenfocar`, caja separable de dos pasadas,
+radio 7 sobre 900 px de ancho). El escalon se derrite y queda como sombra. De regalo, el texto
+de encima se lee mejor y el archivo bajo de 148 KB a **67 KB**.
+
+Tambien se le quito `background-attachment: fixed`: en el telefono no sirve —Safari de iOS lo
+ignora a medias y Android tironea al desplazar—. Movil primero (regla 6).
+
+### Los iconos van recortados a la cara, como los stickers
+
+Volvieron a salir de cuerpo entero. No se pidio rehacerlos: el mismo recorte de la franja de
+arriba (0,58) que ya se usa con los stickers los deja con la cara grande. En las tarjetas se
+ven a 44 px de alto y se entienden.
+
+### Donde quedo cada una
+
+| Dibujo | Donde |
+| --- | --- |
+| `fondo-menu` | telon del menu de modos y de la pantalla de "como buscar" |
+| `modo-casa` | cabecera de la seccion "Contra la casa" |
+| `modo-gente` | cabecera de la seccion "Contra jugadores" |
+| `busqueda-rapida` | tarjeta "Emparejamiento rapido" |
+| `sala-privada` | tarjeta "Sala privada" |
+| `esperando` | arriba de las fichas que se caen, en "Buscando oponente" |
+
+La cabecera de seccion cambio de forma: el dibujo a la izquierda y el texto en **dos
+renglones** a su derecha. En una sola linea no entraba —"CONTRA JUGADORES" con su espaciado ya
+se come casi todo el ancho de un telefono— y el titulo se partia solo.
+
+**El diagrama de sillas se queda** en las cuatro filas de modo. Es lo unico que dice
+exactamente cuantos juegan y cuales son bots, y eso lo calcula el codigo y nunca se equivoca.
+En las dos tarjetas de "como buscar" si se reemplazo, porque ahi el numero ya lo dice la
+cabecera de la pantalla.
+
+### Lo que quedo con un pero
+
+- **`modo-gente` tiene un brazo de robot.** Los dos Panitas chocan los puños, pero el de la
+  derecha conservo los brazos metalicos del icono anterior. A 44 px no se ve, pero en el icono
+  de "contra jugadores" no deberia haber nada de robot.
+- **Sigue faltando `sticker-chivo`.**

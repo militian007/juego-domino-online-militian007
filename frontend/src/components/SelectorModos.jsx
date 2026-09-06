@@ -49,14 +49,31 @@ export const MODOS = [
   }
 ];
 
-export function Seccion({ titulo, pie, children }) {
+/**
+ * @param arte dibujo del Panita que le pone cara a la seccion. Es de adorno: si
+ *   no carga, el titulo se lee igual.
+ */
+export function Seccion({ titulo, pie, arte, children }) {
   return (
     <section className="mb-5 last:mb-0">
-      <div className="mb-2 flex items-baseline justify-between px-1">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-domino-accent/80">
-          {titulo}
-        </h2>
-        <span className="text-[10px] uppercase tracking-wider text-domino-cream/35">{pie}</span>
+      {/* El dibujo a la izquierda y el texto en dos renglones a su derecha. En
+          una sola linea no entraba: "CONTRA JUGADORES" con su espaciado ya se
+          come casi todo el ancho de un telefono, y el titulo se partia solo. */}
+      <div className="mb-2 flex items-center gap-2.5 px-1">
+        {arte && (
+          <img
+            src={arte}
+            alt=""
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            className="h-11 w-auto shrink-0 drop-shadow-[0_2px_5px_rgba(0,0,0,0.7)]"
+          />
+        )}
+        <div className="min-w-0">
+          <h2 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-domino-accent/80">
+            {titulo}
+          </h2>
+          <span className="block text-[10px] uppercase tracking-wider text-domino-cream/35">{pie}</span>
+        </div>
       </div>
       <div className="flex flex-col gap-2.5">{children}</div>
     </section>
@@ -107,10 +124,10 @@ export default function SelectorModos({ onElegir, mostrarInsignias = false }) {
 
   return (
     <>
-      <Seccion titulo="Contra la casa" pie="empieza ya">
+      <Seccion titulo="Contra la casa" pie="empieza ya" arte="/iconos/modo-casa.png">
         {casa.map(fila)}
       </Seccion>
-      <Seccion titulo="Contra jugadores" pie="hace falta gente">
+      <Seccion titulo="Contra jugadores" pie="hace falta gente" arte="/iconos/modo-gente.png">
         {amigos.map(fila)}
       </Seccion>
     </>

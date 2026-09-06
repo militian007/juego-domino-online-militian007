@@ -126,6 +126,58 @@ export function quitarElFondoPorColor(img, { color = [255, 0, 255], tolerancia =
   return img;
 }
 
+/**
+ * Desenfoca la imagen. Caja separable, dos pasadas: horizontal y vertical.
+ *
+ * Se usa en el fondo de los menus por dos motivos. Uno, el texto encima se lee
+ * mejor si lo de atras no compite. Dos, y el que lo hizo falta: Gemini pinto la
+ * franja oscura del medio como un RECTANGULO, con dos bordes verticales duros
+ * que se veian como una raya. Desenfocado, el escalon se derrite y parece una
+ * sombra.
+ *
+ * Dos pasadas de caja se parecen bastante a un desenfoque gaussiano y cuestan
+ * mucho menos de escribir.
+ */
+export function desenfocar(img, radio = 8) {
+  if (radio < 1) return img;
+
+  const { ancho, alto } = img;
+  let origen = img.px;
+  let destino = new Uint8Array(origen.length);
+
+  const pasada = (px, salida, horizontal) => {
+    const largo = horizontal ? ancho : alto;
+    const otros = horizontal ? alto : ancho;
+    const salto = horizontal ? 4 : ancho * 4;
+
+    for (let o = 0; o < otros; o++) {
+      const base = (horizontal ? o * ancho : o) * 4;
+      for (let c = 0; c < 4; c++) {
+        let suma = 0;
+        let cuenta = 0;
+        // Ventana deslizante: cada paso suma el que entra y resta el que sale.
+        for (let i = 0; i <= radio && i < largo; i++) { suma += px[base + i * salto + c]; cuenta++; }
+        for (let i = 0; i < largo; i++) {
+          salida[base + i * salto + c] = Math.round(suma / cuenta);
+          const sale = i - radio;
+          const entra = i + radio + 1;
+          if (sale >= 0) { suma -= px[base + sale * salto + c]; cuenta--; }
+          if (entra < largo) { suma += px[base + entra * salto + c]; cuenta++; }
+        }
+      }
+    }
+  };
+
+  for (let vuelta = 0; vuelta < 2; vuelta++) {
+    pasada(origen, destino, true);
+    const medio = origen; origen = destino; destino = medio;
+    pasada(origen, destino, false);
+    const otro = origen; origen = destino; destino = otro;
+  }
+
+  return { ancho, alto, px: origen };
+}
+
 /** Deja solo lo que se ve, sin el aire de alrededor. */
 export function recortar(img) {
   const { ancho, alto, px } = img;

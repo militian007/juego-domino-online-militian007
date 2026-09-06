@@ -35,6 +35,23 @@ import { ChevronRight, Lock, LogOut } from 'lucide-react';
 const BASE_DE_EMERGENCIA = ['😎', '😂', '🤣', '😆', '😭', '😡', '🤬', '🥱', '🤔', '😒', '😮'];
 
 /**
+ * Un dibujo del Panita al lado de una opcion del menu.
+ *
+ * Es de adorno: si la imagen no esta, no deja un hueco raro, simplemente no se
+ * dibuja y el texto de la opcion queda solo.
+ */
+function IconoDeMenu({ src }) {
+  return (
+    <img
+      src={src}
+      alt=""
+      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+      className="h-11 w-auto shrink-0 drop-shadow-[0_2px_5px_rgba(0,0,0,0.7)]"
+    />
+  );
+}
+
+/**
  * El dibujo de un sticker del pase, con el emoji de respaldo.
  *
  * Los del pase son dibujos del Panita. Si a uno todavia no le hicieron el
@@ -750,6 +767,12 @@ export default function Game() {
           <div className="card p-6 sm:p-10 max-w-md w-full border border-domino-accent/30 bg-domino-felt shadow-2xl text-center relative overflow-hidden">
             <div className="absolute inset-0 bg-felt opacity-5 pointer-events-none" />
             <div className="relative z-10 flex flex-col items-center py-4">
+              <img
+                src="/iconos/esperando.png"
+                alt=""
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                className="mb-2 h-20 w-auto drop-shadow-[0_3px_8px_rgba(0,0,0,0.8)]"
+              />
               <div className="mb-6">
                 <CargandoFichas />
               </div>
@@ -785,7 +808,7 @@ export default function Game() {
     const asientos = mode === '2v2' ? 4 : 2;
     const vacias = asientos - 1;
     return (
-      <div className="flex min-h-[100svh] flex-col bg-domino-dark text-domino-cream">
+      <div className="telon-menu flex min-h-[100svh] flex-col text-domino-cream">
         <Navbar />
         <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pb-6 pt-4 sm:max-w-lg">
           <div className="mb-5 px-1">
@@ -799,13 +822,13 @@ export default function Game() {
 
           <Seccion titulo="Cómo buscar" pie={`faltan ${vacias}`}>
             <Fila
-              icono={<MesaIcono asientos={asientos} vacias={vacias} tamano={54} />}
+              icono={<IconoDeMenu src="/iconos/busqueda-rapida.png" />}
               titulo="Emparejamiento rápido"
               texto="Te sentamos con quien aparezca."
               onClick={() => setPlayModeOption('matchmaking')}
             />
             <Fila
-              icono={<MesaIcono asientos={asientos} vacias={vacias} codigo tamano={54} />}
+              icono={<IconoDeMenu src="/iconos/sala-privada.png" />}
               titulo="Sala privada"
               texto="Te damos un código para pasarle."
               onClick={() => setPlayModeOption('private')}
