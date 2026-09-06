@@ -164,9 +164,10 @@ export function setupGameSocket(io, roomManager) {
       const room = roomManager.rooms.get(code);
       if (!room?.game) return callback?.({ ok: false, error: 'No hay juego' });
       
-      // Delay human move so it doesn't appear too instantly
+      // Normalmente no espera nada (HUMAN_DELAY_MS viene en cero). Se deja el
+      // gancho por si alguna vez hace falta frenar la jugada a proposito.
       if (HUMAN_DELAY_MS > 0) await roomManager._sleep(HUMAN_DELAY_MS);
-      
+
       // Re-verify that the room and game are still active after the sleep
       const activeRoom = roomManager.rooms.get(code);
       if (!activeRoom?.game) return callback?.({ ok: false, error: 'No hay juego' });

@@ -7,6 +7,15 @@ export default function Tile({
   dim = false,
   size = 'md',
   small = false,
+  /**
+   * Ancho exacto en pixeles. Si viene, manda sobre `size`.
+   *
+   * Lo usa la mano, que calcula cuanto mide cada ficha a partir del ancho que
+   * de verdad tiene la pantalla. Los tamaños con nombre son escalones fijos y
+   * dejaban aire sin usar: en un telefono de 375, siete fichas ocupaban 287 de
+   * los 351 disponibles.
+   */
+  ancho = null,
   onClick,
   className = '',
   isNewest = false
@@ -39,7 +48,14 @@ export default function Tile({
   };
   const d = dims[finalSize] || dims.md;
 
-  const sizeClasses = orientation === 'horizontal' ? d.w : d.wv;
+  const sizeClasses = ancho ? '' : orientation === 'horizontal' ? d.w : d.wv;
+
+  // La proporcion es la misma que la de los escalones con nombre: uno a dos.
+  const estiloDeCaja = ancho
+    ? orientation === 'horizontal'
+      ? { width: `${ancho}px`, height: `${Math.round(ancho / 2)}px` }
+      : { width: `${ancho}px`, height: `${ancho * 2}px` }
+    : undefined;
 
   // Rotation calculation:
   // For Horizontal:
@@ -98,6 +114,7 @@ export default function Tile({
   return (
     <div
       onClick={onClick}
+      style={estiloDeCaja}
       className={`${baseClasses} ${sizeClasses} ${interactiveClasses} ${stateClasses} ${dimClasses} overflow-visible ${className}`}
     >
       <span className="tile-edge" aria-hidden="true" />

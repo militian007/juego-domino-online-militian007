@@ -11,7 +11,22 @@ import * as pase from './services/pase.js';
 const MODES = MODE_CONFIG;
 
 export const BOT_DELAY_MS = Number(process.env.BOT_DELAY_MS ?? 3000);
-export const HUMAN_DELAY_MS = Number(process.env.HUMAN_DELAY_MS ?? 1000);
+/**
+ * Espera artificial en la jugada de una PERSONA. En cero.
+ *
+ * Estaba en mil milisegundos "para que no se vea tan instantaneo". Los amigos
+ * de Jonathan probaron el juego y lo primero que dijeron fue que entre elegir
+ * la ficha y verla puesta se hacia eterno: era esto. Un segundo por jugada, y
+ * ademas con la mano bloqueada mientras tanto.
+ *
+ * Una jugada propia tiene que sentirse inmediata: el jugador ya sabe lo que
+ * hizo, no hay nada que anunciarle. La espera del BOT si se queda, que ahi si
+ * hace falta para que parezca que piensa.
+ *
+ * Queda como variable de entorno por si algun dia hace falta, pero por defecto
+ * no espera nada.
+ */
+export const HUMAN_DELAY_MS = Number(process.env.HUMAN_DELAY_MS ?? 0);
 
 export class RoomManager {
   constructor() {

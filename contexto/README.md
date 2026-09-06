@@ -5185,3 +5185,57 @@ cabecera de la pantalla.
   derecha conservo los brazos metalicos del icono anterior. A 44 px no se ve, pero en el icono
   de "contra jugadores" no deberia haber nada de robot.
 - **Sigue faltando `sticker-chivo`.**
+
+## 118. Lo que dijeron los amigos de Jonathan (2026-09-05)
+
+Jonathan le paso el juego a sus amigos y volvieron con tres cosas. Las tres tenian razon.
+
+### 1. "Entre que elegis la ficha y la pones se hace eterno"
+
+Y no era impresion. En `gameSocket.js` habia esto:
+
+```js
+// Delay human move so it doesn't appear too instantly
+if (HUMAN_DELAY_MS > 0) await roomManager._sleep(HUMAN_DELAY_MS);
+```
+
+**Un segundo entero de espera puesto a proposito en cada jugada de una persona**, y ademas con
+la mano bloqueada mientras tanto (`isPlacing`). La idea era que no se viera "demasiado
+instantaneo". Es al reves: la jugada propia tiene que sentirse inmediata, el jugador ya sabe
+lo que hizo y no hay nada que anunciarle.
+
+`HUMAN_DELAY_MS` pasa a **0**. La espera del BOT se queda en 3 segundos, que ahi si hace falta
+para que parezca que piensa.
+
+### 2. "Las fichas de la mano las queremos mas grandes"
+
+Estaban en tres escalones fijos por cantidad de fichas (`xs`/`sm`/`md`), y dejaban aire sin
+usar. Medido en un telefono de 375: siete fichas ocupaban **287 de los 351** disponibles.
+
+Ahora la mano **mide el ancho que de verdad tiene** y estira las fichas hasta llenarlo, con un
+tope de 58 px para que no se vean payasas. Siete fichas pasaron de 41 a **51 px de ancho** —un
+24% mas grandes— sin desbordar: comprobado que la pagina no scrollea de lado.
+
+Si con una sola fila las fichas quedarian por debajo de 34 px (no se acierta con el dedo), se
+parten en dos filas y se recalcula. Dos filas de fichas grandes se tocan mejor que una fila de
+fichas diminutas.
+
+### 3. "El pozo que salga en el medio, como un monton desordenado"
+
+Era una fila ordenada en el panel de abajo. Ahora es `PozoEnLaMesa`: el **monton** boca abajo,
+tirado en el medio de la mesa, y uno elige cual levanta.
+
+- **El desorden esta calculado.** Con `Math.random()` el monton se reacomodaria entero en cada
+  dibujado y se veria como un temblor. Cada ficha saca su sitio y su angulo de su numero de
+  orden, asi que siempre cae en el mismo lugar.
+- **Se reparten en espiral** (angulo aureo) y no a lo loco: a lo loco quedan grumos y huecos y
+  parece un charco, no una pila.
+- **Cuando no toca robar se va detras de la cadena** y no recibe toques. La cadena crece desde
+  el centro y tarde o temprano le pasa por encima; que gane la cadena, que es lo que hay que
+  mirar para jugar. Cuando toca robar, el monton sube al frente y se enciende.
+
+Probado corriendo: el monton se ve en la mesa, la cadena le pasa por encima sin taparlo del
+todo, y al tocar una ficha teniendo jugada el servidor contesta *"Tienes jugadas disponibles,
+no puedes robar"* — o sea que el cable llega hasta el fondo.
+
+`Pool.jsx` se borro: ya no lo usa nadie.

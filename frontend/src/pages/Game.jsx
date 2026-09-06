@@ -4,7 +4,7 @@ import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom'
 import Navbar from '../components/Navbar.jsx';
 import Board from '../components/game/Board.jsx';
 import MesaThemePicker, { useMesaTheme, ContextoFichas } from '../components/game/MesaTheme.jsx';
-import Pool from '../components/game/Pool.jsx';
+import PozoEnLaMesa from '../components/game/PozoEnLaMesa.jsx';
 import RoundBreakdown from '../components/game/RoundBreakdown.jsx';
 import { Marcador, Jugador, Mesa } from '../components/game/Hud.jsx';
 import Hand from '../components/game/Hand.jsx';
@@ -1084,6 +1084,18 @@ export default function Game() {
                   nombre={gameState.players?.find((p) => p.id === gameState.currentPlayerId)?.username}
                 />
 
+                {/* El pozo: el monton de fichas boca abajo, en el medio de la
+                    mesa. Se ve siempre que haya pozo; solo se puede tocar
+                    cuando toca robar. */}
+                {gameState.hasPool && (
+                  <PozoEnLaMesa
+                    cantidad={gameState.poolCount}
+                    activo={myTurn && gameState.canDraw}
+                    robando={isPlacing}
+                    onRobar={handleDraw}
+                  />
+                )}
+
                 {/* "Fulano se desconecto, tiene 60 segundos para volver". */}
                 <AvisoDeAusente ausentes={gameState.ausentes} />
 
@@ -1341,17 +1353,12 @@ export default function Game() {
                   </div>
                 )}
 
-                {gameState.hasPool && gameState.poolCount > 0 && (
-                  myTurn && gameState.canDraw ? (
-                    <div className="mt-2">
-                      <Pool
-                        cantidad={gameState.poolCount}
-                        activo
-                        robando={isPlacing}
-                        onRobar={handleDraw}
-                      />
-                    </div>
-                  ) : null
+                {/* El pozo ya no vive aca abajo: es el monton del medio de la
+                    mesa. Aca solo queda el aviso de que hay que robar. */}
+                {myTurn && gameState.canDraw && (
+                  <p className="mt-2 text-center text-[11px] italic leading-tight text-domino-accent">
+                    No podés jugar. Levantá una ficha del montón.
+                  </p>
                 )}
 
                 {myTurn && gameState.canPass && (

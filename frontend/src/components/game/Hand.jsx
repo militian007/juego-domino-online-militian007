@@ -1,6 +1,52 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useLayoutEffect } from 'react';
 import Tile from './Tile.jsx';
 import { useCarpetaDeFichas, VERSION_FICHAS } from './MesaTheme.jsx';
+
+/** El hueco entre fichas, en pixeles. Tiene que coincidir con el gap del CSS. */
+const HUECO = 3;
+
+/** Lo mas grande que se deja una ficha, aunque sobre sitio. Mas se ve payaso. */
+const MAXIMO = 58;
+
+/** Lo mas chica antes de preferir dos filas: por debajo no se acierta con el dedo. */
+const MINIMO = 34;
+
+/**
+ * Cuanto mide cada ficha de la mano, medido sobre la pantalla de verdad.
+ *
+ * Se prueba primero a meterlas todas en una fila. Si para eso hay que hacerlas
+ * mas chicas que el minimo, se parten en dos filas y se calcula de nuevo: dos
+ * filas de fichas grandes se tocan mejor que una fila de fichas diminutas.
+ */
+function useAnchoDeFicha(ref, cuantas) {
+  const [ancho, setAncho] = useState(0);
+
+  useLayoutEffect(() => {
+    const nodo = ref.current;
+    if (!nodo) return;
+
+    const medir = () => setAncho(nodo.clientWidth);
+    medir();
+
+    const observador = new ResizeObserver(medir);
+    observador.observe(nodo);
+    return () => observador.disconnect();
+  }, [ref]);
+
+  if (!ancho || !cuantas) return null;
+
+  // El padding horizontal del contenedor de las fichas (px-1 a cada lado).
+  const util = ancho - 8;
+  const paraFilas = (filas) => {
+    const porFila = Math.ceil(cuantas / filas);
+    return Math.floor((util - HUECO * (porFila - 1)) / porFila);
+  };
+
+  let medida = paraFilas(1);
+  if (medida < MINIMO) medida = paraFilas(2);
+
+  return Math.max(24, Math.min(MAXIMO, medida));
+}
 
 export default function Hand({
   tiles,
@@ -67,9 +113,13 @@ export default function Hand({
     };
   }, [draggedTile, onDragUpdate, onDragEnd]);
 
-  // Con la mano cargada las fichas se achican para que sigan entrando en pocas
-  // filas. En el telefono una sola fila larga obligaba a scrollear de costado.
-  const tamanoFicha = tiles.length > 10 ? 'xs' : tiles.length > 5 ? 'sm' : 'md';
+  // Las fichas se estiran hasta llenar el ancho que de verdad hay.
+  //
+  // Antes eran tres escalones fijos por cantidad de fichas, y dejaban aire sin
+  // usar: en un telefono de 375 pixeles, siete fichas ocupaban 287 de los 351
+  // disponibles. Los amigos de Jonathan pidieron fichas mas grandes y estaban
+  // ahi, sin pedirle nada a nadie.
+  const anchoFicha = useAnchoDeFicha(handRef, tiles.length);
 
   if (!tiles || tiles.length === 0) {
     return (
@@ -80,8 +130,8 @@ export default function Hand({
   }
 
   return (
-    <div className="w-full overflow-visible py-3">
-      <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-2 px-1 sm:gap-x-2">
+    <div ref={handRef} className="w-full overflow-visible py-3">
+      <div className="flex flex-wrap items-center justify-center gap-x-[3px] gap-y-2 px-1">
         {tiles.map((tile, i) => {
           const isValid = validIndices.includes(i);
           const isSelected = selectedIndex === i;
@@ -115,7 +165,7 @@ export default function Hand({
               <Tile
                 tile={tile}
                 orientation="vertical"
-                size={tamanoFicha}
+                ancho={anchoFicha}
                 selected={isSelected}
                 dim={canPlay && !isValid}
                 onClick={() => !draggedTile && isValid && onSelect && onSelect(i)}
