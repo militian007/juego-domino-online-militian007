@@ -32,6 +32,28 @@ import { ChevronRight, Lock, LogOut } from 'lucide-react';
  * cuales tiene ganados cada uno.
  */
 const BASE_DE_EMERGENCIA = ['😎', '😂', '🤣', '😆', '😭', '😡', '🤬', '🥱', '🤔', '😒', '😮'];
+
+/**
+ * El dibujo de un sticker del pase, con el emoji de respaldo.
+ *
+ * Los del pase son dibujos del Panita. Si a uno todavia no le hicieron el
+ * dibujo, o la imagen no carga, se ve el emoji y no un cuadro roto.
+ */
+function DibujoDeSticker({ sticker, emoji, alto = 'h-8' }) {
+  const [rota, setRota] = useState(false);
+  const cara = emoji ?? sticker?.emoji;
+
+  if (!sticker?.imagen || rota) return <span>{cara}</span>;
+
+  return (
+    <img
+      src={sticker.imagen}
+      alt={sticker.nombre ?? ''}
+      onError={() => setRota(true)}
+      className={`${alto} w-full object-contain`}
+    />
+  );
+}
 import IconoColor from '../components/IconoColor.jsx';
 import { salirPantallaCompleta } from '../utils/pantalla.js';
 import RelojDeTurno from '../components/game/RelojDeTurno.jsx';
@@ -1157,8 +1179,12 @@ export default function Game() {
                       style={estilo}
                       className={`absolute ${posClass} flex flex-col items-center justify-center animate-bounce z-40`}
                     >
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-domino-dark/95 border-2 border-domino-accent rounded-full flex items-center justify-center text-3xl sm:text-4xl shadow-xl shadow-amber-500/20">
-                        {val.emoji}
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-domino-dark/95 border-2 border-domino-accent rounded-full flex items-center justify-center text-3xl sm:text-4xl shadow-xl shadow-amber-500/20 overflow-hidden">
+                        <DibujoDeSticker
+                          sticker={stickers.premiados.find((s) => s.emoji === val.emoji)}
+                          emoji={val.emoji}
+                          alto="h-11 sm:h-14"
+                        />
                       </div>
                       <span className="text-[9px] sm:text-[10px] text-domino-accent font-semibold tracking-wider bg-black/70 px-2 py-0.5 rounded-full mt-1 border border-domino-accent/20 max-w-[80px] truncate">
                         {val.username}
@@ -1188,7 +1214,13 @@ export default function Game() {
                 {showReactionMenu && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowReactionMenu(false)} />
-                    <div className="absolute bottom-full left-1/2 z-50 mb-2 grid -translate-x-1/2 grid-cols-6 gap-2 rounded-2xl border-2 border-domino-accent/50 bg-domino-felt p-3 shadow-2xl">
+                    {/* El ancho es fijo y no lo marca el contenido. Con el ancho
+                        automatico el panel quedaba en 188 px, la casilla en 31, y
+                        el dibujo del Panita entraba a 18 px de alto: una mancha.
+                        Con 280 la casilla de los del pase queda en 88 y el dibujo
+                        se ve. */}
+                    <div className="absolute bottom-full left-1/2 z-50 mb-2 w-[280px] -translate-x-1/2 rounded-2xl border-2 border-domino-accent/50 bg-domino-felt p-3 shadow-2xl">
+                    <div className="grid grid-cols-6 gap-2">
                       {stickers.base.map((emoji) => (
                         <button
                           key={emoji}
@@ -1199,9 +1231,14 @@ export default function Game() {
                         </button>
                       ))}
 
-                      {/* Los del pase. El que todavia no se gano se ve igual,
-                          apagado y con candado: hay que ver lo que uno se esta
-                          perdiendo, si no el premio no motiva a nadie. */}
+                    </div>
+
+                    {/* Los del pase van en tres columnas y no en seis: son
+                        dibujos apaisados, y en una casilla de seis quedan
+                        diminutos. El que todavia no se gano se ve igual, apagado
+                        y con candado: hay que ver lo que uno se esta perdiendo,
+                        si no el premio no motiva a nadie. */}
+                    <div className="mt-2 grid grid-cols-3 gap-2 border-t border-domino-accent/20 pt-2">
                       {stickers.premiados.map((s) => (
                         <button
                           key={s.clave}
@@ -1214,7 +1251,7 @@ export default function Game() {
                               : 'cursor-not-allowed opacity-30 grayscale'
                           }`}
                         >
-                          {s.emoji}
+                          <DibujoDeSticker sticker={s} alto="h-12" />
                           {/* El candado va sobre un circulo oscuro: encima del
                               emoji apagado, a solas, no se distinguia. */}
                           {!s.mio && (
@@ -1224,6 +1261,7 @@ export default function Game() {
                           )}
                         </button>
                       ))}
+                    </div>
                     </div>
                   </>
                 )}

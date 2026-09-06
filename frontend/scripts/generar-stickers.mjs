@@ -39,6 +39,22 @@ const ALTO = 192;
 /** Los siete del pase, con el mismo id que usa el servidor en `sticker:<id>`. */
 const STICKERS = ['candela', 'corona', 'suerte', 'chivo', 'cerebro', 'respeto', 'diamante'];
 
+/**
+ * Cuanto del dibujo se queda: la franja de ARRIBA.
+ *
+ * Los dibujos vienen de cuerpo entero, y de cuerpo entero no sirven. Se probo:
+ * bajados a los 44 pixeles en que se ven en el menu de la mesa, la cara queda
+ * en una mancha oscura y los seis se parecen entre si. Quedandose con la franja
+ * de arriba, la cara ocupa el sticker y cada uno se distingue del otro.
+ *
+ * El numero sale de comparar 0,45 / 0,55 / 0,62 / 0,70 sobre los seis: con 0,45
+ * se corta la boca, con 0,70 la cara vuelve a achicarse. 0,58 deja la cara
+ * entera y todavia grande.
+ *
+ * El resto del dibujo no se pierde: el de cuerpo entero es el del banner.
+ */
+const FRANJA_DE_ARRIBA = 0.58;
+
 /** El ancho del banner ya listo. La imagen de origen es enorme y no hace falta. */
 const ANCHO_BANNER = 1200;
 
@@ -58,11 +74,18 @@ function guardar(destino, img) {
   return buf.length;
 }
 
-/** Recorta el magenta, deja solo el dibujo y lo baja al tamano en que se usa. */
-function prepararSticker(origen) {
+/** Recorta el magenta, se queda con la cara y lo baja al tamano en que se usa. */
+function prepararSticker(origen, soloLaCara = true) {
   const limpio = recortar(quitarElFondoPorColor(leer(origen)));
-  const ancho = Math.max(1, Math.round((limpio.ancho / limpio.alto) * ALTO));
-  return escalar(limpio, ancho, ALTO);
+
+  let util = limpio;
+  if (soloLaCara) {
+    const alto = Math.max(1, Math.round(limpio.alto * FRANJA_DE_ARRIBA));
+    util = recortar({ ancho: limpio.ancho, alto, px: limpio.px.slice(0, limpio.ancho * alto * 4) });
+  }
+
+  const ancho = Math.max(1, Math.round((util.ancho / util.alto) * ALTO));
+  return escalar(util, ancho, ALTO);
 }
 
 function main() {
@@ -77,7 +100,8 @@ function main() {
       continue;
     }
 
-    const img = prepararSticker(origen);
+    // La mascota se guarda entera: se usa grande, no en el menu de la mesa.
+    const img = prepararSticker(origen, id !== 'panita');
     const peso = guardar(path.join(SALIDA, `${id}.png`), img);
     console.log(`  ${id.padEnd(10)} ${img.ancho}x${img.alto}  ${(peso / 1024).toFixed(1)} KB`);
     hechos++;

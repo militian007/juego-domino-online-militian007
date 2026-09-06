@@ -5066,3 +5066,43 @@ cerca de la mitad del alto. El cuerpo entero se queda para el banner, que se ve 
 
 Es el mismo error de siempre: mirar el arte al tamaño en que lo devuelve el modelo y no al
 tamaño en que lo va a ver el jugador.
+
+## 115. Los stickers dibujados, y el recorte que los salvo (2026-09-05)
+
+Jonathan genero seis de los siete stickers y el arte quedo muy bueno. El problema no fue el
+dibujo: fue el **encuadre**.
+
+### El error, y como se vio
+
+Salieron **de cuerpo entero**, como el primer prompt pedia. Se bajaron a los 44 pixeles a los
+que se ven en el menu de la mesa y **los seis se parecian entre si**: una mancha oscura con
+dorado, sin cara y sin gesto. El sticker no sirve si no se distingue del de al lado.
+
+En vez de pedirle que los rehiciera, se recortan aqui: se guarda la **franja de arriba** del
+dibujo, con la cara y el objeto que lo identifica (la candela, el trebol, los engranajes).
+
+El numero no se puso a ojo. Se compararon 0,45 / 0,55 / 0,62 / 0,70 sobre los seis, mirandolos
+al tamaño real y despues agrandados: con 0,45 se corta la boca, con 0,70 la cara vuelve a
+achicarse. Quedo en **0,58**.
+
+### Y el menu tuvo que crecer
+
+Puestos los dibujos, el menu de gestos seguia sin funcionar. Medido en pantalla: el panel se
+armaba solo con el ancho de su contenido, quedaba en **188 px**, la casilla en **31**, y el
+dibujo entraba a **18 px de alto**. Ahora el panel tiene ancho fijo de 280, los once de
+siempre siguen en seis columnas y los del pase van en **tres**, que es lo que necesitan por
+ser apaisados. El dibujo termina viendose a 75x48.
+
+### Lo que falta y lo que se hereda
+
+- **Falta el sticker de El Chivo.** En el sexto dibujo el chivo se le mezclo al del cerebro:
+  salio con engranajes Y con cuernos y barbita. Ese quedo de Cerebro; el del Chivo hay que
+  pedirlo aparte.
+- **La corona se pego a todos.** Como cada sticker se pidio con "mismo estilo que la imagen
+  anterior", desde el tercero en adelante todos llevan corona, y desde el quinto tambien el
+  cuerno dorado. No molesta —a 48 px lo que distingue a cada uno es su objeto— pero si se
+  piden mas hay que agregar al prompt "sin corona y sin cuernos, solo lo que dice el SUJETO".
+
+El `emoji` no se tiro: sigue viajando en el mensaje del socket y es el respaldo. Si un dibujo
+no existe o no carga, se ve el emoji y no un cuadro roto. Por eso el del Chivo se ve hoy sin
+romper nada.

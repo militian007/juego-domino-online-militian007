@@ -73,6 +73,7 @@ const sticker = (clave, emoji, nombre) => ({
   tipo: 'desbloqueo',
   clave,
   emoji,
+  imagen: `/stickers/${clave.split(':')[1]}.png`,
   nombre: `Sticker ${emoji} ${nombre}`,
   corto: nombre
 });

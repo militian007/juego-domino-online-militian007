@@ -52,7 +52,17 @@ function MuestraDelPremio({ premio, ganado }) {
   }
 
   if (premio.emoji) {
-    return <span className={`text-3xl ${apagado}`}>{premio.emoji}</span>;
+    // El dibujo del Panita; si todavia no existe, el emoji.
+    return premio.imagen ? (
+      <img
+        src={premio.imagen}
+        alt=""
+        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        className={`h-10 w-auto ${apagado}`}
+      />
+    ) : (
+      <span className={`text-3xl ${apagado}`}>{premio.emoji}</span>
+    );
   }
 
   const pano = PANOS.find((p) => p.clave === premio.clave);

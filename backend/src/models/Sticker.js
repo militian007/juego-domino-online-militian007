@@ -29,14 +29,26 @@ export const BASE = ['😎', '😂', '🤣', '😆', '😭', '😡', '🤬', '�
  * cada uno esta en la escalera de `Pase.js`, no aqui: la escalera es la que
  * manda, esto es solo el catalogo.
  */
+/**
+ * `imagen` es el dibujo del Panita, que es lo que se ve de verdad. El `emoji`
+ * se queda de respaldo: viaja igual en el mensaje del socket, y si un dibujo
+ * todavia no existe la pantalla cae en el emoji sin romperse.
+ */
+const premiado = (id, emoji, nombre) => ({
+  clave: `sticker:${id}`,
+  emoji,
+  nombre,
+  imagen: `/stickers/${id}.png`
+});
+
 export const PREMIADOS = [
-  { clave: 'sticker:candela', emoji: '🔥', nombre: 'Candela' },
-  { clave: 'sticker:corona', emoji: '👑', nombre: 'Corona' },
-  { clave: 'sticker:suerte', emoji: '🍀', nombre: 'Suerte' },
-  { clave: 'sticker:chivo', emoji: '🐐', nombre: 'El Chivo' },
-  { clave: 'sticker:cerebro', emoji: '🧠', nombre: 'Cerebro' },
-  { clave: 'sticker:respeto', emoji: '🫡', nombre: 'Respeto' },
-  { clave: 'sticker:diamante', emoji: '💎', nombre: 'Diamante' }
+  premiado('candela', '🔥', 'Candela'),
+  premiado('corona', '👑', 'Corona'),
+  premiado('suerte', '🍀', 'Suerte'),
+  premiado('chivo', '🐐', 'El Chivo'),
+  premiado('cerebro', '🧠', 'Cerebro'),
+  premiado('respeto', '🫡', 'Respeto'),
+  premiado('diamante', '💎', 'Diamante')
 ];
 
 const POR_EMOJI = new Map(PREMIADOS.map((s) => [s.emoji, s]));
