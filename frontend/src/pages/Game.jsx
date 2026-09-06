@@ -20,6 +20,7 @@ import AdSidebar from '../components/AdSidebar.jsx';
 import TopBanner from '../components/TopBanner.jsx';
 import { connectSocket } from '../services/socket.js';
 import { paseApi } from '../services/api.js';
+import CargandoFichas from '../components/CargandoFichas.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { playTileSound, playDrawSound, estaSilenciado, alternarSilencio } from '../utils/soundEffects.js';
 import { ChevronRight, Lock, LogOut } from 'lucide-react';
@@ -749,9 +750,8 @@ export default function Game() {
           <div className="card p-6 sm:p-10 max-w-md w-full border border-domino-accent/30 bg-domino-felt shadow-2xl text-center relative overflow-hidden">
             <div className="absolute inset-0 bg-felt opacity-5 pointer-events-none" />
             <div className="relative z-10 flex flex-col items-center py-4">
-              <div className="relative flex items-center justify-center w-24 h-24 mb-6">
-                <div className="absolute inset-0 rounded-full border-2 border-domino-accent/20 border-t-domino-accent animate-spin" />
-                <div className="text-4xl animate-pulse">🎲</div>
+              <div className="mb-6">
+                <CargandoFichas />
               </div>
               <p className="text-domino-accent text-[10px] tracking-[0.4em] uppercase mb-2">
                 Buscando Mesa
@@ -911,7 +911,9 @@ export default function Game() {
         <Navbar />
         <div className="flex-1 flex items-center justify-center px-4">
           <div className="text-center max-w-md">
-            <div className="text-5xl mb-3 animate-bounce">🎲</div>
+            <div className="mb-4">
+              <CargandoFichas />
+            </div>
             <p className="text-slate-300 mb-2">Preparando la partida...</p>
             {error && (
               <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm mb-4">

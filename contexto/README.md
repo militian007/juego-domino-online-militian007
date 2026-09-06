@@ -5106,3 +5106,30 @@ ser apaisados. El dibujo termina viendose a 75x48.
 El `emoji` no se tiro: sigue viajando en el mensaje del socket y es el respaldo. Si un dibujo
 no existe o no carga, se ve el emoji y no un cuadro roto. Por eso el del Chivo se ve hoy sin
 romper nada.
+
+## 116. La espera ya no es un dado (2026-09-05)
+
+Jonathan: *"quiero cambiar lo del dado dando vueltas, que sea una animación de dominós"*.
+
+Habia un emoji de dado girando en dos pantallas: "Buscando oponente" y "Preparando la
+partida". Un dado no pinta nada en un juego de domino, y ademas era un emoji, que cada
+telefono dibuja a su manera.
+
+Ahora es una **fila de cinco fichas paradas que se cae en cadena y se vuelve a parar**. Son
+las **mismas imagenes de la mesa**, no un dibujo aparte: se ve el mismo material, cambia sola
+con la pinta que tenga elegida el jugador, y no hay arte nuevo que mantener.
+
+Dos detalles que solo aparecieron corriendo:
+
+- La ficha viene **acostada**. Pararla girandola con `translate` a ojo la dejaba cuadrada y
+  cortada. Se arreglo clavando el centro de la imagen en el centro de la casilla y girando
+  sobre su propio centro: 22 de ancho por 56 de alto, sin cuentas.
+- El giro de la **caida** va en el envoltorio y no en la imagen. Los dos giros en el mismo
+  elemento se pisan: manda el ultimo y el otro desaparece.
+
+Cae 72 grados y no 90: a 90 queda tumbada del todo y la fila se ve rota. Y con
+`prefers-reduced-motion` no se cae, solo respira.
+
+Los prompts para el resto de las visuales de los menus (el fondo, los iconos de modo y los de
+busqueda) quedaron en `contexto/prompts/visuales-de-los-menus.md`, cada uno completo y listo
+para copiar.
