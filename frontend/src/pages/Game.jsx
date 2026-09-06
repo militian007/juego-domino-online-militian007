@@ -1084,15 +1084,22 @@ export default function Game() {
                   nombre={gameState.players?.find((p) => p.id === gameState.currentPlayerId)?.username}
                 />
 
-                {/* El pozo: el monton de fichas boca abajo, en el medio de la
-                    mesa. Se ve siempre que haya pozo; solo se puede tocar
-                    cuando toca robar. */}
+                {/* El pozo. No vive en la mesa: entra desparramado y
+                    barajeandose SOLO cuando a este jugador le toca robar, y se
+                    va apenas puede jugar. La cuenta de cuantas quedan esta
+                    siempre arriba, en el marcador. */}
                 {gameState.hasPool && (
                   <PozoEnLaMesa
                     cantidad={gameState.poolCount}
                     activo={myTurn && gameState.canDraw}
                     robando={isPlacing}
                     onRobar={handleDraw}
+                    margenes={{
+                      arriba: MARGEN_MESA.arriba,
+                      derecha: seatRight ? MARGEN_MESA.lados : MARGEN_MESA.borde,
+                      abajo: altoMano + MARGEN_MESA.abajo,
+                      izquierda: seatLeft ? MARGEN_MESA.lados : MARGEN_MESA.borde
+                    }}
                   />
                 )}
 

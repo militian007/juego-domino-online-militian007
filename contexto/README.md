@@ -5222,20 +5222,62 @@ fichas diminutas.
 
 ### 3. "El pozo que salga en el medio, como un monton desordenado"
 
-Era una fila ordenada en el panel de abajo. Ahora es `PozoEnLaMesa`: el **monton** boca abajo,
-tirado en el medio de la mesa, y uno elige cual levanta.
-
-- **El desorden esta calculado.** Con `Math.random()` el monton se reacomodaria entero en cada
-  dibujado y se veria como un temblor. Cada ficha saca su sitio y su angulo de su numero de
-  orden, asi que siempre cae en el mismo lugar.
-- **Se reparten en espiral** (angulo aureo) y no a lo loco: a lo loco quedan grumos y huecos y
-  parece un charco, no una pila.
-- **Cuando no toca robar se va detras de la cadena** y no recibe toques. La cadena crece desde
-  el centro y tarde o temprano le pasa por encima; que gane la cadena, que es lo que hay que
-  mirar para jugar. Cuando toca robar, el monton sube al frente y se enciende.
-
-Probado corriendo: el monton se ve en la mesa, la cadena le pasa por encima sin taparlo del
-todo, y al tocar una ficha teniendo jugada el servidor contesta *"Tienes jugadas disponibles,
-no puedes robar"* — o sea que el cable llega hasta el fondo.
+La primera version fue un monton chiquito siempre visible en el medio de la mesa. **Estaba
+mal entendido.** Jonathan lo explico de nuevo y es otra cosa (ver §119).
 
 `Pool.jsx` se borro: ya no lo usa nadie.
+
+## 119. El pozo, como lo queria de verdad (2026-09-05)
+
+La primera version del pozo estaba mal entendida: un monton chiquito, siempre a la vista en el
+medio de la mesa. Jonathan lo volvio a explicar y **pidio expresamente que no se programara
+hasta confirmar que se habia entendido**. Se confirmo primero y despues se hizo.
+
+Lo que queria:
+
+1. La mesa se ve **normal**. Nada de pozo. Solo la cadena y la gente jugando.
+2. Le toca a alguien robar → las fichas del pozo **aparecen desparramadas por toda la mesa**,
+   boca abajo.
+3. **Se barajean**: se ven revolviendose, cambiando de sitio, con su ruido.
+4. Quedan quietas y la persona **agarra una**. Si todavia no puede jugar, agarra otra, y otra,
+   hasta que le salga.
+5. Apenas termina, **las fichas se quitan de la mesa** y se sigue jugando normal.
+6. Cuando a otro le toque robar, **vuelve a pasar lo mismo**.
+
+O sea: el pozo **entra y sale**, no vive en la mesa.
+
+### Dos decisiones que tomo el
+
+- **Lo ve solo quien roba.** El rival sigue viendo su mesa normal. Eso ademas ahorra tocar el
+  servidor: `canDraw` ya es de cada uno y de nadie mas.
+- **Con sonido.** Se agrego `playShuffleSound`, que no es un sonido nuevo inventado: es el
+  mismo clac de una ficha repetido muchas veces con el tono y el volumen movidos, que es
+  justo lo que se oye al revolver el pozo con las manos. Todos los golpes se programan de una
+  en el reloj del audio, asi que no dependen de que la pantalla vaya fluida. Respeta el boton
+  de silencio que ya existia.
+
+### Tres cosas que solo se vieron corriendo
+
+1. **Las fichas caian debajo de la mano.** Se reparten dentro del rectangulo util, con los
+   MISMOS margenes que recibe el tablero.
+2. **El velo cortaba con un escalon.** Cubria solo el rectangulo util y se veia una franja
+   clara pegada a la mano. Ahora el velo cubre la mesa entera y solo las fichas respetan el
+   margen.
+3. **El cartel le caia encima al nombre del rival.** Bajado a 96 px, que es donde termina la
+   placa del de enfrente, y metido en una pastilla oscura: sobre catorce fichas desparramadas
+   el texto suelto no se lee.
+
+### Por que el reparto no es al azar puro y el barajeo si
+
+- **El reparto** es una rejilla con temblor: una ficha por casilla, corrida un poco al azar
+  dentro de la suya. Tirandolas del todo al azar quedan pilas en un lado y huecos en el otro.
+- **Las posiciones no se recalculan** mientras uno esta agarrando. Si dependieran de la
+  cantidad, al levantar una se reacomodarian todas y uno perderia de vista la que iba a tocar.
+  Se guarda la lista de sitios y al levantar la ficha numero j se saca el sitio j; las demas se
+  quedan quietas y la cuenta sigue calzando con la del servidor.
+
+Probado corriendo: la mesa se ve limpia sin pozo, y forzando el estado de robar se comprobo
+que las fichas aparecen, **cambian de sitio cinco veces** antes de quedarse quietas (medido
+muestreando la posicion de una ficha), que ninguna cae fuera del rectangulo util, y que al
+tocar una teniendo jugada disponible el servidor contesta *"Tienes jugadas disponibles, no
+puedes robar"* — el cable llega hasta el fondo.

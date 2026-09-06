@@ -1,116 +1,188 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { playShuffleSound } from '../../utils/soundEffects.js';
 
 /**
- * El pozo, como un monton de fichas tiradas en el medio de la mesa.
+ * El pozo: entra a la mesa solo cuando toca robar, y se va cuando termina.
  *
- * Antes era una fila ordenada en el panel de abajo. Los amigos de Jonathan
- * pidieron que fuera lo que es en una mesa de verdad: **el monton**, boca
- * abajo, desordenado, y que uno elija cual levanta.
+ * Asi lo pidio Jonathan, con las palabras de sus amigos: la mesa se ve normal,
+ * y **solo cuando a uno le toca agarrar del pozo** las fichas aparecen
+ * desparramadas por toda la mesa, boca abajo. Se barajean —se ven
+ * revolviendose— y quedan quietas. La persona agarra una, y si todavia no
+ * puede jugar agarra otra, y otra, hasta que le salga. Apenas termina, las
+ * fichas se quitan de la mesa y se sigue jugando normal.
  *
- * ## El desorden esta calculado, no es al azar
+ * **Lo ve solo quien esta robando.** Decision de Jonathan. El rival sigue
+ * viendo su mesa normal, asi que esto no necesita nada del servidor: se dibuja
+ * con lo que el cliente ya sabe (`canDraw` es suyo y de nadie mas).
  *
- * Si las posiciones salieran de `Math.random()`, el monton se reacomodaria
- * entero en cada dibujado —cada vez que alguien juega, cada vez que llega el
- * estado— y se veria como un temblor. Aca cada ficha saca su sitio y su angulo
- * de su propio numero de orden, asi que siempre cae en el mismo lugar.
+ * ## Por que las posiciones se guardan en una lista y no se recalculan
  *
- * ## El azar ya paso
- *
- * El orden del pozo lo fijo la semilla al repartir y no vuelve a cambiar en
- * toda la mano. Elegir una ficha u otra no mejora ni empeora nada, pero la
- * decision es del jugador y no del servidor.
+ * Mientras uno esta agarrando, las fichas que quedan **no se pueden mover**: si
+ * se recalcularan por la cantidad, al levantar una se reacomodarian todas y uno
+ * perderia de vista la que estaba por tocar. Se guarda una lista de sitios y al
+ * levantar la ficha numero j se saca el sitio j; las demas se quedan donde
+ * estaban, y la cuenta sigue calzando con la del servidor (la ficha visible
+ * numero j es la ficha j del pozo, antes y despues).
  */
-
-/** El ancho de cada ficha del monton. */
-const ANCHO = 24;
-
-/** Cuanto se abre el monton, en pixeles. Es una elipse, mas ancha que alta. */
-const ABIERTO_X = 70;
-const ABIERTO_Y = 30;
 
 /**
- * Un numero estable entre 0 y 1 a partir de dos enteros.
+ * Cuanto se mete el reparto dentro del rectangulo util, en fracciones.
  *
- * Congruencial simple: alcanza de sobra para desparramar veintiocho fichas y
- * garantiza que la ficha numero cinco caiga siempre en el mismo sitio.
+ * El rectangulo util lo marcan los MISMOS margenes que recibe el tablero: por
+ * fuera de ahi estan la mano, las placas de los jugadores y la baranda. Sin
+ * esto, media docena de fichas caian tapadas por la mano.
  */
-const azarFijo = (i, sal) => {
-  let h = (i + 1) * 374761393 + sal * 668265263;
-  h = (h ^ (h >>> 13)) >>> 0;
-  h = Math.imul(h, 1274126177) >>> 0;
-  return (h >>> 8) / 16777216;
+const AREA = { x1: 0.04, x2: 0.96, y1: 0.05, y2: 0.95 };
+
+/** Cuanto dura cada revoltijo y cuantos hay antes de que queden quietas. */
+const MS_REVOLTIJO = 190;
+const REVOLTIJOS = 4;
+
+/** El ancho de la ficha boca abajo, en pixeles. */
+const ANCHO = 30;
+
+/**
+ * Reparte `cuantas` fichas por toda el area, sin grumos.
+ *
+ * Rejilla con temblor: se divide el area en casillas, una ficha por casilla, y
+ * cada una se corre un poco al azar dentro de la suya. Tirandolas del todo al
+ * azar quedan pilas en un lado y huecos en el otro; asi cubren parejo y aun asi
+ * se ven desordenadas.
+ */
+const repartir = (cuantas) => {
+  const columnas = Math.max(1, Math.ceil(Math.sqrt(cuantas * 1.6)));
+  const filas = Math.max(1, Math.ceil(cuantas / columnas));
+
+  const casillas = [];
+  for (let f = 0; f < filas; f++) {
+    for (let c = 0; c < columnas; c++) casillas.push([c, f]);
+  }
+  // Se barajan las casillas para que las que sobran no queden todas al final.
+  for (let i = casillas.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [casillas[i], casillas[j]] = [casillas[j], casillas[i]];
+  }
+
+  const anchoCasilla = (AREA.x2 - AREA.x1) / columnas;
+  const altoCasilla = (AREA.y2 - AREA.y1) / filas;
+
+  return casillas.slice(0, cuantas).map(([c, f]) => ({
+    x: AREA.x1 + (c + 0.15 + Math.random() * 0.7) * anchoCasilla,
+    y: AREA.y1 + (f + 0.15 + Math.random() * 0.7) * altoCasilla,
+    giro: Math.random() * 360
+  }));
 };
 
-/**
- * Donde cae cada ficha.
- *
- * Se reparten en espiral y no a lo loco: a lo loco quedan huecos y grumos, y
- * el monton parece un charco. En espiral el monton crece parejo desde el centro
- * y siempre se ve como una pila.
- */
-const armarMonton = (cuantas) =>
-  Array.from({ length: cuantas }, (_, i) => {
-    const vuelta = Math.sqrt((i + 0.5) / Math.max(1, cuantas));
-    const angulo = i * 2.399963; // el angulo aureo: reparte sin alinear nada
-    return {
-      x: Math.cos(angulo) * vuelta * ABIERTO_X + (azarFijo(i, 1) - 0.5) * 12,
-      y: Math.sin(angulo) * vuelta * ABIERTO_Y + (azarFijo(i, 2) - 0.5) * 10,
-      giro: (azarFijo(i, 3) - 0.5) * 150
-    };
-  });
+export default function PozoEnLaMesa({
+  cantidad = 0,
+  activo = false,
+  robando = false,
+  onRobar,
+  /** Los mismos margenes que recibe el tablero, en pixeles. */
+  margenes = { arriba: 0, derecha: 0, abajo: 0, izquierda: 0 }
+}) {
+  const [sitios, setSitios] = useState([]);
+  const [barajeando, setBarajeando] = useState(false);
+  const relojes = useRef([]);
 
-export default function PozoEnLaMesa({ cantidad = 0, activo = false, robando = false, onRobar }) {
-  const monton = useMemo(() => armarMonton(cantidad), [cantidad]);
+  const limpiarRelojes = () => {
+    relojes.current.forEach(clearTimeout);
+    relojes.current = [];
+  };
 
-  if (!cantidad) return null;
+  // Entra: aparecen, se revuelven unas cuantas veces y quedan quietas.
+  useEffect(() => {
+    limpiarRelojes();
+
+    if (!activo || !cantidad) {
+      setSitios([]);
+      setBarajeando(false);
+      return;
+    }
+
+    setBarajeando(true);
+    setSitios(repartir(cantidad));
+    playShuffleSound(REVOLTIJOS * MS_REVOLTIJO);
+
+    for (let i = 1; i <= REVOLTIJOS; i++) {
+      relojes.current.push(
+        setTimeout(() => {
+          setSitios(repartir(cantidad));
+          if (i === REVOLTIJOS) setBarajeando(false);
+        }, i * MS_REVOLTIJO)
+      );
+    }
+
+    return limpiarRelojes;
+    // A proposito NO depende de `cantidad`: si dependiera, cada ficha que uno
+    // levanta volveria a barajear todo el pozo y no se podria elegir nada.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activo]);
+
+  const levantar = (j) => {
+    if (barajeando || robando) return;
+    onRobar?.(j);
+    // La ficha se va de la mesa y las demas se quedan donde estaban.
+    setSitios((antes) => antes.filter((_, i) => i !== j));
+  };
+
+  const visibles = useMemo(() => sitios.slice(0, cantidad), [sitios, cantidad]);
+
+  if (!activo || !cantidad || !visibles.length) return null;
 
   return (
-    // Dos cosas cuando NO toca robar: no recibe toques —taparia los imanes
-    // donde se sueltan las fichas— y se va DETRAS de la cadena. La cadena crece
-    // desde el centro y tarde o temprano le pasa por encima al monton; que gane
-    // la cadena, que es lo que hay que mirar para jugar. Cuando toca robar el
-    // monton sube al frente, que ahi es lo unico que importa.
-    <div
-      className={`absolute left-1/2 top-[62%] -translate-x-1/2 -translate-y-1/2 ${
-        activo ? 'z-20' : 'pointer-events-none z-0 opacity-90'
-      }`}
-    >
-      <div className="relative" style={{ width: ABIERTO_X * 2 + ANCHO, height: ABIERTO_Y * 2 + ANCHO * 2 }}>
-        {monton.map((f, i) => (
-          <button
-            key={i}
-            type="button"
-            disabled={!activo || robando}
-            title={activo ? 'Levantar esta ficha' : `Quedan ${cantidad} en el pozo`}
-            onClick={() => activo && !robando && onRobar?.(i)}
-            style={{
-              width: ANCHO,
-              height: ANCHO * 1.8,
-              left: '50%',
-              top: '50%',
-              transform: `translate(-50%, -50%) translate(${f.x}px, ${f.y}px) rotate(${f.giro}deg)`,
-              zIndex: i
-            }}
-            className={`pool-tile absolute rounded-[3px] transition-[filter,box-shadow] ${
-              activo && !robando
-                ? 'cursor-pointer hover:z-30 hover:brightness-150 hover:ring-2 hover:ring-domino-accent'
-                : 'cursor-default'
-            }`}
-          >
-            <span className="sr-only">Ficha {i + 1} del pozo</span>
-          </button>
-        ))}
+    <div className="absolute inset-0 z-30">
+      {/* El velo cubre la mesa ENTERA y no solo el rectangulo util: cortandolo
+          en el margen se veia el escalon, una franja clara pegada a la mano. */}
+      <div className="absolute inset-0 bg-black/45" />
+
+      {/* Las fichas si van dentro del rectangulo util —los mismos margenes que
+          recibe el tablero—, o caen tapadas por la mano y por las placas. */}
+      <div
+        className="absolute"
+        style={{
+          top: margenes.arriba,
+          right: margenes.derecha,
+          bottom: margenes.abajo,
+          left: margenes.izquierda
+        }}
+      >
+      {visibles.map((s, j) => (
+        <button
+          key={j}
+          type="button"
+          disabled={barajeando || robando}
+          title={barajeando ? 'Barajando...' : 'Levantar esta ficha'}
+          onClick={() => levantar(j)}
+          style={{
+            width: ANCHO,
+            height: Math.round(ANCHO * 1.85),
+            left: `${s.x * 100}%`,
+            top: `${s.y * 100}%`,
+            transform: `translate(-50%, -50%) rotate(${s.giro}deg)`,
+            transition: `left ${MS_REVOLTIJO}ms ease-in-out, top ${MS_REVOLTIJO}ms ease-in-out, transform ${MS_REVOLTIJO}ms ease-in-out`
+          }}
+          className={`pool-tile absolute rounded-[3px] ${
+            barajeando
+              ? 'cursor-default'
+              : 'cursor-pointer hover:z-10 hover:brightness-150 hover:ring-2 hover:ring-domino-accent'
+          }`}
+        >
+          <span className="sr-only">Ficha {j + 1} del pozo</span>
+        </button>
+      ))}
+
       </div>
 
-      {/* El cartel va debajo del monton y no encima: encima tapa las fichas de
-          arriba, que son justo las que uno quiere tocar. */}
-      <p
-        className={`pointer-events-none mt-1 text-center text-[10px] font-semibold uppercase tracking-[0.2em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] ${
-          activo ? 'text-domino-accent' : 'text-domino-cream/45'
-        }`}
-      >
-        {activo ? 'Levantá una' : `Pozo ${cantidad}`}
-      </p>
+      {/* El cartel va arriba, PERO por debajo de la placa del rival: pegado al
+          borde le caia encima al nombre —medido: la placa termina cerca de los
+          ochenta pixeles—. Y en pastilla, que sobre las fichas
+          desparramadas el texto suelto no se lee. */}
+      <div className="pointer-events-none absolute inset-x-0 top-24 flex justify-center">
+        <span className="rounded-full border border-domino-accent/40 bg-black/75 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-domino-accent">
+          {barajeando ? 'Barajando' : `Levantá una · quedan ${cantidad}`}
+        </span>
+      </div>
     </div>
   );
 }

@@ -122,3 +122,53 @@ export function playDrawSound() {
   osc.start(now);
   osc.stop(now + 0.17);
 }
+
+/**
+ * El revoltijo del pozo: muchas fichas chocando entre si.
+ *
+ * No es un sonido nuevo inventado: es el mismo clac de una ficha, repetido
+ * muchas veces con el tono y el volumen movidos, que es exactamente lo que se
+ * oye cuando uno revuelve el pozo con las manos. Se programan todos los golpes
+ * de una en el reloj del audio, asi que no dependen de que la pantalla vaya
+ * fluida.
+ *
+ * @param duracionMs cuanto dura el revoltijo. Se reparten los golpes ahi dentro.
+ */
+export function playShuffleSound(duracionMs = 800) {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const inicio = ctx.currentTime;
+  const segundos = duracionMs / 1000;
+  // Un golpe cada 35 milisegundos mas o menos: suena a monton, no a goteo.
+  const golpes = Math.max(6, Math.round(segundos / 0.035));
+
+  for (let i = 0; i < golpes; i++) {
+    // El momento se corre al azar dentro de su hueco para que no suene a metronomo.
+    const cuando = inicio + (i / golpes) * segundos + Math.random() * 0.02;
+    const agudo = 700 + Math.random() * 900;
+    const fuerza = 0.05 + Math.random() * 0.06;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filtro = ctx.createBiquadFilter();
+
+    filtro.type = 'bandpass';
+    filtro.frequency.value = agudo;
+    filtro.Q.value = 1.4;
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(agudo * 1.6, cuando);
+    osc.frequency.exponentialRampToValueAtTime(160, cuando + 0.035);
+
+    gain.gain.setValueAtTime(fuerza, cuando);
+    gain.gain.exponentialRampToValueAtTime(0.001, cuando + 0.045);
+
+    osc.connect(filtro);
+    filtro.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(cuando);
+    osc.stop(cuando + 0.05);
+  }
+}
