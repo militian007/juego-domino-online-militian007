@@ -12,6 +12,10 @@
   parece a ningún color del dibujo.
 - **Se tiene que leer a 40 píxeles.** En el menú de la mesa se ven chiquitos. Silueta simple
   y mucho contraste, o se convierten en una mancha.
+- **De busto, no de cuerpo entero.** Medido con el dibujo del Panita: bajado a 30 y 40
+  pixeles de alto, de cuerpo entero la cara desaparece y queda una mancha oscura con
+  dorado. Recortado al busto, los ojos se le siguen viendo a 30. El cuerpo entero queda
+  para el banner, que se ve grande.
 
 ## Dónde se guardan
 
@@ -48,8 +52,11 @@ LEGIBILIDAD:
 Silueta simple y clara: tiene que entenderse cuando se ve a 40 píxeles de alto. Pocos
 elementos, mucho contraste, nada de detalles finos ni tramas.
 
-ENCUADRE:
-Personaje centrado, ocupando el 85% del cuadro, sin tocar los bordes.
+ENCUADRE (importante):
+PLANO DE BUSTO: solo la cabeza y el torso, cortado a la altura de la cintura. La CARA
+tiene que ocupar cerca de la mitad del alto de la imagen. Nada de cuerpo entero: en el
+juego el sticker se ve muy chiquito y de cuerpo entero la cara no se distingue.
+El busto va centrado y ocupa el 85% del cuadro, sin tocar los bordes.
 
 FORMATO (obligatorio):
 - Imagen cuadrada 1024x1024.
@@ -118,5 +125,7 @@ FORMATO:
   85% del cuadro y no toca ningún borde."*
 - **Se ve recargado** → *"Simplificá: menos elementos, silueta más limpia, tiene que leerse
   a 40 píxeles."*
+- **Salió de cuerpo entero** → *"Plano de busto: solo cabeza y torso, cortado en la cintura,
+  con la cara ocupando la mitad del alto."*
 - **Cada uno salió con un estilo distinto** → los estás mandando juntos. Uno por vez, con el
   bloque fijo completo cada vez.

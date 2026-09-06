@@ -208,15 +208,21 @@ export default function Pase() {
       </header>
 
       <div className="mx-auto max-w-2xl px-4 pb-14 sm:px-8">
-        {/* ---- en que nivel voy ---- */}
-        <div className="mt-5 flex items-center gap-3">
-          <img src="/iconos/pase.png" alt="" className="h-11 w-11 drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]" />
-          <div>
-            <h1 className="text-3xl font-black tracking-tight text-domino-accent sm:text-4xl">
-              PASE DE BATALLA
+        {/* ---- la cabecera ----
+             El banner ya viene con la mitad izquierda oscura y vacia, hecho a
+             proposito para que el titulo se lea encima sin taparle el dibujo. */}
+        <div className="relative mt-5 overflow-hidden rounded-2xl border border-domino-accent/25">
+          <img
+            src="/pase-banner.jpg"
+            alt=""
+            className="block h-32 w-full object-cover object-right sm:h-40"
+          />
+          <div className="absolute inset-y-0 left-0 flex w-3/5 flex-col justify-center bg-gradient-to-r from-domino-dark/85 to-transparent px-4">
+            <h1 className="text-2xl font-black leading-none tracking-tight text-domino-accent sm:text-4xl">
+              PASE DE<br />BATALLA
             </h1>
-            <p className="text-sm text-domino-cream/55">
-              Quedan {dias(datos.temporada.terminaEn)} días de temporada
+            <p className="mt-1.5 text-xs text-domino-cream/65 sm:text-sm">
+              Quedan {dias(datos.temporada.terminaEn)} días
             </p>
           </div>
         </div>

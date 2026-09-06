@@ -98,6 +98,34 @@ export function quitarElFondo(img, { difMax = 16, minBrillo = null, porTodaLaIma
   return img;
 }
 
+/**
+ * Borra el fondo de un COLOR concreto, no del gris.
+ *
+ * Hace falta para los stickers: llevan un contorno crema, y el crema es casi
+ * neutro, asi que `quitarElFondo` se lo comeria. Por eso se le pide a Gemini un
+ * fondo magenta puro, que no aparece en ningun sitio del dibujo, y se borra por
+ * color.
+ *
+ * `tolerancia` es cuanto se puede alejar un pixel del color y seguir contando
+ * como fondo. Medido sobre el primer sticker: el fondo queda a menos de 60 y lo
+ * mas cercano del dibujo esta a mas de 120, asi que 90 corta por el medio del
+ * hueco y no toca nada.
+ */
+export function quitarElFondoPorColor(img, { color = [255, 0, 255], tolerancia = 90 } = {}) {
+  const [cr, cg, cb] = color;
+  const { px } = img;
+
+  for (let i = 0; i < px.length; i += 4) {
+    const d = Math.max(
+      Math.abs(px[i] - cr),
+      Math.abs(px[i + 1] - cg),
+      Math.abs(px[i + 2] - cb)
+    );
+    if (d <= tolerancia) px[i + 3] = 0;
+  }
+  return img;
+}
+
 /** Deja solo lo que se ve, sin el aire de alrededor. */
 export function recortar(img) {
   const { ancho, alto, px } = img;

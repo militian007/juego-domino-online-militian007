@@ -5028,3 +5028,41 @@ que mirar todos los dias; los torneos y la tabla son de rato en rato.
 `npm run test:pase` — 71 pruebas. Las nuevas comprueban que todo sticker de la escalera existe
 en el catalogo y al reves (que ninguno se quede sin nivel que lo reparta), y que no se puede
 tirar uno que no se gano.
+
+## 114. El Panita, el banner, y el recorte por color (2026-09-05)
+
+Llego el primer arte de Gemini: **El Panita** —la ficha de dominó con cara, ónix negro,
+marco dorado, guantes blancos y corbatín verde— y el **banner** de la pantalla del pase.
+
+### El recorte ahora tambien sabe borrar por color
+
+`quitarElFondo` busca gris neutro. Con los stickers no sirve: llevan un **contorno crema**, y
+el crema es casi neutro, asi que el recorte se lo comeria. Por eso el prompt pide fondo
+**magenta puro**, que no aparece en ninguna parte del dibujo, y se agrego
+`quitarElFondoPorColor`.
+
+El umbral no se puso a ojo. Medido sobre el Panita: el fondo queda a distancia **menor de 60**
+del magenta puro, lo mas cercano del dibujo esta a **mas de 120**, y en la franja del medio
+(60-110) cae el **0,09%** de los pixeles. El corte en **90** parte ese hueco por la mitad.
+
+`npm run stickers` deja los siete stickers y la mascota en `public/stickers/` a 192 px de
+alto, y el banner en `public/pase-banner.jpg`.
+
+### El banner sale en JPEG, no en PNG
+
+Es una escena con degradados y un foco: en PNG pesaba **913 KB**, que en un telefono con mala
+señal es una cabecera que tarda en aparecer. En JPEG al 82 pesa **77 KB** y no se nota la
+diferencia. Los stickers si van en PNG, porque necesitan fondo transparente.
+
+### Los stickers van de BUSTO, y eso se midio
+
+El primer dibujo salio de cuerpo entero, y se veia precioso... a 96 pixeles. Se bajo al tamaño
+en el que se ve **de verdad** —30 y 40 pixeles de alto en el menu de la mesa— y la cara
+desaparece: queda una mancha oscura con dorado. Recortado al busto, los ojos se le siguen
+viendo a 30.
+
+Asi que el prompt cambio: los siete stickers van en **plano de busto**, con la cara ocupando
+cerca de la mitad del alto. El cuerpo entero se queda para el banner, que se ve grande.
+
+Es el mismo error de siempre: mirar el arte al tamaño en que lo devuelve el modelo y no al
+tamaño en que lo va a ver el jugador.
