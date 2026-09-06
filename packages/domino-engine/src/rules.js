@@ -34,7 +34,23 @@ export const BASE_RULES = {
   // decide la partida por un descuido.
   //
   // En las partidas contra la maquina no se usa reloj.
-  timeoutRule: 'auto-play'
+  timeoutRule: 'auto-play',
+
+  /**
+   * Destrancar: si el dibujo le veta una jugada legal a alguien, se vuelve a
+   * trazar la cadena para hacerle sitio.
+   *
+   * La regla del domino dice que la ficha va en un extremo o en el otro, y ya.
+   * Pero la cadena se dibuja sobre una rejilla y se enrolla sobre si misma:
+   * medido sobre 91.821 situaciones de partidas jugadas de verdad, en el 0,88%
+   * hay una ficha que pega y no tiene donde caer. En una mesa real los
+   * jugadores corren las fichas; aca las corre el motor.
+   *
+   * No cambia la secuencia de fichas ni las puntas ni las manos: solo el camino
+   * sobre la rejilla. Va en `config` y no fijo en el codigo porque la plataforma
+   * tiene que poder apagarlo (regla 7 del motor).
+   */
+  destrancar: true
 };
 
 export const FORMATS = {

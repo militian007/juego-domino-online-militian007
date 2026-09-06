@@ -11,6 +11,7 @@ export {
   spectatorView,
   currentSeat,
   isTerminal,
+  necesitaDestrancar,
   serialize,
   deserialize
 } from './engine.js';
@@ -26,7 +27,11 @@ export {
   anchorOffsetFor,
   rectOf,
   boardEnds,
-  straightestPlacement
+  straightestPlacement,
+  reconstruirCadena,
+  jugadasSinSitio,
+  destrancarCadena,
+  FORMAS_DE_CADENA
 } from './layout.js';
 
 export {

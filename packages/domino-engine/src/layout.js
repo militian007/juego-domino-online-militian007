@@ -629,3 +629,164 @@ export function explainPlacements(board, tile, side, layout = DEFAULT_LAYOUT) {
   const validas = placementsFor(board, tile, side, layout, diagnostico);
   return { validas, candidatas: diagnostico };
 }
+
+// ---------------------------------------------------------------------------
+// Destrancar: volver a trazar la cadena para que las puntas tengan sitio
+// ---------------------------------------------------------------------------
+
+/**
+ * Las formas en que se puede volver a trazar la cadena.
+ *
+ * La SECUENCIA de fichas nunca cambia —el 6|3 sigue pegado al 3|4— y lo unico
+ * que se recalcula es el camino sobre la rejilla. Cada forma es una manera de
+ * preferir una casilla u otra cuando hay varias donde poner la siguiente ficha,
+ * que es exactamente lo que hace que la cadena termine pareciendo un caracol,
+ * una serpiente o un cuadrado.
+ *
+ * Se prueban en orden. Con la primera que deje las puntas con sitio, alcanza.
+ */
+export const FORMAS_DE_CADENA = ['compacta', 'recta', 'ancha', 'giro'];
+
+const largoDe = (p) => (p.orientation === 'horizontal' ? 2 : 1);
+const altoDe = (p) => (p.orientation === 'horizontal' ? 1 : 2);
+
+/** La caja que ocuparia la cadena si se agregara `p`. */
+const cajaCon = (board, p) => {
+  let x1 = minX(p), x2 = maxX(p) + 1, y1 = minY(p), y2 = maxY(p) + 1;
+  for (const t of board) {
+    x1 = Math.min(x1, minX(t)); x2 = Math.max(x2, maxX(t) + 1);
+    y1 = Math.min(y1, minY(t)); y2 = Math.max(y2, maxY(t) + 1);
+  }
+  return { ancho: x2 - x1, alto: y2 - y1 };
+};
+
+/** Hacia donde apunta una ficha, como vector unitario de su eje largo. */
+const direccionDe = (p) => ({
+  x: Math.sign(p.x2 - p.x),
+  y: Math.sign(p.y2 - p.y)
+});
+
+/**
+ * Cuanto "vale" poner la ficha en esa casilla, segun la forma buscada.
+ * Menos es mejor: se ordena de menor a mayor.
+ */
+const puntuar = (forma, p, board, layout) => {
+  const caja = cajaCon(board, p);
+  const centro = layout.grid / 2;
+  const cx = (minX(p) + maxX(p) + 1) / 2;
+  const cy = (minY(p) + maxY(p) + 1) / 2;
+  const alCentro = Math.abs(cx - centro) + Math.abs(cy - centro);
+
+  if (forma === 'compacta') {
+    // Cuadrada y apretada: crece lo menos posible por el lado que ya es mayor.
+    return Math.max(caja.ancho, caja.alto) * 100 + (caja.ancho + caja.alto) * 10 + alCentro;
+  }
+
+  if (forma === 'ancha') {
+    // Se estira a lo ancho, que es donde la pantalla del telefono tiene menos
+    // sitio... pero a lo alto sobra: una cadena ancha y baja entra mejor.
+    return caja.alto * 100 + caja.ancho * 10 + alCentro;
+  }
+
+  const anterior = board[board.length - 1];
+  if (!anterior) return alCentro;
+
+  const dAnt = direccionDe(anterior);
+  const dNue = direccionDe(p);
+  const sigueDerecho = dAnt.x === dNue.x && dAnt.y === dNue.y;
+
+  // 'recta' prefiere seguir derecho; 'giro' prefiere doblar. Una hace serpientes
+  // largas, la otra caracoles.
+  const quiereDerecho = forma === 'recta';
+  return (sigueDerecho === quiereDerecho ? 0 : 1000) + Math.max(caja.ancho, caja.alto) * 10 + alCentro;
+};
+
+/**
+ * Vuelve a trazar la cadena entera con una forma distinta.
+ *
+ * Busca en profundidad con vuelta atras: prueba las casillas en el orden que
+ * marca la forma y, si se mete en un callejon, deshace y prueba la siguiente.
+ * El presupuesto de pasos evita que una cadena larga se quede pensando.
+ *
+ * @param secuencia las fichas ya orientadas, en orden, tal como estan en `board`
+ * @returns un `board` nuevo, o null si con esa forma no se llega al final
+ */
+export function reconstruirCadena(secuencia, layout = DEFAULT_LAYOUT, forma = 'compacta', presupuesto = 20000) {
+  if (!secuencia || secuencia.length === 0) return [];
+
+  const board = [];
+  let quedan = presupuesto;
+
+  const paso = (i) => {
+    if (i >= secuencia.length) return true;
+    if (--quedan < 0) return false;
+
+    const candidatas =
+      i === 0
+        ? placementsFor([], secuencia[0], 'first', layout)
+        : placementsFor(board, secuencia[i], 'right', layout);
+
+    const ordenadas = candidatas
+      .map((p) => ({ p, valor: puntuar(forma, p, board, layout) }))
+      .sort((a, b) => a.valor - b.valor)
+      .map((c) => c.p);
+
+    for (const p of ordenadas) {
+      board.push(p);
+      if (paso(i + 1)) return true;
+      board.pop();
+    }
+    return false;
+  };
+
+  return paso(0) ? board : null;
+}
+
+/**
+ * Las fichas de una mano que pegan con una punta pero no tienen donde caer.
+ *
+ * Es la definicion exacta de "trancado por el dibujo": la regla del domino dice
+ * que la jugada es legal y el tablero dice que no hay sitio. En una mesa de
+ * verdad esto no existe, porque los jugadores corren las fichas.
+ */
+export function jugadasSinSitio(board, mano, ends, layout = DEFAULT_LAYOUT) {
+  if (!board || board.length === 0) return [];
+
+  const sinSitio = [];
+  mano.forEach((tile, tileIndex) => {
+    for (const side of ['left', 'right']) {
+      const end = side === 'left' ? ends.left : ends.right;
+      if (tile[0] !== end && tile[1] !== end) continue;
+      if (placementsFor(board, tile, side, layout).length === 0) {
+        sinSitio.push({ tileIndex, tile, side });
+      }
+    }
+  });
+  return sinSitio;
+}
+
+/**
+ * Busca un trazado nuevo donde las fichas que estaban sin sitio si entren.
+ *
+ * Prueba las formas una por una y se queda con la PRIMERA que destranca todas.
+ * Si ninguna lo logra, devuelve null y el tablero se queda como esta: nunca se
+ * cambia el dibujo para dejarlo igual de trancado.
+ */
+export function destrancarCadena(board, mano, ends, layout = DEFAULT_LAYOUT) {
+  const atascadas = jugadasSinSitio(board, mano, ends, layout);
+  if (atascadas.length === 0) return null;
+
+  const secuencia = board.map((t) => t.tile);
+
+  for (const forma of FORMAS_DE_CADENA) {
+    const nuevo = reconstruirCadena(secuencia, layout, forma);
+    if (!nuevo || nuevo.length !== board.length) continue;
+
+    const siguenAtascadas = atascadas.filter(
+      ({ tile, side }) => placementsFor(nuevo, tile, side, layout).length === 0
+    );
+    if (siguenAtascadas.length === 0) return { board: nuevo, forma };
+  }
+
+  return null;
+}

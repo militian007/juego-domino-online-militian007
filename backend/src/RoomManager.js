@@ -460,6 +460,15 @@ export class RoomManager {
   broadcastState(room) {
     if (!this.io || !room.game) return;
 
+    // Antes de mostrar nada: si al que le toca le falta SITIO y no jugada, se
+    // vuelve a trazar la cadena. Va aqui porque es el unico punto por el que
+    // pasan todos los cambios de estado, igual que el registro del final.
+    const forma = room.game.destrancarSiHaceFalta();
+    if (forma) {
+      room.destrancadoEn = Date.now();
+      console.log(`🔀 ${room.code}: mesa destrancada (${forma})`);
+    }
+
     this._ajustarReloj(room);
 
     room.players.forEach((p) => {

@@ -53,7 +53,36 @@ const LADO_CELDAS = GRID_SIZE + 2 * MARGEN_CELDAS;
 // Aun asi las fichas quedan mas grandes que antes, porque la rejilla paso de
 // 20x20 a 16x16: en un telefono de 375, de 29x15 a 35x17.
 // Ver contexto/README.md secciones 82 y 88.
-const ZOOM_FICHAS = 1.10;
+//
+// ---------------------------------------------------------------------------
+// SUBIDO A 1,30 (§120). Los amigos de Jonathan pidieron las fichas de la mesa
+// mas grandes.
+//
+// La medicion vieja estaba equivocada, y por eso el numero era tan conservador:
+// comparaba el ancho Y el alto de la cadena contra la MISMA ventana cuadrada.
+// En un telefono la ventana no es cuadrada ni de lejos. La escala la manda el
+// lado corto —el ancho—, asi que a lo alto se ven 26 celdas donde a lo ancho se
+// ven 18. Una cadena alta entraba perfecto y la medicion decia que no.
+//
+// Y falta lo otro: la camara se corre sola. Mientras la cadena QUEPA, la
+// encuadra. Y cuando ya no cabe, garantiza que se vean las DOS PUNTAS, que es
+// donde se juega; lo que queda fuera es un tramo del medio, que no estorba.
+//
+// Medido bien, sobre 55.021 posiciones de partidas jugadas de verdad
+// (`packages/domino-engine/tools/medir-zoom.mjs`), en un telefono de 375:
+//
+//   zoom | ficha  | la cadena entera no entra | no entran ni las PUNTAS
+//   -----|--------|---------------------------|------------------------
+//   1,10 | 35x17  |                    0,000% |                 0,000%
+//   1,20 | 38x19  |                    0,165% |                 0,029%
+//   1,30 | 41x20  |                    1,263% |                 0,327%
+//   1,40 | 44x22  |                    4,611% |                 1,252%
+//   1,50 | 47x24  |                   10,180% |                 3,271%
+//
+// 1,30 deja las fichas un 17% mas grandes y las dos puntas a la vista en el
+// 99,67% de las jugadas. Para el 1,3% en que un tramo del medio se sale, estan
+// los dos dedos: la lupa ya existe.
+const ZOOM_FICHAS = 1.30;
 
 // Cuanto puede correrse la camara, en celdas, respecto del centro de la rejilla.
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
@@ -461,7 +490,11 @@ export default function Board({
           return (
             <div
               key={`tile-${i}`}
-              className={`absolute ${isNewest ? 'tile-placed z-10' : ''}`}
+              // La transicion de sitio es para el DESTRANQUE: cuando la cadena
+              // se vuelve a trazar, las fichas se deslizan a su lugar nuevo en
+              // vez de saltar. En el juego normal no se nota, porque una ficha
+              // ya puesta nunca se mueve.
+              className={`absolute ficha-de-mesa ${isNewest ? 'tile-placed z-10' : ''}`}
               style={{ left: `${left}px`, top: `${top}px` }}
             >
               <Tile

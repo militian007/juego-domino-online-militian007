@@ -5281,3 +5281,98 @@ que las fichas aparecen, **cambian de sitio cinco veces** antes de quedarse quie
 muestreando la posicion de una ficha), que ninguna cae fuera del rectangulo util, y que al
 tocar una teniendo jugada disponible el servidor contesta *"Tienes jugadas disponibles, no
 puedes robar"* — el cable llega hasta el fondo.
+
+## 120. Fichas de mesa mas grandes, y el destranque (2026-09-06)
+
+Jonathan volvio con dos cosas de sus amigos.
+
+### 1. Las fichas de la mesa, un 17% mas grandes
+
+Estaban en 35x17 pixeles en un telefono de 375, contra 51x102 las de la mano. El tope lo ponia
+`ZOOM_FICHAS = 1,10`, y ese numero salia de una **medicion equivocada**.
+
+`scratch/medir-zoom.mjs` comparaba el ancho Y el alto de la cadena contra la MISMA ventana
+cuadrada. En un telefono la ventana no es cuadrada: la escala la manda el lado corto —el
+ancho—, asi que a lo alto se ven 26 celdas donde a lo ancho se ven 18. Una cadena alta entraba
+perfecto y la medicion decia que no. Y faltaba lo otro: **la camara se corre sola**, y cuando
+la cadena ya no entra garantiza que se vean las DOS PUNTAS, que es donde se juega.
+
+Medido de nuevo y bien (`packages/domino-engine/tools/medir-zoom.mjs`), sobre **55.021 posiciones** de
+partidas jugadas de verdad, en un telefono de 375:
+
+| zoom | ficha | la cadena entera no entra | no entran ni las PUNTAS |
+| --- | --- | --- | --- |
+| 1,10 | 35x17 | 0,000% | 0,000% |
+| 1,20 | 38x19 | 0,165% | 0,029% |
+| **1,30** | **41x20** | **1,263%** | **0,327%** |
+| 1,40 | 44x22 | 4,611% | 1,252% |
+| 1,50 | 47x24 | 10,180% | 3,271% |
+
+Queda en **1,30**: fichas un 17% mas grandes y las dos puntas a la vista en el **99,67%** de
+las jugadas. Para el 1,3% en que se sale un tramo del medio estan los dos dedos, que la lupa
+ya existe. Comprobado corriendo: la ficha de la mesa mide 41x20.
+
+### 2. El destranque: el dibujo ya no le veta una jugada legal a nadie
+
+Idea de Jonathan: *"cuando el camino se cierra y el jugador tenga pieza... destrabe la figura y
+la ponga en otra forma"*. Es **exactamente** lo que la §33 habia concluido hace tiempo y nunca
+se hizo: *"el lugar fisico donde cae la ficha no es una decision de domino... hoy el dibujo
+tiene poder de veto sobre una jugada legal, y eso esta al reves"*.
+
+#### Cuanto pasaba, separado en dos casos
+
+Medido sobre **68.758 turnos** de partidas jugadas de verdad
+(`packages/domino-engine/tools/medir-destranque.mjs`):
+
+| | cuanto | |
+| --- | --- | --- |
+| veto PARCIAL: podia jugar otra ficha, pero una suya no entraba | 0,586% de los turnos | |
+| **veto TOTAL: no podia jugar NADA teniendo ficha que pega** | **0,266% de los turnos** | **4,73% de las rondas** |
+
+El grave es el segundo: una de cada 21 rondas mandaba a alguien a robar o a pasar cuando la
+regla del domino decia que tenia jugada. **De 183 casos, el trazado nuevo destranco los 183.**
+
+#### Que hace
+
+La SECUENCIA de fichas no se toca: el 6|3 sigue pegado al 3|4, en el mismo orden. Lo unico que
+se recalcula es el CAMINO sobre la rejilla, probando cuatro formas (`compacta`, `recta`,
+`ancha`, `giro`) hasta que una deje sitio. Las puntas siguen valiendo lo mismo, las manos no se
+tocan, el turno tampoco. Es puramente geometrico: **no le da ventaja a nadie**, solo devuelve
+el espacio que el dibujo habia quitado. La `compacta` resuelve el 93% de los casos.
+
+Si ninguna forma destranca, no se cambia nada: nunca se mueve el tablero para dejarlo igual de
+trancado.
+
+#### Donde vive cada parte
+
+- **El motor** trae la accion `RELAYOUT`, `necesitaDestrancar()` y, en `layout.js`,
+  `reconstruirCadena` / `jugadasSinSitio` / `destrancarCadena`. Va detras de
+  `config.destrancar` para que PrivoyTruco pueda apagarlo (regla 7 del motor).
+- **Quien decide CUANDO** es el servidor, en `broadcastState`, que es el unico punto por el que
+  pasan todos los cambios de estado. El motor es un reducer puro y no actua por su cuenta,
+  igual que con el reloj del turno.
+- **Sin boton**, decision de Jonathan. El jugador no tiene por que enterarse de que existe un
+  problema de dibujo: para el, el juego simplemente nunca lo frena injustamente.
+
+#### El caso parcial se deja como esta, a proposito
+
+Cuando el jugador **si puede jugar otra ficha**, no se toca el tablero. Rearmar la mesa cada
+vez que una ficha cualquiera no entra la haria saltar el 0,59% de los turnos sin necesidad, y
+el jugador tiene jugada igual. Se arregla el caso que cambia el resultado de la ronda, no el
+que solo molesta.
+
+#### Pruebas
+
+- `packages/domino-engine`: 75 (14 nuevas). La posicion de prueba **se reconstruye jugando**
+  con semilla fija, no se pega a mano: un estado pegado se queda viejo en cuanto cambia una
+  regla y deja de probar nada. Comprueban que la secuencia, las puntas, las manos, el turno y
+  el marcador no se tocan; que el trazado nuevo cae dentro de la rejilla, sin fichas
+  superpuestas y con cada ficha pegada a la anterior; que el estado sigue siendo serializable;
+  y que la partida se sigue jugando despues.
+- `npm run test:destranque` (backend): juega **60 partidas enteras por el RoomManager**, 14.312
+  turnos. Comprueba la invariante que de verdad importa: **nadie se queda sin jugar teniendo
+  una ficha que pega**. Cero casos. El servidor destranco solo 27 veces.
+
+La animacion es una transicion de `left`/`top` en las fichas de la mesa: cuando la cadena se
+vuelve a trazar, se deslizan a su sitio nuevo en vez de saltar. En el juego normal no hace
+nada, porque una ficha ya puesta no se mueve. Con `prefers-reduced-motion` no anima.

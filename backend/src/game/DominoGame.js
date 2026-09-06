@@ -8,6 +8,7 @@ import {
   straightestPlacement,
   boardEnds,
   handPips,
+  necesitaDestrancar,
   PHASE,
   ACTION
 } from '@privoytruco/domino-engine';
@@ -341,6 +342,36 @@ export class DominoGame {
     const r = this._dispatch(playerId, { type: ACTION.PASS });
     if (!r.ok) return r;
     return { ok: true, blocked: this.state.lastRound?.reason === 'blocked' };
+  }
+
+  /**
+   * Destranca la mesa si al que le toca le falta SITIO, no jugada.
+   *
+   * La regla del domino dice que la ficha va en un extremo o en el otro. Pero la
+   * cadena se dibuja sobre una rejilla y se enrolla sobre si misma, y a veces la
+   * unica jugada que alguien tiene se queda sin casilla donde caer. Medido sobre
+   * 68.758 turnos de partidas jugadas de verdad: pasa en el 0,27% de los turnos,
+   * pero toca **el 4,7% de las rondas** — una de cada veintiuna. De 183 casos, el
+   * trazado nuevo destranco los 183.
+   *
+   * Se hace SOLO, sin boton, decision de Jonathan. El jugador no tiene por que
+   * saber que existe un problema de dibujo: para el, el juego simplemente nunca
+   * lo frena injustamente.
+   *
+   * Quien decide CUANDO es esta capa y no el motor: el motor es un reducer puro
+   * y no actua por su cuenta, igual que con el reloj del turno.
+   *
+   * @returns la forma con la que quedo, o null si no hizo falta
+   */
+  destrancarSiHaceFalta() {
+    if (this.state.phase !== PHASE.PLAYING) return null;
+    if (!necesitaDestrancar(this.state, this.state.turn)) return null;
+
+    const r = applyAction(this.state, { type: ACTION.RELAYOUT, seat: this.state.turn });
+    if (!r.ok) return null;
+
+    this.state = r.state;
+    return r.events.find((e) => e.kind === 'RELAYOUT')?.forma ?? 'compacta';
   }
 
   startNextRound() {
