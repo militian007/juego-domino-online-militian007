@@ -5520,3 +5520,102 @@ esta donde tiene que estar.
 
 Paso 2: que el juego hable (consejos, celebracion de fin de ronda, la mano del rival boca
 abajo). Paso 3: modos de reglas (Tranca, Con pozo, Cinco). Paso 4: decisiones de Jonathan.
+
+---
+
+## 123. Que el juego hable (2026-09-10)
+
+Segundo paso del plan de [analisis-domino-legends.md](analisis-domino-legends.md). Jonathan
+vio el paso 1 y dijo *"ok se ve decente sigamos con el paso 2"*. El paso 2 son tres cosas, y
+las tres apuntan a lo mismo: que el juego **diga** lo que esta pasando en vez de dejarte
+adivinar.
+
+### 1. Consejos que salen solos
+
+`frontend/src/components/game/ConsejoDeMesa.jsx`. Una pastilla que aparece sobre la mano y se
+va sola. Seis consejos, todos sacados de un cambio REAL del estado que manda el servidor:
+
+| cuando | que dice |
+| --- | --- |
+| empieza la ronda 1 | Sale el que tenga el doble más alto |
+| empieza otra ronda | Sale quien ganó la ronda pasada |
+| baja el pozo y no es tu turno | Fulano no puede jugar y está levantando |
+| el pozo llega a cero | Se acabó el montón: el que no puede, pasa |
+| te queda una ficha | ¡Te queda una ficha! |
+| a otro le queda una | A Fulano le queda una ficha |
+
+**Cada uno sale UNA vez por ronda.** Un cartel que vuelve cada dos jugadas deja de leerse a
+los treinta segundos y pasa a estorbar, que es lo contrario de lo que se busca.
+
+**La cola va en estado, no en un `setInterval` mirando un ref.** La primera version encolaba
+en un ref y un reloj de 150 ms lo vaciaba. Medido en el navegador: cuando la pestaña no se
+esta dibujando, los relojes se frenan a ~1 s y el consejo salia tarde o no salia. Con estado,
+mostrar el siguiente es consecuencia de que se fue el anterior, no de un reloj.
+
+### 2. El fin de ronda, en dos tiempos
+
+`frontend/src/components/game/CelebracionDeRonda.jsx`.
+
+Primero el **grito sobre la mesa** (1,8 s): el cartel grande, y si ganaste, rayos de sol
+girando detras y 36 papelitos cayendo. Recien cuando se va, entra el panel con las cuentas.
+Si salieran juntos, el panel taparia la jugada que acaba de cerrar la ronda, que es justo lo
+que uno quiere mirar.
+
+Lo que dice el cartel sale de `tituloDeRonda()`, con el motivo y tu equipo:
+
+| motivo | ganaste | perdiste |
+| --- | --- | --- |
+| domino | **¡Dominó!** | Se quedó sin fichas |
+| trancado | ¡Tranca ganada! | Tranca perdida |
+| abandono | Ronda ganada | Ronda perdida |
+
+En un **abandono no hay grito**: nadie gano nada, se fue alguien.
+
+Despues, en el panel:
+
+- **El puntaje sube en vez de saltar** (`useNumeroQueSube`). `+22 puntos` apareciendo de golpe
+  es un dato; subiendo de a poco es lo que te hace mirarlo. Se apoya en `requestAnimationFrame`,
+  con un `setTimeout` de respaldo que lo deja en su valor final si el navegador no esta
+  dibujando: nunca se queda a mitad.
+- **Los pips del perdedor vuelan hasta el total** (`PuntosQueVuelan.jsx`). Lo que viaja es una
+  COPIA; el numero del desglose se queda donde esta, porque sirve para comprobar la cuenta a
+  mano. Las dos puntas se encuentran por atributos en el HTML —`[data-pips-volando]` y
+  `[data-total-puntos]`— y no encadenando refs entre dos componentes que no se conocen.
+
+Nada de esto es un dibujo: los rayos son un `conic-gradient`, el confeti son rectangulos y el
+cartel es tipografia. Son EFECTOS, no ilustraciones (regla 1.1).
+
+### 3. Las fichas del rival, boca abajo
+
+`frontend/src/components/game/ManoBocaAbajo.jsx`. Antes su asiento decia "5 fichas". Un numero
+es informacion; un abanico de fichas es la mesa. Cuando el rival juega, el abanico se achica
+solo y se ve.
+
+El dorso **no es un dibujo nuevo**: es el mismo `.pool-tile` con el que ya se dibujan las
+fichas del pozo, para que el reverso sea UNO en todo el juego.
+
+### Comprobado corriendo
+
+Jugado en localhost, telefono de 375, contra la maquina:
+
+- El consejo de salida sale con el texto correcto, encima de la mano.
+- Siete dorsos en el asiento del rival con la mano llena.
+- Tres de los cinco cierres, vistos de verdad: **"¡Dominó!" con 36 papelitos y los rayos**,
+  "Se quedó sin fichas" y "Tranca perdida". "¡Tranca ganada!" y "¡Empate!" salen de la misma
+  funcion pura y no se forzaron.
+- El contador llega al total (+19 y +12 en dos rondas distintas).
+- El pip que vuela: una copia de "12 pips" viajando 112 px a la izquierda y 78 hacia arriba,
+  hasta un total que dice "+12 puntos". Los numeros coinciden.
+
+### Un error del camino
+
+`useNumeroQueSube` quedo escrito **debajo de los cinco `return` tempranos** de `Game`
+(buscando partida, sala de espera, sin estado...). Un hook detras de un `return` rompe React:
+*"Rendered more hooks than during the previous render"*, pantalla en blanco al entrar a la
+mesa. Es el **mismo error** que en la §122. Ahora va arriba de todos los `return`, con el
+porque escrito al lado.
+
+### Lo que queda del plan
+
+Paso 3: modos de reglas (Tranca, Con pozo, Cinco), que es trabajo del motor.
+Paso 4: las decisiones de Jonathan (Hint/Spy, monedas y tienda, ligas).

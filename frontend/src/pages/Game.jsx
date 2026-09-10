@@ -9,6 +9,14 @@ import RoundBreakdown from '../components/game/RoundBreakdown.jsx';
 import { Marcador, Jugador, Mesa } from '../components/game/Hud.jsx';
 import Hand from '../components/game/Hand.jsx';
 import OpponentHand from '../components/game/OpponentHand.jsx';
+import ManoBocaAbajo from '../components/game/ManoBocaAbajo.jsx';
+import ConsejoDeMesa, { useConsejos } from '../components/game/ConsejoDeMesa.jsx';
+import PuntosQueVuelan from '../components/game/PuntosQueVuelan.jsx';
+import CelebracionDeRonda, {
+  MS_GRITO,
+  tituloDeRonda,
+  useNumeroQueSube
+} from '../components/game/CelebracionDeRonda.jsx';
 import MesaIcono from '../components/MesaIcono.jsx';
 import { Seccion, Fila } from '../components/SelectorModos.jsx';
 import PlayerInfo from '../components/game/PlayerInfo.jsx';
@@ -154,9 +162,16 @@ function PlacaAsiento({ jugador, fichas, enTurno, esCompanero, className = '' })
       >
         {jugador.username}
       </span>
-      <span className="text-[9px] leading-tight text-domino-cream/60">
-        {fichas ?? 0} {esCompanero ? '· compa' : 'fichas'}
-      </span>
+      {/* Las fichas del rival, boca abajo. El numero se queda al lado: el
+          abanico se corta en siete y a partir de ahi solo el numero dice
+          cuantas son de verdad. */}
+      <div className="flex items-end justify-center gap-1">
+        <ManoBocaAbajo cantidad={fichas ?? 0} />
+        <span className="text-[9px] leading-none text-domino-cream/60">{fichas ?? 0}</span>
+      </div>
+      {esCompanero && (
+        <span className="text-[9px] leading-tight text-sky-200/70">compa</span>
+      )}
     </div>
   );
 }
@@ -598,6 +613,49 @@ export default function Game() {
     ? gameState.currentPlayerId === myPlayerId
     : false;
   const manoFirma = (gameState?.myHand || []).map((t) => `${t[0]}${t[1]}`).join(',');
+
+  // Los consejos que salen solos durante la partida (§123).
+  const consejo = useConsejos(gameState, { myTurn, miId: myPlayerId });
+
+  // ---------------------------------------------------------------------
+  // EL CIERRE DE LA RONDA, EN DOS TIEMPOS (§123)
+  //
+  // Primero el grito sobre la mesa —"¡Dominó!", rayos y confeti—, y recien
+  // cuando se va, el panel con las cuentas. Si salieran juntos, el panel taparia
+  // la jugada que acaba de cerrar la ronda, que es lo que uno quiere mirar.
+  //
+  // En un abandono no hay grito: nadie gano nada, se fue alguien.
+  const [gritando, setGritando] = useState(false);
+  const rondaGritada = useRef(null);
+
+  useEffect(() => {
+    if (gameState?.status !== 'round-end') {
+      setGritando(false);
+      return;
+    }
+    if (gameState.endReason === 'forfeit') return;
+
+    const cual = `${gameState.round}-${gameState.endReason}`;
+    if (rondaGritada.current === cual) return;
+    rondaGritada.current = cual;
+
+    setGritando(true);
+    const id = setTimeout(() => setGritando(false), MS_GRITO);
+    return () => clearTimeout(id);
+  }, [gameState?.status, gameState?.round, gameState?.endReason]);
+
+  // El puntaje de la ronda, contando hacia arriba en vez de saltar. Va aca
+  // arriba y no al lado del panel: `useNumeroQueSube` es un hook, y mas abajo
+  // ya hay cinco `return` tempranos (buscando partida, sala de espera, sin
+  // estado...). Un hook detras de un return rompe React.
+  // El panel de fin de ronda, para medir dentro de el de donde a donde vuelan
+  // los pips.
+  const panelDeRonda = useRef(null);
+
+  const puntosQueSuben = useNumeroQueSube(
+    gameState?.roundPoints ?? 0,
+    gameState?.status === 'round-end' && !gritando
+  );
 
   // La mano se apoya sobre el paño. Se mide para reservarle sitio a la cadena.
   const manoRef = useRef(null);
@@ -1063,6 +1121,14 @@ export default function Game() {
   const miEquipo = miJugador?.team ?? 1;
   const equipoRival = miEquipo === 1 ? 2 : 1;
 
+  // Como cerro la ronda, en palabras.
+  const cierreDeRonda = tituloDeRonda({
+    motivo: gameState.endReason,
+    equipoGanador: gameState.winningTeam,
+    miEquipo
+  });
+
+
   // La pantalla de juego no es una pagina con un tablero adentro: es la mesa.
   // Sin barra de navegacion, sin banner y sin scroll, para que lo que se ve
   // grande sea lo que importa.
@@ -1188,6 +1254,11 @@ export default function Game() {
                     }}
                   />
                 )}
+
+                {/* Los consejos que salen solos. Van pegados al borde de
+                    abajo de la mesa, justo encima de la mano: arriba ya viven
+                    la placa del de enfrente, el cartel del pozo y los avisos. */}
+                <ConsejoDeMesa consejo={consejo} style={{ bottom: altoMano + 10 }} />
 
                 {/* "Fulano se desconecto, tiene 60 segundos para volver". */}
                 <AvisoDeAusente ausentes={gameState.ausentes} />
@@ -1564,9 +1635,25 @@ export default function Game() {
           </div>
         </div>
 
-        {gameState.status === 'round-end' && (
+        {/* El grito. Va sobre la mesa, antes del panel. */}
+        {gameState.status === 'round-end' && gameState.endReason !== 'forfeit' && (
+          <CelebracionDeRonda
+            activa={gritando}
+            titulo={cierreDeRonda.texto}
+            gane={cierreDeRonda.gane}
+            puntos={cierreDeRonda.gane ? gameState.roundPoints : 0}
+          />
+        )}
+
+        {gameState.status === 'round-end' && !gritando && (
           <div className="fixed inset-0 z-40 bg-black/70 flex items-center justify-center p-4">
-            <div className="card p-6 sm:p-8 max-w-md w-full text-center max-h-[90vh] overflow-y-auto">
+            <div
+              ref={panelDeRonda}
+              className="card relative p-6 sm:p-8 max-w-md w-full text-center max-h-[90vh] overflow-y-auto"
+            >
+              {/* Los pips del perdedor, viajando hasta el total. */}
+              <PuntosQueVuelan contenedor={panelDeRonda} activo={gameState.endReason !== 'forfeit'} />
+
               <h2 className="text-2xl sm:text-3xl font-bold mb-2">
                 {gameState.winningTeam
                   ? `¡Ganó el equipo ${gameState.winningTeam}!`
@@ -1585,8 +1672,13 @@ export default function Game() {
                   haria parecer que algo fallo. */}
               {gameState.endReason !== 'forfeit' && (
                 <>
-                  <p className="text-3xl font-black text-domino-accent mb-4">
-                    +{gameState.roundPoints} puntos
+                  {/* Sube en vez de saltar: es lo que hace que se mire, y le
+                      da tiempo a los pips a llegar volando. */}
+                  <p
+                    data-total-puntos=""
+                    className="text-3xl font-black tabular-nums text-domino-accent mb-4"
+                  >
+                    +{puntosQueSuben} puntos
                   </p>
 
                   <RoundBreakdown

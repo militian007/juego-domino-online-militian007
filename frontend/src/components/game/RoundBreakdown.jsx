@@ -29,7 +29,13 @@ export default function RoundBreakdown({ manos, equipoGanador, motivo, puntos })
                   {m.username}
                   {ganador && ' · ganó'}
                 </span>
-                <span className={ganador ? 'text-slate-500' : 'font-bold text-domino-accent'}>
+                {/* Los pips del que PERDIO son los que suman, y son los que
+                    salen volando hasta el total (§123). El marcador lo lee
+                    `PuntosQueVuelan` por este atributo. */}
+                <span
+                  data-pips-volando={ganador ? undefined : ''}
+                  className={ganador ? 'text-slate-500' : 'font-bold text-domino-accent'}
+                >
                   {m.pips} pips
                 </span>
               </div>

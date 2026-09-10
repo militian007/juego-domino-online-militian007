@@ -186,6 +186,13 @@ colocación, **vuelve a medir esto** antes y después.
 - **La ficha viaja de la mano a su casilla** (§122), y la del rival entra desde arriba. La que vuela
   se dibuja **dentro de la cámara**, no encima: así aterriza exacto aunque la cámara se esté moviendo
   en ese mismo momento. Medido: 0 px de diferencia con la casilla real.
+- **El juego habla** (§123): consejos que salen solos sobre la mano (uno por ronda, nunca repetido),
+  las fichas del rival boca abajo en su asiento, y el cierre de ronda en DOS tiempos — primero el
+  grito sobre la mesa ("¡Dominó!", rayos y confeti) y recién después el panel con las cuentas, con
+  el puntaje subiendo y los pips del perdedor volando hasta el total.
+- **Ojo con los hooks detrás de un `return`.** `Game` tiene CINCO `return` tempranos y `Board` uno.
+  Un `useState`/`useEffect` escrito debajo de ellos rompe React con *"Rendered more hooks than during
+  the previous render"* y deja la mesa en blanco. Pasó dos veces (§122 y §123).
 - **El marcador va fuera de la mesa**, arriba. La mesa es rectangular y los jugadores se sientan en
   sus bordes: compañero arriba, rivales a los costados. `Board` recibe `margenes` por los cuatro
   lados: ese es el rectángulo donde vive la cadena, y no se sale de ahí (§75).
