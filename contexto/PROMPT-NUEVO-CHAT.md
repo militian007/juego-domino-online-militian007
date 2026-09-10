@@ -190,6 +190,11 @@ colocación, **vuelve a medir esto** antes y después.
   las fichas del rival boca abajo en su asiento, y el cierre de ronda en DOS tiempos — primero el
   grito sobre la mesa ("¡Dominó!", rayos y confeti) y recién después el panel con las cuentas, con
   el puntaje subiendo y los pips del perdedor volando hasta el total.
+- **El sonido de la ficha está MEDIDO** (§124), no hecho a oído: nueve modos resonantes que dan
+  13/18/56/12% de energía por banda, contra el 13/18/57/12% medido sobre 98 golpes del video de
+  Domino Legends. Si lo tocás, medilo igual — hay un `OfflineAudioContext` para eso, que es la
+  razón de que `armarClac()` reciba el contexto en vez de usar el suyo. **El audio de ellos no se
+  usa nunca: es su grabación.**
 - **Ojo con los hooks detrás de un `return`.** `Game` tiene CINCO `return` tempranos y `Board` uno.
   Un `useState`/`useEffect` escrito debajo de ellos rompe React con *"Rendered more hooks than during
   the previous render"* y deja la mesa en blanco. Pasó dos veces (§122 y §123).

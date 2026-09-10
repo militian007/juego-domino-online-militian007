@@ -5619,3 +5619,80 @@ porque escrito al lado.
 
 Paso 3: modos de reglas (Tranca, Con pozo, Cinco), que es trabajo del motor.
 Paso 4: las decisiones de Jonathan (Hint/Spy, monedas y tienda, ligas).
+
+---
+
+## 124. El clac de la ficha, medido (2026-09-10)
+
+Jonathan, viendo el video de Domino Legends: *"puede usar el audio de las fichas de ese juego
+se escucha mas natural"*.
+
+**El audio de ellos no se usa.** Es su grabacion. Lo que si se puede es medir POR QUE suena
+natural y hacer uno propio que de los mismos numeros. Eso es esta seccion.
+
+### Que estaba mal
+
+El clac viejo eran dos osciladores: un triangulo de 950 Hz cayendo a 120 y un seno de 2400
+cayendo a 800. Es el equivalente sonoro de dibujar un icono a mano, y la regla 1.1 lo prohibe
+para lo visual por la misma razon por la que aca se oia mal.
+
+### La medicion
+
+Se saco el audio del video con `ffmpeg`, se buscaron los arranques secos (un marco de 5 ms
+mucho mas fuerte que los 40 ms anteriores) y se quedaron los que se apagan rapido y tienen la
+energia arriba: **98 golpes**. De cada uno: cuanto tarda en caer 20 dB, donde esta el centro
+del espectro, y como se reparte la energia por bandas.
+
+| | el viejo | **ellos** | el nuevo |
+| --- | --- | --- | --- |
+| se apaga (-20 dB) en | 30 ms | **50 ms** | 45 ms |
+| centro espectral | 1581 Hz | **4359 Hz** | 3944 Hz |
+| planitud espectral | 0,085 | **0,023** | 0,011 |
+| energia < 500 Hz | 10% | **13%** | 13% |
+| energia 500-2000 Hz | **73%** | **18%** | 18% |
+| energia 2-8 kHz | 14% | **57%** | 56% |
+| energia > 8 kHz | 3% | **12%** | 12% |
+
+Ahi esta todo. El viejo ponia el **73% de la energia entre 500 y 2000 Hz**, que es la banda
+del *bip*. El clac de dos fichas duras vive en 2-8 kHz, y ahi ellos tienen el 57%.
+
+### Lo que la planitud enseño
+
+La planitud espectral de ellos es **0,023**: casi nada. Eso quiere decir que su golpe esta
+hecho de **picos definidos, no de ruido**. Una ficha dura no hace "shhk", hace "clac": suena
+el cuerpo con sus modos y se apaga.
+
+El primer intento fue justamente un golpe de ruido filtrado. Daba planitud **0,329** —
+catorce veces mas ruidoso que el de ellos— y sonaba a soplido. Por eso el que quedo es un
+**modelo de modos**: nueve senos en las frecuencias del cuerpo, cada uno con su peso y su
+tiempo de apagado, mas dos milisegundos de ruido por arriba de 3 kHz para que tenga filo.
+
+### Y nunca suena igual dos veces
+
+Cada golpe mueve el tono un ±8% y el volumen un ±15%. Medido sobre ocho jugadas seguidas, el
+centro va de **3675 a 4014 Hz**: no hay dos iguales. Dos fichas de verdad nunca chocan igual,
+y una muestra repetida identica se nota a la tercera jugada.
+
+### El revoltijo del pozo usa el mismo clac
+
+Con cuatro modos en vez de nueve. Son veintitantos golpes seguidos: con el modelo entero
+serian mas de doscientos nodos de audio a la vez, y en un telefono viejo eso se oye como un
+tironeo.
+
+**Los cuatro estan elegidos uno por banda, no son los cuatro primeros.** Recortando por orden
+quedaban los cuatro agudos y el monton sonaba a cascabeles: medido, **99% de la energia arriba
+de 2 kHz y nada abajo**. Con uno por banda queda 21 / 17 / 61 / 0.
+
+### Comprobado corriendo
+
+Los numeros de la columna "el nuevo" **no son los del prototipo**: salen de renderizar
+`armarClac()` —la funcion que va en el juego— en un `OfflineAudioContext` del navegador y
+medirla ahi. Por eso la funcion recibe el contexto y el momento en vez de usar los suyos: sin
+eso no habria forma de medir lo que de verdad suena.
+
+Jugado ademas en la mesa, con fichas y con el pozo: cero errores.
+
+### Archivos
+
+- `frontend/src/utils/soundEffects.js` — `MODOS`, `armarClac()`, `playTileSound()`,
+  `playShuffleSound()`.
