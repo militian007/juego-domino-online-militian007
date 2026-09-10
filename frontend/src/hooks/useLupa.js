@@ -29,7 +29,7 @@ import { useEffect, useRef, useState } from 'react';
  *
  * @param {object} ref el paño donde se escuchan los dedos (el que ya existe)
  * @param {number} maximo cuanto se deja acercar como mucho
- * @returns {{estilo, acercado}} `estilo` va en lo que se quiere agrandar, y
+ * @returns {{estilo, acercado, x, y, escala}} `estilo` va en lo que se quiere agrandar, y
  *   `acercado` avisa si en este momento hay dedos pellizcando
  */
 export function useLupa(ref, maximo = 3) {
@@ -113,6 +113,11 @@ export function useLupa(ref, maximo = 3) {
 
   return {
     acercado: lupa.escala > 1,
+    // El sitio y el zoom en crudo. Los necesita quien tenga que calcular donde
+    // cae en la pantalla algo que esta dentro de la lupa, en vez de medirlo.
+    x: lupa.x,
+    y: lupa.y,
+    escala: lupa.escala,
     estilo: {
       transformOrigin: '0 0',
       transform: `translate(${lupa.x}px, ${lupa.y}px) scale(${lupa.escala})`,

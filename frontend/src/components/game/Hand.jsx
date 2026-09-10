@@ -157,6 +157,9 @@ export default function Hand({
           return (
             <div
               key={i}
+              // Lo lee la mesa para saber DE DONDE sale la ficha al jugarla, y
+              // poder hacerla volar desde ahi (§122).
+              data-ficha-mano={i}
               className="shrink-0 relative touch-none"
               style={{ opacity: isDragging ? 0 : 1 }}
               onMouseDown={handleMouseDown}

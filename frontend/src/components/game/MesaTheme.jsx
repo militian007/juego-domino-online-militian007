@@ -98,13 +98,25 @@ export const VERSION_FICHAS = 3;
 
 export const useCarpetaDeFichas = () => useContext(ContextoFichas);
 
-const DEFECTO = { pano: 'tela', baranda: 'foto', fichas: 'clasica' };
+/**
+ * Con que mesa empieza el que nunca eligio nada.
+ *
+ * Las fichas por defecto pasaron de `clasica` a `hueso`, a pedido de Jonathan.
+ * Es la ficha de domino de toda la vida —blanca, puntos negros— y se lee mucho
+ * mejor de lejos que la negra con puntos dorados, que es preciosa pero tiene
+ * poco contraste sobre el paño oscuro. La clasica sigue estando, a un toque.
+ */
+const DEFECTO = { pano: 'tela', baranda: 'foto', fichas: 'hueso' };
 const CLAVE = 'mesa-tema';
 
 // Se sube cuando entra una mesa nueva que vale la pena mostrarle a todos. Sin
 // esto, quien ya habia elegido mesa se quedaba con la vieja para siempre: el
 // valor por defecto solo aplica a quien no tiene nada guardado.
-const CATALOGO = 4;
+//
+// 5 = las blanco hueso pasan a ser las de fabrica. Subirlo devuelve a todos al
+//     tema por defecto, incluido el paño; es el precio de que el cambio se vea.
+//     Quien tenia algo elegido lo vuelve a elegir en dos toques.
+const CATALOGO = 5;
 
 function leer() {
   try {

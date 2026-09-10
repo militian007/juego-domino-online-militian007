@@ -174,11 +174,18 @@ colocación, **vuelve a medir esto** antes y después.
 
 ## CÓMO SE VE LA MESA
 
-- **La cámara sigue a la cadena**, con escala fija. Las fichas **nunca cambian de tamaño** mientras
-  juegas: eso lo rechacé y no se vuelve. La cámara se queda quieta el 91% de las jugadas.
-- **La ventana muestra 21,5 celdas** (`ZOOM_FICHAS = 1.116` en `Board.jsx`). Ese número no es
-  arbitrario: medido sobre 120.936 posiciones, es el mínimo con el que **no se sale ni una ficha
-  de la pantalla, nunca**. Con 20,9 celdas todavía se salía el 0,10% (§82).
+- **La cámara sigue a la cadena y ahora también se acerca y se aleja** (§122). Durante mucho tiempo
+  la escala fue fija —lo había rechazado porque el zoom saltando en cada jugada marea (§82)—, pero
+  lo que molestaba era el SALTO, no el zoom: con una transición de 420 ms la cámara se desliza y se
+  aguanta perfecto. Es lo que hace Domino Legends y lo que hizo que la ficha de la mesa pasara de
+  20 px fijos a **42 px al arrancar la mano**. Si volvés a tocar esto, medí el alto de la ficha a lo
+  largo de una ronda entera antes y después.
+- **El encuadre es la caja de la cadena más `ALCANCE_PUNTA = 2` celdas de aire en cada punta**, para
+  que se vean los sitios donde podés jugar. Bajar ese 2 agranda la ficha pero puede dejar el imán
+  fuera de la pantalla: **no se toca a ojo**, se mide.
+- **La ficha viaja de la mano a su casilla** (§122), y la del rival entra desde arriba. La que vuela
+  se dibuja **dentro de la cámara**, no encima: así aterriza exacto aunque la cámara se esté moviendo
+  en ese mismo momento. Medido: 0 px de diferencia con la casilla real.
 - **El marcador va fuera de la mesa**, arriba. La mesa es rectangular y los jugadores se sientan en
   sus bordes: compañero arriba, rivales a los costados. `Board` recibe `margenes` por los cuatro
   lados: ese es el rectángulo donde vive la cadena, y no se sale de ahí (§75).

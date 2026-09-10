@@ -5443,3 +5443,80 @@ localStorage**, asi que no se pueden tener dos cuentas abiertas a la vez. Se hiz
 navegador de un lado y un socket de Node del otro. Y ese script **no puede vivir dentro de
 `backend/`**: nodemon vigila esa carpeta, al escribir el archivo reinicia el servidor, y con el
 reinicio se pierden las mesas, que viven en memoria. Costo tres intentos entenderlo.
+
+---
+
+## 122. La camara sigue la cadena y la ficha vuela (2026-09-10)
+
+Primer paso del plan de [analisis-domino-legends.md](analisis-domino-legends.md): **que la
+mesa se sienta viva**. Jonathan: *"dale play al plan y vamos viendo paso por paso"*, y de
+paso *"que la skin de las piezas blanca hueso sea el skin predeterminado"*.
+
+### Lo que cambio
+
+1. **Las blanco hueso son las de fabrica.** `MesaTheme.jsx`: `DEFECTO.fichas = 'hueso'`.
+   Quien ya tenia otra elegida la conserva; lo que cambia es con que se entra la primera vez.
+2. **La camara encuadra la cadena.** Antes la mesa tenia UN tamaño fijo toda la mano (§82).
+   Ahora el zoom sale de la caja de la cadena mas el alcance de las puntas, y se mueve con una
+   transicion lenta (`.camara-de-mesa`, 420 ms).
+3. **La ficha viaja.** La tuya sale del sitio exacto que ocupaba en tu mano; la del rival entra
+   desde arriba, por fuera del borde. Antes las dos aparecian de golpe en su casilla.
+
+### El tamaño de la ficha en la mesa, medido
+
+Sobre el juego corriendo, telefono de 375, leyendo la escala de la camara:
+
+| fichas en la mesa | 1 | 2 | 3 | 4 | 5 | 6 | 10 | 11 | 13 | 14 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| alto de la ficha | 36 | **42** | 32 | 28 | 23 | 21 | 23 | 20 | 18 | 17 |
+
+Antes era **20 px siempre**. Al principio de la mano —que es cuando se mira— la ficha es
+**el doble**. Cuando la cadena se llena, queda igual o un poco mas chica, que es exactamente
+lo que hace Domino Legends.
+
+Seguimos por debajo de ellos al arrancar (miden 78 px con una sola ficha, nosotros 36-42).
+La diferencia es el aire que reservamos alrededor de las puntas (`ALCANCE_PUNTA = 2` celdas)
+para que se vean los sitios donde podes jugar. Bajarlo agranda la ficha pero puede dejar el
+iman fuera de la pantalla: es una decision para medir aparte, no para tocar a ojo.
+
+### Como se hizo volar la ficha, y los dos errores del camino
+
+**Primer error: los hooks detras de un `return`.** El estado del vuelo quedo escrito despues
+del `return` con el que `Board` dibuja la mesa vacia. Con la mesa vacia corrian menos hooks
+que con la mesa puesta, y React se caia con *"Rendered more hooks than during the previous
+render"* en cuanto entraba la primera ficha: pantalla en blanco. Van todos arriba del `return`.
+
+**Segundo error: medir el destino en pantalla.** La primera version calculaba a que punto de
+la PANTALLA tenia que llegar la ficha. No sirve: en ese mismo momento la camara esta a mitad
+de su propia transicion de 420 ms, asi que la ficha aterrizaba donde la mesa estaba, no donde
+iba a quedar. La solucion fue no pelearse con la camara sino meterse dentro: **la ficha que
+vuela se dibuja junto a las demas, dentro de la camara**, y su destino es la casilla. Asi la
+camara se la lleva como a cualquier otra ficha, y aterriza exacto por construccion.
+
+Comprobado en el navegador: en las jugadas medidas, la distancia entre la ficha que vuela y
+la casilla real es **0 px** en las cuatro medidas (izquierda, arriba, ancho, alto).
+
+**Y un detalle de tamaño.** El despegue compara los lados LARGOS, no los anchos. La ficha
+vuela ya girada como va a quedar; si sale de la mano (siempre parada) hacia una casilla
+acostada, comparar ancho con ancho la hacia despegar al doble de grande. Con el lado largo
+despega exactamente del tamaño que tenia en la mano.
+
+**El viaje es `@keyframes`, no una transicion.** Una transicion necesita dos renders y un
+`requestAnimationFrame` para tener de donde animar, y `rAF` no corre cuando la pestaña no se
+esta dibujando: la ficha se quedaba clavada sobre la mano. Con `@keyframes` arranca sola. De
+regalo, con el movimiento apagado en el sistema la animacion no corre y la ficha simplemente
+esta donde tiene que estar.
+
+### Archivos
+
+- `frontend/src/components/game/Board.jsx` — encuadre, escala, `FichaEnVuelo`.
+- `frontend/src/components/game/MesaTheme.jsx` — hueso por defecto.
+- `frontend/src/components/game/Hand.jsx` — `data-ficha-mano`, de donde sale la ficha.
+- `frontend/src/pages/Game.jsx` — anota el sitio en la mano y lanza el vuelo del rival.
+- `frontend/src/hooks/useLupa.js` — devuelve `x`, `y` y `escala` en crudo.
+- `frontend/src/index.css` — `ficha-vuela`, `.camara-de-mesa`.
+
+### Lo que queda del plan
+
+Paso 2: que el juego hable (consejos, celebracion de fin de ronda, la mano del rival boca
+abajo). Paso 3: modos de reglas (Tranca, Con pozo, Cinco). Paso 4: decisiones de Jonathan.

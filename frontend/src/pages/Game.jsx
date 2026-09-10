@@ -230,6 +230,18 @@ export default function Game() {
   const [showReactionMenu, setShowReactionMenu] = useState(false);
   const [chatAbierto, setChatAbierto] = useState(false);
 
+  // De donde sale la ficha que se juega, para que se vea volar (§122). Se anota
+  // el sitio que ocupaba en la mano ANTES de jugarla, porque en cuanto se juega
+  // desaparece de ahi y ya no hay nada que medir.
+  const [vuelo, setVuelo] = useState(null);
+  const sitioEnLaMano = useRef(null);
+  // La mesa como estaba antes del ultimo estado, para saber que ficha entro y
+  // hacerla volar tambien cuando la jugo el rival.
+  const tableroPrevio = useRef([]);
+  // La ficha que acabo de mandar yo. Su vuelo ya salio desde mi mano al soltarla,
+  // asi que cuando vuelva en el estado no hay que volver a lanzarlo desde arriba.
+  const miJugada = useRef(null);
+
   // Los stickers: los de siempre y los que se ganan en el pase. Viene del
   // servidor porque es el servidor el que sabe cuales tiene ganados esta
   // persona, y ademas es el que va a comprobarlo al mandarlos.
@@ -270,6 +282,7 @@ export default function Game() {
   }, [actualRoomCode]);
 
   const handleDragStart = (index, tile, clientX, clientY) => {
+    anotarSitioEnLaMano(index);
     anotarArrastre({
       index,
       tile,
@@ -342,6 +355,8 @@ export default function Game() {
     };
 
     const onGameState = (state) => {
+      lanzarVueloDelRival(state);
+
       setGameState((prev) => {
         if (prev && state) {
           const prevBoardLen = prev.board?.length || 0;
@@ -636,8 +651,53 @@ export default function Game() {
   }, [gameState]);
 
 
+  /**
+   * La ficha del rival tambien viaja.
+   *
+   * La mia sale de mi mano en cuanto la suelto; la del rival no tiene de donde
+   * salir, asi que entra por arriba, desde su lado de la mesa. Sin esto la
+   * jugada del otro aparecia de golpe y costaba ver que habia puesto.
+   */
+  const lanzarVueloDelRival = (state) => {
+    const antes = tableroPrevio.current ?? [];
+    const ahora = state?.board ?? [];
+    tableroPrevio.current = ahora;
+
+    // Solo interesa la ficha que ENTRA. Si la mesa no crecio de a una (ronda
+    // nueva, reconexion, destranque) no hay nada que animar.
+    if (ahora.length !== antes.length + 1) return;
+
+    const misma = (a, b) =>
+      a && b && ((a[0] === b[0] && a[1] === b[1]) || (a[0] === b[1] && a[1] === b[0]));
+
+    // Entro por el principio o por el final: se sabe mirando si la punta de
+    // antes sigue siendo la punta de ahora.
+    const porElFinal = misma(ahora[0]?.tile, antes[0]?.tile);
+    const puesta = porElFinal ? ahora[ahora.length - 1] : ahora[0];
+    if (!puesta) return;
+
+    // Si es la que mande yo, su vuelo ya salio desde mi mano.
+    if (misma(puesta.tile, miJugada.current)) {
+      miJugada.current = null;
+      return;
+    }
+
+    setVuelo({
+      id: Date.now(),
+      rect: null,
+      tile: puesta.tile,
+      orientation: puesta.orientation
+    });
+  };
+
+  const anotarSitioEnLaMano = (index) => {
+    const img = document.querySelectorAll('[data-ficha-mano]')[index];
+    sitioEnLaMano.current = img ? img.getBoundingClientRect() : null;
+  };
+
   const handleTileClick = (index) => {
     if (!myTurn || !gameState || isPlacing || draggedTile) return;
+    anotarSitioEnLaMano(index);
     const movesForTile = gameState.validMoves.filter((m) => m.index === index);
     if (movesForTile.length === 0) return;
     
@@ -662,6 +722,21 @@ export default function Game() {
       enviandoRef.current = false;
       setIsPlacing(false);
     }, 6000);
+
+    // El vuelo se lanza YA, sin esperar al servidor: la ficha sale de la mano en
+    // el momento en que la soltas, que es cuando lo esperas. Si el servidor la
+    // rechazara, la ficha vuelve sola porque el tablero no cambia.
+    const sitio = sitioEnLaMano.current;
+    const laFicha = gameState?.myHand?.[tileIndex];
+    if (sitio && laFicha) {
+      miJugada.current = laFicha;
+      setVuelo({
+        id: Date.now(),
+        rect: sitio,
+        tile: laFicha,
+        orientation: placement?.orientation ?? 'horizontal'
+      });
+    }
 
     const payload = { code: actualRoomCode, tileIndex, side };
     if (placement) {
@@ -1080,6 +1155,7 @@ export default function Game() {
                   }}
                   myTurn={myTurn}
                   lastAction={gameState.lastAction}
+                  vuelo={vuelo}
                   draggedTile={draggedTile}
                   onSnapChange={handleSnapChange}
                 />

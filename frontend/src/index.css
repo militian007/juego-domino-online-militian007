@@ -198,6 +198,21 @@
       radial-gradient(ellipse 92% 92% at 50% 50%, transparent 34%, rgba(0, 0, 0, 0.6) 100%);
   }
 
+  /* La camara de la mesa (§122).
+     El encuadre cambia en cada jugada, asi que el transform lleva transicion:
+     la camara se DESLIZA en vez de saltar. Esto es lo que hace tolerable el
+     zoom que se descarto en la §82 — lo que molestaba era el salto, no el zoom.
+
+     420 ms: mas corto se siente brusco, mas largo se siente pesado y encima
+     compite con la ficha que esta cayendo. */
+  .camara-de-mesa {
+    transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .camara-de-mesa { transition: none; }
+  }
+
   /* La burbuja del chat de mesa aparece SOLO con opacidad.
      Nada de transform: la burbuja se centra con -translate-x-1/2 y cualquier
      animacion que toque transform se lo borra. */
@@ -498,4 +513,25 @@
 
 @media (max-height: 520px) {
   .menu-compacto .logo-menu { display: none; }
+}
+
+/* La ficha viajando de la mano a la mesa (§122).
+   Se dibuja en su destino y la animacion la trae desde la mano. */
+@keyframes ficha-vuela {
+  from {
+    transform: translate(var(--vuelo-dx), var(--vuelo-dy)) scale(var(--vuelo-escala));
+  }
+  to {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+.ficha-en-vuelo {
+  animation: ficha-vuela var(--vuelo-ms, 300ms) cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ficha-en-vuelo {
+    animation: none;
+  }
 }

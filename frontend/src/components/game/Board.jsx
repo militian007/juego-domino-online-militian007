@@ -84,6 +84,43 @@ const LADO_CELDAS = GRID_SIZE + 2 * MARGEN_CELDAS;
 // los dos dedos: la lupa ya existe.
 const ZOOM_FICHAS = 1.30;
 
+// ---------------------------------------------------------------------------
+// Los topes de la camara (§122)
+//
+// Van como FRACCION del lado corto del rectangulo de juego, no en pixeles, para
+// que la ficha se vea del mismo tamaño relativo en un telefono y en una pantalla
+// grande.
+//
+// En un telefono de 375 el lado corto son 315 px:
+//   maximo 0,22 -> ficha de 69 px de alto   (Domino Legends: 78)
+//   minimo 0,035 -> ficha de 11 px de alto  (Domino Legends: 13)
+const ALTO_MAXIMO_FICHA = 0.22;
+const ALTO_MINIMO_FICHA = 0.035;
+
+// Cuanto sitio se reserva MAS ALLA DE LAS PUNTAS al encuadrar.
+//
+// No es estetica: una ficha mide dos celdas de largo, asi que la siguiente cae
+// como mucho a dos celdas de una punta. Reservando eso, el iman donde se suelta
+// siempre entra en pantalla.
+//
+// Se reserva alrededor de LAS PUNTAS y no de toda la cadena. La primera version
+// dejaba 2,2 celdas por los cuatro lados de la caja entera, y con la cadena
+// larga eso son casi cinco celdas de paño vacio que achicaban las fichas mas
+// que antes de todo el cambio.
+const ALCANCE_PUNTA = 2.0;
+
+/** Un respiro para que la cadena no toque el borde. Esto si es estetica. */
+const AIRE_CELDAS = 0.5;
+
+/**
+ * Cuanto tarda la ficha en llegar de la mano a la mesa.
+ *
+ * Medido en Domino Legends: ~0,3 s. Mas rapido no se ve; mas lento se siente
+ * que el juego te hace esperar, que es justo lo que nos dijeron los amigos de
+ * Jonathan del segundo de espera que habia en el servidor.
+ */
+const MS_VUELO = 300;
+
 // Cuanto puede correrse la camara, en celdas, respecto del centro de la rejilla.
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
@@ -114,6 +151,12 @@ export default function Board({
   ends,
   selectedTile = null,
   onPlayTile = null,
+  /**
+   * De donde sale la ficha que se acaba de jugar, para que la veas volar.
+   * `{ id, rect }` — `rect` en coordenadas de pantalla, o null si no se sabe
+   * (jugada del rival: entonces sale del lado de su asiento).
+   */
+  vuelo = null,
   myTurn = false,
   lastAction = null,
   draggedTile = null,
@@ -182,21 +225,10 @@ export default function Board({
   const anchoUtil = Math.max(pano.ancho - margenes.izquierda - margenes.derecha, 120);
   const altoUtil = Math.max(pano.alto - margenes.arriba - margenes.abajo, 120);
 
-  // La cadena es ANCHA, no cuadrada: 11,0 x 6,9 celdas de media y 18,5 x 16 en
-  // el percentil 99, medido sobre 116.120 posiciones. Por eso el rectangulo de
-  // juego no tiene que ser cuadrado, y manda el eje que quede mas justo.
-  const escala =
-    anchoUtil > 0 && altoUtil > 0
-      ? (Math.min(anchoUtil, altoUtil) / (LADO_CELDAS * CELL_SIZE)) * ZOOM_FICHAS
-      : 1;
-
   // La lupa de dos dedos. Va POR ENCIMA de todo lo de arriba y no lo toca: la
   // partida se sigue dibujando igual, solo se acerca la vista mientras hay
   // dedos apoyados.
   const lupa = useLupa(containerRef);
-
-  const celdasVisiblesX = anchoUtil > 0 ? anchoUtil / (CELL_SIZE * escala) : LADO_CELDAS;
-  const celdasVisiblesY = altoUtil > 0 ? altoUtil / (CELL_SIZE * escala) : LADO_CELDAS;
 
   // La caja que ocupa la cadena dibujada, en celdas. Lleva el corrimiento de
   // los dobles, que es lo que hace que el dibujo se salga de la rejilla.
@@ -232,29 +264,69 @@ export default function Board({
     };
   }, [board, boardOffsets]);
 
-  // La camara se queda QUIETA en el centro de la rejilla mientras la cadena
-  // entre en pantalla, que es casi siempre (la cadena mide 11,4 celdas de
-  // promedio contra una ventana de 18,2). Solo cuando crece de mas se corre lo
-  // justo para no cortar nada, y si ni asi entra, se centra entre las dos
-  // puntas jugables. La escala nunca cambia: las fichas no cambian de tamaño.
-  // Orden de prioridad: que entre la cadena entera; si no cabe, que entren al
-  // menos las dos puntas jugables (es donde se puede jugar); y si ni eso, se
-  // centra entre ellas. Medido sobre 142.469 posiciones a este zoom: la camara
-  // se queda quieta el 91,4% de las jugadas, una punta se sale el 0,22% y el
-  // corrimiento entre jugada y jugada es de 0,41 celdas en el percentil 99.
-  const centrar = (visibles, min, max, pMin, pMax, medioPuntas) => {
-    const centro = GRID_SIZE / 2;
-    if (!cajaCadena) return centro;
-    const mitad = visibles / 2;
-    if (max - min <= visibles) return clamp(centro, max - mitad, min + mitad);
-    if (pMax - pMin <= visibles) return clamp(centro, pMax - mitad, pMin + mitad);
-    return medioPuntas;
-  };
+  // -------------------------------------------------------------------------
+  // LA CAMARA (§122)
+  //
+  // Antes la mesa tenia UN SOLO tamaño toda la mano: se dibujaba la rejilla
+  // entera y las fichas salian del tamaño que salieran. Con la rejilla de 16x16
+  // eso daba fichas de 20 px de alto en un telefono, y ahi se quedaban aunque
+  // hubiera una sola ficha puesta y la pantalla estuviera vacia.
+  //
+  // Ahora la camara **encuadra la cadena**: se acerca cuando hay poco puesto y
+  // se aleja a medida que crece, como una camara de verdad siguiendo la mesa.
+  // Medido sobre el video de Domino Legends, que es lo que pidio Jonathan: su
+  // primera ficha mide 78 px de alto y la nuestra media 20.
+  //
+  // El motivo por el que esto se habia descartado (§82) era que "el zoom
+  // cambiando en cada jugada molesta". Se resuelve con dos cosas:
+  //
+  //   1. El cambio es SUAVE: el transform lleva una transicion, asi que la
+  //      camara se desliza en vez de saltar.
+  //   2. El encuadre deja AIRE de sobra alrededor de la cadena, asi que casi
+  //      todas las jugadas caben sin mover nada y el zoom cambia poco.
+  /**
+   * Lo que la camara tiene que llegar a mostrar: la cadena, y el sitio donde va
+   * a caer la ficha que viene, que esta pegado a las PUNTAS.
+   */
+  const encuadre = useMemo(() => {
+    if (!cajaCadena) return null;
+    return {
+      x1: Math.min(cajaCadena.x1, cajaCadena.px1 - ALCANCE_PUNTA) - AIRE_CELDAS,
+      x2: Math.max(cajaCadena.x2, cajaCadena.px2 + ALCANCE_PUNTA) + AIRE_CELDAS,
+      y1: Math.min(cajaCadena.y1, cajaCadena.py1 - ALCANCE_PUNTA) - AIRE_CELDAS,
+      y2: Math.max(cajaCadena.y2, cajaCadena.py2 + ALCANCE_PUNTA) + AIRE_CELDAS
+    };
+  }, [cajaCadena]);
 
-  const centroX = centrar(celdasVisiblesX, cajaCadena?.x1, cajaCadena?.x2,
-    cajaCadena?.px1, cajaCadena?.px2, cajaCadena?.puntasX);
-  const centroY = centrar(celdasVisiblesY, cajaCadena?.y1, cajaCadena?.y2,
-    cajaCadena?.py1, cajaCadena?.py2, cajaCadena?.puntasY);
+  const centroCadenaX = encuadre ? (encuadre.x1 + encuadre.x2) / 2 : GRID_SIZE / 2;
+  const centroCadenaY = encuadre ? (encuadre.y1 + encuadre.y2) / 2 : GRID_SIZE / 2;
+
+  const escala = useMemo(() => {
+    if (anchoUtil <= 0 || altoUtil <= 0) return 1;
+
+    const menorLado = Math.min(anchoUtil, altoUtil);
+    // Topes proporcionales a la pantalla: asi la ficha se ve del mismo tamaño
+    // relativo en un telefono y en un escritorio.
+    const maxima = (menorLado * ALTO_MAXIMO_FICHA) / CELL_SIZE;
+    const minima = (menorLado * ALTO_MINIMO_FICHA) / CELL_SIZE;
+
+    if (!cajaCadena) return maxima;
+
+    const necesarioX = (encuadre.x2 - encuadre.x1) * CELL_SIZE;
+    const necesarioY = (encuadre.y2 - encuadre.y1) * CELL_SIZE;
+
+    const cabe = Math.min(anchoUtil / necesarioX, altoUtil / necesarioY);
+    return clamp(cabe, minima, maxima);
+  }, [anchoUtil, altoUtil, cajaCadena, encuadre]);
+
+  const celdasVisiblesX = anchoUtil > 0 ? anchoUtil / (CELL_SIZE * escala) : LADO_CELDAS;
+  const celdasVisiblesY = altoUtil > 0 ? altoUtil / (CELL_SIZE * escala) : LADO_CELDAS;
+
+  // Con el encuadre siguiendo a la cadena, la camara se centra en la CADENA y no
+  // en el centro de la rejilla. Antes se centraba en la rejilla porque la vista
+  // era fija y la cadena siempre entraba; ahora la cadena manda.
+  const centroX = centroCadenaX;
+  const centroY = centroCadenaY;
   const origenX = centroX - celdasVisiblesX / 2;
   const origenY = centroY - celdasVisiblesY / 2;
   const desplazamientoX = margenes.izquierda - origenX * CELL_SIZE * escala;
@@ -399,6 +471,82 @@ export default function Board({
     });
   };
 
+  // -------------------------------------------------------------------------
+  // EL VUELO DE LA FICHA (§122)
+  //
+  // Antes la ficha aparecia de golpe en su sitio, con un rebote. Ahora **sale de
+  // donde estaba** —tu mano, o el lado del rival— y viaja hasta la mesa
+  // creciendo por el camino, que es lo que hace Domino Legends y lo que hace que
+  // la jugada se entienda sin mirar dos veces.
+  //
+  // Todo esto va ANTES del `return` del tablero vacio. Los hooks no pueden
+  // quedar detras de un `return`: con la mesa sin fichas corrian menos hooks que
+  // con la mesa puesta, y React se caia con "Rendered more hooks than during the
+  // previous render" en cuanto entraba la primera ficha.
+  const [volando, setVolando] = useState(null);
+  const ultimoVuelo = useRef(null);
+
+  useLayoutEffect(() => {
+    if (!vuelo || vuelo.id === ultimoVuelo.current) return;
+
+    // Cual de las fichas de la mesa es la que se acaba de jugar: solo puede ser
+    // una de las dos puntas, y tiene que coincidir con la ficha jugada.
+    //
+    // Ojo con el orden: `vuelo` se anota ANTES de que el servidor conteste, asi
+    // que la primera vez que corre esto la mesa todavia no tiene la ficha. Por
+    // eso el vuelo se da por consumido **solo cuando ya se encontro**, y por eso
+    // `board` esta en las dependencias: al llegar el estado nuevo vuelve a
+    // correr, y ahi si la encuentra.
+    const mismaFicha = (a, b) =>
+      a && b && ((a[0] === b[0] && a[1] === b[1]) || (a[0] === b[1] && a[1] === b[0]));
+    const indice = [0, board.length - 1].find((i) => mismaFicha(board[i]?.tile, vuelo.tile));
+    if (indice === undefined) return;
+
+    const pano = containerRef.current;
+    const nodo = pano?.querySelector(`[data-ficha-mesa="${indice}"]`);
+    if (!pano || !nodo || !nodo.offsetWidth) return;
+
+    // Todo el viaje se cuenta en coordenadas de la REJILLA, no de la pantalla.
+    //
+    // La ficha que vuela se dibuja dentro de la camara, al lado de las demas: el
+    // destino es entonces la casilla donde va a quedar, y no hace falta adivinar
+    // donde caera esa casilla en la pantalla. Si la camara se esta moviendo en
+    // ese mismo momento —y se esta moviendo, porque acaba de entrar una ficha—
+    // se lleva a la que vuela con ella, como a cualquier otra.
+    const hasta = {
+      x: nodo.offsetLeft,
+      y: nodo.offsetTop,
+      w: nodo.offsetWidth,
+      h: nodo.offsetHeight
+    };
+
+    // Lo unico que hay que traducir es de DONDE sale, que se midio en pantalla.
+    const z = lupa.escala || 1;
+    const caja = pano.getBoundingClientRect();
+    const aRejilla = (r) => ({
+      x: ((r.left - caja.left - (lupa.x ?? 0)) / z - desplazamientoX) / escala,
+      y: ((r.top - caja.top - (lupa.y ?? 0)) / z - desplazamientoY) / escala,
+      w: r.width / (z * escala),
+      h: r.height / (z * escala)
+    });
+
+    // Si no hay ficha de mano conocida (jugo el rival), entra desde su lado, por
+    // fuera del borde de arriba de la mesa.
+    const desde = vuelo.rect
+      ? aRejilla(vuelo.rect)
+      : { x: hasta.x, y: hasta.y - altoUtil / escala, w: hasta.w, h: Math.max(hasta.w, hasta.h) };
+
+    ultimoVuelo.current = vuelo.id;
+    setVolando({ id: vuelo.id, indice, tile: vuelo.tile, orientation: vuelo.orientation, desde, hasta });
+  }, [vuelo, board, escala, desplazamientoX, desplazamientoY, altoUtil, lupa.x, lupa.y, lupa.escala]);
+
+  // Al terminar el viaje, la ficha de verdad ya esta en su sitio y esta se va.
+  useEffect(() => {
+    if (!volando) return;
+    const id = setTimeout(() => setVolando(null), MS_VUELO + 40);
+    return () => clearTimeout(id);
+  }, [volando]);
+
   if (!board || board.length === 0) {
     return (
       <div className={`rail-base ${claseBaranda} flex h-full w-full flex-col rounded-none relative`}>
@@ -419,7 +567,7 @@ export default function Board({
           }}
         />
         <div
-          className="relative origin-top-left"
+          className="camara-de-mesa relative origin-top-left"
           style={{
             width: `${GRID_SIZE * CELL_SIZE}px`,
             height: `${GRID_SIZE * CELL_SIZE}px`,
@@ -427,23 +575,28 @@ export default function Board({
           }}
         >
           {renderGhostPlacements()}
+        </div>
+      </div>
 
-          <div className="absolute inset-0 flex items-center justify-center text-domino-cream/60 italic text-sm sm:text-base pointer-events-none">
-            <div className="text-center p-6 bg-slate-900/60 backdrop-blur-sm rounded-xl border border-slate-700/50 max-w-xs">
-              <div className="text-domino-accent/50 text-4xl mb-2 font-serif">🀫</div>
-              <div>El tablero está vacío</div>
-              <div className="text-xs mt-1 opacity-70">
-                {myTurn
-                  ? 'Arrastra una ficha válida de tu mano o haz clic en los imanes del centro para iniciar.'
-                  : 'Esperando que comience la ronda...'}
-              </div>
-            </div>
+      {/* El cartel del tablero vacio va FUERA de la camara.
+          Dentro, se escalaba con ella: con la mesa acercada al maximo el texto
+          salia gigante y cortado por los lados. */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-domino-cream/60 italic text-sm sm:text-base">
+        <div className="max-w-xs rounded-xl border border-slate-700/50 bg-slate-900/60 p-6 text-center backdrop-blur-sm">
+          <div className="mb-2 font-serif text-4xl text-domino-accent/50">🀫</div>
+          <div>El tablero está vacío</div>
+          <div className="mt-1 text-xs opacity-70">
+            {myTurn
+              ? 'Arrastra una ficha válida de tu mano o haz clic en los imanes del centro para iniciar.'
+              : 'Esperando que comience la ronda...'}
           </div>
         </div>
       </div>
       </div>
     );
   }
+
+
 
   return (
     <div className={`rail-base ${claseBaranda} flex h-full w-full flex-col rounded-none relative`}>
@@ -466,7 +619,7 @@ export default function Board({
       />
       <div style={lupa.estilo}>
       <div
-        className="relative origin-top-left"
+        className="camara-de-mesa relative origin-top-left"
         style={{
           width: `${GRID_SIZE * CELL_SIZE}px`,
           height: `${GRID_SIZE * CELL_SIZE}px`,
@@ -487,15 +640,25 @@ export default function Board({
 
           const { left, top } = getVisualCoords(pos, i, boardOffsets);
 
+          // La ficha recien puesta se esconde mientras su copia va volando: si
+          // no, se verian las dos a la vez, una quieta y otra viajando.
+          const esLaQueVuela = volando != null && volando.indice === i;
+
           return (
             <div
               key={`tile-${i}`}
+              data-ficha-mesa={i}
               // La transicion de sitio es para el DESTRANQUE: cuando la cadena
               // se vuelve a trazar, las fichas se deslizan a su lugar nuevo en
               // vez de saltar. En el juego normal no se nota, porque una ficha
               // ya puesta nunca se mueve.
-              className={`absolute ficha-de-mesa ${isNewest ? 'tile-placed z-10' : ''}`}
-              style={{ left: `${left}px`, top: `${top}px` }}
+              // Ya no lleva `tile-placed`: ese rebote empezaba en `scale(0.3)`
+              // con opacidad 0, asi que despues de aterrizar la ficha
+              // desaparecia y volvia a aparecer de un salto. El viaje ES la
+              // animacion de poner la ficha; lo unico que queda es dejarla por
+              // encima de sus vecinas.
+              className={`absolute ficha-de-mesa ${isNewest ? 'z-10' : ''}`}
+              style={{ left: `${left}px`, top: `${top}px`, visibility: esLaQueVuela ? 'hidden' : undefined }}
             >
               <Tile
                 tile={displayTile}
@@ -509,9 +672,61 @@ export default function Board({
 
         {/* Renderizar Siluetas e Imanes */}
         {renderGhostPlacements()}
+
+        {/* La ficha viajando de la mano a su casilla. */}
+        {volando && (
+          <FichaEnVuelo
+            key={volando.id}
+            tile={volando.tile}
+            orientation={volando.orientation}
+            desde={volando.desde}
+            hasta={volando.hasta}
+          />
+        )}
       </div>
       </div>
     </div>
+    </div>
+  );
+}
+
+/**
+ * La ficha que va de la mano a su sitio en la mesa.
+ *
+ * Se dibuja **ya en su destino**, del tamaño que le toca ahi, y una animacion de
+ * CSS la trae desde donde estaba en la mano: empieza corrida y chiquita, y llega
+ * a su sitio creciendo.
+ *
+ * Va con `@keyframes` y no con una transicion en dos renders. La transicion
+ * necesitaba un `requestAnimationFrame` para tener de donde animar, y `rAF` no
+ * corre cuando la pestaña no se esta dibujando: la ficha se quedaba clavada
+ * sobre la mano y desaparecia sin viajar. Asi ademas, si el sistema tiene el
+ * movimiento apagado, la animacion no corre y la ficha simplemente esta donde
+ * tiene que estar.
+ */
+function FichaEnVuelo({ tile, orientation, desde, hasta }) {
+  return (
+    <div
+      className="ficha-en-vuelo pointer-events-none absolute z-30 origin-top-left"
+      style={{
+        left: `${hasta.x}px`,
+        top: `${hasta.y}px`,
+        width: `${hasta.w}px`,
+        height: `${hasta.h}px`,
+        '--vuelo-dx': `${desde.x - hasta.x}px`,
+        '--vuelo-dy': `${desde.y - hasta.y}px`,
+        // Se comparan los lados LARGOS, no los anchos.
+        //
+        // La ficha vuela ya girada como va a quedar, asi que si sale de la mano
+        // (siempre parada) hacia una casilla acostada, comparar ancho con ancho
+        // la hacia despegar al doble de grande y encoger por el camino. Con el
+        // lado largo despega exactamente del tamaño que tenia en la mano.
+        '--vuelo-escala': desde.h / Math.max(hasta.w, hasta.h, 1),
+        '--vuelo-ms': `${MS_VUELO}ms`,
+        filter: 'drop-shadow(0 6px 10px rgba(0,0,0,0.55))'
+      }}
+    >
+      <Tile tile={tile} orientation={orientation} ancho={hasta.w} />
     </div>
   );
 }
