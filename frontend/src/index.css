@@ -599,3 +599,32 @@
 @media (prefers-reduced-motion: reduce) {
   .pip-vuela { display: none; }
 }
+
+/* El Panita diciendo un consejo (§126).
+   Entra desde abajo, como si se asomara por el borde de la mesa. */
+@keyframes panita-entra {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.panita-entra {
+  animation: panita-entra 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Un saludito, una sola vez: sin esto se ve como una calcomania pegada. */
+@keyframes panita-saluda {
+  0%, 70%, 100% { transform: rotate(0deg); }
+  78% { transform: rotate(-7deg); }
+  86% { transform: rotate(5deg); }
+  94% { transform: rotate(-3deg); }
+}
+
+.panita-saluda {
+  transform-origin: bottom center;
+  animation: panita-saluda 2200ms ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panita-entra { animation: none; }
+  .panita-saluda { animation: none; }
+}

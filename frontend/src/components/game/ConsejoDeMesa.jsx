@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { Lightbulb } from 'lucide-react';
 
 /**
  * Los consejos que salen solos durante la partida.
@@ -199,21 +198,51 @@ export function useConsejos(gameState, { myTurn, miId }) {
   return actual;
 }
 
+/**
+ * El Panita lo dice, en un globo de dialogo.
+ *
+ * Jonathan: *"prefiero que salga nuestra mascota oficial diciendolos en un
+ * cuadro de dialogo, se ve mejor no crees?"*. Si: un consejo con dueño se lee
+ * como alguien hablandote, y un cartel suelto se lee como una etiqueta del
+ * sistema — y las etiquetas del sistema la gente las aprende a ignorar.
+ *
+ * ## Compacto a proposito
+ *
+ * El Panita mide 46 px y el globo no pasa de dos renglones. Una mascota grande
+ * saltando cada media ronda tapa la mesa y cansa a los diez minutos; el freno
+ * de verdad ya esta en el hook —cada consejo sale UNA vez por ronda— pero el
+ * tamaño ayuda.
+ *
+ * El dibujo es el sticker que ya existe (`/stickers/panita.png`, §114): la
+ * misma cara que la gente ve en el pase y en los menus. Nada dibujado a mano.
+ */
 export default function ConsejoDeMesa({ consejo, style }) {
   if (!consejo) return null;
   return (
     <div
-      // `opacity: 1` a mano y no confiado a la animacion. `burbuja-entra` no
-      // lleva `fill-mode`, asi que el estado en reposo es el del elemento; si
-      // algun dia alguien le pone `forwards` o la animacion no corre, el cartel
-      // tiene que seguir viendose igual.
+      // `opacity: 1` a mano y no confiado a la animacion: si algun dia no corre,
+      // el consejo tiene que verse igual.
       style={{ opacity: 1, ...style }}
-      className="burbuja-entra pointer-events-none absolute inset-x-0 z-30 flex justify-center px-4"
+      className="panita-entra pointer-events-none absolute inset-x-0 z-30 flex items-end justify-center gap-1.5 px-3"
     >
-      <span className="flex items-center gap-2 rounded-xl border border-domino-accent/60 bg-domino-dark/95 px-3.5 py-2 text-center text-[13px] font-semibold leading-snug text-domino-cream shadow-[0_6px_20px_rgba(0,0,0,.7)]">
-        <Lightbulb size={15} className="shrink-0 text-domino-accent" aria-hidden="true" />
-        {consejo.texto}
-      </span>
+      <img
+        src="/stickers/panita.png"
+        alt=""
+        aria-hidden="true"
+        className="panita-saluda h-[46px] w-auto shrink-0 drop-shadow-[0_4px_8px_rgba(0,0,0,.75)]"
+      />
+
+      <div className="relative max-w-[250px]">
+        {/* La colita del globo, apuntando al Panita. Es un cuadrado girado, no
+            un dibujo: asi hereda el borde y el fondo del globo sin repetirlos. */}
+        <span
+          aria-hidden="true"
+          className="absolute -left-1 bottom-3 h-2.5 w-2.5 rotate-45 border-b border-l border-domino-accent/60 bg-domino-dark"
+        />
+        <p className="relative rounded-2xl border border-domino-accent/60 bg-domino-dark/97 px-3.5 py-2 text-[13px] font-semibold leading-snug text-domino-cream shadow-[0_6px_20px_rgba(0,0,0,.7)]">
+          {consejo.texto}
+        </p>
+      </div>
     </div>
   );
 }

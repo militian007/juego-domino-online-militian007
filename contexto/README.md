@@ -5818,3 +5818,38 @@ cantidad de juego, salia uno.
 El cartel ahora lleva `opacity: 1` escrito a mano. `burbuja-entra` no tiene `fill-mode`, asi
 que el reposo es el del elemento; si algun dia alguien le pone `forwards` o la animacion no
 corre, el cartel tiene que seguir viendose igual.
+
+---
+
+## 126. El Panita dice los consejos (2026-09-10)
+
+Jonathan, despues de ver los consejos de la §125: *"medio los vi, pero prefiero que salga
+nuestra mascota oficial diciendolos en un cuadro de dialogo, se ve mejor no crees?"*.
+
+Si, y por una razon concreta: **un consejo con dueño se lee como alguien hablandote; un cartel
+suelto se lee como una etiqueta del sistema**, y las etiquetas del sistema la gente las
+aprende a ignorar. Es exactamente lo que hace Domino Legends con su mascota en el tutorial.
+
+### Como quedo
+
+El Panita —el sticker que ya existe desde la §114, la ficha de onix con guantes y corbatin—
+se asoma por el borde de abajo de la mesa con un globo de dialogo al lado.
+
+- **46 px de alto**, y el globo no pasa de un par de renglones. Una mascota grande saltando
+  cada media ronda tapa la mesa y cansa a los diez minutos.
+- **Entra desde abajo** (260 ms) y **saluda una vez**, con un balanceo corto. Sin el saludo se
+  ve como una calcomania pegada.
+- **La colita del globo es un cuadrado girado**, no un dibujo: asi hereda el borde y el fondo
+  del globo y no hay que repetir los colores en dos sitios.
+- El freno de verdad sigue estando en el hook: **cada consejo sale una vez por ronda**. El
+  tamaño solo ayuda.
+
+**No se dibujo nada nuevo** (regla 1.1): es `/stickers/panita.png`, la misma cara que ya se ve
+en el pase y en los menus.
+
+### Comprobado corriendo
+
+Jugando contra la maquina, telefono de 375: El Panita salio con *"La Comadre no puede jugar y
+esta levantando"*, *"A La Comadre le queda una ficha"* y *"¡Te queda una ficha!"*. La imagen
+carga (`naturalWidth > 0`), mide 46x45, el conjunto cae entre 569 y 592 de alto, y la mano
+empieza en 691: no se pisan. Cero errores en consola.
