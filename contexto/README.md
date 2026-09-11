@@ -5756,3 +5756,65 @@ como vino la grabacion; 1,12 es aproximadamente un decibel mas.
 
 La grabacion se pide al entrar a la mesa, no en la primera jugada: son 16 KB y un clac que
 llega tarde es peor que ninguno. Si no llega, no suena nada y el juego se juega igual.
+
+---
+
+## 125. Los consejos, que no se veian (2026-09-10)
+
+Jonathan: *"a mi no me salen los consejos, puedes verificar eso?"*.
+
+### Lo primero: no estaban rotos
+
+Medido en el navegador, jugando: el consejo **si dispara**, cae **dentro de la pantalla**
+(terminaba en 623 de 812, con la mano empezando en 684, asi que tampoco la pisaba), esta
+`visible`, con `z-index: 30`, y no hay nada encima.
+
+Una cosa que casi me hace perseguir un fantasma: el medidor decia `opacity: 0` en las treinta
+muestras. Resulta que **el panel del navegador donde pruebo no dibuja**, y cuando no dibuja,
+el reloj de las animaciones no avanza: `getAnimations()[0].currentTime` se queda en **0** con
+el estado en `running`, para siempre. La animacion de entrada va de opacidad 0 a 1, asi que se
+quedaba congelada en el primer fotograma. En una pantalla de verdad se ve.
+
+Vale anotarlo porque ya paso dos veces (tambien con el vuelo de la ficha, §122): **en este
+panel, cualquier cosa que dependa de una animacion o de `requestAnimationFrame` se mide
+congelada.** No es un bug del juego.
+
+### Lo que si estaba mal
+
+Dos cosas, las dos de criterio:
+
+1. **Demasiado discreto.** Letra de 11 px en una pastilla negra translucida, abajo del todo,
+   justo donde uno esta mirando sus fichas y no esperando un cartel.
+2. **Demasiado raro.** Seis consejos, cada uno una vez por ronda, y los que mas se repiten
+   dependian del pozo. En una ronda normal salia uno, al principio, y se iba en 3,6 segundos.
+
+### Lo que cambio
+
+El cartel: **13 px** en vez de 11, borde dorado, fondo solido, sombra, y un icono de bombilla
+de `lucide-react` (regla 1.1: de libreria, no dibujado). **4,6 segundos** en vez de 3,6.
+
+Y cinco consejos nuevos, elegidos porque salen SEGUIDO o porque cambian como jugas:
+
+| clave | cuando | que dice |
+| --- | --- | --- |
+| `primera-vez` | la primera partida de esa persona, nunca mas | Tocá una ficha tuya y después el imán azul para ponerla |
+| `extremos-iguales` | los dos extremos piden el mismo numero | Los dos extremos piden 5 |
+| `paso-alguien` | otro tuvo que pasar | Fulano no pudo jugar y pasó |
+| `pozo-poco` | quedan 3 o menos en el monton | Quedan pocas en el montón |
+| `cerca` | alguien esta a 20 o menos del objetivo | Van 85 de 100: esto se define ya |
+
+El de la primera vez es el unico que **no sale del estado** sino de `localStorage`: es el
+"como se juega" que tiene Domino Legends con su mascota, y solo tiene sentido una vez.
+
+### Comprobado corriendo
+
+Jugando de verdad contra la maquina, en dos sesiones: salieron **cinco consejos distintos** —
+`primera-vez`, las dos variantes de `salida`, `extremos-iguales` y `cerca`— a 13 px y en la
+franja de 374 a 482, bien despegados de la mano. Cero errores en consola. Antes, en la misma
+cantidad de juego, salia uno.
+
+### Detalle chico pero que ahorra un dolor de cabeza
+
+El cartel ahora lleva `opacity: 1` escrito a mano. `burbuja-entra` no tiene `fill-mode`, asi
+que el reposo es el del elemento; si algun dia alguien le pone `forwards` o la animacion no
+corre, el cartel tiene que seguir viendose igual.
