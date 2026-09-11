@@ -43,46 +43,107 @@ function getAudioContext() {
 }
 
 /**
- * Plays a wooden/plastic domino clack sound
+ * EL CLAC DE LA FICHA (§124)
+ *
+ * Es una **grabacion de verdad**, no un sonido fabricado. Origen y licencia en
+ * `frontend/public/sonidos/LEEME.md`: es CC0 (dominio publico), del pack de
+ * madera y metal de rubberduck en OpenGameArt.
+ *
+ * ## Por que una grabacion
+ *
+ * Hubo un intento de fabricarlo con osciladores, ajustado contra el espectro
+ * medido del video de Domino Legends. Daba las MISMAS bandas de energia
+ * (13/18/56/12 contra su 13/18/57/12) y **sonaba peor**. Jonathan: *"se escucha
+ * horrible... no entiendo por que el afan de querer inventar la rueda"*. Tenia
+ * razon: dar los mismos numeros no es sonar igual.
+ *
+ * La medicion no se tiro: sirvio para ELEGIR. De los 25 golpes CC0 del pack,
+ * este es el que mas se acerca al del video con la misma vara.
+ *
+ * **El audio del video de ellos no se usa nunca.** Es su grabacion.
+ *
+ * ## Y nunca suena igual dos veces
+ *
+ * Cada golpe mueve el tono y el volumen un poco. Dos fichas de verdad nunca
+ * chocan igual, y una muestra repetida identica se nota a la tercera jugada.
  */
+
+const ARCHIVO_CLAC = '/sonidos/clac.wav';
+
+/**
+ * El volumen del clac. **Este es el numero que se toca para subirlo o bajarlo.**
+ * 1 = como vino la grabacion. 1,12 es aproximadamente un decibel mas.
+ */
+export const VOLUMEN_CLAC = 1;
+
+/** Cuanto se le mueve el tono a cada golpe, para que no haya dos iguales. */
+const VARIACION_TONO = 0.08;
+
+let muestraClac = null;
+let cargando = null;
+
+/**
+ * Trae la grabacion y la deja lista. Se pide UNA vez y se guarda.
+ *
+ * Mientras no este, `playTileSound` no hace nada: son 16 KB, llegan en el primer
+ * momento de la partida, y un clac que llega tarde es peor que ninguno.
+ */
+function cargarClac(ctx) {
+  if (muestraClac || cargando) return cargando;
+  cargando = fetch(ARCHIVO_CLAC)
+    .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(r.status))))
+    .then((datos) => ctx.decodeAudioData(datos))
+    .then((buf) => {
+      muestraClac = buf;
+      return buf;
+    })
+    .catch(() => {
+      // Sin sonido antes que con un error: el juego se juega igual.
+      cargando = null;
+      return null;
+    });
+  return cargando;
+}
+
+/**
+ * Arma un golpe en el grafo que se le pase.
+ *
+ * Recibe el contexto y el momento en vez de usar los suyos para que el
+ * revoltijo del pozo pueda programar veintitantos golpes de una sola vez, sin
+ * depender de que la pantalla vaya fluida.
+ */
+export function armarClac(ctx, destino, cuando, { volumen = 1, tono = 1 } = {}) {
+  if (!muestraClac) return;
+  const fuente = ctx.createBufferSource();
+  fuente.buffer = muestraClac;
+  // El tono se mueve cambiando la velocidad, que es lo que pasa de verdad
+  // cuando la ficha que golpea es un poco mas chica o mas grande.
+  fuente.playbackRate.value = tono;
+  const gain = ctx.createGain();
+  gain.gain.value = volumen * VOLUMEN_CLAC;
+  fuente.connect(gain);
+  gain.connect(destino);
+  fuente.start(cuando);
+}
+
+/** El clac de una ficha al ponerse en la mesa. */
 export function playTileSound() {
   const ctx = getAudioContext();
   if (!ctx) return;
+  if (!muestraClac) {
+    cargarClac(ctx);
+    return;
+  }
+  armarClac(ctx, ctx.destination, ctx.currentTime, {
+    tono: 1 + (Math.random() - 0.5) * 2 * VARIACION_TONO,
+    volumen: 0.85 + Math.random() * 0.3
+  });
+}
 
-  const now = ctx.currentTime;
-
-  // Primary clack oscillator (main body)
-  const osc1 = ctx.createOscillator();
-  const gain1 = ctx.createGain();
-  osc1.connect(gain1);
-  gain1.connect(ctx.destination);
-
-  osc1.type = 'triangle';
-  osc1.frequency.setValueAtTime(950, now);
-  osc1.frequency.exponentialRampToValueAtTime(120, now + 0.08);
-
-  gain1.gain.setValueAtTime(0.4, now);
-  gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-
-  // High-pitched click oscillator (impact transient)
-  const osc2 = ctx.createOscillator();
-  const gain2 = ctx.createGain();
-  osc2.connect(gain2);
-  gain2.connect(ctx.destination);
-
-  osc2.type = 'sine';
-  osc2.frequency.setValueAtTime(2400, now);
-  osc2.frequency.exponentialRampToValueAtTime(800, now + 0.03);
-
-  gain2.gain.setValueAtTime(0.2, now);
-  gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
-
-  // Start & Stop
-  osc1.start(now);
-  osc1.stop(now + 0.09);
-
-  osc2.start(now);
-  osc2.stop(now + 0.04);
+/** Se llama al entrar a la mesa, para que el primer clac no llegue tarde. */
+export function prepararSonidos() {
+  const ctx = getAudioContext();
+  if (ctx) cargarClac(ctx);
 }
 
 /**
@@ -126,17 +187,20 @@ export function playDrawSound() {
 /**
  * El revoltijo del pozo: muchas fichas chocando entre si.
  *
- * No es un sonido nuevo inventado: es el mismo clac de una ficha, repetido
- * muchas veces con el tono y el volumen movidos, que es exactamente lo que se
- * oye cuando uno revuelve el pozo con las manos. Se programan todos los golpes
- * de una en el reloj del audio, asi que no dependen de que la pantalla vaya
- * fluida.
+ * No es un sonido nuevo: es el MISMO clac, repetido muchas veces con el tono y
+ * el volumen movidos, que es exactamente lo que se oye cuando uno revuelve el
+ * pozo con las manos. Se programan todos los golpes de una en el reloj del
+ * audio, asi que no dependen de que la pantalla vaya fluida.
  *
  * @param duracionMs cuanto dura el revoltijo. Se reparten los golpes ahi dentro.
  */
 export function playShuffleSound(duracionMs = 800) {
   const ctx = getAudioContext();
   if (!ctx) return;
+  if (!muestraClac) {
+    cargarClac(ctx);
+    return;
+  }
 
   const inicio = ctx.currentTime;
   const segundos = duracionMs / 1000;
@@ -146,29 +210,9 @@ export function playShuffleSound(duracionMs = 800) {
   for (let i = 0; i < golpes; i++) {
     // El momento se corre al azar dentro de su hueco para que no suene a metronomo.
     const cuando = inicio + (i / golpes) * segundos + Math.random() * 0.02;
-    const agudo = 700 + Math.random() * 900;
-    const fuerza = 0.05 + Math.random() * 0.06;
-
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const filtro = ctx.createBiquadFilter();
-
-    filtro.type = 'bandpass';
-    filtro.frequency.value = agudo;
-    filtro.Q.value = 1.4;
-
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(agudo * 1.6, cuando);
-    osc.frequency.exponentialRampToValueAtTime(160, cuando + 0.035);
-
-    gain.gain.setValueAtTime(fuerza, cuando);
-    gain.gain.exponentialRampToValueAtTime(0.001, cuando + 0.045);
-
-    osc.connect(filtro);
-    filtro.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.start(cuando);
-    osc.stop(cuando + 0.05);
+    armarClac(ctx, ctx.destination, cuando, {
+      tono: 0.82 + Math.random() * 0.5,
+      volumen: 0.22 + Math.random() * 0.2
+    });
   }
 }

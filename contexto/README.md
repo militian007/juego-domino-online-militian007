@@ -5713,3 +5713,33 @@ El clac volvio al de antes. **Lo que corresponde no es modelar mejor: es una GRA
 verdad**, que es literalmente "la misma rueda". La medicion de arriba no se tira: sirve para
 elegir y ajustar esa grabacion, no para fabricar un sustituto.
 
+### Como quedo: una GRABACION, elegida con la medicion
+
+`frontend/public/sonidos/clac.wav` — 16 KB, mono, 32 kHz, 260 ms.
+
+- **Origen:** pack *"100 CC0 metal and wood SFX"* de **rubberduck** en OpenGameArt
+  (https://opengameart.org/content/100-cc0-metal-and-wood-sfx), archivo `wood_hit_01.ogg`.
+- **Licencia:** **CC0 / dominio publico.** Uso libre, tambien comercial, sin atribucion
+  obligatoria. Queda escrito igual en `frontend/public/sonidos/LEEME.md`.
+- **Que se le hizo:** recortado desde el golpe, 260 ms, desvanecido de 25 ms al final para que
+  no chasquee al cortarse.
+
+La medicion sirvio para **elegir**, que es para lo que servia. Se midieron los 25 golpes de
+madera y metal del pack con la misma vara que el video, y este es el que mas se acerca:
+
+| | apagado | centro | < 500 / 500-2k / 2-8k / > 8k |
+| --- | --- | --- | --- |
+| el del video | 50 ms | 4359 Hz | 13 / 18 / 57 / 12 % |
+| **el elegido** | 70 ms | 3751 Hz | 9 / 26 / 58 / 7 % |
+| el segundo | 100 ms | 4125 Hz | 16 / 22 / 50 / 13 % |
+
+Cada golpe mueve el tono un ±8% y el volumen un ±15%, cambiando la velocidad de la muestra —
+que es lo que pasa de verdad cuando la ficha que golpea es un poco distinta. **El revoltijo
+del pozo es la misma grabacion**, veintitantas veces con el tono movido.
+
+**Para subir o bajar el volumen se toca UN numero**, `VOLUMEN_CLAC` en `soundEffects.js`. 1 es
+como vino la grabacion; 1,12 es aproximadamente un decibel mas.
+
+La grabacion se pide al entrar a la mesa, no en la primera jugada: son 16 KB y un clac que
+llega tarde es peor que ninguno. Si no llega, no suena nada y el juego se juega igual.
+

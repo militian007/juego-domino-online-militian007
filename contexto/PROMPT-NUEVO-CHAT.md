@@ -190,11 +190,13 @@ colocación, **vuelve a medir esto** antes y después.
   las fichas del rival boca abajo en su asiento, y el cierre de ronda en DOS tiempos — primero el
   grito sobre la mesa ("¡Dominó!", rayos y confeti) y recién después el panel con las cuentas, con
   el puntaje subiendo y los pips del perdedor volando hasta el total.
-- **El sonido de la ficha se sintetiza y suena a bip** (§124). Ya se intentó arreglarlo modelando
-  los modos de la ficha contra el espectro medido del video de Domino Legends: daba las mismas
-  bandas (13/18/56/12%) y **sonaba peor**, así que se deshizo. La lección: dar los mismos números
-  no es sonar igual. **Lo que falta es una grabación de verdad**, no un modelo mejor. El audio del
-  video de ellos no se usa nunca: es su grabación.
+- **El clac de la ficha es una GRABACIÓN CC0** (§124), en `frontend/public/sonidos/clac.wav`, con
+  su origen y licencia en el LEEME de al lado. Antes se intentó fabricarlo con osciladores
+  ajustados al espectro medido del video de Domino Legends: daba las mismas bandas de energía y
+  **sonaba peor**. La lección, que vale para todo: **dar los mismos números no es sonar igual**;
+  la medición sirve para ELEGIR entre cosas reales, no para fabricar un sustituto. Para subir o
+  bajar el volumen se toca un solo número, `VOLUMEN_CLAC`. El audio del video de ellos no se usa
+  nunca: es su grabación.
 - **Ojo con los hooks detrás de un `return`.** `Game` tiene CINCO `return` tempranos y `Board` uno.
   Un `useState`/`useEffect` escrito debajo de ellos rompe React con *"Rendered more hooks than during
   the previous render"* y deja la mesa en blanco. Pasó dos veces (§122 y §123).

@@ -31,7 +31,9 @@ import { paseApi } from '../services/api.js';
 import CargandoFichas from '../components/CargandoFichas.jsx';
 import PanelDeChat, { BurbujaDeChat, useChatDeMesa } from '../components/game/ChatDeMesa.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
-import { playTileSound, playDrawSound, estaSilenciado, alternarSilencio } from '../utils/soundEffects.js';
+import {
+  playTileSound, playDrawSound, estaSilenciado, alternarSilencio, prepararSonidos
+} from '../utils/soundEffects.js';
 import { ChevronRight, Lock, LogOut } from 'lucide-react';
 
 /**
@@ -613,6 +615,12 @@ export default function Game() {
     ? gameState.currentPlayerId === myPlayerId
     : false;
   const manoFirma = (gameState?.myHand || []).map((t) => `${t[0]}${t[1]}`).join(',');
+
+  // La grabacion del clac se pide al entrar a la mesa, no en la primera jugada:
+  // son 16 KB, y un clac que llega tarde es peor que ninguno.
+  useEffect(() => {
+    prepararSonidos();
+  }, []);
 
   // Los consejos que salen solos durante la partida (§123).
   const consejo = useConsejos(gameState, { myTurn, miId: myPlayerId });
