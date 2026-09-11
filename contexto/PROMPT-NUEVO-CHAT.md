@@ -275,9 +275,12 @@ colocación, **vuelve a medir esto** antes y después.
   había crédito de IA. Los prompts para rehacerlos con IA están en `contexto/avatares-prompts.md`.
 - **2v2 entre cuatro personas reales** sin probar (lobby de cuatro, elegir compañero, qué pasa si
   alguien se va).
-- **Acotar el corrimiento visual de los dobles**: hoy la cadena dibujada necesita 22,5 celdas cuando
-  la rejilla mide 20, porque el desplazamiento de los dobles se acumula. Acotarlo daría fichas más
-  grandes gratis, sin tocar reglas.
+- ~~**Acotar el corrimiento visual de los dobles**~~ **CERRADO (2026-09-11): no hay nada que ganar.**
+  Se volvió a medir sobre 65.558 posiciones en 1v1 y 39.835 en 2v2
+  (`packages/domino-engine/tools/medir-corrimiento.mjs`): el corrimiento cuesta **1,1% del tamaño
+  de la ficha** de media y 4% en el 10% peor, y la caja dibujada **nunca pasa de 18,5 celdas**, no
+  22,5. El dato viejo quedó obsoleto cuando la §127 arregló sobre qué casilla se centra el doble.
+  No vale tocar el dibujo por un 1%.
 - **Fichas en SVG** en vez de PNG: quitaría 3,8 MB. Sin decidir.
 
 ## POR DÓNDE EMPEZAR
