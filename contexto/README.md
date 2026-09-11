@@ -5696,3 +5696,20 @@ Jugado ademas en la mesa, con fichas y con el pozo: cero errores.
 
 - `frontend/src/utils/soundEffects.js` — `MODOS`, `armarClac()`, `playTileSound()`,
   `playShuffleSound()`.
+
+### DESHECHO el mismo dia
+
+Jonathan lo escucho: *"se escucha horrible haslo igual y solo subele un decibel y ya... que
+tanto, no entiendo por que el afan de querer inventar la rueda. Solo necesitamos que sea la
+rueda: si la de ellos es amarilla, la de nosotros es amarilla con rayas, no una rueda cuadrada
+y turbo motores"*.
+
+Tenia razon, y la leccion vale mas que el codigo: **dar los mismos numeros no es sonar igual.**
+El modelo clavaba las bandas (13/18/56/12 contra 13/18/57/12) y aun asi sonaba mal, porque un
+golpe real tiene cosas que esas cuatro bandas no miden — como arranca, como se mezclan los
+modos, el cuarto donde se grabo. Se optimizo el objetivo equivocado.
+
+El clac volvio al de antes. **Lo que corresponde no es modelar mejor: es una GRABACION de
+verdad**, que es literalmente "la misma rueda". La medicion de arriba no se tira: sirve para
+elegir y ajustar esa grabacion, no para fabricar un sustituto.
+
