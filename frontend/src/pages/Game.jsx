@@ -10,6 +10,8 @@ import { Marcador, Jugador, Mesa } from '../components/game/Hud.jsx';
 import Hand from '../components/game/Hand.jsx';
 import OpponentHand from '../components/game/OpponentHand.jsx';
 import ManoBocaAbajo from '../components/game/ManoBocaAbajo.jsx';
+import { modalidadGuardada } from '../components/SelectorModalidad.jsx';
+import AvisoDeCinco from '../components/game/AvisoDeCinco.jsx';
 import ConsejoDeMesa, {
   useConsejos, consejosEncendidos, alternarConsejos
 } from '../components/game/ConsejoDeMesa.jsx';
@@ -219,6 +221,9 @@ export default function Game() {
   const urlRoomCode = params.roomCode;
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode') || '1v1';
+  // Con que reglas se juega (§128). De la URL si viene; si no, la ultima que
+  // eligio esta persona. El servidor tiene la ultima palabra igual.
+  const modalidad = searchParams.get('modalidad') || modalidadGuardada();
   const joinParam = searchParams.get('join');
   const navigate = useNavigate();
   const { user, loading } = useAuth();
@@ -508,7 +513,7 @@ export default function Game() {
           return;
         }
 
-        socket.emit('room:create', { mode }, (res) => {
+        socket.emit('room:create', { mode, modalidad }, (res) => {
           if (!res?.ok) {
             setError(res?.error || 'No se pudo crear la sala');
             roomInitRef.current = false;
@@ -525,7 +530,7 @@ export default function Game() {
       // Caso C: El usuario eligió crear una sala privada
       if (playModeOption === 'private') {
         roomInitRef.current = true;
-        socket.emit('room:create', { mode }, (res) => {
+        socket.emit('room:create', { mode, modalidad }, (res) => {
           if (!res?.ok) {
             setError(res?.error || 'No se pudo crear la sala');
             roomInitRef.current = false;
@@ -1211,6 +1216,7 @@ export default function Game() {
           objetivo={gameState.targetPoints ?? 100}
           pozo={gameState.hasPool ? gameState.poolCount : null}
           sala={gameState.roomCode}
+          modalidad={gameState.modalidad}
         />
       </div>
 
@@ -1268,6 +1274,15 @@ export default function Game() {
                       abajo: altoMano + MARGEN_MESA.abajo,
                       izquierda: seatLeft ? MARGEN_MESA.lados : MARGEN_MESA.borde
                     }}
+                  />
+                )}
+
+                {/* El "+15" de la modalidad Cinco. Va en el medio de la mesa
+                    porque es donde estas mirando cuando acabas de jugar. */}
+                {gameState.anotaJugando && (
+                  <AvisoDeCinco
+                    cinco={gameState.ultimoCinco}
+                    soyYo={gameState.ultimoCinco?.team === miEquipo}
                   />
                 )}
 

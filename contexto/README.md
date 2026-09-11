@@ -5936,3 +5936,88 @@ Ahora:
 Comprobado corriendo, telefono de 375: con la mesa vacia y mi turno, el texto viejo ya no
 aparece, el aviso queda a 160 px de arriba y el centro esta libre. Con una ficha elegida, lo
 que esta encima del iman es **el iman**.
+
+---
+
+## 128. Tres modalidades: Con pozo, Tranca y Cinco (2026-09-10)
+
+Tercer paso del plan de [analisis-domino-legends.md](analisis-domino-legends.md). Ellos dejan
+elegir entre **All Fives, Draw y Block**; nosotros jugabamos siempre lo mismo y no se elegia.
+Es el paso que mas le alarga la vida al juego, y es **trabajo del motor**, no de la pantalla.
+
+### Las tres
+
+| | que cambia | a cuantos puntos |
+| --- | --- | --- |
+| **Con pozo** | La de siempre. Si no podes jugar, levantas hasta poder. | 100 |
+| **Tranca** | Sin monton: el que no puede jugar, pasa. | 100 |
+| **Cinco** | Ademas, cada vez que las dos puntas suman multiplo de cinco, te anotas esa suma. | **200** |
+
+Las modalidades son **ortogonales al modo**: cualquiera vale en 1 vs 1 y en 2 vs 2. Por eso el
+selector va ARRIBA del de modos y no dentro de cada fila: elegis las reglas una vez y despues
+elegis la mesa. Se recuerda la ultima.
+
+**Lo de siempre no cambia.** Sin elegir nada, 1v1 es "con pozo" y 2v2 es "tranca", que es
+exactamente lo que se jugaba antes. Comprobado en la mesa: una partida por defecto sigue
+diciendo "a 100", con pozo y sin rotulo.
+
+### Por que el Cinco va a 200, y no a 100
+
+Medido sobre 300 partidas:
+
+| modalidad | rondas por partida | turnos por ronda | trancadas |
+| --- | --- | --- | --- |
+| Con pozo 1v1 | 8,0 | 30,0 | 14,1% |
+| Tranca 1v1 | 10,7 | **14,2** | **63,5%** |
+| Cinco 1v1 **a 100** | **3,0** | 36,6 | 13,7% |
+| Cinco 1v1 **a 200** | 7,0 | 31,0 | 15,7% |
+| Tranca 2v2 | 7,0 | 30,5 | 21,2% |
+
+En el Cinco el **68% del marcador se gana jugando**, no al cerrar la ronda. A 100 la partida se
+acaba en **tres rondas**, que es media partida. A 200 dura siete, igual que el clasico. El
+numero no se eligio a ojo.
+
+**Y la Tranca se siente distinta, a proposito:** manos de 14 turnos en vez de 30, y el 63% de
+las rondas cierran trancadas. Es lo que es el Block domino con 14 fichas repartidas de 28; si
+un dia molesta, el numero esta aqui para discutirlo.
+
+### Dos detalles del Cinco que no son obvios
+
+1. **Un doble en la punta cuenta DOBLE.** Esta cruzado, con sus dos caras a la vista: un 5|5
+   en la punta son diez, no cinco.
+2. **Con una sola ficha en la mesa cuentan sus dos caras**, porque las dos son punta. Un 3|2
+   solo son cinco, y el que lo puso se anota.
+
+Ademas los puntos de la ronda **se redondean a multiplos de cinco**: 23 pips son 25 puntos. En
+esta modalidad todo el marcador va de cinco en cinco.
+
+**La partida se sigue mirando al CERRAR la ronda**, aunque se anote jugando. Cortar a mitad de
+mano dejaria la ronda sin terminar y sin repartir los pips, que es peor que jugar dos o tres
+fichas de mas.
+
+### Tranca en 1v1 hubo que habilitarla
+
+`resolveConfig` forzaba el pozo cuando no se reparten todas las fichas, porque un formato al
+que le faltan fichas y no tiene de donde sacarlas casi seguro es un error de configuracion.
+Ahora respeta `hasPool: false` **cuando se pide a proposito**, y sigue corrigiendo solo cuando
+no. Comprobado: en Tranca 1v1 se reparten 7 y 7, y las otras 14 se quedan fuera de la mano.
+
+### Que se ve en la mesa
+
+- El **rotulo de la modalidad** en la placa del marcador, solo si NO es la de siempre: poner
+  "Con pozo" en todas las mesas seria ruido.
+- En Cinco, un **"+15" que salta en el medio** cada vez que alguien anota. Sin eso, la mitad
+  de los puntos de la partida pasan sin que te enteres: el numero de arriba cambia y nadie
+  mira arriba mientras juega. El dato viene del servidor (`ultimoCinco`, con su `seq`), no se
+  calcula en la pantalla — la pantalla nunca decide puntajes (regla 8).
+
+### Pruebas
+
+- `packages/domino-engine`: **85** (diez nuevas, de las modalidades).
+- `backend/src/test-modalidades.js`: **18**, jugadas por el RoomManager de verdad.
+  `npm run test:modalidades`.
+- Las 87 del backend y las 3 del destranque siguen pasando.
+
+Comprobado ademas en la mesa, corriendo: Cinco arranca "a 200" con su rotulo, el rival anoto
+5 jugando y salto el "+5"; Tranca muestra "TRANCA · SIN POZO" y no ofrece monton ni una vez;
+y elegir "Cinco" en el menu deja la URL en `?mode=1v1bot&modalidad=cinco`.

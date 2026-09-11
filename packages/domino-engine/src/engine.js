@@ -32,6 +32,7 @@ export const EVENT = {
   TIMEOUT: 'TIMEOUT',
   FORFEIT: 'FORFEIT',
   ROUND_END: 'ROUND_END',
+  SCORE_FIVES: 'SCORE_FIVES',
   GAME_END: 'GAME_END',
   RELAYOUT: 'RELAYOUT'
 };
@@ -356,6 +357,21 @@ function commitPlacement(state, seat, move) {
     placement: { x: p.x, y: p.y, x2: p.x2, y2: p.y2, orientation: p.orientation },
     handCount: state.hands[seat].length
   });
+
+  // El "Cinco": si las dos puntas suman multiplo de cinco, se anota (§128).
+  //
+  // Los puntos van a la cuenta del equipo en el acto, pero el fin de la partida
+  // se sigue mirando al CERRAR la ronda, como siempre. Cortar a mitad de mano
+  // dejaria la ronda sin terminar y sin repartir los pips, que es peor que
+  // jugar dos o tres fichas de mas.
+  if (state.config.scoring === 'cincos') {
+    const suma = sumaDeLasPuntas(state);
+    if (suma > 0 && suma % 5 === 0) {
+      const equipo = state.teams[seat];
+      state.scores[equipo] += suma;
+      push(state, { kind: EVENT.SCORE_FIVES, seat, team: equipo, points: suma, total: state.scores[equipo] });
+    }
+  }
 }
 
 function doDraw(state, action) {
@@ -549,6 +565,33 @@ function advanceTurn(state) {
   }
 }
 
+/**
+ * La suma de las DOS PUNTAS de la cadena (§128).
+ *
+ * Es el numero que decide si se anota en el "Cinco". Dos detalles que no son
+ * obvios y que cambian el resultado:
+ *
+ * 1. **Un doble en la punta cuenta doble.** Esta cruzado, con sus dos caras a
+ *    la vista: un 5|5 en la punta son diez, no cinco.
+ * 2. **Con una sola ficha en la mesa cuentan sus dos caras**, porque las dos
+ *    son punta. Un 3|2 solo son cinco, y el que lo puso se anota.
+ */
+export function sumaDeLasPuntas(state) {
+  const b = state.board;
+  if (!b || b.length === 0) return 0;
+
+  if (b.length === 1) {
+    const [a, z] = b[0].tile;
+    return a + z;
+  }
+
+  const valor = (ficha, expuesto) =>
+    ficha.tile[0] === ficha.tile[1] ? ficha.tile[0] * 2 : expuesto;
+
+  const ends = state.ends || boardEnds(b);
+  return valor(b[0], ends.left) + valor(b[b.length - 1], ends.right);
+}
+
 function endRound(state, reason, winnerSeat) {
   const cfg = state.config;
   const revealed = state.hands.map((h) => h.slice());
@@ -576,6 +619,12 @@ function endRound(state, reason, winnerSeat) {
     if (winnerTeam != null) {
       winnerSeat = lowestPipSeatOfTeam(state, winnerTeam);
     }
+  }
+
+  // En el "Cinco" todo el marcador va de cinco en cinco, asi que los pips del
+  // perdedor tambien se redondean al multiplo mas cercano (§128).
+  if (cfg.redondeoDeRonda > 0 && points > 0) {
+    points = Math.round(points / cfg.redondeoDeRonda) * cfg.redondeoDeRonda;
   }
 
   if (winnerTeam != null) state.scores[winnerTeam] += points;

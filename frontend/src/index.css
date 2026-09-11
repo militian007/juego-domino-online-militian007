@@ -628,3 +628,19 @@
   .panita-entra { animation: none; }
   .panita-saluda { animation: none; }
 }
+
+/* El "+15" del Cinco: sube y se desvanece (§128). */
+@keyframes cinco-sube {
+  0% { opacity: 0; transform: translateY(14px) scale(0.7); }
+  22% { opacity: 1; transform: translateY(0) scale(1.1); }
+  40% { transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-42px) scale(1); }
+}
+
+.cinco-sube {
+  animation: cinco-sube 1600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cinco-sube { animation: none; }
+}

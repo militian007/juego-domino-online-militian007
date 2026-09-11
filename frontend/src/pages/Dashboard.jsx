@@ -16,12 +16,16 @@ export default function Dashboard() {
   useEffect(() => {
     if (!initialMode) return;
     if (!MODOS.some((m) => m.id === initialMode)) return;
-    navigate(`/game?mode=${initialMode}`, { replace: true });
+    const reglas = searchParams.get('modalidad');
+    navigate(`/game?mode=${initialMode}${reglas ? `&modalidad=${reglas}` : ''}`, { replace: true });
   }, [initialMode, navigate]);
 
   const startGame = (mode) => {
     pantallaCompleta();
-    navigate(`/game?mode=${mode.id}`);
+    // Las reglas van en la URL ademas de guardadas: asi se ve de un vistazo a
+    // que se entro, y una mesa se puede compartir con sus reglas puestas.
+    const reglas = mode.modalidad ? `&modalidad=${mode.modalidad}` : '';
+    navigate(`/game?mode=${mode.id}${reglas}`);
   };
 
   const joinGame = (e) => {

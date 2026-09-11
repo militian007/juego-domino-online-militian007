@@ -109,15 +109,17 @@ export default function Landing() {
     const elegido = MODOS.find((m) => m.id === modeId);
     if (!elegido) return;
     pantallaCompleta();
+    // Las reglas elegidas viajan con el modo por los tres caminos (§128).
+    const reglas = typeof mode === 'object' && mode?.modalidad ? `&modalidad=${mode.modalidad}` : '';
     if (elegido.requiresAuth && !user) {
-      navigate('/login', { state: { from: `/dashboard?mode=${modeId}` } });
+      navigate('/login', { state: { from: `/dashboard?mode=${modeId}${reglas}` } });
       return;
     }
     if (user) {
-      navigate(`/dashboard?mode=${modeId}`);
+      navigate(`/dashboard?mode=${modeId}${reglas}`);
       return;
     }
-    navigate(`/game?mode=${modeId}`);
+    navigate(`/game?mode=${modeId}${reglas}`);
   };
 
   const handleLogout = () => {
@@ -256,7 +258,7 @@ export default function Landing() {
       <ModeModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        onSelect={(id) => { setModalOpen(false); goToMode(id); }}
+        onSelect={(m) => { setModalOpen(false); goToMode(m); }}
       />
     </div>
   );

@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 
 import MesaIcono from './MesaIcono.jsx';
+import SelectorModalidad, { modalidadGuardada, guardarModalidad } from './SelectorModalidad.jsx';
 
 /**
  * El selector de modos, uno solo para toda la app.
@@ -111,6 +113,10 @@ export default function SelectorModos({ onElegir, mostrarInsignias = false }) {
   const casa = MODOS.filter((m) => m.grupo === 'casa');
   const amigos = MODOS.filter((m) => m.grupo === 'amigos');
 
+  // Las reglas se eligen una vez y valen para la mesa que elijas despues (§128).
+  const [modalidad, setModalidad] = useState(modalidadGuardada);
+  const cambiar = (id) => { setModalidad(id); guardarModalidad(id); };
+
   const fila = (m) => (
     <Fila
       key={m.id}
@@ -118,12 +124,13 @@ export default function SelectorModos({ onElegir, mostrarInsignias = false }) {
       titulo={m.label}
       texto={m.desc}
       insignia={mostrarInsignias && m.requiresAuth ? 'con cuenta' : null}
-      onClick={() => onElegir(m)}
+      onClick={() => onElegir({ ...m, modalidad })}
     />
   );
 
   return (
     <>
+      <SelectorModalidad valor={modalidad} onCambiar={cambiar} />
       <Seccion titulo="Contra la casa" pie="empieza ya" arte="/iconos/modo-casa.png">
         {casa.map(fila)}
       </Seccion>

@@ -43,7 +43,10 @@ function Puntaje({ etiqueta, valor, tono }) {
   );
 }
 
-export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala }) {
+/** Como se llama la modalidad en la placa. `pozo` es la de siempre y no se rotula. */
+const ROTULO = { tranca: 'Tranca', cinco: 'Cinco' };
+
+export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala, modalidad }) {
   return (
     <div className="pointer-events-none min-w-0 flex-1 pb-1">
     <div
@@ -81,6 +84,20 @@ export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala }) {
             >
               Ronda {ronda} · a {objetivo}
             </span>
+
+            {/* Con que reglas se juega (§128). Solo se rotula si NO es la de
+                siempre: poner "Con pozo" en todas las mesas seria ruido. */}
+            {ROTULO[modalidad] && (
+              <span
+                className="rounded-full px-2 py-[1px] text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-100"
+                style={{
+                  background: 'linear-gradient(180deg, rgba(6,30,18,.9), rgba(12,52,30,.9))',
+                  boxShadow: 'inset 0 1px 2px rgba(0,0,0,.8), 0 1px 0 rgba(180,255,210,.18)'
+                }}
+              >
+                {ROTULO[modalidad]}
+              </span>
+            )}
 
             {pozo != null ? (
               <span

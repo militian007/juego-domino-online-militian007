@@ -12,11 +12,15 @@ export {
   currentSeat,
   isTerminal,
   necesitaDestrancar,
+  sumaDeLasPuntas,
   serialize,
   deserialize
 } from './engine.js';
 
-export { FORMATS, BASE_RULES, resolveConfig, teamOfSeat, teamsFor } from './rules.js';
+export {
+  FORMATS, BASE_RULES, MODALIDADES, overridesDeModalidad,
+  resolveConfig, teamOfSeat, teamsFor
+} from './rules.js';
 
 export {
   DEFAULT_LAYOUT,

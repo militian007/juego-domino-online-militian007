@@ -12,8 +12,24 @@ import {
   PHASE,
   ACTION
 } from '@privoytruco/domino-engine';
+import { MODALIDADES, overridesDeModalidad } from '@privoytruco/domino-engine';
 
 export const GRID_SIZE = 20;
+
+/**
+ * Con que modalidad arranca cada modo si nadie elige (§128).
+ *
+ * Son las de siempre: 1v1 con pozo, 2v2 a la tranca. Asi, quien no toca nada
+ * juega exactamente lo que jugaba antes.
+ */
+export const MODALIDAD_POR_DEFECTO = {
+  '1v1': 'pozo',
+  '1v1bot': 'pozo',
+  '2v2': 'tranca',
+  '2v2bots': 'tranca'
+};
+
+export const esModalidad = (m) => Object.prototype.hasOwnProperty.call(MODALIDADES, m);
 
 export const MODE_CONFIG = {
   // `turnMs` y `reconnectMs` solo estan en los modos entre personas. Contra la
@@ -39,7 +55,7 @@ const STATUS_TO_PHASE = {
 };
 
 export class DominoGame {
-  constructor({ roomCode, mode, players, seed }) {
+  constructor({ roomCode, mode, players, seed, modalidad }) {
     const config = MODE_CONFIG[mode];
     if (!config) throw new Error('Modo inválido');
 
@@ -47,6 +63,14 @@ export class DominoGame {
     this.mode = mode;
     this.config = config;
     this.players = players;
+    this.modalidad = esModalidad(modalidad) ? modalidad : MODALIDAD_POR_DEFECTO[mode];
+
+    const deLaModalidad = overridesDeModalidad(this.modalidad);
+
+    // En 2v2 se reparten las 28 fichas, asi que no queda pozo aunque la
+    // modalidad lo pida. Se apaga a mano para que la mesa no muestre un monton
+    // vacio, que confunde mas de lo que informa.
+    if (config.totalPlayers === 4) deLaModalidad.hasPool = false;
 
     this.state = createGame({
       gameFormat: config.gameFormat,
@@ -56,8 +80,8 @@ export class DominoGame {
       // acaba: perder la ronda. El motor no cuenta el tiempo (no tiene relojes
       // por dentro), solo aplica la regla cuando el servidor le avisa.
       config: config.turnMs
-        ? { turnMs: config.turnMs, timeoutRule: 'skip-turn' }
-        : {}
+        ? { ...deLaModalidad, turnMs: config.turnMs, timeoutRule: 'skip-turn' }
+        : deLaModalidad
     });
 
     this._syncPlayers();
@@ -178,6 +202,18 @@ export class DominoGame {
   /** Asiento que abandono, si la partida termino asi. */
   get forfeitedSeat() {
     return this.state.result?.reason === 'forfeit' ? this.state.result.forfeitedSeat ?? null : null;
+  }
+
+  /**
+   * Lo que se acaba de anotar por dejar las puntas en multiplo de cinco (§128).
+   *
+   * Se saca del ultimo evento, y solo si es lo ULTIMO que paso: si no, el
+   * cartelito de "+15" se quedaria puesto varias jugadas.
+   */
+  get ultimoCinco() {
+    const ev = this.state.events[this.state.events.length - 1];
+    if (!ev || ev.kind !== 'SCORE_FIVES') return null;
+    return { seq: ev.seq, seat: ev.seat, team: ev.team, points: ev.points };
   }
 
   get roundPoints() {
@@ -400,6 +436,10 @@ export class DominoGame {
     return {
       roomCode: this.roomCode,
       mode: this.mode,
+      // Con que reglas se esta jugando esta mesa (§128). La pantalla lo necesita
+      // para rotularla y para saber si tiene que mostrar lo que se anota jugando.
+      modalidad: this.modalidad,
+      anotaJugando: this.state.config.scoring === 'cincos',
       hasPool: this.hasPool,
       targetPoints: this.state.config.targetPoints,
       // Cuanto dura un turno y cuanto le QUEDA al que esta en curso.
@@ -429,6 +469,7 @@ export class DominoGame {
       teamScores: this.state.scores,
       winningTeam: this.winningTeam,
       roundPoints: this.roundPoints,
+      ultimoCinco: this.ultimoCinco,
       endReason: this.endReason,
       forfeitedSeat: this.forfeitedSeat,
       // El ultimo a quien se le paso el turno por tiempo. Lleva un contador

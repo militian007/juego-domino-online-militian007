@@ -3,6 +3,7 @@ import { elegirBots } from './game/bots.js';
 import { DominoGame } from './game/DominoGame.js';
 import { Bot } from './game/Bot.js';
 import { MODE_CONFIG } from './game/DominoGame.js';
+import { MODALIDAD_POR_DEFECTO, esModalidad } from './game/DominoGame.js';
 import * as Partida from './models/Partida.js';
 import * as Ranking from './models/Ranking.js';
 import * as torneos from './services/torneos.js';
@@ -48,7 +49,7 @@ export class RoomManager {
     return code;
   }
 
-  createRoom({ mode, hostId, hostUsername }) {
+  createRoom({ mode, hostId, hostUsername, modalidad }) {
     const code = this.generateCode();
     const config = MODES[mode];
     if (!config) throw new Error('Modo inválido');
@@ -56,6 +57,10 @@ export class RoomManager {
     const room = {
       code,
       mode,
+      // Con que reglas se juega esta mesa (§128). Se guarda en la sala y no en
+      // la partida porque hay que saberlo ANTES de repartir: quien entra por el
+      // codigo tiene que ver a que lo estan invitando.
+      modalidad: esModalidad(modalidad) ? modalidad : MODALIDAD_POR_DEFECTO[mode],
       config,
       players: [
         { id: hostId, username: hostUsername, isBot: false, socketId: null }
@@ -281,6 +286,7 @@ export class RoomManager {
     room.game = new DominoGame({
       roomCode: room.code,
       mode: room.mode,
+      modalidad: room.modalidad,
       players: room.players,
       seed: room.seed
     });
@@ -611,6 +617,7 @@ export class RoomManager {
     const lobbyState = {
       code: room.code,
       mode: room.mode,
+      modalidad: room.modalidad,
       modeLabel: room.config.label,
       hasPool: room.config.hasPool,
       started: room.started,

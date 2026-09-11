@@ -14,6 +14,26 @@ export const BASE_RULES = {
   // al rival. 'difference' (restar los propios) queda disponible como variante.
   blockedScoring: 'total',
 
+  /**
+   * Como se puntua (§128).
+   *
+   *   'clasico' → solo al cerrar la ronda. Es el domino venezolano de siempre.
+   *   'cincos'  → ademas, cada vez que la suma de las DOS PUNTAS es multiplo de
+   *               cinco, el que acaba de jugar se anota esa suma. Es el "All
+   *               Fives", y cambia el juego entero: ya no se trata solo de
+   *               quedarte sin fichas, sino de dejar las puntas en 5, 10, 15...
+   */
+  scoring: 'clasico',
+
+  /**
+   * A que multiplo se redondean los puntos de la ronda. 0 = no se redondea.
+   *
+   * En el "Cinco" todo el marcador va de cinco en cinco, asi que los pips del
+   * perdedor tambien: 23 pips son 25 puntos, 22 son 20. Con el redondeo en 0
+   * —lo de siempre— se suman tal cual.
+   */
+  redondeoDeRonda: 0,
+
   // Cuanto dura un turno. El motor NO cuenta el tiempo: no tiene relojes por
   // dentro a proposito, porque tiene que dar siempre el mismo resultado con la
   // misma semilla. Este numero es el que le dice a quien SI tiene reloj (el
@@ -104,10 +124,46 @@ export function resolveConfig(gameFormat, overrides = {}) {
   if (cfg.seats * cfg.tilesPerPlayer > totalTiles) {
     throw new Error(`No alcanzan las fichas: ${cfg.seats} x ${cfg.tilesPerPlayer} > ${totalTiles}`);
   }
-  if (!cfg.hasPool && cfg.seats * cfg.tilesPerPlayer !== totalTiles) {
+  // Sin pozo y sin repartir todas las fichas es la TRANCA (§128): se reparte y
+  // lo que sobra se queda fuera de la mano. Si no se pide a proposito, se
+  // enciende el pozo: un formato al que le faltan fichas y no tiene de donde
+  // sacarlas casi seguro es un error de configuracion, no una modalidad.
+  if (!cfg.hasPool && cfg.seats * cfg.tilesPerPlayer !== totalTiles
+      && overrides.hasPool !== false) {
     cfg.hasPool = true;
   }
   return cfg;
+}
+
+/**
+ * Las tres modalidades que se pueden elegir (§128), como sobreescrituras de
+ * `config`. Van aqui y no en `FORMATS` porque son ortogonales: cualquiera de
+ * ellas vale tanto en 1v1 como en 2v2.
+ */
+export const MODALIDADES = {
+  pozo: {
+    label: 'Con pozo',
+    descripcion: 'Si no podés jugar, levantás del montón hasta poder.',
+    overrides: { hasPool: true, scoring: 'clasico', redondeoDeRonda: 0 }
+  },
+  tranca: {
+    label: 'Tranca',
+    descripcion: 'Sin montón: el que no puede jugar, pasa.',
+    overrides: { hasPool: false, scoring: 'clasico', redondeoDeRonda: 0 }
+  },
+  cinco: {
+    label: 'Cinco',
+    descripcion: 'Sumás cada vez que las dos puntas dan 5, 10, 15...',
+    // A 200 y no a 100, y el numero esta medido (§128). En esta modalidad el
+    // 68% del marcador se gana JUGANDO, asi que a 100 la partida se acaba en
+    // 3 rondas. A 200 dura 7, que es lo mismo que el clasico.
+    overrides: { hasPool: true, scoring: 'cincos', redondeoDeRonda: 5, targetPoints: 200 }
+  }
+};
+
+export function overridesDeModalidad(nombre) {
+  const m = MODALIDADES[nombre];
+  return m ? { ...m.overrides } : {};
 }
 
 export function teamOfSeat(seat, cfg) {

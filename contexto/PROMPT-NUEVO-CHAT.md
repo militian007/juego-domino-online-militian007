@@ -197,6 +197,10 @@ colocación, **vuelve a medir esto** antes y después.
   la medición sirve para ELEGIR entre cosas reales, no para fabricar un sustituto. Para subir o
   bajar el volumen se toca un solo número, `VOLUMEN_CLAC`. El audio del video de ellos no se usa
   nunca: es su grabación.
+- **Hay TRES modalidades** (§128): Con pozo (la de siempre, a 100), Tranca (sin montón, a 100) y
+  Cinco (All Fives, se anota jugando, **a 200** — el número está medido: a 100 la partida dura 3
+  rondas en vez de 7). Se eligen arriba del selector de modos, valen igual en 1v1 y en 2v2, y se
+  recuerdan. Sin elegir nada se juega lo de siempre.
 - **Los consejos los dice El Panita** (§123, §125, §126), en un globo, sobre la mano. Cada consejo
   sale UNA vez por ronda y se pueden apagar desde la solapa de la mesa (se recuerda). Si agregás
   uno, que salga de un cambio real del estado del servidor, nunca de una suposición.

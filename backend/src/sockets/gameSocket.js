@@ -43,7 +43,7 @@ export function setupGameSocket(io, roomManager) {
     const tag = socket.isGuest ? 'invitado' : 'usuario';
     console.log(`🎮 ${socket.username} (${tag}) conectado (${socket.id})`);
 
-    socket.on('room:create', ({ mode, bot }, callback) => {
+    socket.on('room:create', ({ mode, bot, modalidad }, callback) => {
       // Los modos contra bots no exponen a nadie a otro usuario, asi que un
       // invitado puede crearlos. Los que llevan humanos siguen pidiendo cuenta.
       if (socket.isGuest && !MODOS_INVITADO.includes(mode)) {
@@ -52,6 +52,7 @@ export function setupGameSocket(io, roomManager) {
       try {
         const room = roomManager.createRoom({
           mode,
+          modalidad,
           hostId: socket.userId,
           hostUsername: socket.username
         });
@@ -60,7 +61,7 @@ export function setupGameSocket(io, roomManager) {
         player.socketId = socket.id;
         socket.join(room.code);
         roomManager.broadcastLobby(room);
-        callback?.({ ok: true, code: room.code, room: { code: room.code, mode: room.mode, modeLabel: room.config.label, hasPool: room.config.hasPool, players: room.players, started: room.started, maxPlayers: room.config.totalPlayers } });
+        callback?.({ ok: true, code: room.code, room: { code: room.code, mode: room.mode, modalidad: room.modalidad, modeLabel: room.config.label, hasPool: room.config.hasPool, players: room.players, started: room.started, maxPlayers: room.config.totalPlayers } });
       } catch (e) {
         callback?.({ ok: false, error: e.message });
       }
