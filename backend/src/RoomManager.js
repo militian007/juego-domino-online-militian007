@@ -4,6 +4,7 @@ import { DominoGame } from './game/DominoGame.js';
 import { Bot } from './game/Bot.js';
 import { MODE_CONFIG } from './game/DominoGame.js';
 import { MODALIDAD_POR_DEFECTO, esModalidad } from './game/DominoGame.js';
+import * as Moneda from './models/Moneda.js';
 import * as Partida from './models/Partida.js';
 import * as Ranking from './models/Ranking.js';
 import * as torneos from './services/torneos.js';
@@ -594,6 +595,33 @@ export class RoomManager {
 
     pase.alTerminarPartida({ jugadores, modo: room.mode, conBots, puntosDelRival })
       .catch((err) => console.error('El pase no pudo con la partida:', err.message));
+
+    this._pagarMonedas(room, conBots, jugadores);
+  }
+
+  /**
+   * Paga las monedas de la partida (§133).
+   *
+   * **Contra la maquina no se paga**, igual que la clasificacion: si pagara,
+   * la forma mas rapida de hacerse rico seria jugar solo contra la casa.
+   *
+   * La referencia es el codigo de la mesa, asi que si esto se llama dos veces
+   * por la misma partida, la segunda no suma nada.
+   */
+  _pagarMonedas(room, conBots, jugadores) {
+    if (conBots && !Moneda.PAGA_CONTRA_BOTS) return;
+    if (!jugadores.length) return;
+
+    Moneda.alTerminarPartida(jugadores, room.code)
+      .then((pagos) => {
+        for (const pago of pagos) {
+          const jugador = room.players.find((p) => String(p.id) === String(pago.userId));
+          if (jugador?.socketId) {
+            this.io?.to(jugador.socketId).emit('monedas:ganadas', { cuanto: pago.cuanto });
+          }
+        }
+      })
+      .catch((err) => console.error('Las monedas no pudieron con la partida:', err.message));
   }
 
   /**

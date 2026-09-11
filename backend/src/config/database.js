@@ -206,6 +206,31 @@ export async function initDatabase() {
 
     CREATE UNIQUE INDEX IF NOT EXISTS idx_desbloqueo_uno ON desbloqueos(user_id, clave);
 
+    -- Las monedas del club (§133). Una fila por persona con su saldo, y el
+    -- detalle aparte: sin el detalle, un saldo raro no hay forma de explicarlo.
+    CREATE TABLE IF NOT EXISTS monedas (
+      user_id INTEGER PRIMARY KEY,
+      saldo INTEGER NOT NULL DEFAULT 0,
+      ganadas_total INTEGER NOT NULL DEFAULT 0,
+      gastadas_total INTEGER NOT NULL DEFAULT 0,
+      actualizado_en TIMESTAMP
+    );
+
+    -- El detalle de cada movimiento. El motivo dice de donde salio o en que se
+    -- fue, y la referencia permite que un mismo hecho no pague dos veces.
+    CREATE TABLE IF NOT EXISTS monedas_movimientos (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      cuanto INTEGER NOT NULL,
+      motivo VARCHAR(40) NOT NULL,
+      referencia VARCHAR(80),
+      creado_en TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_monedas_mov_user ON monedas_movimientos(user_id, id);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_monedas_mov_una
+      ON monedas_movimientos(user_id, motivo, referencia);
+
     -- El pase de batalla. Una fila por persona y por temporada.
     --
     -- La temporada va como texto ("T1", "T2") por lo mismo que la semana del

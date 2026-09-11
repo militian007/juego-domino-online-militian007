@@ -8,6 +8,7 @@ import perfilRoutes from './routes/perfil.js';
 import rankingRoutes from './routes/ranking.js';
 import torneosRoutes from './routes/torneos.js';
 import desbloqueosRoutes from './routes/desbloqueos.js';
+import monedasRoutes from './routes/monedas.js';
 import paseRoutes from './routes/pase.js';
 import { roomManager } from './RoomManager.js';
 import { setupGameSocket } from './sockets/gameSocket.js';
@@ -39,6 +40,7 @@ app.use('/api/perfil', perfilRoutes);
 app.use('/api/ranking', rankingRoutes);
 app.use('/api/torneos', torneosRoutes);
 app.use('/api/desbloqueos', desbloqueosRoutes);
+app.use('/api/monedas', monedasRoutes);
 app.use('/api/pase', paseRoutes);
 
 app.get('/api/health', (req, res) => {

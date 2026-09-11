@@ -6141,3 +6141,75 @@ Arreglado mirando el abandono primero. Sin el arreglo: `"game-over" / "domino"`.
 **Elegir compañero.** Hoy los equipos salen del asiento (0 y 2 contra 1 y 3) y no hay forma de
 elegir con quien te toca. No es un bug, es una funcion que no existe; si se quiere, hay que
 decidirla.
+
+---
+
+## 133. Las monedas del club (2026-09-11)
+
+Jonathan dio luz verde a *"las ligas y la moneda y la tienda"*. Esto es la moneda. Las ligas y
+la tienda estan frenadas por dos cosas que hay que decidir y que estan al final de la seccion.
+
+### Que son
+
+Se ganan **jugando entre personas**:
+
+| | |
+| --- | --- |
+| jugar una partida | **5** |
+| ganarla | **15** mas |
+| la primera victoria del dia | **25**, una sola vez |
+
+**Contra la maquina no se paga.** Es la regla que sostiene todo lo demas: si pagara, la forma
+mas rapida de hacerse rico seria jugar solo contra la casa, y las monedas dejarian de
+significar nada. Es la misma vara que la clasificacion.
+
+**No se compran.** En Venezuela no hay pasarela de pago que sirva, asi que esto es moneda de
+juego y nada mas. Si algun dia se vende algo sera decision aparte; nada de lo que hay aqui lo
+da por hecho.
+
+### Las dos cosas que rompen un sistema de monedas
+
+No son sumar y restar. Son estas, y las dos estan cubiertas:
+
+1. **Pagar dos veces por lo mismo.** Cada movimiento lleva una `referencia` —el codigo de la
+   partida, o el dia para la primera victoria— y hay un indice unico sobre
+   `(user_id, motivo, referencia)`. Si el servidor reintenta, o si dos caminos avisan de la
+   misma partida, la segunda vez **no suma**. Sin esto, un reintento regala monedas.
+2. **Quedar en negativo.** `cobrar` mira el saldo antes y, si no alcanza, **no cobra nada** y
+   lo dice. Cobrar de mas y dejar el saldo bajo cero es la clase de error que despues no se
+   sabe deshacer.
+
+### Hay detalle, no solo un numero
+
+Un saldo suelto no se puede explicar. Cuando alguien pregunte *"¿y mis monedas?"*, con el
+detalle se contesta. Comprobado que **el detalle suma exactamente el saldo**.
+
+### Donde vive
+
+En el servidor, como los desbloqueos. Si el saldo viviera en el telefono, cualquiera se
+regalaria mil editando su navegador (CLAUDE.md regla 8).
+
+### Probado
+
+`npm run test:monedas` — **34 comprobaciones**, y la prueba **se vale por si misma**: crea las
+tablas si no estan, sin depender de que alguien haya levantado el servidor.
+
+Incluye una partida entera **contra un bot jugada de verdad** por el RoomManager, para
+comprobar que no paga ni una moneda.
+
+Y comprobado ademas en una partida de cuatro personas de verdad (la de la §132): los dos
+ganadores cobraron 45 y los dos perdedores 5, con el detalle de cada moneda.
+
+### LO QUE FALTA DECIDIR
+
+**1. La tienda no tiene que vender.** Lo unico que se desbloquea hoy son **cuatro
+cosmeticos** —tres paños y las fichas de oro— y **los cuatro son premios del pase de
+batalla**. Una tienda que los venda por monedas vacia el pase. Las salidas son: arte nuevo
+solo para la tienda (hace falta Gemini), o que las monedas compren otra cosa (¿niveles de
+pase? ¿entradas a torneo?). Hasta que eso se decida, el saldo se guarda y se muestra, que es
+lo que hace falta para cualquier camino.
+
+**2. Las ligas chocan con la §99.** Jonathan pidio una escalera de rangos, **se construyo**, y
+despues el mismo la mando sacar al ver que PrivoyTruco no la tiene: *"la escalera de rangos se
+saco"*. Volver a ponerla es deshacer esa decision y separar el domino de la plataforma a la
+que se entrega. No se toco nada hasta que lo diga.

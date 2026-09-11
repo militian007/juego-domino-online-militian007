@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
 import SelectorModos, { MODOS } from '../components/SelectorModos.jsx';
+import Monedas from '../components/Monedas.jsx';
 import Logo from '../components/Logo.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { pantallaCompleta } from '../utils/pantalla.js';
@@ -53,9 +54,12 @@ export default function Dashboard() {
           <span className="truncate text-[13px] text-domino-cream/85">
             Hola, <span className="font-semibold text-domino-cream">{user?.username || 'jugador'}</span>
           </span>
-          <span className="shrink-0 text-[11px] uppercase tracking-wider text-domino-cream/40">
-            {user?.games_played || 0} partidas ·{' '}
-            <span className="text-domino-accent">{user?.games_won || 0}</span> ganadas
+          <span className="flex shrink-0 items-center gap-2">
+            <span className="text-[11px] uppercase tracking-wider text-domino-cream/40">
+              {user?.games_played || 0} partidas ·{' '}
+              <span className="text-domino-accent">{user?.games_won || 0}</span> ganadas
+            </span>
+            <Monedas />
           </span>
         </div>
 

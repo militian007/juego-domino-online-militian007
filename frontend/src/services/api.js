@@ -56,6 +56,10 @@ export const desbloqueosApi = {
   mios: () => api.get('/desbloqueos').then((r) => r.data)
 };
 
+export const monedasApi = {
+  mias: () => api.get('/monedas').then((r) => r.data)
+};
+
 export const paseApi = {
   mio: () => api.get('/pase').then((r) => r.data),
   stickers: () => api.get('/pase/stickers').then((r) => r.data),
