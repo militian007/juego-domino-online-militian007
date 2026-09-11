@@ -5875,3 +5875,64 @@ Comprobado corriendo: apagado, **cero** consejos en doce jugadas; encendido, sal
 acto (*"Van 99 de 100: esto se define ya"*); apagado sobrevive a recargar la pagina. Cero
 errores.
 
+
+---
+
+## 127. Los dobles que se metian debajo, y el cartel que tapaba los imanes (2026-09-10)
+
+Jonathan mando capturas del telefono con dos cosas: *"ve aqui como se ve cuando voy a poner la
+primera ficha, que lo tapa ese anuncio"* y *"ve que los dobles a veces se ponen mal"*.
+
+### 1. El doble se metia POR DEBAJO de la cadena
+
+Lo primero fue descartar lo obvio: ¿se despegan las fichas? No. Medido sobre **89.775
+tableros**, en cero casos dos fichas seguidas dejan de tocarse. El dibujo no esta roto.
+
+Lo que si pasa: cuando un doble no tiene sitio para cruzarse en la punta, el motor tiene un
+rescate —**el doble dobla**— que lo pone atravesado sobre la direccion nueva. Ese rescate
+ofrecia dos posiciones, hacia adelante y **hacia atras**, y la de atras deja el doble metido
+por debajo de las fichas ya puestas. Es exactamente lo de las capturas.
+
+**Medido: 411 de 9.855 dobles (4,17%) sobresalian hacia atras.**
+
+El primer intento fue quitarle al rescate la opcion fea. Medido, **no sirve**: las fichas
+trabadas —*"tengo la ficha que pega y no me deja ponerla"*— pasan de 0,343% a 2,140% de los
+turnos, seis veces mas. Un doble feo cada tanto es mucho menos grave que eso.
+
+**La causa real era de DIBUJO, no de reglas.** `celdaDeUnion` busca por donde se tocan las dos
+fichas para centrar el doble. Cuando la cadena dobla, las dos quedan lado a lado y hay **dos**
+casillas pegadas, no una: la funcion devolvia la primera que encontraba, o sea media vez la de
+atras. Entonces el doble se centraba sobre el CUERPO de su vecina en vez de sobre la punta.
+
+Ahora el par bueno se elige por los **numeros**: dos fichas se tocan por la cara que comparte
+valor. Con eso:
+
+| | antes | despues |
+| --- | --- | --- |
+| dobles que sobresalen hacia atras | **411** (4,17%) | **0** |
+| fichas trabadas | 0,343% de los turnos | **0,201%** |
+
+Las trabadas bajaron de yapa: al centrar bien, el doble ocupa donde de verdad va y deja libre
+lo que antes pisaba.
+
+De paso, la cadena ya **no sale por el lado LARGO de un doble** salvo como rescate. Un doble
+va cruzado sobre la cadena: salir por su lado largo lo deja acostado en linea, que en una mesa
+de verdad no pasa. Cuesta cero (las trabadas no se movieron).
+
+Las 75 pruebas del motor y las 87 del backend siguen pasando.
+
+### 2. El cartel del tablero vacio tapaba los imanes
+
+Cuando te toca abrir la ronda, en el centro de la mesa habia una tarjeta con fondo y
+**desenfoque** — justo encima de donde salen los imanes azules. En las capturas de Jonathan se
+ven los imanes borrosos por detras del cartel: no podia ver donde estaba poniendo la ficha.
+
+Ahora:
+
+- **Si NO es tu turno**, el cartel se queda (dice "Esperando que comience la ronda").
+- **Si es tu turno**, baja a una linea fina arriba: *"Sos el primero: poné una ficha en el centro"*.
+- **En cuanto agarras una ficha, desaparece.** A esa altura ya sabes lo que estas haciendo.
+
+Comprobado corriendo, telefono de 375: con la mesa vacia y mi turno, el texto viejo ya no
+aparece, el aviso queda a 160 px de arriba y el centro esta libre. Con una ficha elegida, lo
+que esta encima del iman es **el iman**.

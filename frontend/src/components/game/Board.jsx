@@ -580,18 +580,29 @@ export default function Board({
 
       {/* El cartel del tablero vacio va FUERA de la camara.
           Dentro, se escalaba con ella: con la mesa acercada al maximo el texto
-          salia gigante y cortado por los lados. */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-domino-cream/60 italic text-sm sm:text-base">
-        <div className="max-w-xs rounded-xl border border-slate-700/50 bg-slate-900/60 p-6 text-center backdrop-blur-sm">
-          <div className="mb-2 font-serif text-4xl text-domino-accent/50">🀫</div>
-          <div>El tablero está vacío</div>
-          <div className="mt-1 text-xs opacity-70">
-            {myTurn
-              ? 'Arrastra una ficha válida de tu mano o haz clic en los imanes del centro para iniciar.'
-              : 'Esperando que comience la ronda...'}
+          salia gigante y cortado por los lados.
+
+          Y NO va en el medio cuando te toca a vos (§127). Era una tarjeta con
+          fondo y desenfoque justo encima de donde aparecen los imanes: Jonathan
+          mando capturas con los imanes borrosos por detras del cartel, sin
+          poder ver donde estaba poniendo la primera ficha. Cuando te toca, el
+          aviso baja a una linea fina arriba; y en cuanto agarras una ficha
+          desaparece del todo, que a esa altura ya sabes lo que estas haciendo. */}
+      {!myTurn && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6">
+          <div className="rounded-xl border border-slate-700/50 bg-slate-900/60 px-5 py-3 text-center text-sm italic text-domino-cream/60 backdrop-blur-sm">
+            Esperando que comience la ronda...
           </div>
         </div>
-      </div>
+      )}
+
+      {myTurn && !selectedTile && !draggedTile && (
+        <div className="pointer-events-none absolute inset-x-0 top-14 flex justify-center px-6">
+          <span className="rounded-full border border-domino-accent/30 bg-black/70 px-3 py-1.5 text-center text-[11px] font-semibold text-domino-cream/80">
+            Sos el primero: poné una ficha en el centro
+          </span>
+        </div>
+      )}
       </div>
     );
   }

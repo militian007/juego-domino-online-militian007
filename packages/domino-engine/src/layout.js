@@ -38,12 +38,26 @@ function celdasDe(t) {
  * centrar sobre el centro deja el doble corrido media ficha.
  */
 function celdaDeUnion(a, b) {
+  const pares = [];
   for (const p of celdasDe(a)) {
     for (const q of celdasDe(b)) {
-      if (Math.abs(p.x - q.x) + Math.abs(p.y - q.y) === 1) return { enA: p, enB: q };
+      if (Math.abs(p.x - q.x) + Math.abs(p.y - q.y) === 1) pares.push({ enA: p, enB: q });
     }
   }
-  return null;
+  if (pares.length === 0) return null;
+  if (pares.length === 1) return pares[0];
+
+  // Hay mas de un par pegado: pasa cuando la cadena DOBLA y las dos fichas
+  // quedan lado a lado. Ahi elegir el primero que aparezca es elegir al azar, y
+  // la mitad de las veces sale el de atras: el doble se centra sobre el cuerpo
+  // de su vecina y queda apilado al lado, en vez de cruzar la punta. Es lo que
+  // Jonathan reporto con capturas (§127).
+  //
+  // El par bueno se sabe por los NUMEROS: las dos fichas se tocan por la cara
+  // que comparte valor. Se busca ese, y si no se distingue se deja el primero.
+  const valorEn = (t, c) => (c.x === t.x && c.y === t.y ? t.tile[0] : t.tile[1]);
+  const porValor = pares.find((par) => valorEn(a, par.enA) === valorEn(b, par.enB));
+  return porValor || pares[0];
 }
 
 const centroDeCelda = (c, cell) => ({ x: c.x * cell + cell / 2, y: c.y * cell + cell / 2 });
@@ -247,6 +261,10 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
   // Solo se enciende en el rescate. Ver mas abajo: ofrecer el giro del doble
   // siempre hace que se elija en juego normal y deja el tablero mas apretado.
   let dobleDobla = false;
+
+  // Idem: la cadena saliendo por el LADO LARGO de un doble. Ver el rescate.
+  let salirPorElLargo = false;
+
   const add = (p) => {
     const motivo = evaluar(p, permitirRozar);
     if (diagnostico) diagnostico.push({ ...p, motivo });
@@ -284,12 +302,16 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
       if (endTile.orientation === 'horizontal') {
         const bx = minX(endTile);
         const rx = maxX(endTile);
+        // Por los lados CORTOS: la cadena atraviesa el doble y sigue derecho.
         for (const col of [bx, rx]) {
           addAlong('vertical', { x: col, y: ey - 1 }, { x: col, y: ey - 2 });
           addAlong('vertical', { x: col, y: ey + 1 }, { x: col, y: ey + 2 });
         }
-        addAlong('horizontal', { x: bx - 1, y: ey }, { x: bx - 2, y: ey });
-        addAlong('horizontal', { x: rx + 1, y: ey }, { x: rx + 2, y: ey });
+        // Por los lados LARGOS: solo si no hay mas remedio (§127).
+        if (salirPorElLargo) {
+          addAlong('horizontal', { x: bx - 1, y: ey }, { x: bx - 2, y: ey });
+          addAlong('horizontal', { x: rx + 1, y: ey }, { x: rx + 2, y: ey });
+        }
       } else {
         const by = minY(endTile);
         const ry = maxY(endTile);
@@ -297,8 +319,10 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
           addAlong('horizontal', { x: ex - 1, y: fila }, { x: ex - 2, y: fila });
           addAlong('horizontal', { x: ex + 1, y: fila }, { x: ex + 2, y: fila });
         }
-        addAlong('vertical', { x: ex, y: by - 1 }, { x: ex, y: by - 2 });
-        addAlong('vertical', { x: ex, y: ry + 1 }, { x: ex, y: ry + 2 });
+        if (salirPorElLargo) {
+          addAlong('vertical', { x: ex, y: by - 1 }, { x: ex, y: by - 2 });
+          addAlong('vertical', { x: ex, y: ry + 1 }, { x: ex, y: ry + 2 });
+        }
       }
     } else {
       // La punta libre del extremo puede apuntar en cualquiera de las 4 direcciones:
@@ -324,6 +348,13 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
           // nueva, asi que va en la fila de arriba o la de abajo, centrado
           // sobre la columna de la punta. Solo en el rescate.
           if (dobleDobla) {
+            // Solo HACIA AFUERA (§127).
+            //
+            // Antes se ofrecian las dos: hacia afuera y hacia atras, por encima
+            // de la ficha anterior. La de atras es la que se ve mal — el doble
+            // queda apilado justo al lado de su vecina y las dos acostadas
+            // igual, que es lo que Jonathan reporto con capturas. La de afuera
+            // se lee como lo que es: la cadena giro y el doble la cruza.
             for (const row of [ey - 1, ey + 1]) {
               addAlong('horizontal', { x: ex, y: row }, { x: ex - 1, y: row });
               addAlong('horizontal', { x: ex, y: row }, { x: ex + 1, y: row });
@@ -335,6 +366,7 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
           addAlong('horizontal', { x: ex, y: row }, { x: ex + 1, y: row });
 
           if (dobleDobla) {
+            // Solo hacia afuera, por lo mismo de arriba.
             for (const col of [ex - 1, ex + 1]) {
               addAlong('vertical', { x: col, y: ey }, { x: col, y: ey - 1 });
               addAlong('vertical', { x: col, y: ey }, { x: col, y: ey + 1 });
@@ -388,7 +420,25 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
 
   generarCandidatos();
 
-  // Primer rescate: el doble dobla en la punta.
+  // Primer rescate: la cadena sale por el lado LARGO del doble (§127).
+  //
+  // Un doble va cruzado sobre la cadena, asi que la cadena lo atraviesa y sale
+  // por el lado de enfrente. Salir por su lado largo deja al doble ACOSTADO EN
+  // LINEA con la cadena, que en una mesa de verdad no pasa y se ve mal al
+  // instante. Lo reporto Jonathan con capturas: *"ve que los dobles a veces se
+  // ponen mal"*.
+  //
+  // Medido sobre 300 partidas y 70.516 turnos, ofrecerlo siempre dejaba el
+  // 13,12% de los dobles en paralelo. Como rescate, solo entra cuando el doble
+  // no tiene ninguna otra salida, que es justo el caso en que la alternativa
+  // seria dejar la ficha injugable.
+  if (out.length === 0 && endIsDouble) {
+    salirPorElLargo = true;
+    if (diagnostico) diagnostico.push({ motivo: 'rescate-salir-por-el-largo' });
+    generarCandidatos();
+  }
+
+  // Segundo rescate: el doble dobla en la punta.
   //
   // Va como rescate y no como opcion normal por una razon medida. Ofrecerlo
   // siempre baja los dobles trabados del 4,87% al 2,10%, pero las fichas
