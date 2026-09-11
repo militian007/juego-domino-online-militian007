@@ -45,9 +45,10 @@ function getAudioContext() {
 /**
  * EL CLAC DE LA FICHA (§124)
  *
- * Es una **grabacion de verdad**, no un sonido fabricado. Origen y licencia en
- * `frontend/public/sonidos/LEEME.md`: es CC0 (dominio publico), del pack de
- * madera y metal de rubberduck en OpenGameArt.
+ * Son **grabaciones de verdad**, no sonidos fabricados. Origen y licencia en
+ * `frontend/public/sonidos/LEEME.md`: CC0 (dominio publico), del pack de madera
+ * y metal de rubberduck en OpenGameArt. Jonathan eligio cual, de oido, entre
+ * cuatro candidatos.
  *
  * ## Por que una grabacion
  *
@@ -71,6 +72,16 @@ function getAudioContext() {
 const ARCHIVO_CLAC = '/sonidos/clac.wav';
 
 /**
+ * El pozo revuelto usa OTRA grabacion, corta y seca.
+ *
+ * Antes usaba la misma del clac, veintitantas veces con el tono muy movido.
+ * Jonathan lo escucho: *"suena raro el final ese corrido"*. Tenia razon y se
+ * entiende por que: el clac dura 260 ms, y veinte colas de 260 ms encimadas no
+ * suenan a monton de fichas, suenan a un barrido. Esta dura 80 ms.
+ */
+const ARCHIVO_POZO = '/sonidos/clac-pozo.wav';
+
+/**
  * El volumen del clac. **Este es el numero que se toca para subirlo o bajarlo.**
  * 1 = como vino la grabacion. 1,12 es aproximadamente un decibel mas.
  */
@@ -80,6 +91,7 @@ export const VOLUMEN_CLAC = 1;
 const VARIACION_TONO = 0.08;
 
 let muestraClac = null;
+let muestraPozo = null;
 let cargando = null;
 
 /**
@@ -90,12 +102,17 @@ let cargando = null;
  */
 function cargarClac(ctx) {
   if (muestraClac || cargando) return cargando;
-  cargando = fetch(ARCHIVO_CLAC)
-    .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(r.status))))
-    .then((datos) => ctx.decodeAudioData(datos))
-    .then((buf) => {
-      muestraClac = buf;
-      return buf;
+
+  const traer = (url) =>
+    fetch(url)
+      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(r.status))))
+      .then((datos) => ctx.decodeAudioData(datos));
+
+  cargando = Promise.all([traer(ARCHIVO_CLAC), traer(ARCHIVO_POZO)])
+    .then(([clac, pozo]) => {
+      muestraClac = clac;
+      muestraPozo = pozo;
+      return clac;
     })
     .catch(() => {
       // Sin sonido antes que con un error: el juego se juega igual.
@@ -112,10 +129,11 @@ function cargarClac(ctx) {
  * revoltijo del pozo pueda programar veintitantos golpes de una sola vez, sin
  * depender de que la pantalla vaya fluida.
  */
-export function armarClac(ctx, destino, cuando, { volumen = 1, tono = 1 } = {}) {
-  if (!muestraClac) return;
+export function armarClac(ctx, destino, cuando, { volumen = 1, tono = 1, pozo = false } = {}) {
+  const muestra = pozo ? muestraPozo : muestraClac;
+  if (!muestra) return;
   const fuente = ctx.createBufferSource();
-  fuente.buffer = muestraClac;
+  fuente.buffer = muestra;
   // El tono se mueve cambiando la velocidad, que es lo que pasa de verdad
   // cuando la ficha que golpea es un poco mas chica o mas grande.
   fuente.playbackRate.value = tono;
@@ -197,22 +215,26 @@ export function playDrawSound() {
 export function playShuffleSound(duracionMs = 800) {
   const ctx = getAudioContext();
   if (!ctx) return;
-  if (!muestraClac) {
+  if (!muestraPozo) {
     cargarClac(ctx);
     return;
   }
 
   const inicio = ctx.currentTime;
   const segundos = duracionMs / 1000;
-  // Un golpe cada 35 milisegundos mas o menos: suena a monton, no a goteo.
-  const golpes = Math.max(6, Math.round(segundos / 0.035));
+  // Un golpe cada 47 milisegundos mas o menos: suena a monton, no a goteo. Era
+  // cada 35 y quedaban demasiado encimados.
+  const golpes = Math.max(6, Math.round(segundos / 0.047));
 
   for (let i = 0; i < golpes; i++) {
     // El momento se corre al azar dentro de su hueco para que no suene a metronomo.
-    const cuando = inicio + (i / golpes) * segundos + Math.random() * 0.02;
+    const cuando = inicio + (i / golpes) * segundos + Math.random() * 0.03;
     armarClac(ctx, ctx.destination, cuando, {
-      tono: 0.82 + Math.random() * 0.5,
-      volumen: 0.22 + Math.random() * 0.2
+      // Abanico de tonos corto. Con el de antes —de 0,82 a 1,32— los golpes
+      // subian y bajaban tanto que se oian como un barrido, no como fichas.
+      tono: 0.92 + Math.random() * 0.26,
+      volumen: 0.25 + Math.random() * 0.18,
+      pozo: true
     });
   }
 }

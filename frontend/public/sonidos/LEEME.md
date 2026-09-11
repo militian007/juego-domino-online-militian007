@@ -1,15 +1,29 @@
 # De dónde salen estos sonidos
 
-`clac.wav` — el golpe de la ficha al ponerse en la mesa.
+Los dos salen del mismo pack y tienen la misma licencia:
 
 - **Origen:** pack *"100 CC0 metal and wood SFX"* de **rubberduck**, en OpenGameArt.
   https://opengameart.org/content/100-cc0-metal-and-wood-sfx
 - **Licencia:** **CC0 / dominio público.** Uso libre, también comercial, sin
   atribución obligatoria. Se deja igual escrito acá porque corresponde.
-- **Archivo original:** `wood_hit_01.ogg`.
-- **Qué se le hizo:** se recortó desde el golpe, se dejó en 260 ms, se le puso
-  un desvanecido de 25 ms al final para que no chasquee al cortarse, y se pasó
-  a WAV mono de 32 kHz (16 KB).
+
+| archivo | para qué | original | largo | peso |
+| --- | --- | --- | --- | --- |
+| `clac.wav` | la ficha al ponerse en la mesa | `metal_hit_01.ogg` | 260 ms | 16 KB |
+| `clac-pozo.wav` | cada golpe del pozo revuelto | `wood_misc_05.ogg` | 80 ms | 5 KB |
+
+A los dos: recortados desde el golpe, con un desvanecido al final para que no
+chasqueen al cortarse, y pasados a WAV mono de 32 kHz.
+
+**El del pozo es OTRO, y corto a propósito.** Al principio el montón usaba la
+misma grabación del clac, veintitantas veces con el tono muy movido. Jonathan lo
+escuchó: *"suena raro el final ese corrido"*. Veinte colas de 260 ms encimadas
+no suenan a montón de fichas, suenan a un barrido. Esta dura 80 ms, van más
+espaciadas (una cada 47 ms en vez de 35) y el abanico de tonos es la mitad de
+ancho.
+
+**Cuál se usa lo eligió Jonathan de oído**, entre cuatro candidatos que se le
+pasaron sonando. La medición sirvió para hacer la lista corta, no para decidir.
 
 ## Por qué es una grabación y no un sonido sintetizado
 

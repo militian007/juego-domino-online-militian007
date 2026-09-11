@@ -5715,10 +5715,15 @@ elegir y ajustar esa grabacion, no para fabricar un sustituto.
 
 ### Como quedo: una GRABACION, elegida con la medicion
 
-`frontend/public/sonidos/clac.wav` — 16 KB, mono, 32 kHz, 260 ms.
+Dos grabaciones, del mismo pack:
+
+| archivo | para que | original | largo |
+| --- | --- | --- | --- |
+| `clac.wav` | la ficha al ponerse | `metal_hit_01.ogg` | 260 ms |
+| `clac-pozo.wav` | cada golpe del monton | `wood_misc_05.ogg` | 80 ms |
 
 - **Origen:** pack *"100 CC0 metal and wood SFX"* de **rubberduck** en OpenGameArt
-  (https://opengameart.org/content/100-cc0-metal-and-wood-sfx), archivo `wood_hit_01.ogg`.
+  (https://opengameart.org/content/100-cc0-metal-and-wood-sfx).
 - **Licencia:** **CC0 / dominio publico.** Uso libre, tambien comercial, sin atribucion
   obligatoria. Queda escrito igual en `frontend/public/sonidos/LEEME.md`.
 - **Que se le hizo:** recortado desde el golpe, 260 ms, desvanecido de 25 ms al final para que
@@ -5734,12 +5739,20 @@ madera y metal del pack con la misma vara que el video, y este es el que mas se 
 | el segundo | 100 ms | 4125 Hz | 16 / 22 / 50 / 13 % |
 
 Cada golpe mueve el tono un ±8% y el volumen un ±15%, cambiando la velocidad de la muestra —
-que es lo que pasa de verdad cuando la ficha que golpea es un poco distinta. **El revoltijo
-del pozo es la misma grabacion**, veintitantas veces con el tono movido.
+que es lo que pasa de verdad cuando la ficha que golpea es un poco distinta.
+
+**Cual se usa lo eligio Jonathan de oido**, entre cuatro candidatos que se le pasaron sonando.
+La medicion hizo la lista corta; la eleccion fue suya. Eso es lo que faltaba en el intento
+anterior.
+
+**El pozo revuelto lleva OTRA grabacion, corta y seca.** Al principio usaba la misma del clac,
+veintitantas veces con el tono muy movido, y Jonathan lo escucho: *"suena raro el final ese
+corrido"*. Tenia razon: veinte colas de 260 ms encimadas no suenan a monton de fichas, suenan
+a un barrido. La del pozo dura 80 ms, van una cada 47 ms en vez de cada 35, y el abanico de
+tonos paso de 0,82-1,32 a 0,92-1,18.
 
 **Para subir o bajar el volumen se toca UN numero**, `VOLUMEN_CLAC` en `soundEffects.js`. 1 es
 como vino la grabacion; 1,12 es aproximadamente un decibel mas.
 
 La grabacion se pide al entrar a la mesa, no en la primera jugada: son 16 KB y un clac que
 llega tarde es peor que ninguno. Si no llega, no suena nada y el juego se juega igual.
-
