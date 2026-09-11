@@ -31,6 +31,33 @@ const MS_VISIBLE = 4600;
 /** Se recuerda si ya jugo alguna vez, para el consejo de la primera partida. */
 const LLAVE_PRIMERA = 'domino-ya-jugo';
 
+/**
+ * Si el Panita habla o no.
+ *
+ * Se apaga desde la solapa de la mesa y se recuerda, igual que el silencio: a
+ * quien ya sabe jugar, un consejo cada ronda le sobra. Y quien lo apago no
+ * quiere que vuelva solo la proxima vez.
+ */
+const LLAVE_APAGADOS = 'domino-sin-consejos';
+
+export function consejosEncendidos() {
+  try {
+    return localStorage.getItem(LLAVE_APAGADOS) !== '1';
+  } catch {
+    return true;
+  }
+}
+
+export function alternarConsejos() {
+  const ahora = !consejosEncendidos();
+  try {
+    localStorage.setItem(LLAVE_APAGADOS, ahora ? '0' : '1');
+  } catch {
+    // Navegador sin almacenamiento: se queda encendido y listo.
+  }
+  return ahora;
+}
+
 function esPrimeraVez() {
   try {
     return localStorage.getItem(LLAVE_PRIMERA) !== '1';
@@ -154,7 +181,7 @@ function consejosDelCambio(antes, ahora, { myTurn, miId }) {
   return salida;
 }
 
-export function useConsejos(gameState, { myTurn, miId }) {
+export function useConsejos(gameState, { myTurn, miId, encendidos = true }) {
   // La cola va en ESTADO, no en un ref con un `setInterval` mirandolo. La
   // primera version encolaba en un ref y un reloj de 150 ms lo vaciaba: en
   // cuanto el navegador frena los relojes (pestaña de fondo, telefono con la
@@ -164,11 +191,20 @@ export function useConsejos(gameState, { myTurn, miId }) {
   const anterior = useRef(null);
   const dichos = useRef(new Set());
   const ronda = useRef(null);
+  const estabaEncendido = useRef(encendidos);
 
   useEffect(() => {
     const antes = anterior.current;
     anterior.current = gameState;
-    if (!gameState) return;
+
+    // Al volver a encenderlos se olvida lo dicho. Si no, el que los apago y los
+    // prende de nuevo en la misma ronda no ve NADA hasta la ronda siguiente, y
+    // el interruptor parece roto.
+    const seAcabaDeEncender = encendidos && !estabaEncendido.current;
+    estabaEncendido.current = encendidos;
+    if (seAcabaDeEncender) dichos.current = new Set();
+
+    if (!gameState || !encendidos) return;
 
     // Ronda nueva: se olvida lo dicho, para que los consejos de salida vuelvan.
     if (ronda.current !== gameState.round) {
@@ -183,11 +219,11 @@ export function useConsejos(gameState, { myTurn, miId }) {
     });
 
     if (nuevos.length) setCola((antes2) => [...antes2, ...nuevos]);
-  }, [gameState, myTurn, miId]);
+  }, [gameState, myTurn, miId, encendidos]);
 
   // El primero de la cola es el que se ve. Cuando se le acaba el tiempo se cae
   // de la cola, y el que sigue entra solo.
-  const actual = cola[0] ?? null;
+  const actual = encendidos ? cola[0] ?? null : null;
 
   useEffect(() => {
     if (!actual) return;
@@ -208,7 +244,7 @@ export function useConsejos(gameState, { myTurn, miId }) {
  *
  * ## Compacto a proposito
  *
- * El Panita mide 46 px y el globo no pasa de dos renglones. Una mascota grande
+ * El Panita mide 64 px y el globo no pasa de dos renglones. Una mascota grande
  * saltando cada media ronda tapa la mesa y cansa a los diez minutos; el freno
  * de verdad ya esta en el hook —cada consejo sale UNA vez por ronda— pero el
  * tamaño ayuda.
@@ -229,17 +265,17 @@ export default function ConsejoDeMesa({ consejo, style }) {
         src="/stickers/panita.png"
         alt=""
         aria-hidden="true"
-        className="panita-saluda h-[46px] w-auto shrink-0 drop-shadow-[0_4px_8px_rgba(0,0,0,.75)]"
+        className="panita-saluda h-[64px] w-auto shrink-0 drop-shadow-[0_5px_10px_rgba(0,0,0,.75)]"
       />
 
-      <div className="relative max-w-[250px]">
+      <div className="relative max-w-[268px]">
         {/* La colita del globo, apuntando al Panita. Es un cuadrado girado, no
             un dibujo: asi hereda el borde y el fondo del globo sin repetirlos. */}
         <span
           aria-hidden="true"
-          className="absolute -left-1 bottom-3 h-2.5 w-2.5 rotate-45 border-b border-l border-domino-accent/60 bg-domino-dark"
+          className="absolute -left-1.5 bottom-4 h-3 w-3 rotate-45 border-b border-l border-domino-accent/60 bg-domino-dark"
         />
-        <p className="relative rounded-2xl border border-domino-accent/60 bg-domino-dark/97 px-3.5 py-2 text-[13px] font-semibold leading-snug text-domino-cream shadow-[0_6px_20px_rgba(0,0,0,.7)]">
+        <p className="relative rounded-2xl border border-domino-accent/60 bg-domino-dark/97 px-4 py-2.5 text-[14px] font-semibold leading-snug text-domino-cream shadow-[0_6px_20px_rgba(0,0,0,.7)]">
           {consejo.texto}
         </p>
       </div>

@@ -5853,3 +5853,25 @@ Jugando contra la maquina, telefono de 375: El Panita salio con *"La Comadre no 
 esta levantando"*, *"A La Comadre le queda una ficha"* y *"¡Te queda una ficha!"*. La imagen
 carga (`naturalWidth > 0`), mide 46x45, el conjunto cae entre 569 y 592 de alto, y la mano
 empieza en 691: no se pisan. Cero errores en consola.
+
+### Mas grande, y con interruptor
+
+Jonathan, despues de verlo: *"me gusta, pero tambien hazlo un poco mas grande y que esa opcion
+se pueda deshabilitar"*.
+
+- **El Panita pasa de 46 a 64 px** y la letra del globo de 13 a 14. Sigue sin pisar la mano:
+  medido, el conjunto termina cerca de 623 y la mano empieza en 684.
+- **Se apaga desde la solapa de la mesa**, con el resto de los controles, y se recuerda — igual
+  que el silencio. A quien ya sabe jugar, un consejo cada ronda le sobra.
+- El icono del boton es la bombilla del set **Fluent Emoji**, sacada con
+  `tools/extraer-iconos.cjs`. No se dibujo (regla 1.1).
+
+**Un detalle que salio de probarlo y era un bug de verdad:** al volver a encenderlos no pasaba
+nada hasta la ronda siguiente, porque los consejos de esa ronda ya estaban marcados como
+dichos. Uno prende el interruptor, no ve nada y piensa que esta roto. Ahora **encenderlos
+olvida lo dicho**, asi que el siguiente consejo que corresponda sale enseguida.
+
+Comprobado corriendo: apagado, **cero** consejos en doce jugadas; encendido, sale uno en el
+acto (*"Van 99 de 100: esto se define ya"*); apagado sobrevive a recargar la pagina. Cero
+errores.
+

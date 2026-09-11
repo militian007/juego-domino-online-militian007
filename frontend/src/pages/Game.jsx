@@ -10,7 +10,9 @@ import { Marcador, Jugador, Mesa } from '../components/game/Hud.jsx';
 import Hand from '../components/game/Hand.jsx';
 import OpponentHand from '../components/game/OpponentHand.jsx';
 import ManoBocaAbajo from '../components/game/ManoBocaAbajo.jsx';
-import ConsejoDeMesa, { useConsejos } from '../components/game/ConsejoDeMesa.jsx';
+import ConsejoDeMesa, {
+  useConsejos, consejosEncendidos, alternarConsejos
+} from '../components/game/ConsejoDeMesa.jsx';
 import PuntosQueVuelan from '../components/game/PuntosQueVuelan.jsx';
 import CelebracionDeRonda, {
   MS_GRITO,
@@ -622,8 +624,14 @@ export default function Game() {
     prepararSonidos();
   }, []);
 
-  // Los consejos que salen solos durante la partida (§123).
-  const consejo = useConsejos(gameState, { myTurn, miId: myPlayerId });
+  // Los consejos que dice el Panita (§123, §126). Se pueden apagar desde la
+  // solapa de la mesa: a quien ya sabe jugar, uno cada ronda le sobra.
+  const [conConsejos, setConConsejos] = useState(consejosEncendidos);
+  const consejo = useConsejos(gameState, {
+    myTurn,
+    miId: myPlayerId,
+    encendidos: conConsejos
+  });
 
   // ---------------------------------------------------------------------
   // EL CIERRE DE LA RONDA, EN DOS TIEMPOS (§123)
@@ -1347,7 +1355,7 @@ export default function Game() {
                       aria-label={solapa ? 'Ocultar los controles' : 'Mostrar los controles'}
                       aria-expanded={solapa}
                       className={`absolute left-0 top-0 z-0 flex w-4 items-end justify-center rounded-r-lg border border-l-0 border-domino-accent/40 bg-black/45 pb-2 text-domino-accent/70 transition-all hover:bg-black/65 hover:text-domino-accent ${
-                        solapa ? 'h-[172px]' : 'h-[76px]'
+                        solapa ? 'h-[218px]' : 'h-[76px]'
                       }`}
                     >
                       <ChevronRight
@@ -1372,6 +1380,12 @@ export default function Game() {
                         activo={abierto === 'pano'}
                         icono="paleta"
                         onClick={() => setAbierto((v) => (v === 'pano' ? null : 'pano'))}
+                      />
+                      <BotonMesa
+                        titulo={conConsejos ? 'Apagar los consejos del Panita' : 'Encender los consejos del Panita'}
+                        activo={conConsejos}
+                        icono="consejo"
+                        onClick={() => setConConsejos(alternarConsejos())}
                       />
                       <BotonMesa
                         titulo="Enviar un gesto"

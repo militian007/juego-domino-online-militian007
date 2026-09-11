@@ -197,6 +197,9 @@ colocación, **vuelve a medir esto** antes y después.
   la medición sirve para ELEGIR entre cosas reales, no para fabricar un sustituto. Para subir o
   bajar el volumen se toca un solo número, `VOLUMEN_CLAC`. El audio del video de ellos no se usa
   nunca: es su grabación.
+- **Los consejos los dice El Panita** (§123, §125, §126), en un globo, sobre la mano. Cada consejo
+  sale UNA vez por ronda y se pueden apagar desde la solapa de la mesa (se recuerda). Si agregás
+  uno, que salga de un cambio real del estado del servidor, nunca de una suposición.
 - **Ojo con los hooks detrás de un `return`.** `Game` tiene CINCO `return` tempranos y `Board` uno.
   Un `useState`/`useEffect` escrito debajo de ellos rompe React con *"Rendered more hooks than during
   the previous render"* y deja la mesa en blanco. Pasó dos veces (§122 y §123).
