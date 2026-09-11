@@ -6021,3 +6021,18 @@ no. Comprobado: en Tranca 1v1 se reparten 7 y 7, y las otras 14 se quedan fuera 
 Comprobado ademas en la mesa, corriendo: Cinco arranca "a 200" con su rotulo, el rival anoto
 5 jugando y salto el "+5"; Tranca muestra "TRANCA · SIN POZO" y no ofrece monton ni una vez;
 y elegir "Cinco" en el menu deja la URL en `?mode=1v1bot&modalidad=cinco`.
+
+---
+
+## 129. Decidido: no van Hint ni Spy (2026-09-11)
+
+Del paso 4 del plan de Domino Legends, el punto que no era tecnico sino de criterio. Jonathan:
+*"no lo de hint spy no"*.
+
+**Cerrado, y no hace falta volver a proponerlo.** Ver las fichas del rival cambia el domino de
+raiz: el que lo sufre no vuelve a jugar. Y el Hint —marcarle a alguien donde puede poner— en un
+juego donde ya existe *"por que no podes jugar"* con el diagnostico escrito es de todos modos
+poco.
+
+Del paso 4 quedan sin decidir: monedas/tienda/ruleta y las ligas con divisiones.
+

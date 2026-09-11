@@ -171,9 +171,9 @@ Son tres cosas y las tres van juntas, porque las tres son la misma sensación.
 
 Estas las tiene que decidir Jonathan, porque cambian qué clase de juego es:
 
-8. **Ayudas tipo Spy y Hint.** Ver las fichas del rival cambia el dominó de raíz. En un juego
-   con dinero sería inaceptable; en uno casual es un gancho enorme. **Mi opinión: el Hint sí
-   (ayuda al que empieza), el Spy no** (rompe el juego y el que lo sufre se va).
+8. ~~**Ayudas tipo Spy y Hint.**~~ **DECIDIDO (2026-09-11): NO va ninguna de las dos.**
+   Jonathan: *"no lo de hint spy no"*. Queda cerrado, no hace falta volver a proponerlo.
+   Ver las fichas del rival cambia el dominó de raíz, y el que lo sufre se va.
 9. **Monedas, tienda, ruleta y coste de entrada.** Es un modelo de negocio entero. Sin pasarela
    de pago en Venezuela, hoy solo serviría como moneda de juego. **Mi opinión: esperar**, y que
    el pase de batalla siga siendo el sistema de recompensas.
