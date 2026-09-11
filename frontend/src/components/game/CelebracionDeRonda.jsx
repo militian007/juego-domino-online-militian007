@@ -29,19 +29,63 @@ const PAPELITOS = 36;
 
 const COLORES = ['#d4af37', '#f6e6bd', '#e0684f', '#5fa8d3', '#7bc47f', '#e8c974'];
 
-/** Que dice el cartel, segun como cerro la ronda y como te fue. */
+/**
+ * Que dice el cartel, segun como cerro la ronda y como te fue.
+ *
+ * `arte` es el cartel PINTADO que le corresponde, si lo hay (§130). Solo los de
+ * ganar lo tienen: un banner pintado para "Tranca perdida" seria celebrar que
+ * perdiste. Los de perder se quedan en tipografia sobria, a proposito.
+ */
 export function tituloDeRonda({ motivo, equipoGanador, miEquipo }) {
   if (equipoGanador === 0 || equipoGanador == null) {
-    return { texto: '¡Empate!', gane: false };
+    return { texto: '¡Empate!', gane: false, arte: null };
   }
   const gane = equipoGanador === miEquipo;
   if (motivo === 'blocked') {
-    return { texto: gane ? '¡Tranca ganada!' : 'Tranca perdida', gane };
+    return { texto: gane ? '¡Tranca ganada!' : 'Tranca perdida', gane, arte: gane ? 'tranca' : null };
   }
   if (motivo === 'forfeit') {
-    return { texto: gane ? 'Ronda ganada' : 'Ronda perdida', gane };
+    return { texto: gane ? 'Ronda ganada' : 'Ronda perdida', gane, arte: null };
   }
-  return { texto: gane ? '¡Dominó!' : 'Se quedó sin fichas', gane };
+  return { texto: gane ? '¡Dominó!' : 'Se quedó sin fichas', gane, arte: gane ? 'domino' : null };
+}
+
+/**
+ * El cartel: pintado si existe, y si no, la tipografia de siempre.
+ *
+ * El dibujo se pide por `<img>` y si no esta —todavia no lo generamos, o fallo
+ * la descarga— se cae solo al texto. Asi el juego nunca depende de que el arte
+ * este puesto, que es la unica forma de poder soltarlo cuando llegue sin tocar
+ * codigo.
+ */
+export function Cartel({ arte, texto, gane, className = '' }) {
+  const [sinArte, setSinArte] = useState(false);
+
+  if (arte && !sinArte) {
+    return (
+      <img
+        src={`/carteles/${arte}.png`}
+        alt={texto}
+        onError={() => setSinArte(true)}
+        className={`mx-auto h-auto w-[min(86vw,420px)] drop-shadow-[0_8px_20px_rgba(0,0,0,.85)] ${className}`}
+      />
+    );
+  }
+
+  return (
+    <h2
+      className={`text-[13vw] font-black leading-none tracking-tight sm:text-6xl ${
+        gane ? 'text-domino-accent' : 'text-domino-cream/85'
+      }`}
+      style={{
+        textShadow: gane
+          ? '0 0 24px rgba(212,175,55,.55), 0 4px 0 rgba(0,0,0,.75), 0 10px 26px rgba(0,0,0,.9)'
+          : '0 3px 0 rgba(0,0,0,.75), 0 8px 20px rgba(0,0,0,.9)'
+      }}
+    >
+      {texto}
+    </h2>
+  );
 }
 
 /**
@@ -123,7 +167,7 @@ function Confeti() {
   );
 }
 
-export default function CelebracionDeRonda({ activa, titulo, gane, puntos }) {
+export default function CelebracionDeRonda({ activa, titulo, gane, puntos, arte = null }) {
   if (!activa) return null;
 
   return (
@@ -138,18 +182,7 @@ export default function CelebracionDeRonda({ activa, titulo, gane, puntos }) {
       )}
 
       <div className="grito-entra relative px-6 text-center">
-        <h2
-          className={`text-[13vw] font-black leading-none tracking-tight sm:text-6xl ${
-            gane ? 'text-domino-accent' : 'text-domino-cream/85'
-          }`}
-          style={{
-            textShadow: gane
-              ? '0 0 24px rgba(212,175,55,.55), 0 4px 0 rgba(0,0,0,.75), 0 10px 26px rgba(0,0,0,.9)'
-              : '0 3px 0 rgba(0,0,0,.75), 0 8px 20px rgba(0,0,0,.9)'
-          }}
-        >
-          {titulo}
-        </h2>
+        <Cartel arte={arte} texto={titulo} gane={gane} />
         {puntos > 0 && (
           <p className="mt-2 text-lg font-bold tabular-nums text-domino-cream/90 drop-shadow-[0_3px_6px_rgba(0,0,0,.9)]">
             +{puntos}

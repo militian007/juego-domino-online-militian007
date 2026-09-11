@@ -6036,3 +6036,56 @@ poco.
 
 Del paso 4 quedan sin decidir: monedas/tienda/ruleta y las ligas con divisiones.
 
+
+---
+
+## 130. El cartel de "¡Dominó!", listo para recibir el arte (2026-09-11)
+
+Cierra lo que quedaba del paso 2. El grito de fin de ronda estaba hecho con tipografia y
+efectos de CSS: se ve bien, pero es lo que mas se mira de toda la partida y no compite con el
+arte pintado de ellos.
+
+### Lo que se hizo AHORA (sin el arte todavia)
+
+El prompt para Gemini esta en
+[contexto/prompts/carteles-de-fin-de-ronda.md](prompts/carteles-de-fin-de-ronda.md), y el
+codigo ya sabe usar los dibujos **cuando aparezcan**:
+
+- `npm run carteles` (en `frontend/`) toma `arte-fuente/cartel-*.png`, les quita el fondo
+  magenta por el mismo camino que los stickers, y los deja en `public/carteles/`.
+- `CelebracionDeRonda` pide el dibujo por `<img>` y **si no esta, se cae solo al texto**.
+
+Asi Jonathan suelta los PNG y ya esta, sin tocar codigo y sin que yo tenga que estar delante.
+
+### Son tres, y todos son de GANAR
+
+| archivo | cuando sale | que dice |
+| --- | --- | --- |
+| `domino.png` | ganaste la ronda quedandote sin fichas (85% de las veces) | ¡DOMINÓ! |
+| `tranca.png` | ganaste una ronda trancada | ¡TRANCA! |
+| `ganaste.png` | ganaste la partida entera | ¡GANASTE! |
+
+**Los de perder no llevan arte, a proposito.** Un banner pintado para "Tranca perdida" seria
+celebrar que perdiste; esos se quedan en tipografia sobria. Tampoco se pidio `¡EMPATE!`: son
+el 0,7% de las rondas, medido, y no vale una imagen que casi nadie va a ver.
+
+### Y no llevan rayos pintados
+
+Los rayos de sol siguen siendo CSS y giran despacio por detras. Pintados en la imagen se
+quedarian quietos, y lo que da vida es el giro. El prompt lo prohibe explicitamente, junto con
+el confeti y cualquier ficha o personaje: **solo la palabra**.
+
+### Una cosa que se descubrio probando
+
+El servidor de desarrollo devuelve **200 con `text/html`** cuando el archivo no existe: es el
+`index.html` del SPA. O sea que **preguntar por `fetch` si el dibujo esta no sirve** —
+contestaria que si. Lo unico fiable es el `onError` del `<img>`, que es lo que se uso.
+
+Comprobado corriendo, con los dibujos todavia sin generar: la ronda cerro, se intento
+`/carteles/domino.png`, fallo, y salio el "¡Dominó!" de texto de siempre. Cero errores.
+
+### Ojo con las tildes
+
+Los generadores de imagen se equivocan con el texto, y en español mas: se comen la tilde de
+DOMINÓ o se olvidan del `¡`. El prompt insiste tres veces y el LEEME avisa de revisar letra
+por letra antes de guardar.

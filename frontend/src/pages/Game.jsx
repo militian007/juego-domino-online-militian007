@@ -17,6 +17,7 @@ import ConsejoDeMesa, {
 } from '../components/game/ConsejoDeMesa.jsx';
 import PuntosQueVuelan from '../components/game/PuntosQueVuelan.jsx';
 import CelebracionDeRonda, {
+  Cartel,
   MS_GRITO,
   tituloDeRonda,
   useNumeroQueSube
@@ -1678,6 +1679,7 @@ export default function Game() {
             activa={gritando}
             titulo={cierreDeRonda.texto}
             gane={cierreDeRonda.gane}
+            arte={cierreDeRonda.arte}
             puntos={cierreDeRonda.gane ? gameState.roundPoints : 0}
           />
         )}
@@ -1748,9 +1750,20 @@ export default function Game() {
         {gameState.status === 'game-over' && (
           <div className="fixed inset-0 z-40 bg-black/70 flex items-center justify-center p-4">
             <div className="card p-6 sm:p-8 max-w-md w-full text-center">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-domino-accent">
-                🏆 ¡Partida terminada!
-              </h2>
+              {/* Al ganar la partida entera va el cartel pintado, si esta
+                  (§130). Si no, el titulo de siempre. */}
+              {gameState.winningTeam === miEquipo ? (
+                <Cartel
+                  arte="ganaste"
+                  texto="¡Ganaste la partida!"
+                  gane
+                  className="mb-3 w-[min(70vw,300px)]"
+                />
+              ) : (
+                <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-domino-accent">
+                  ¡Partida terminada!
+                </h2>
+              )}
               <p className="text-slate-300 mb-6">
                 {gameState.winningTeam
                   ? `El equipo ${gameState.winningTeam} ganó ${Math.max(
