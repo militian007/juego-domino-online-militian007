@@ -19,6 +19,7 @@
     "test:torneos": "node src/test-torneos.js",
     "test:desbloqueos": "node src/test-desbloqueos.js",
     "test:pase": "node src/test-pase.js",
+    "test:2v2-humanos": "node src/test-2v2-humanos.js",
     "test:modalidades": "node src/test-modalidades.js",
     "test:destranque": "node src/test-destranque.js",
     "reiniciar-clasificacion": "node src/reiniciar-clasificacion.js",

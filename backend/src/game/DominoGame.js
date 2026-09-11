@@ -191,6 +191,17 @@ export class DominoGame {
   }
 
   get endReason() {
+    // El abandono va PRIMERO, y no es un capricho de orden (§132).
+    //
+    // Abandonar termina la partida sin cerrar ronda: el motivo queda en
+    // `state.result` y `lastRound` se queda con el de la ronda ANTERIOR. Como
+    // `_roundClosed` mira solo la fase, tras un abandono daba por buena esa
+    // ronda vieja y contestaba "domino" cuando en realidad alguien se fue.
+    // Lo mismo que ya estaba arreglado en `winningTeam` y aqui faltaba.
+    if (this.state.phase === PHASE.GAME_OVER && this.state.result?.reason === 'forfeit') {
+      return 'forfeit';
+    }
+
     const deLaRonda = this._roundClosed ? this.state.lastRound?.reason ?? null : null;
     if (deLaRonda !== null) return deLaRonda;
 

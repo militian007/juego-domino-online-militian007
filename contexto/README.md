@@ -6089,3 +6089,55 @@ Comprobado corriendo, con los dibujos todavia sin generar: la ronda cerro, se in
 Los generadores de imagen se equivocan con el texto, y en español mas: se comen la tilde de
 DOMINÓ o se olvidan del `¡`. El prompt insiste tres veces y el LEEME avisa de revisar letra
 por letra antes de guardar.
+
+---
+
+## 132. El 2 vs 2 entre cuatro personas, probado por fin (2026-09-11)
+
+Estaba en la lista de pendientes como **"sin probar"**: el 2v2 se habia jugado siempre con
+bots. Lo que cambia con cuatro humanos es todo lo de alrededor —la sala de cuatro, los
+equipos, quien ve que, y sobre todo que pasa si uno se va a mitad de partida— y nada de eso lo
+cubren las pruebas del motor.
+
+`backend/src/test-2v2-humanos.js`, **35 comprobaciones** con cuatro sockets de verdad contra el
+servidor levantado. `npm run test:2v2-humanos`.
+
+### Lo que se comprobo
+
+| | |
+| --- | --- |
+| la sala | se crea para cuatro; **no arranca a medias** ("Faltan jugadores (1/4)"); los otros tres entran por codigo |
+| los equipos | el 1 con el 3, el 2 con el 4, cada uno en su asiento |
+| la privacidad | cada uno ve **solo su mano**, las cuatro son distintas, y el estado no lleva la de los demas |
+| jugar | 23 fichas por turnos; **jugar fuera de turno se rechaza** ("No es tu turno"); los cuatro ven la misma mesa |
+| caerse | a los demas les llega quien falta y cuanto le queda (60 s) |
+| volver | entra con el mismo codigo, **con su mano intacta** y la mesa como estaba; a los demas se les quita el aviso |
+| irse del todo | la partida se cierra sola por abandono y nadie queda esperando un turno que no va a llegar |
+
+### El bug que encontro
+
+**Despues de un abandono, el motivo del final estaba mal.** `endReason` devolvia `"domino"` —el
+de la ronda ANTERIOR— en vez de `"forfeit"`.
+
+La causa: abandonar termina la partida **sin cerrar ronda**, asi que el motivo queda en
+`state.result` y `lastRound` se queda con el de antes. Como `_roundClosed` mira solo la fase,
+tras un abandono daba por buena esa ronda vieja. Es exactamente el mismo agujero que ya estaba
+tapado en `winningTeam` —con su comentario y todo— y que en `endReason` nadie habia tapado.
+
+Arreglado mirando el abandono primero. Sin el arreglo: `"game-over" / "domino"`. Con el:
+`"game-over" / "forfeit"`.
+
+### Dos trampas de la prueba, anotadas para el que venga
+
+1. **El servidor manda `game:state` ANTES de contestar el callback de `room:join`.** Si te
+   pones a escuchar despues de que vuelva el callback, ya paso y parece que no llego nunca.
+   Costo dos falsos fallos.
+2. **Escribir el archivo de prueba dentro de `backend/` reinicia nodemon**, y el reinicio se
+   lleva las salas, que viven en memoria. Si la prueba falla con `xhr poll error`, es eso:
+   esperar unos segundos y repetir.
+
+### Lo que sigue sin probar
+
+**Elegir compañero.** Hoy los equipos salen del asiento (0 y 2 contra 1 y 3) y no hay forma de
+elegir con quien te toca. No es un bug, es una funcion que no existe; si se quiere, hay que
+decidirla.

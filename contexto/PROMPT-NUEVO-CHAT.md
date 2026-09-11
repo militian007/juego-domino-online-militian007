@@ -273,8 +273,11 @@ colocación, **vuelve a medir esto** antes y después.
   (el 35% del ancho). Ponerlas en las esquinas de arriba las devolvería (ficha ~31x15). Sin decidir.
 - **Los 12 retratos son vectores dibujados a mano** (`frontend/tools/retratos.py`), hechos cuando no
   había crédito de IA. Los prompts para rehacerlos con IA están en `contexto/avatares-prompts.md`.
-- **2v2 entre cuatro personas reales** sin probar (lobby de cuatro, elegir compañero, qué pasa si
-  alguien se va).
+- ~~**2v2 entre cuatro personas reales** sin probar~~ **PROBADO (§132)**: 35 comprobaciones con
+  cuatro sockets de verdad (`npm run test:2v2-humanos`) — sala de cuatro, equipos, privacidad de
+  las manos, jugar por turnos, caerse, volver con la mano intacta, e irse del todo. Encontró un
+  bug real: tras un abandono el motivo del final decía "domino" en vez de "forfeit". **Sigue sin
+  existir "elegir compañero"**: los equipos salen del asiento y no se eligen.
 - ~~**Acotar el corrimiento visual de los dobles**~~ **CERRADO (2026-09-11): no hay nada que ganar.**
   Se volvió a medir sobre 65.558 posiciones en 1v1 y 39.835 en 2v2
   (`packages/domino-engine/tools/medir-corrimiento.mjs`): el corrimiento cuesta **1,1% del tamaño
