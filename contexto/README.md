@@ -6213,3 +6213,44 @@ lo que hace falta para cualquier camino.
 despues el mismo la mando sacar al ver que PrivoyTruco no la tiene: *"la escalera de rangos se
 saco"*. Volver a ponerla es deshacer esa decision y separar el domino de la plataforma a la
 que se entrega. No se toco nada hasta que lo diga.
+
+---
+
+## 134. La ficha ya no se voltea al ponerla (2026-09-11)
+
+Jonathan: *"cuando uno pone la pieza en la mesa hace una animacion rara, como si volteara la
+pieza"*. Tenia razon, y eran **dos** saltos distintos, los dos del vuelo de la §122.
+
+### Por que se veia asi
+
+Una ficha no tiene una imagen por cada cara: hay **un solo archivo**, `tile_min_max.png`, y
+`Tile` lo **gira** 0, 90, 180 o 270 grados segun la orientacion y segun si el numero chico va
+primero. Entonces:
+
+1. **Al aterrizar cambiaba de cara.** La mesa no dibuja la ficha con el orden crudo de tu mano:
+   la da vuelta segun por que punta entra (`displayTile`). La que volaba usaba el orden crudo,
+   asi que al llegar pasaba de golpe de 0 a 180 grados. **Eso es literalmente un volteo.**
+2. **Al despegar daba un cuarto de vuelta de golpe.** En la mano la ficha esta parada; en la
+   mesa suele quedar acostada. Ese giro de 90 grados ocurria en el primer fotograma, al salir
+   de la mano.
+
+### Como quedo
+
+1. **Vuela con la cara con la que va a aterrizar.** Se copia `displayTile` y la orientacion de
+   la ficha que ya esta puesta en el tablero, no lo que tenias en la mano.
+2. **Gira mientras viaja**, por el camino corto (270 grados a la derecha son 90 a la
+   izquierda), en vez de dar el volantazo al salir.
+
+### El giro va en una capa aparte, y no es un capricho
+
+La capa de afuera se mueve y se escala **desde su esquina de arriba a la izquierda**, que es lo
+que hace simples las cuentas de sitio. Girar desde esa misma esquina abre la ficha **como una
+puerta**: el giro necesita el centro. Por eso son dos capas, cada una con su animacion.
+
+### Comprobado corriendo
+
+Jugando contra la maquina: la ficha en vuelo es `tile_0_2.png` a 0 grados y la que queda puesta
+es `tile_0_2.png` a 0 grados — **la misma cara**, sin salto. El giro sale en `90deg` y el pivote
+en `32px 16px`, que es el centro exacto de una ficha de mesa. Cero errores en consola.
+
+Antes del arreglo, en la misma prueba: en vuelo `tile_1_4.png` a **0** y puesta a **180**.

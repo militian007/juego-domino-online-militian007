@@ -536,8 +536,43 @@ export default function Board({
       ? aRejilla(vuelo.rect)
       : { x: hasta.x, y: hasta.y - altoUtil / escala, w: hasta.w, h: Math.max(hasta.w, hasta.h) };
 
+    // Con que CARA y en que sentido aterriza (§134).
+    //
+    // La ficha de la mesa no se dibuja con el orden crudo de la mano: se le da
+    // vuelta segun por que punta entra (`displayTile`). Si la que vuela usa el
+    // orden crudo, al llegar cambia de golpe y se ve como si la ficha se
+    // volteara. Se copia lo que va a quedar puesto, tal cual.
+    const puesta = board[indice];
+    const caraFinal = puesta.orientation === 'horizontal'
+      ? (puesta.x < puesta.x2 ? [puesta.tile[0], puesta.tile[1]] : [puesta.tile[1], puesta.tile[0]])
+      : (puesta.y < puesta.y2 ? [puesta.tile[0], puesta.tile[1]] : [puesta.tile[1], puesta.tile[0]]);
+
+    // Y cuanto tiene que GIRAR por el camino.
+    //
+    // En la mano la ficha esta parada; en la mesa puede quedar acostada. Antes
+    // el giro pasaba de golpe al salir de la mano —el volantazo que se veia—.
+    // Ahora sale con el angulo que tenia en tu mano y gira mientras viaja.
+    const giroDe = (ficha, orientacion) =>
+      orientacion === 'horizontal'
+        ? (ficha[0] <= ficha[1] ? 0 : 180)
+        : (ficha[0] <= ficha[1] ? 90 : 270);
+
+    const enLaMano = giroDe(vuelo.tile, 'vertical');
+    const enLaMesa = giroDe(caraFinal, puesta.orientation);
+    // Por el camino corto: 270 grados a la derecha es 90 a la izquierda.
+    let giro = ((enLaMano - enLaMesa) % 360 + 360) % 360;
+    if (giro > 180) giro -= 360;
+
     ultimoVuelo.current = vuelo.id;
-    setVolando({ id: vuelo.id, indice, tile: vuelo.tile, orientation: vuelo.orientation, desde, hasta });
+    setVolando({
+      id: vuelo.id,
+      indice,
+      tile: caraFinal,
+      orientation: puesta.orientation,
+      giro,
+      desde,
+      hasta
+    });
   }, [vuelo, board, escala, desplazamientoX, desplazamientoY, altoUtil, lupa.x, lupa.y, lupa.escala]);
 
   // Al terminar el viaje, la ficha de verdad ya esta en su sitio y esta se va.
@@ -692,6 +727,7 @@ export default function Board({
             orientation={volando.orientation}
             desde={volando.desde}
             hasta={volando.hasta}
+            giro={volando.giro}
           />
         )}
       </div>
@@ -715,7 +751,7 @@ export default function Board({
  * movimiento apagado, la animacion no corre y la ficha simplemente esta donde
  * tiene que estar.
  */
-function FichaEnVuelo({ tile, orientation, desde, hasta }) {
+function FichaEnVuelo({ tile, orientation, desde, hasta, giro = 0 }) {
   return (
     <div
       className="ficha-en-vuelo pointer-events-none absolute z-30 origin-top-left"
@@ -737,7 +773,17 @@ function FichaEnVuelo({ tile, orientation, desde, hasta }) {
         filter: 'drop-shadow(0 6px 10px rgba(0,0,0,0.55))'
       }}
     >
-      <Tile tile={tile} orientation={orientation} ancho={hasta.w} />
+      {/* El giro va en una capa APARTE, y no en la de afuera.
+          La de afuera se mueve y se escala desde su esquina de arriba a la
+          izquierda, que es lo que hace que las cuentas de sitio sean simples.
+          Girar desde esa misma esquina abriria la ficha como una puerta: el
+          giro necesita el centro. */}
+      <div
+        className="ficha-en-vuelo-giro h-full w-full"
+        style={{ '--vuelo-giro': `${giro}deg`, '--vuelo-ms': `${MS_VUELO}ms` }}
+      >
+        <Tile tile={tile} orientation={orientation} ancho={hasta.w} />
+      </div>
     </div>
   );
 }

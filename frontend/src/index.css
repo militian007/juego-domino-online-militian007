@@ -526,6 +526,24 @@
   }
 }
 
+/* El giro, en su propia capa y desde el CENTRO (§134).
+   En la mano la ficha esta parada y en la mesa puede quedar acostada; antes ese
+   cuarto de vuelta pasaba de golpe al salir de la mano y se veia como si la
+   ficha se volteara. Ahora gira mientras viaja. */
+@keyframes ficha-gira {
+  from { transform: rotate(var(--vuelo-giro, 0deg)); }
+  to { transform: rotate(0deg); }
+}
+
+.ficha-en-vuelo-giro {
+  transform-origin: center;
+  animation: ficha-gira var(--vuelo-ms, 300ms) cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ficha-en-vuelo-giro { animation: none; }
+}
+
 .ficha-en-vuelo {
   animation: ficha-vuela var(--vuelo-ms, 300ms) cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
 }
