@@ -26,11 +26,22 @@ const SALIDA = path.join(RAIZ, 'public', 'carteles');
 /**
  * El alto al que se guardan.
  *
- * En un telefono de 375 el cartel se ve a unos 80 pixeles de alto. Se guardan a
- * 320 —cuatro veces— para que en pantallas finas siga nitido, y aun asi pesan
- * poco porque son pocas formas y mucho transparente.
+ * El cartel se dibuja a `min(86vw, 420px)` de ancho: en un telefono de 375 son
+ * 322 pixeles, y en escritorio 420 como mucho.
+ *
+ * Guardado a 220 de alto sale de 706 de ancho, que es **2,2 veces** lo que se ve
+ * en el telefono y 1,7 en escritorio: nitido de sobra. Y pesa lo que tiene que
+ * pesar. Medido sobre el cartel de "¡Domino!":
+ *
+ *   320 de alto → 1027 px de ancho → 413 KB
+ *   256         →  821             → 271 KB
+ *   220         →  706             → 207 KB   <- este
+ *   180         →  578             → 143 KB
+ *
+ * A 320 se veria igual en pantalla y costaria el doble de descarga, que en un
+ * telefono con mala señal es lo unico que se nota.
  */
-const ALTO = 320;
+const ALTO = 220;
 
 const CARTELES = ['domino', 'tranca', 'ganaste'];
 
