@@ -6338,3 +6338,31 @@ Los dos son numeros con nombre arriba del archivo, no valores sueltos: subirlos 
 tocar uno solo. El del monton se movia al azar en cada golpe y lo sigue haciendo, alrededor del
 nuevo valor, para que no suenen todos iguales.
 
+---
+
+## 138. Los tres carteles, puestos (2026-09-12)
+
+Llegaron de Gemini y estan en el juego: **¡DOMINÓ!**, **¡TRANCA!** y **¡GANASTE!**, los tres
+con el signo de apertura y la tilde donde corresponde.
+
+### El tamaño al que se guardan, medido
+
+El cartel se dibuja a `min(86vw, 420px)` de ancho. Guardado a **220 de alto** sale de unos 710
+px de ancho: **2,2 veces** lo que se ve en un telefono y 1,7 en escritorio, nitido de sobra.
+
+| alto guardado | ancho | peso |
+| --- | --- | --- |
+| 320 | 1027 | 413 KB |
+| 256 | 821 | 271 KB |
+| **220** | **706** | **207 KB** |
+| 180 | 578 | 143 KB |
+
+A 320 se veria **igual** en pantalla y costaria **el doble** de descarga. En un telefono con
+mala señal eso es lo unico que se nota.
+
+### Una trampa de Gemini que conviene tener anotada
+
+Los dos primeros intentos de `tranca` y `ganaste` salieron los dos diciendo **"¡CAPOTE!"**:
+pidiendole varias imagenes en el MISMO chat, arrastra la anterior como referencia y devuelve
+una variacion en vez de una imagen nueva. **Un chat limpio por cada imagen.**
+
