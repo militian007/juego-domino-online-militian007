@@ -6254,3 +6254,59 @@ es `tile_0_2.png` a 0 grados — **la misma cara**, sin salto. El giro sale en `
 en `32px 16px`, que es el centro exacto de una ficha de mesa. Cero errores en consola.
 
 Antes del arreglo, en la misma prueba: en vuelo `tile_1_4.png` a **0** y puesta a **180**.
+
+---
+
+## 135. La ficha que arrastras se ve como la ficha que agarraste (2026-09-11)
+
+Jonathan: *"cuando uno esta arrastrando la ficha se ve como mal escalada, no se ve bien que
+ficha estas arrastrando"*.
+
+### Que pasaba
+
+La copia que sigue al dedo **no usaba el componente de ficha**: era una `<img>` suelta, metida
+a la fuerza en una caja de **48x96** con `object-fit: cover`.
+
+El archivo de una ficha es **horizontal** (medido: 399x213). Forzarlo en una caja vertical con
+`cover` significa ampliarlo hasta que la tape y recortar lo que sobra:
+
+```
+  imagen origen     : 399x213 (horizontal)
+  caja forzada      : 48x96  (vertical)
+  al cubrir queda en: 180x96, recortada a 48 de ancho
+  se veia el        : 27% de la ficha, la franja del medio
+```
+
+**Se veia una cuarta parte de la ficha, y encima la del medio**, que es justo donde esta la
+barra divisoria y casi ningun punto. De ahi lo de "no se ve que ficha estas arrastrando".
+
+Ademas no la giraba: la `<img>` iba tal cual, asi que tampoco respetaba por donde va cada
+numero.
+
+### Como quedo
+
+Usa el **mismo componente `Tile` que todas las demas fichas del juego**, en vertical y con
+`anchoFicha` — el ancho de verdad de las fichas de tu mano, que ya se calcula midiendo la
+pantalla. La que arrastras es identica a la que agarraste.
+
+Se le sumaron dos cosas chicas: va **levantada un poco por encima del dedo** (debajo la tapa tu
+propia mano) y se dibuja como `selected`, igual que cuando la eliges tocandola.
+
+### Comprobado corriendo
+
+Arrastrando de verdad en un telefono de 375:
+
+| | ancho | alto | proporcion |
+| --- | --- | --- | --- |
+| en la mano | 47 | 94 | 2,00 |
+| arrastrando | 47 | 94 | 2,00 |
+
+Misma medida exacta, la imagen girada 90 grados como corresponde a una ficha parada, y sin
+recorte. Cero errores en consola.
+
+### La leccion, que ya es la tercera vez
+
+Es el mismo error que el volteo de la §134 y que el rebote de la §122: **dibujar una ficha por
+fuera del componente que dibuja fichas**. Cada vez que alguien pone una `<img>` suelta con
+medidas a mano, se pierde el giro, la proporcion o las dos. Si hay que dibujar una ficha, se
+usa `Tile`.

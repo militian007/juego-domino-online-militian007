@@ -1,6 +1,5 @@
 import { useRef, useState, useEffect, useLayoutEffect } from 'react';
 import Tile from './Tile.jsx';
-import { useCarpetaDeFichas, VERSION_FICHAS } from './MesaTheme.jsx';
 
 /** El hueco entre fichas, en pixeles. Tiene que coincidir con el gap del CSS. */
 const HUECO = 3;
@@ -63,7 +62,6 @@ export default function Hand({
   // dibuja aparte de `Tile`, con su propia etiqueta de imagen, y por eso se
   // habia quedado con la ruta vieja fija: al arrastrar aparecia la clasica
   // aunque la mano fuera de hueso.
-  const carpeta = useCarpetaDeFichas();
 
   const handRef = useRef(null);
 
@@ -179,28 +177,34 @@ export default function Hand({
         })}
       </div>
 
-      {/* Vista previa de arrastre flotante: solo se muestra si NO está imantada a un imán */}
+      {/* La ficha que sigue al dedo mientras la arrastras (§135).
+          Solo se muestra si NO esta imantada a un iman: ahi ya se ve en su sitio.
+
+          Usa el MISMO componente que todas las demas fichas del juego. Antes era
+          una `<img>` suelta metida a la fuerza en una caja de 48x96 con
+          `object-fit: cover`: la imagen de una ficha es HORIZONTAL, asi que
+          forzarla en una caja vertical la ampliaba y le recortaba los lados. Se
+          veia una tira del medio y no se sabia que ficha llevabas. */}
       {draggedTile && !draggedTile.isSnapped && (
-        <img
-          src={`${carpeta}/tile_${Math.min(draggedTile.tile[0], draggedTile.tile[1])}_${Math.max(draggedTile.tile[0], draggedTile.tile[1])}.png?v=${VERSION_FICHAS}`}
-          alt=""
+        <div
           style={{
             position: 'fixed',
             left: `${draggedTile.currentX}px`,
             top: `${draggedTile.currentY}px`,
-            width: '48px',
-            height: '96px',
-            transform: 'translate(-50%, -50%)',
+            // Levantada un poco por encima del dedo: debajo la tapa tu propia mano.
+            transform: 'translate(-50%, -68%)',
             pointerEvents: 'none',
             zIndex: 9999,
-            filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.5)) brightness(1.1)',
-            borderRadius: '6px',
-            border: '2px solid #d4af37',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-            objectFit: 'cover',
-            transition: 'none'
+            filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.55))'
           }}
-        />
+        >
+          <Tile
+            tile={draggedTile.tile}
+            orientation="vertical"
+            ancho={anchoFicha}
+            selected
+          />
+        </div>
       )}
     </div>
   );
