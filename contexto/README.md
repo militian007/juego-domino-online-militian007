@@ -6407,3 +6407,47 @@ ruido: si algun dia molesta, es la primera candidata a rehacer con una veta mas 
 Se pidio nogal oscuro y vino roble claro, casi blanqueado. Se lee perfecto y es bien distinta
 de las otras, asi que se deja. Queda anotado por si se quiere volver a pedir.
 
+---
+
+## 140. Los paños nuevos, recoloreando el que ya habia (2026-09-12)
+
+Gemini **bloqueaba** el pedido de una tela nueva. Primero por *"paño de mesa de juego"* (lo
+asocia a casinos) y *"vino tinto"* (alcohol); se reescribio en neutro, con los colores por
+codigo y sin la pila de "sin esto, sin lo otro", y **siguio cortando**.
+
+### La salida fue no pedirla
+
+Se recolorea el paño verde que el juego ya usa. Y no es un parche: es **mejor**.
+
+Lo dificil de una textura que se repite no es el color, es que **los cuatro bordes encajen sin
+que se vea la union**. El paño verde ya encaja —la baldosa viene espejada en 2x2 a proposito—
+asi que recolorearlo **hereda esa propiedad gratis**. Una tela nueva de la IA habria que
+volver a comprobarla, y lo mas probable es que se le viera la grilla al repetirse.
+
+### Como se recolorea sin aplastar el tejido
+
+Cambiar el tono y ya deja el verde asomando en las sombras. En vez de eso: se mide el BRILLO de
+cada pixel, se divide por el brillo medio de la tela, y ese factor se aplica al color nuevo.
+Cada fibra conserva si era mas clara o mas oscura que sus vecinas —que es lo que hace que se
+vea tela y no un rectangulo de color— y el color de conjunto es el que se pide.
+
+El tope de 1,85 esta para que los brillos no se quemen a blanco.
+
+### En WEBP, como el verde
+
+| | PNG | WEBP |
+| --- | --- | --- |
+| granate | 418 KB | **115 KB** |
+| azul noche | 412 KB | **72 KB** |
+
+Es una textura fotografica y el PNG comprime mal las fotos. El verde de siempre pesa 117 KB,
+asi que los nuevos entran en la misma medida.
+
+`npm run panos`. Los dos van con `clave`, como las fichas nuevas: **se compran en la tienda**,
+no son premio del pase.
+
+### Un choque de nombres
+
+El pase ya da un paño llamado "Azul medianoche" en el nivel 10. El nuevo se llama **"Azul
+noche"** para que no haya dos con el mismo nombre en el selector.
+

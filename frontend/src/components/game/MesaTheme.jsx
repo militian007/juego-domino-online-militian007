@@ -36,6 +36,23 @@ export const PANOS = [
     clase: 'felt-oroviejo',
     clave: 'pano:oroviejo',
     comoSeGana: 'Nivel 34 del pase de batalla'
+  },
+
+  // Los dos de la tienda (§140). Como las fichas de marmol, jade y madera: NO
+  // son premio del pase, se compran con monedas.
+  {
+    id: 'granate',
+    nombre: 'Granate',
+    clase: 'felt-granate',
+    clave: 'pano:granate',
+    comoSeGana: 'Se compra en la tienda'
+  },
+  {
+    id: 'azul',
+    nombre: 'Azul noche',
+    clase: 'felt-azul',
+    clave: 'pano:azul',
+    comoSeGana: 'Se compra en la tienda'
   }
 ];
 
@@ -119,6 +136,8 @@ export const ContextoFichas = createContext('/tiles');
  * 3 = entraron las negro y oro, y de paso se rehicieron las de hueso con el
  *     script nuevo, que arma las dos pintas con la misma geometria.
  * 4 = entraron marmol, jade y madera.
+ * 5 = entraron los panos granate y azul noche (no cambian fichas, pero el
+ *     numero de catalogo si tiene que subir para que se vean).
  */
 export const VERSION_FICHAS = 4;
 
@@ -142,7 +161,7 @@ const CLAVE = 'mesa-tema';
 // 5 = las blanco hueso pasan a ser las de fabrica. Subirlo devuelve a todos al
 //     tema por defecto, incluido el paño; es el precio de que el cambio se vea.
 //     Quien tenia algo elegido lo vuelve a elegir en dos toques.
-const CATALOGO = 5;
+const CATALOGO = 6;
 
 function leer() {
   try {

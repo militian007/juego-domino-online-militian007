@@ -163,6 +163,30 @@
     display: none;
   }
 
+  /* Los dos panos de la tienda (§140). Son la MISMA tela del verde, recoloreada,
+     asi que repiten sin costura igual que el: la baldosa ya viene espejada. */
+  .felt-granate {
+    background-color: #6a1b29;
+    background-image: url('/pano-granate.webp');
+    background-size: 340px 340px;
+    background-repeat: repeat;
+  }
+
+  .felt-granate::before {
+    display: none;
+  }
+
+  .felt-azul {
+    background-color: #14233f;
+    background-image: url('/pano-azul.webp');
+    background-size: 340px 340px;
+    background-repeat: repeat;
+  }
+
+  .felt-azul::before {
+    display: none;
+  }
+
   .felt-verde {
     background-color: #0d6340;
     background-image:

@@ -11,7 +11,8 @@
     "iconos-atajos": "node scripts/generar-iconos-atajos.mjs",
     "fichas": "node scripts/generar-fichas.mjs",
     "stickers": "node scripts/generar-stickers.mjs",
-    "carteles": "node scripts/generar-carteles.mjs"
+    "carteles": "node scripts/generar-carteles.mjs",
+    "panos": "node scripts/generar-panos.mjs"
   },
   "dependencies": {
     "@iconify-json/flat-color-icons": "^1.2.3",
