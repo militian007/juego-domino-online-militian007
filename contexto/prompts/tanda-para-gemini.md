@@ -97,72 +97,68 @@ Reemplazá `{{MATERIAL_PUNTO}}` por:
 
 # 2. PAÑOS DE MESA
 
-Son **baldosas que se repiten** por toda la mesa. Lo más importante es que **no se note la
-costura** donde se repiten. Guardalos como `pano-<nombre>.png`. Los dos: `granate`, `azul`.
+Son **baldosas que se repiten** por toda la mesa: lo importante es que no se note la unión.
+Guardalos como `pano-<nombre>.png`. Los dos: `granate`, `azul`.
+
+> **Ojo:** la primera versión de estos prompts la bloqueaba Gemini. Los detonantes eran
+> *"paño de mesa de juego"* (lo asocia a casinos) y *"vino tinto"* (alcohol), más la pila de
+> "sin esto, sin lo otro". Estos están reescritos en positivo y con los colores por su nombre.
+
+## 2a. Granate — `pano-granate.png`
 
 ```
-Textura de paño de mesa de juego, vista completamente de frente y desde arriba,
-en primer plano y muy cerca, como una foto macro de la tela.
+Textura de tela de fieltro granate oscuro, fotografía macro cenital (top-down).
+Superficie de fieltro liso, tupido y uniforme, color rojo borgoña profundo
+#6A1B29, con las fibras cortas visibles de cerca.
 
-MATERIAL:
-{{TELA}}
+Textura homogénea y continua en toda la superficie, apta para repetirse en
+mosaico: los cuatro bordes continúan entre sí.
 
-MUY IMPORTANTE — SIN COSTURA:
-La textura tiene que poder repetirse en mosaico sin que se note la unión. El
-borde de arriba tiene que continuar exactamente en el borde de abajo, y el
-izquierdo en el derecho. Nada de motivos grandes, manchas, logos ni elementos
-sueltos que delaten dónde se repite: solo el tejido parejo.
+Iluminación plana, difusa y completamente uniforme en todo el cuadro.
 
-ILUMINACIÓN:
-Luz completamente pareja y difusa sobre toda la imagen. NADA de foco, viñeta,
-degradado ni zonas más oscuras en las esquinas: si hay un foco, al repetirse se
-ve una grilla de manchas.
-
-FORMATO (obligatorio):
-- Imagen cuadrada, 1024x1024.
-- Solo la tela, llenando el cuadro entero.
-- Sin fichas, sin manos, sin objetos, sin bordes, sin marco.
-- Sin texto, sin letras, sin números, sin marcas de agua.
+Formato cuadrado 1024x1024, plano cerrado, la tela llenando el cuadro entero.
 ```
 
-Reemplazá `{{TELA}}`:
+## 2b. Azul — `pano-azul.png`
 
-- **`pano-granate.png`** — `Fieltro de billar granate profundo, tipo vino tinto oscuro. Tejido fino y apretado, con las fibras cortas bien visibles de cerca.`
-- **`pano-azul.png`** — `Fieltro de billar azul medianoche, profundo y elegante. Tejido fino y apretado, con las fibras cortas bien visibles de cerca.`
+```
+Textura de tela de fieltro azul medianoche, fotografía macro cenital (top-down).
+Superficie de fieltro liso, tupido y uniforme, color azul profundo #14233F, con
+las fibras cortas visibles de cerca.
+
+Textura homogénea y continua en toda la superficie, apta para repetirse en
+mosaico: los cuatro bordes continúan entre sí.
+
+Iluminación plana, difusa y completamente uniforme en todo el cuadro.
+
+Formato cuadrado 1024x1024, plano cerrado, la tela llenando el cuadro entero.
+```
 
 ---
 
-# 3. BARANDA
+# 3. BARANDA — `mesa-caoba.png`
 
-Es el **marco de madera** que rodea la mesa. El juego lo recorta por los bordes, así que el
-marco tiene que estar **pegado a los bordes de la imagen**. Guardala como `mesa-<nombre>.png`.
+Es el **marco de madera** que rodea la mesa. La madera tiene que **tocar los cuatro bordes**
+de la imagen, porque el juego la recorta por ahí.
+
+> Reescrito igual que los paños: la versión anterior decía *"mesa de casino"* y es de las que
+> bloquea.
 
 ```
-Marco rectangular de una mesa de juego de lujo, visto completamente de frente y
-desde arriba (vista cenital perfecta, sin perspectiva).
+Marco rectangular de madera noble, fotografía cenital (top-down), visto
+completamente de frente.
 
-QUÉ SE VE:
-Un borde grueso de madera que rodea el cuadro entero por los cuatro lados, como
-la baranda de una mesa de casino. El CENTRO queda hueco: dentro del marco se ve
-el paño verde oscuro liso.
+Un borde ancho de madera de caoba rojiza oscura, encerada, con la veta visible,
+rodeando el cuadro por los cuatro lados. La madera llega hasta el borde mismo de
+la imagen en los cuatro lados, con grosor parejo. Por el borde interior corre
+una moldura dorada fina.
 
-MATERIAL:
-Madera de caoba rojiza oscura, encerada, con la veta bien visible y un
-filo dorado fino por el borde interior, donde la madera se encuentra con el
-paño. Acabado satinado, elegante, de mesa cara.
+El centro del cuadro es una superficie lisa de tela verde oscura, uniforme y sin
+detalle.
 
-MUY IMPORTANTE — EL MARCO TOCA LOS BORDES:
-La madera tiene que llegar hasta el borde mismo de la imagen por los cuatro
-lados, sin ningún margen ni fondo alrededor. El grosor de la madera tiene que
-ser PAREJO en los cuatro lados.
+Iluminación plana, difusa y uniforme en todo el cuadro.
 
-ILUMINACIÓN:
-Luz pareja. Sin foco, sin viñeta, sin brillos fuertes en una esquina.
-
-FORMATO (obligatorio):
-- Imagen cuadrada, 1024x1024.
-- Sin fichas, sin manos, sin objetos encima.
-- Sin texto, sin letras, sin números, sin marcas de agua.
+Formato cuadrado 1024x1024. Solo el marco y la tela del centro.
 ```
 
 ---
