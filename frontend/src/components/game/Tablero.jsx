@@ -48,7 +48,7 @@ const ROTULO = { tranca: 'Tranca', cinco: 'Cinco' };
 
 export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala, modalidad }) {
   return (
-    <div className="pointer-events-none min-w-0 flex-1 pb-1">
+    <div className="pointer-events-none pb-1">
     <div
       className="rounded-[10px]"
       style={{
@@ -71,7 +71,11 @@ export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala, moda
         <Tornillo className="bottom-[5px] left-[5px]" />
         <Tornillo className="bottom-[5px] right-[5px]" />
 
-        <div className="flex items-center">
+        {/* Los 28 px de aire a los lados son el sitio del boton de salir, que
+            va flotando encima de la esquina izquierda de la placa. Se dejan en
+            los DOS lados aunque el boton este en uno solo: si no, los dos
+            marcadores quedan descentrados uno respecto del otro y se nota. */}
+        <div className="flex items-center px-7">
           <Puntaje etiqueta="Vos" valor={mios} tono="text-sky-100" />
 
           <div className="flex flex-col items-center gap-[3px] px-2">

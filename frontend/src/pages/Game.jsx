@@ -1167,9 +1167,15 @@ export default function Game() {
       )}
 
       {/* El salir va arriba del todo a la izquierda, separado de los controles
-          de la mesa: es lo unico que no tiene vuelta atras. */}
-      <div className="relative flex shrink-0 items-start gap-1 px-1 pt-1.5">
-        <div className="relative shrink-0">
+          de la mesa: es lo unico que no tiene vuelta atras.
+
+          Va ENCIMA de la placa, no al lado. Al lado le robaba a la placa los
+          primeros cuarenta pixeles de la pantalla, que en un telefono es mucho:
+          la placa arrancaba despegada del borde y se veia mas chica de lo que
+          da la pantalla. Encima no estorba, porque los marcadores se centran en
+          su mitad y esa esquina de la placa es madera vacia. */}
+      <div className="relative shrink-0 px-1 pt-1.5">
+        <div className="absolute left-2 top-1/2 z-30 -translate-y-1/2">
           <button
             type="button"
             onClick={() => setConfirmandoSalida((v) => !v)}

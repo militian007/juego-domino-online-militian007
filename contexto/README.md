@@ -6667,3 +6667,22 @@ dicen. Van enteros.
 
 `sticker-chivo.png`. Lleva pendiente desde la tanda del pase y el premio del nivel 18 cae en
 el emoji 🐐 mientras tanto. El prompt esta en `stickers-del-pase.md`.
+
+---
+
+## 144. La placa del marcador, de borde a borde (2026-09-12)
+
+Jonathan marco en una captura la franja entera de arriba en rojo y la placa en verde: la
+queria del tamaño de la franja.
+
+La placa estaba **al lado** del boton de salir, en una fila flex. Eso le robaba los primeros
+cuarenta pixeles de la pantalla, que en un telefono es mucho: arrancaba despegada del borde
+izquierdo y se veia mas chica de lo que da la pantalla.
+
+Ahora el boton va **encima** de la esquina izquierda de la placa, flotando, y la placa ocupa
+el ancho entero.
+
+El unico cuidado: sin mas, el boton caia justo sobre el numero de VOS. Se le dieron 28 px de
+aire a los lados del renglon de los marcadores. **En los dos lados**, aunque el boton este en
+uno solo: si el aire va solo a la izquierda, los dos marcadores quedan descentrados uno
+respecto del otro y se nota.
