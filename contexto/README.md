@@ -6599,3 +6599,71 @@ cuatro stickers—; las fichas y los paños salieron de la lista porque ya estan
 El icono de la tienda ya esta enchufado en `generar-iconos-atajos.mjs`, y el script dejo de
 morirse cuando falta un archivo: se salta el que no este. Los iconos no salen todos el mismo
 dia y no tiene sentido que no se pueda rehacer la copa porque todavia no esta la bolsa.
+
+---
+
+## 143. Las siete ilustraciones que faltaban, puestas (2026-09-12)
+
+Jonathan las genero todas de una tanda: el icono y el banner de la tienda, la baranda de
+caoba y los cuatro stickers del Panita. Todas salieron bien a la primera —ninguna hubo que
+volver a pedirla— y eso es merito de los prompts completos de §142: sin reemplazos a mano no
+hay sitio donde equivocarse.
+
+### El icono de la tienda
+
+Una bolsa de oro labrado con una ficha grabada y tres monedas. Ya es el cuarto de la familia
+—escudo, bolsa, copa, podio—, asi que **se fue el icono de `lucide-react`** de los dos sitios
+donde estaba: el atajo lateral de la portada y la fila del menu.
+
+`npm run iconos-atajos` dejo de morirse cuando falta un archivo: ahora salta el que no este.
+Los iconos no salen todos el mismo dia y no tiene sentido que no se pueda rehacer la copa
+porque todavia no esta la bolsa.
+
+### El banner de la tienda
+
+El Panita de tendero detras del mostrador, con las tres pintas que vende puestas encima.
+Misma cabecera que la del pase: mitad izquierda oscura y vacia, con el titulo en dorado
+encima. El paso del banner en `generar-stickers.mjs` paso de ser uno a ser una lista, que ya
+son dos.
+
+### La baranda de caoba
+
+Es la **segunda** baranda, gratis. Desde §55 solo habia una, asi que el selector ni se
+enseñaba; ahora aparece.
+
+Se monta igual que la de nogal, con `border-image`. Los recortes salieron de medirlos: en la
+imagen de 2048 la madera ocupa 229 / 234 / 228 / 231 px, y como se guarda a 1024, van a la
+mitad: **115 / 117 / 114 / 116**.
+
+Lo que no se podia copiar es el grosor. Esta lleva **una moldura dorada fina por dentro**, y
+al grosor de la de nogal (24 px) esa moldura cae por debajo del pixel: el marco entero se leia
+como una raya oscura. Probado a 24 y a 34, va un 40% mas ancha.
+
+### Los cuatro stickers, y por que van gratis
+
+Pensando, llorando, aplaudiendo y dormido. **No entran al pase ni a la tienda.**
+
+El motivo no es generosidad: tres de los cuatro —🤔, 😭 y 🥱— **ya estaban abiertos para todo
+el mundo** en la lista de emojis de siempre. Meterlos al pase seria quitarle a la gente algo
+que ya tenia, que es justo lo que el pase no hace (`Sticker.js` lo dice desde el primer dia:
+"un premio no puede ser quitarle algo a quien ya lo tenia"). Lo que se hizo fue **ponerles
+cara**: salieron de `BASE` y entraron en `LIBRES`, con el dibujo del Panita en vez del emoji
+pelado.
+
+El aplauso 👏 es el unico nuevo de verdad.
+
+En el menu de gestos van en su propia fila, entre los emojis y los del pase, **sin candado**.
+`puedeTirar` los acepta sin mirar desbloqueos; el resto del control de siempre no cambia (lo
+que no este en ninguna de las tres listas no se manda).
+
+### Un detalle del recorte
+
+Los siete del pase vinieron de cuerpo entero y hay que quedarse con la franja de arriba
+(`FRANJA_DE_ARRIBA`). Estos cuatro **no**: se pidieron de busto, y el gesto esta en las MANOS
+—aplaudir, taparse la cara, señalar—, asi que cortarlos por arriba seria cortar justo lo que
+dicen. Van enteros.
+
+### Lo que sigue faltando
+
+`sticker-chivo.png`. Lleva pendiente desde la tanda del pase y el premio del nivel 18 cae en
+el emoji 🐐 mientras tanto. El prompt esta en `stickers-del-pase.md`.

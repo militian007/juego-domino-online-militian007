@@ -56,10 +56,11 @@ export const PANOS = [
   }
 ];
 
-// Solo queda la baranda que usamos. Las de cuero eran de la epoca del CSS
-// (§55) y ninguna se acerca a la foto de nogal: solo ensuciaban el selector.
+// Las de cuero eran de la epoca del CSS (§55) y ninguna se acercaba a una foto:
+// se sacaron. Quedan las dos que son imagen de verdad, las dos gratis.
 export const BARANDAS = [
-  { id: 'foto', nombre: 'Nogal y latón', clase: 'rail-foto' }
+  { id: 'foto', nombre: 'Nogal y latón', clase: 'rail-foto' },
+  { id: 'caoba', nombre: 'Caoba y oro', clase: 'rail-caoba' }
 ];
 
 /**

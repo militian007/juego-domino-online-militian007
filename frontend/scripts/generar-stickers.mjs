@@ -41,6 +41,16 @@ const ALTO = 192;
 const STICKERS = ['candela', 'corona', 'suerte', 'chivo', 'cerebro', 'respeto', 'diamante'];
 
 /**
+ * Los cuatro gratis, los de reaccionar a lo que pasa en la mesa.
+ *
+ * Van aparte de los siete por el recorte: los del pase vinieron de cuerpo
+ * entero y hay que quedarse con la franja de arriba. Estos se pidieron ya de
+ * busto, y ademas el gesto esta en las MANOS —aplaudir, taparse la cara,
+ * señalar—, asi que cortarlos por arriba seria cortar justo lo que dicen.
+ */
+const LIBRES = ['pensando', 'llorando', 'aplauso', 'dormido'];
+
+/**
  * Cuanto del dibujo se queda: la franja de ARRIBA.
  *
  * Los dibujos vienen de cuerpo entero, y de cuerpo entero no sirven. Se probo:
@@ -62,8 +72,14 @@ const FRANJA_DE_ARRIBA = 0.58;
  */
 const ICONOS = ['modo-casa', 'modo-gente', 'busqueda-rapida', 'sala-privada', 'esperando'];
 
-/** El ancho del banner ya listo. La imagen de origen es enorme y no hace falta. */
+/** El ancho de los banners ya listos. La imagen de origen es enorme y no hace falta. */
 const ANCHO_BANNER = 1200;
+
+/** Las cabeceras. Son escenas enteras: ni magenta ni recorte. */
+const BANNERS = [
+  { origen: 'pase-banner.png', destino: 'pase-banner.jpg' },
+  { origen: 'tienda-banner.png', destino: 'tienda-banner.jpg' }
+];
 
 /**
  * El fondo de los menus.
@@ -119,7 +135,7 @@ function main() {
   console.log('');
 
   let hechos = 0;
-  for (const id of [...STICKERS, 'panita']) {
+  for (const id of [...STICKERS, ...LIBRES, 'panita']) {
     const origen = path.join(FUENTE, id === 'panita' ? 'panita.png' : `sticker-${id}.png`);
     if (!fs.existsSync(origen)) {
       console.log(`  ${id.padEnd(16)} falta ${path.basename(origen)}`);
@@ -127,7 +143,9 @@ function main() {
     }
 
     // La mascota se guarda entera: se usa grande, no en el menu de la mesa.
-    const img = prepararSticker(origen, id !== 'panita');
+    // Los cuatro libres tambien, que el gesto esta en las manos.
+    const soloLaCara = id !== 'panita' && !LIBRES.includes(id);
+    const img = prepararSticker(origen, soloLaCara);
     const peso = guardar(path.join(SALIDA, `${id}.png`), img);
     console.log(`  ${id.padEnd(16)} ${img.ancho}x${img.alto}  ${(peso / 1024).toFixed(1)} KB`);
     hechos++;
@@ -162,9 +180,13 @@ function main() {
     console.log('  fondo            falta fondo-menu.png');
   }
 
-  // El banner no lleva magenta: es una escena entera, con su fondo.
-  const banner = path.join(FUENTE, 'pase-banner.png');
-  if (fs.existsSync(banner)) {
+  // Los banners no llevan magenta: son escenas enteras, con su fondo.
+  for (const { origen, destino } of BANNERS) {
+    const banner = path.join(FUENTE, origen);
+    if (!fs.existsSync(banner)) {
+      console.log(`  ${destino.padEnd(16)} falta ${origen}`);
+      continue;
+    }
     const arte = leer(banner);
     const alto = Math.round((arte.alto / arte.ancho) * ANCHO_BANNER);
     const chico = escalar(arte, ANCHO_BANNER, alto);
@@ -172,14 +194,12 @@ function main() {
       { data: Buffer.from(chico.px), width: chico.ancho, height: chico.alto },
       CALIDAD_BANNER
     );
-    fs.writeFileSync(path.join(RAIZ, 'public', 'pase-banner.jpg'), data);
-    console.log(`  ${'banner'.padEnd(16)} ${ANCHO_BANNER}x${alto}  ${(data.length / 1024).toFixed(1)} KB`);
-  } else {
-    console.log('  banner     falta pase-banner.png');
+    fs.writeFileSync(path.join(RAIZ, 'public', destino), data);
+    console.log(`  ${destino.padEnd(16)} ${ANCHO_BANNER}x${alto}  ${(data.length / 1024).toFixed(1)} KB`);
   }
 
   console.log('');
-  console.log(`  ${hechos} de ${STICKERS.length + 1} listos`);
+  console.log(`  ${hechos} de ${STICKERS.length + LIBRES.length + 1} listos`);
   console.log('');
 }
 

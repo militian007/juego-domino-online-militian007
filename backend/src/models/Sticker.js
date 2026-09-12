@@ -19,8 +19,8 @@ import * as Desbloqueo from './Desbloqueo.js';
  * ganado (regla 8: el servidor manda).
  */
 
-/** Los de siempre, gratis. */
-export const BASE = ['😎', '😂', '🤣', '😆', '😭', '😡', '🤬', '🥱', '🤔', '😒', '😮'];
+/** Los de siempre, gratis. Emoji pelado, sin dibujo. */
+export const BASE = ['😎', '😂', '🤣', '😆', '😡', '🤬', '😒', '😮'];
 
 /**
  * Los que se ganan en el pase.
@@ -41,6 +41,23 @@ const premiado = (id, emoji, nombre) => ({
   imagen: `/stickers/${id}.png`
 });
 
+/**
+ * Los cuatro con dibujo que NO cuestan nada.
+ *
+ * Van gratis a proposito. Son las cuatro reacciones de todos los dias —pensar,
+ * llorar, aplaudir, dormirse—, y ya estaban abiertas como emoji: 🤔, 😭 y 🥱
+ * salieron de `BASE` y entraron aqui con el dibujo del Panita. Cobrar por algo
+ * que la gente ya tenia seria quitarselo, que es justo lo que el pase no hace.
+ *
+ * El aplauso es el unico nuevo de verdad: no habia 👏 en la lista.
+ */
+export const LIBRES = [
+  premiado('pensando', '🤔', 'Pensando'),
+  premiado('llorando', '😭', 'Llorando'),
+  premiado('aplauso', '👏', 'Aplausos'),
+  premiado('dormido', '🥱', 'Dormido')
+];
+
 export const PREMIADOS = [
   premiado('candela', '🔥', 'Candela'),
   premiado('corona', '👑', 'Corona'),
@@ -52,6 +69,11 @@ export const PREMIADOS = [
 ];
 
 const POR_EMOJI = new Map(PREMIADOS.map((s) => [s.emoji, s]));
+const LIBRE_POR_EMOJI = new Map(LIBRES.map((s) => [s.emoji, s]));
+
+// Solo los del pase: esta tabla es la que dice que claves se pueden entregar
+// como premio, y las de los libres no se entregan porque ya las tiene todo el
+// mundo.
 const POR_CLAVE = new Map(PREMIADOS.map((s) => [s.clave, s]));
 
 export const esSticker = (clave) => POR_CLAVE.has(clave);
@@ -61,11 +83,13 @@ export const porClave = (clave) => POR_CLAVE.get(clave) ?? null;
 /**
  * Dice si esa persona puede tirar ese sticker.
  *
- * Los de siempre, cualquiera. Los del pase, solo quien los gano. Lo que no
- * este en ninguna de las dos listas no se manda: no es un sticker.
+ * Los de siempre y los cuatro libres, cualquiera. Los del pase, solo quien los
+ * gano. Lo que no este en ninguna de las tres listas no se manda: no es un
+ * sticker.
  */
 export const puedeTirar = async (userId, emoji) => {
   if (BASE.includes(emoji)) return true;
+  if (LIBRE_POR_EMOJI.has(emoji)) return true;
 
   const premiado = POR_EMOJI.get(emoji);
   if (!premiado) return false;
@@ -79,6 +103,7 @@ export const catalogoPara = async (userId) => {
   const mios = userId ? await Desbloqueo.de(userId) : [];
   return {
     base: BASE,
+    libres: LIBRES,
     premiados: PREMIADOS.map((s) => ({ ...s, mio: mios.includes(s.clave) }))
   };
 };

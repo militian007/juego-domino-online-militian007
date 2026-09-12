@@ -8,6 +8,11 @@
 >
 > Guardá todo en `frontend/arte-fuente/` con el nombre exacto que dice cada uno.
 
+> **Todo lo de esta lista ya esta hecho y metido (12-09-2026).** Se deja el archivo como
+> referencia: si alguna hay que rehacerla, el recuadro esta aqui. Lo unico que sigue
+> pendiente de toda la tanda es `sticker-chivo.png`, que va en
+> [stickers-del-pase.md](stickers-del-pase.md).
+
 ## Qué falta
 
 | # | qué es | archivo | dónde se ve |

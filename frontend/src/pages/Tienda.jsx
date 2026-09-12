@@ -134,10 +134,24 @@ export default function Tienda() {
           </span>
         </div>
 
-        <h1 className="mb-1 text-center text-2xl font-black text-domino-cream">Tienda</h1>
-        <p className="mb-5 text-center text-[12px] text-domino-cream/50">
-          Las monedas se ganan jugando contra otra gente.
-        </p>
+        {/* La cabecera. El banner ya viene con la mitad izquierda oscura y
+            vacia, hecho a proposito para que el titulo se lea encima sin
+            taparle el dibujo al Panita. */}
+        <div className="relative mb-5 overflow-hidden rounded-2xl border border-domino-accent/25">
+          <img
+            src="/tienda-banner.jpg"
+            alt=""
+            className="block h-32 w-full object-cover object-right sm:h-40"
+          />
+          <div className="absolute inset-y-0 left-0 flex w-3/5 flex-col justify-center bg-gradient-to-r from-domino-dark/85 to-transparent px-4">
+            <h1 className="text-2xl font-black leading-none tracking-tight text-domino-accent sm:text-4xl">
+              TIENDA
+            </h1>
+            <p className="mt-1.5 text-xs text-domino-cream/65 sm:text-sm">
+              Las monedas se ganan jugando contra otra gente.
+            </p>
+          </div>
+        </div>
 
         {aviso && (
           <div

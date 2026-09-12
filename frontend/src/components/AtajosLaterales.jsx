@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { Store } from 'lucide-react';
 
 /**
  * Los atajos del borde derecho: pase de batalla, tienda, torneos y clasificacion.
@@ -11,17 +10,14 @@ import { Store } from 'lucide-react';
  * borde derecho es donde llega el pulgar sin tapar nada de la mesa. Sin
  * recuadro: solo el icono y el nombre, tambien a pedido suyo.
  *
- * Los iconos son la copa y el podio dorados que genero el con Gemini, no
- * dibujos de una libreria: pegan con el oro de la marca. Se preparan con
- * `npm run iconos-atajos`.
+ * Los cuatro iconos son oro labrado generado con Gemini, no dibujos de una
+ * libreria: pegan con el oro de la marca. Se preparan con `npm run
+ * iconos-atajos`.
  */
 
 const ATAJOS = [
   { a: '/pase', icono: '/iconos/pase.png', texto: 'PASE' },
-  // La tienda va con un icono de `lucide-react` y no con uno dorado de Gemini
-  // como los otros tres: es lo que hay hoy y la regla 1.1 admite libreria. Si
-  // alguna vez se pide el dorado que pega con los demas, se cambia aqui y ya.
-  { a: '/tienda', Icono: Store, texto: 'TIENDA' },
+  { a: '/tienda', icono: '/iconos/tienda.png', texto: 'TIENDA' },
   { a: '/torneos', icono: '/iconos/torneos.png', texto: 'TORNEOS' },
   { a: '/ranking', icono: '/iconos/tabla.png', texto: 'TABLA' }
 ];
@@ -29,7 +25,7 @@ const ATAJOS = [
 export default function AtajosLaterales() {
   return (
     <div className="pointer-events-none absolute right-0.5 top-[22%] z-20 flex flex-col gap-3 sm:right-2">
-      {ATAJOS.map(({ a, icono, Icono, texto }) => (
+      {ATAJOS.map(({ a, icono, texto }) => (
         <Link
           key={a}
           to={a}
@@ -37,20 +33,11 @@ export default function AtajosLaterales() {
         >
           {/* La sombra es lo que los despega de la foto de la mesa, que tiene
               zonas claras. Sin ella el oro sobre el paño claro se pierde. */}
-          {Icono ? (
-            <Icono
-              size={30}
-              strokeWidth={1.8}
-              className="text-domino-accent drop-shadow-[0_2px_5px_rgba(0,0,0,0.95)]"
-              aria-hidden="true"
-            />
-          ) : (
-            <img
-              src={icono}
-              alt=""
-              className="h-8 w-8 drop-shadow-[0_2px_5px_rgba(0,0,0,0.95)]"
-            />
-          )}
+          <img
+            src={icono}
+            alt=""
+            className="h-8 w-8 drop-shadow-[0_2px_5px_rgba(0,0,0,0.95)]"
+          />
           <span className="text-[8px] font-semibold tracking-wider drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]">
             {texto}
           </span>

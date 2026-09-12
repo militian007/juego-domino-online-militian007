@@ -48,7 +48,7 @@ import { ChevronRight, Lock, LogOut } from 'lucide-react';
  * gestos vacio. La lista de verdad la manda el servidor, que es el que sabe
  * cuales tiene ganados cada uno.
  */
-const BASE_DE_EMERGENCIA = ['😎', '😂', '🤣', '😆', '😭', '😡', '🤬', '🥱', '🤔', '😒', '😮'];
+const BASE_DE_EMERGENCIA = ['😎', '😂', '🤣', '😆', '😡', '🤬', '😒', '😮'];
 
 /**
  * Un dibujo del Panita al lado de una opcion del menu.
@@ -270,14 +270,14 @@ export default function Game() {
   // Los stickers: los de siempre y los que se ganan en el pase. Viene del
   // servidor porque es el servidor el que sabe cuales tiene ganados esta
   // persona, y ademas es el que va a comprobarlo al mandarlos.
-  const [stickers, setStickers] = useState({ base: [], premiados: [] });
+  const [stickers, setStickers] = useState({ base: [], libres: [], premiados: [] });
 
   useEffect(() => {
     let vivo = true;
     paseApi.stickers()
       .then((r) => { if (vivo) setStickers(r); })
       // Un invitado no tiene stickers ganados; se queda con los de siempre.
-      .catch(() => { if (vivo) setStickers({ base: BASE_DE_EMERGENCIA, premiados: [] }); });
+      .catch(() => { if (vivo) setStickers({ base: BASE_DE_EMERGENCIA, libres: [], premiados: [] }); });
     return () => { vivo = false; };
   }, []);
 
@@ -1480,7 +1480,10 @@ export default function Game() {
                     >
                       <div className="w-12 h-12 sm:w-16 sm:h-16 bg-domino-dark/95 border-2 border-domino-accent rounded-full flex items-center justify-center text-3xl sm:text-4xl shadow-xl shadow-amber-500/20 overflow-hidden">
                         <DibujoDeSticker
-                          sticker={stickers.premiados.find((s) => s.emoji === val.emoji)}
+                          sticker={
+                            [...(stickers.libres ?? []), ...stickers.premiados]
+                              .find((s) => s.emoji === val.emoji)
+                          }
                           emoji={val.emoji}
                           alto="h-11 sm:h-14"
                         />
@@ -1531,6 +1534,25 @@ export default function Game() {
                       ))}
 
                     </div>
+
+                    {/* Los cuatro con dibujo que no cuestan nada. Van en la
+                        misma rejilla de tres que los del pase porque son el
+                        mismo tipo de dibujo, pero sin candado: los tiene todo
+                        el mundo. */}
+                    {(stickers.libres?.length ?? 0) > 0 && (
+                      <div className="mt-2 grid grid-cols-4 gap-2 border-t border-domino-accent/20 pt-2">
+                        {stickers.libres.map((s) => (
+                          <button
+                            key={s.clave}
+                            title={s.nombre}
+                            onClick={() => handleSendReaction(s.emoji)}
+                            className="flex cursor-pointer items-center justify-center p-0.5 transition hover:scale-125 active:scale-95"
+                          >
+                            <DibujoDeSticker sticker={s} alto="h-14" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Los del pase van en tres columnas y no en seis: son
                         dibujos apaisados, y en una casilla de seis quedan

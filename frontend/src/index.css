@@ -143,8 +143,33 @@
     box-shadow: 0 22px 50px rgba(0, 0, 0, 0.78);
   }
 
+  /*
+   * La segunda baranda, de caoba con moldura dorada.
+   *
+   * Mismo truco que la de nogal. Los recortes 115/117/114/116 son el grosor
+   * real de la madera en el archivo: medido sobre la imagen de 2048 daba 229 /
+   * 234 / 228 / 231, y se guarda a 1024, asi que van a la mitad.
+   *
+   * Va un 40% mas ancha que la de nogal, y no por gusto: esta lleva una moldura
+   * dorada fina por el borde de dentro. Al grosor de la de nogal esa moldura
+   * cae por debajo del pixel y el marco entero se lee como una raya oscura.
+   * Probado a 24 px (se pierde) y a 34 px (se ve la madera y el oro).
+   */
+  .rail-caoba {
+    --marco: clamp(15px, 4.5vmin, 36px);
+    padding: 0;
+    background-color: transparent;
+    border-style: solid;
+    border-width: var(--marco);
+    border-image-source: url('/mesa-caoba.webp');
+    border-image-slice: 115 117 114 116;
+    border-image-repeat: stretch;
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.78);
+  }
+
   /* Las tiras de cuero recortadas sobran cuando el marco es una foto. */
-  .rail-foto .rail-side {
+  .rail-foto .rail-side,
+  .rail-caoba .rail-side {
     display: none;
   }
 
