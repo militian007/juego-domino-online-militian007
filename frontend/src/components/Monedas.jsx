@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { monedasApi } from '../services/api.js';
 
 /**
@@ -8,12 +9,9 @@ import { monedasApi } from '../services/api.js';
  * primera victoria del dia. Contra la maquina no pagan — si pagaran, la forma
  * mas rapida de hacerse rico seria jugar solo contra la casa.
  *
- * ## No hay tienda todavia
- *
- * A proposito. Lo unico que se desbloquea hoy son cuatro cosmeticos y los
- * cuatro son premios del pase: una tienda que los venda vacia el pase. Hasta
- * que se decida QUE vende, el saldo se muestra y se guarda, que es lo que hace
- * falta para cualquier camino que se elija despues.
+ * **Es la puerta de la tienda.** Tocar el saldo lleva alli: es donde uno mira
+ * cuando se pregunta "¿y esto para que sirve?", asi que es donde tiene que
+ * estar la respuesta.
  */
 export default function Monedas({ className = '' }) {
   const [saldo, setSaldo] = useState(null);
@@ -30,9 +28,10 @@ export default function Monedas({ className = '' }) {
   if (saldo == null) return null;
 
   return (
-    <span
-      title="Monedas que ganaste jugando"
-      className={`inline-flex shrink-0 items-center gap-1 rounded-full border border-domino-accent/35 bg-black/40 px-2 py-0.5 ${className}`}
+    <Link
+      to="/tienda"
+      title="Tus monedas · ir a la tienda"
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full border border-domino-accent/35 bg-black/40 px-2 py-0.5 transition hover:border-domino-accent hover:bg-black/60 ${className}`}
     >
       {/* La moneda: un circulo con brillo, no un icono dibujado a mano. */}
       <span
@@ -44,6 +43,6 @@ export default function Monedas({ className = '' }) {
         }}
       />
       <span className="text-[11px] font-bold tabular-nums text-domino-accent">{saldo}</span>
-    </span>
+    </Link>
   );
 }

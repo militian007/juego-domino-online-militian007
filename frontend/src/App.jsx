@@ -8,6 +8,7 @@ import Perfil from './pages/Perfil.jsx';
 import Ranking from './pages/Ranking.jsx';
 import Torneos from './pages/Torneos.jsx';
 import Pase from './pages/Pase.jsx';
+import Tienda from './pages/Tienda.jsx';
 import ChangePassword from './pages/ChangePassword.jsx';
 import Game from './pages/Game.jsx';
 import Version from './components/Version.jsx';
@@ -34,6 +35,7 @@ function App() {
       <Route path="/torneos" element={<Torneos />} />
       {/* El pase pide cuenta: sin cuenta no hay donde guardarle el progreso. */}
       <Route path="/pase" element={<PrivateRoute><Pase /></PrivateRoute>} />
+      <Route path="/tienda" element={<PrivateRoute><Tienda /></PrivateRoute>} />
       <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
       <Route path="/cambiar-clave" element={<PrivateRoute><ChangePassword /></PrivateRoute>} />
       <Route path="/game" element={<Game />} />

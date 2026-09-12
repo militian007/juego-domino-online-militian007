@@ -60,6 +60,11 @@ export const monedasApi = {
   mias: () => api.get('/monedas').then((r) => r.data)
 };
 
+export const tiendaApi = {
+  vitrina: () => api.get('/tienda').then((r) => r.data),
+  comprar: (clave) => api.post('/tienda/comprar', { clave }).then((r) => r.data)
+};
+
 export const paseApi = {
   mio: () => api.get('/pase').then((r) => r.data),
   stickers: () => api.get('/pase/stickers').then((r) => r.data),

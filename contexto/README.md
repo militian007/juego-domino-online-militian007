@@ -6451,3 +6451,58 @@ no son premio del pase.
 El pase ya da un paño llamado "Azul medianoche" en el nivel 10. El nuevo se llama **"Azul
 noche"** para que no haya dos con el mismo nombre en el selector.
 
+
+---
+
+## 141. La tienda (2026-09-12)
+
+Cierra lo que quedaba del paso 4. La tienda estuvo frenada desde el principio por una razon
+concreta y no por falta de codigo: **no habia que vender**. Lo unico que se desbloqueaba eran
+cuatro cosmeticos y **los cuatro eran premios del pase**; venderlos lo vacia.
+
+Se destrabo con el arte de las §139 y §140: tres pintas de fichas y dos paños **que no salen
+del pase**.
+
+### Que vende y a cuanto
+
+| | precio |
+| --- | --- |
+| Fichas de mármol, jade y madera | 300 c/u |
+| Paño granate y azul noche | 300 c/u |
+
+**El precio no se puso a ojo.** Una partida entre personas deja entre 5 y 45 monedas, asi que
+300 son entre siete y sesenta partidas: se siente ganado sin ser eterno. Cuando haya datos de
+cuanto juega la gente de verdad, se vuelve a mirar.
+
+### El catalogo vive en el SERVIDOR
+
+Los precios los pone el servidor y el navegador manda **solo la clave** de lo que quiere. Si
+los precios vivieran en la pantalla, cualquiera compraria el marmol por una moneda editando su
+telefono (regla 8).
+
+### Primero se cobra, despues se entrega
+
+El orden no es casual. Al reves, un fallo entre las dos cosas **regala** el articulo. Asi, el
+peor caso es que alguien pague y no reciba —que se arregla mirando el detalle de movimientos—
+y el caso contrario no se puede arreglar con nadie.
+
+Ademas el cobro lleva la clave del articulo como referencia, asi que **el propio libro de
+monedas** impide pagar dos veces por lo mismo, aunque falle la comprobacion de arriba.
+
+### Probado
+
+`npm run test:tienda` — **24 comprobaciones**. No es "compra y ya": es que no se pueda llevar
+algo sin pagarlo, que no se pague dos veces, que un articulo inventado no entregue nada, y que
+el precio cobrado sea el del catalogo.
+
+Una de las pruebas es de diseño y no de codigo: **comprueba que nada de lo que vende la tienda
+sea premio del pase.** Si algun dia alguien agrega un articulo que choca, la prueba falla.
+
+Y probado corriendo de punta a punta: comprar por la API (800 → 500, segunda compra rechazada),
+comprar desde la pantalla (500 → 200, el boton del siguiente pasa a decir "Te faltan 100"), y
+**la ficha comprada usandose en la mesa** — las siete de la mano salieron de `/tiles-marmol/`.
+
+### Como se entra
+
+Tocando el saldo de monedas del menu. Es donde uno mira cuando se pregunta "¿y esto para que
+sirve?", asi que es donde tiene que estar la respuesta.
