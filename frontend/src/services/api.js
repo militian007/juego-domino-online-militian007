@@ -39,7 +39,10 @@ export const authApi = {
 };
 
 export const perfilApi = {
-  mio: () => api.get('/perfil').then((r) => r.data)
+  mio: () => api.get('/perfil').then((r) => r.data),
+  ponerFoto: (foto) => api.put('/perfil/foto', { foto }).then((r) => r.data),
+  quitarFoto: () => api.delete('/perfil/foto').then((r) => r.data),
+  fotosDe: (ids) => api.get('/perfil/fotos', { params: { ids: ids.join(',') } }).then((r) => r.data)
 };
 
 export const rankingApi = {

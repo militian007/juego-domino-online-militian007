@@ -6778,3 +6778,87 @@ tornillo.
 
 La placa crecio de 63,5 a 72 px de alto, pero el renglon que colgaba debajo se llevaba 19, asi
 que la cabecera entera quedo **mas corta que antes**: la mesa gano sitio.
+
+---
+
+## 147. La foto de perfil que sube el jugador (2026-09-12)
+
+Jonathan: *"pongamos que en el perfil se pueda poner una imagen que el jugador suba, así el
+jugador se siente más identificado"*.
+
+Se sube desde el perfil y **se ve en la mesa**: si no la vieran los demas, no identifica a
+nadie. Quien no sube ninguna sigue con el retrato dibujado de siempre, que no cambia.
+
+### Donde se guarda, y por que ahi
+
+En la base de datos, en su propia tabla `fotos_de_perfil`, como texto.
+
+- **Archivo en disco, no.** El servidor de produccion borra su disco en cada despliegue: la
+  foto se perderia al siguiente cambio. La fila no.
+- **Servicio de imagenes tipo S3, tampoco.** Serian claves nuevas, una cuenta nueva y una
+  factura nueva para guardar veinte kilos por persona.
+- **Columna en `users`, tampoco.** `CREATE TABLE IF NOT EXISTS` corre igual en SQLite y en
+  Postgres; agregar una columna a una tabla que ya existe pediria una migracion, y aqui no hay
+  ninguna. Ademas es un texto gordo: en `users` lo arrastraria cada consulta de la cuenta.
+
+### El recorte lo hace el navegador, por tres motivos
+
+La pantalla recorta el cuadrado del centro, lo baja a 256x256 y lo pasa a JPEG antes de
+mandarlo. Medido con una foto vertical de 900x1200: entra de 25 KB y sale de **5,3 KB**, ya
+cuadrada.
+
+1. **El peso.** Una foto de telefono son tres o cuatro megas. Asi sube al instante con mala
+   señal.
+2. **Los datos escondidos.** Una foto sacada con el telefono lleva dentro la fecha, el modelo
+   y **donde se tomo**. Redibujarla en un lienzo tira todo eso. Es la razon principal, no un
+   efecto secundario.
+3. **El cuadro.** Los retratos son redondos; recortando el centro nadie sale estirado.
+
+### Lo que el servidor NO se cree
+
+Nada de lo de arriba es seguridad: cualquiera puede saltarse la pantalla y llamar a la ruta a
+mano (regla 8). El servidor revisa otra vez:
+
+- que venga como `data:image/jpeg;base64,` y nada mas;
+- que no pase de 40 KB ya descifrado —y el tope se mira ANTES de descifrar—;
+- que los bytes **empiecen y terminen** como un JPEG de verdad, no que lo diga la etiqueta;
+- que el tamano leido de la **cabecera del propio JPEG** no pase de 320x320.
+
+La ultima es la que de verdad importa. Un JPEG de dos kilos puede declarar 30000x30000 y
+reventar la memoria de quien lo abra: pesa poco, asi que el limite de peso no lo ve. Hay que
+mirar la cabecera, y para eso el modelo lee los marcadores del JPEG a mano (unas treinta
+lineas, sin dependencias).
+
+**El SVG no entra ni disfrazado.** Un SVG no es una imagen: es un documento, puede traer
+`<script>` adentro y se ejecuta al mostrarlo. Si entrara, cualquiera le correria codigo en el
+navegador a todos los que se sienten en su mesa.
+
+`npm run test:foto` — 25 comprobaciones, todas sobre eso: que pasa cuando alguien manda texto
+pelado, un PNG disfrazado, un SVG, una foto de 60 KB, una bomba de 30000x30000, un JPEG sin
+cabecera legible. Y que despues de todos los rechazos no quedo nada guardado.
+
+### La foto NO viaja en el estado de la partida
+
+Se pide por su propia ruta, `GET /api/perfil/fotos?ids=...`, una vez por persona.
+
+El estado de la mesa se manda **entero en cada jugada**. Una foto son unos veinte kilos: en
+una mesa de cuatro serian ochenta kilos por cada ficha que alguien pone. Metida ahi, la
+funcion se hubiera notado como lentitud y nadie habria sabido por que.
+
+El registro de a quien ya se le pidio va en un `useRef` y no en el estado: si estuviera en el
+estado, el efecto dependeria de lo que el mismo escribe y se quedaria dando vueltas.
+
+### Probado con dos personas de verdad
+
+No alcanza con verlo en el propio perfil. Se abrieron dos cuentas, una con foto y otra sin,
+se juntaron en una sala privada y **se miro la pantalla de la que no tiene foto**: en el
+asiento de enfrente sale la cara subida, y la que no subio ninguna conserva su retrato
+dibujado.
+
+### Lo que falta, y hay que decirlo
+
+**No hay forma de denunciar una foto.** La ve todo el que se siente en esa mesa, y hoy lo
+unico que se puede hacer con una foto que no deberia estar es borrarla a mano en la base.
+Mientras el club sea gente conocida no pasa nada; el dia que entre cualquiera, esto hace falta
+antes que despues. La palanca ya existe (`FotoDePerfil.quitar`), lo que falta es el boton de
+denunciar y a quien le llega.

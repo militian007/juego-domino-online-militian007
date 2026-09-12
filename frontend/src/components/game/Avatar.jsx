@@ -6,8 +6,13 @@
  * pesa nada y nunca falla. Por eso agregar un bot nuevo jamas deja un hueco:
  * se ve el SVG hasta que llegue su foto.
  *
- * Los jugadores humanos siempre van con SVG, derivado de su nombre: el mismo
- * nombre da siempre la misma cara.
+ * Los jugadores humanos van con SVG derivado de su nombre —el mismo nombre da
+ * siempre la misma cara— salvo que hayan subido una foto suya (§147), que
+ * entonces manda la foto.
+ *
+ * El orden es siempre el mismo: **foto subida > retrato de bot > SVG**. Y el
+ * SVG esta abajo del todo a proposito, porque es el unico que no puede fallar:
+ * no se descarga, se dibuja. Asi nunca queda un hueco donde va una cara.
  */
 
 import { useState } from 'react';
@@ -78,10 +83,27 @@ function caraDe(semilla) {
   };
 }
 
-export default function Avatar({ semilla, tamano = 44, aro = true, className = '' }) {
+export default function Avatar({ semilla, foto = null, tamano = 44, aro = true, className = '' }) {
   const [sinFoto, setSinFoto] = useState(false);
+  const [fotoRota, setFotoRota] = useState(false);
   const c = caraDe(semilla);
   const id = `av-${hash(semilla).toString(36)}`;
+
+  // La foto que subio la persona. Si por lo que sea no carga, se cae al
+  // retrato de siempre en vez de dejar el marco vacio.
+  if (foto && !fotoRota) {
+    return (
+      <img
+        src={foto}
+        width={tamano}
+        height={tamano}
+        alt={`Foto de ${semilla}`}
+        onError={() => setFotoRota(true)}
+        className={`rounded-full object-cover ${aro ? 'ring-2 ring-domino-accent/55' : ''} ${className}`}
+        style={{ width: tamano, height: tamano }}
+      />
+    );
+  }
 
   if (CON_FOTO.has(semilla) && !sinFoto) {
     return (

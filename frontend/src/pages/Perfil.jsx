@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { perfilApi, paseApi } from '../services/api.js';
+import MiFoto from '../components/MiFoto.jsx';
 
 /**
  * El perfil: quien sos y como te fue.
@@ -90,6 +91,18 @@ export default function Perfil() {
 
         {datos && (
           <>
+            {/* La foto va arriba del todo, antes que cualquier numero: es
+                quien sos, no como te fue. */}
+            <div className="mb-5">
+              <MiFoto
+                nombre={datos.usuario.username}
+                foto={datos.usuario.foto}
+                onCambio={(foto) =>
+                  setDatos((d) => ({ ...d, usuario: { ...d.usuario, foto } }))
+                }
+              />
+            </div>
+
             <h1 className="text-2xl font-semibold sm:text-3xl">{datos.usuario.username}</h1>
             {/* Se pregunta por la fecha YA FORMATEADA: si lo que vino de la
                 base no es una fecha valida, no se pinta el renglon en vez de

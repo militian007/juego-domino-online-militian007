@@ -57,7 +57,7 @@ export function Jugador({ jugador, fichas = 0, enTurno = false, esRival = false 
     <Panel className={`p-3 transition-colors ${enTurno ? 'border-domino-accent/70 bg-domino-accent/5' : ''}`}>
       <div className="flex items-center gap-3">
         <div className="relative shrink-0">
-          <Avatar semilla={jugador.avatar || jugador.username} tamano={46} />
+          <Avatar semilla={jugador.avatar || jugador.username} foto={jugador.foto} tamano={46} />
           {enTurno && (
             <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 animate-pulse rounded-full border-2 border-domino-dark bg-emerald-400" />
           )}

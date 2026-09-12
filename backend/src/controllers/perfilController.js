@@ -1,6 +1,7 @@
 import * as User from '../models/User.js';
 import * as Partida from '../models/Partida.js';
 import * as Ranking from '../models/Ranking.js';
+import * as Foto from '../models/FotoDePerfil.js';
 
 /**
  * El perfil de quien esta con la sesion iniciada.
@@ -12,11 +13,12 @@ export const miPerfil = async (req, res) => {
   try {
     const userId = req.userId;
 
-    const [usuario, resumen, historial, ficha] = await Promise.all([
+    const [usuario, resumen, historial, ficha, foto] = await Promise.all([
       User.findById(userId),
       Partida.resumenDe(userId),
       Partida.historialDe(userId, req.query.limite),
-      Ranking.de(userId)
+      Ranking.de(userId),
+      Foto.de(userId)
     ]);
 
     if (!usuario) {
@@ -46,7 +48,8 @@ export const miPerfil = async (req, res) => {
       usuario: {
         id: usuario.id,
         username: usuario.username,
-        desde: usuario.created_at
+        desde: usuario.created_at,
+        foto
       },
       resumen,
       historial: conRivales,

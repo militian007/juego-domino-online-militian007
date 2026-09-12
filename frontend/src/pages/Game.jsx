@@ -32,7 +32,7 @@ import SidePicker from '../components/game/SidePicker.jsx';
 import AdSidebar from '../components/AdSidebar.jsx';
 import TopBanner from '../components/TopBanner.jsx';
 import { connectSocket } from '../services/socket.js';
-import { paseApi } from '../services/api.js';
+import { paseApi, perfilApi } from '../services/api.js';
 import CargandoFichas from '../components/CargandoFichas.jsx';
 import PanelDeChat, { BurbujaDeChat, useChatDeMesa } from '../components/game/ChatDeMesa.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -157,7 +157,7 @@ function PlacaAsiento({ jugador, fichas, enTurno, esCompanero, className = '' })
       style={{ textShadow: '0 1px 3px rgba(0,0,0,.95)' }}
     >
       <div className="relative">
-        <Avatar semilla={jugador.avatar || jugador.username} tamano={38} />
+        <Avatar semilla={jugador.avatar || jugador.username} foto={jugador.foto} tamano={38} />
         {enTurno && (
           <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 animate-pulse rounded-full border-2 border-black/70 bg-emerald-400" />
         )}
@@ -280,6 +280,37 @@ export default function Game() {
       .catch(() => { if (vivo) setStickers({ base: BASE_DE_EMERGENCIA, libres: [], premiados: [] }); });
     return () => { vivo = false; };
   }, []);
+
+  /**
+   * Las fotos de perfil de los que estan en la mesa (§147).
+   *
+   * Se piden por su propia ruta y NO vienen dentro del estado de la partida: el
+   * estado se manda entero en cada jugada y una foto son unos veinte kilos, asi
+   * que en una mesa de cuatro serian ochenta kilos por cada ficha puesta. Aqui
+   * se piden una vez por persona y quedan.
+   *
+   * El registro de a quien ya se le pidio va en un `useRef` y no en el estado a
+   * proposito: si estuviera en el estado, el efecto dependeria de lo que el
+   * mismo escribe y se quedaria dando vueltas.
+   */
+  const [fotos, setFotos] = useState({});
+  const fotosPedidas = useRef(new Set());
+
+  useEffect(() => {
+    const ids = (gameState?.players ?? [])
+      .filter((p) => !p.isBot && Number.isInteger(p.id))
+      .map((p) => p.id)
+      .filter((id) => !fotosPedidas.current.has(id));
+    if (ids.length === 0) return;
+
+    ids.forEach((id) => fotosPedidas.current.add(id));
+    let vivo = true;
+    perfilApi.fotosDe(ids)
+      .then((r) => { if (vivo) setFotos((f) => ({ ...f, ...r })); })
+      // Sin foto se ve el retrato dibujado de siempre: no hay nada que avisar.
+      .catch(() => {});
+    return () => { vivo = false; };
+  }, [gameState?.players]);
 
   const { tema, setTema, clasePano, claseBaranda, carpetaFichas, puedeUsar } = useMesaTheme();
   const [explicacion, setExplicacion] = useState(null);
@@ -1125,7 +1156,10 @@ export default function Game() {
     );
   }
 
-  const miJugador = gameState?.players?.find((p) => p.id === myPlayerId) || null;
+  // Le pega a cada jugador su foto de perfil, si subio alguna (§147).
+  const conFoto = (p) => (p ? { ...p, foto: fotos[p.id] ?? null } : null);
+
+  const miJugador = conFoto(gameState?.players?.find((p) => p.id === myPlayerId) || null);
   const is1v1 = opponents.length === 1;
   // En dominó el compañero se sienta enfrente. Antes los rivales se repartían
   // por orden de lista, y en 2v2 el compañero (asiento +2) caía a un costado
@@ -1134,9 +1168,9 @@ export default function Game() {
   const miAsiento = miJugador?.seat ?? 0;
   const porAsiento = (salto) =>
     gameState.players.find((p) => p.seat === (miAsiento + salto) % totalAsientos) || null;
-  const seatTop = totalAsientos === 4 ? porAsiento(2) : opponents[0] || null;
-  const seatRight = totalAsientos === 4 ? porAsiento(1) : null;
-  const seatLeft = totalAsientos === 4 ? porAsiento(3) : null;
+  const seatTop = conFoto(totalAsientos === 4 ? porAsiento(2) : opponents[0] || null);
+  const seatRight = conFoto(totalAsientos === 4 ? porAsiento(1) : null);
+  const seatLeft = conFoto(totalAsientos === 4 ? porAsiento(3) : null);
   const esCompanero = (p) => p && miJugador && p.team === miJugador.team;
   // El marcador se rotula segun TU equipo, no segun el numero de equipo: si
   // entras de segundo sos el equipo 2, y "Vos" mostraba los puntos del rival.

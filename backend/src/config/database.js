@@ -300,6 +300,23 @@ export async function initDatabase() {
     );
 
     CREATE UNIQUE INDEX IF NOT EXISTS idx_preferencia_uno ON preferencias(user_id, clave);
+
+    -- La foto que se sube en el perfil.
+    --
+    -- Va en su propia tabla y no en una columna de users por dos motivos. Uno,
+    -- CREATE TABLE IF NOT EXISTS corre igual en SQLite y en Postgres, mientras
+    -- que agregarle una columna a una tabla que ya existe necesitaria una
+    -- migracion, y aqui no hay ninguna. Dos, es un texto gordo: metido en users
+    -- lo arrastraria cada SELECT de la cuenta, y la cuenta se lee todo el rato.
+    --
+    -- Se guarda la imagen misma y no una ruta a un archivo porque el servidor
+    -- de produccion borra su disco en cada despliegue: un archivo subido se
+    -- perderia al siguiente cambio, la fila no.
+    CREATE TABLE IF NOT EXISTS fotos_de_perfil (
+      user_id INTEGER PRIMARY KEY,
+      foto TEXT NOT NULL,
+      actualizada_en TIMESTAMP
+    );
   `;
 
   if (isPostgres) {

@@ -25,7 +25,8 @@
     "test:modalidades": "node src/test-modalidades.js",
     "test:destranque": "node src/test-destranque.js",
     "reiniciar-clasificacion": "node src/reiniciar-clasificacion.js",
-    "test:engine": "npm --prefix ../packages/domino-engine test"
+    "test:engine": "npm --prefix ../packages/domino-engine test",
+    "test:foto": "node src/test-foto-perfil.js"
   },
   "dependencies": {
     "@privoytruco/domino-engine": "file:../packages/domino-engine",

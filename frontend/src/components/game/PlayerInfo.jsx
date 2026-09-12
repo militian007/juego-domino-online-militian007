@@ -14,7 +14,7 @@ export default function PlayerInfo({ player, count, isTurn, isWinner, team }) {
         } ${isWinner ? 'ring-4 ring-domino-accent' : ''}`}
       >
         <div className="relative shrink-0">
-          <Avatar semilla={player.avatar || player.username} tamano={34} />
+          <Avatar semilla={player.avatar || player.username} foto={player.foto} tamano={34} />
           {isTurn && (
             <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 animate-pulse rounded-full border-2 border-domino-card bg-emerald-400" />
           )}
