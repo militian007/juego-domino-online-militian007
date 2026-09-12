@@ -92,6 +92,16 @@ function joinOffset(prev, curr, prevOffset, cell) {
 
   // El doble se centra sobre la union, en el eje de su lado largo.
   if (currDouble) {
+    // ...salvo si se tocan POR EL CANTO, o sea si la vecina esta en la
+    // prolongacion del lado largo del doble. Eso pasa en el rescate contra la
+    // pared: el doble se planta de costado en la punta en vez de cruzarla.
+    // Centrarlo ahi lo corre una ficha y media y lo monta encima de la cadena.
+    const haciaLaVecina = { x: union.enA.x - union.enB.x, y: union.enA.y - union.enB.y };
+    const porElCanto = curr.orientation === 'horizontal'
+      ? haciaLaVecina.x !== 0
+      : haciaLaVecina.y !== 0;
+    if (porElCanto) return { x: prevOffset.x, y: prevOffset.y };
+
     const objetivo = centroDeCelda(union.enA, cell);
     const actual = center(curr, cell);
     return curr.orientation === 'vertical'
@@ -344,21 +354,15 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
           addAlong('vertical', { x: col, y: ey }, { x: col, y: ey + 1 });
 
           // El doble tambien puede DOBLAR en la punta, igual que una ficha
-          // normal. La cadena gira y el doble se cruza sobre la direccion
-          // nueva, asi que va en la fila de arriba o la de abajo, centrado
-          // sobre la columna de la punta. Solo en el rescate.
+          // normal, cuando pasando la punta no cabe. Solo en el rescate.
+          //
+          // Se queda CRUZADO sobre la ficha anterior, nunca acostado a su lado:
+          // el doble sigue vertical, pero en vez de ir una columna mas alla de
+          // la punta se planta en la columna DE la punta, saliendo hacia arriba
+          // o hacia abajo. Ver el comentario de abajo.
           if (dobleDobla) {
-            // Solo HACIA AFUERA (§127).
-            //
-            // Antes se ofrecian las dos: hacia afuera y hacia atras, por encima
-            // de la ficha anterior. La de atras es la que se ve mal — el doble
-            // queda apilado justo al lado de su vecina y las dos acostadas
-            // igual, que es lo que Jonathan reporto con capturas. La de afuera
-            // se lee como lo que es: la cadena giro y el doble la cruza.
-            for (const row of [ey - 1, ey + 1]) {
-              addAlong('horizontal', { x: ex, y: row }, { x: ex - 1, y: row });
-              addAlong('horizontal', { x: ex, y: row }, { x: ex + 1, y: row });
-            }
+            addAlong('vertical', { x: ex, y: ey - 1 }, { x: ex, y: ey - 2 });
+            addAlong('vertical', { x: ex, y: ey + 1 }, { x: ex, y: ey + 2 });
           }
         } else {
           const row = free.y + dy;
@@ -366,11 +370,8 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
           addAlong('horizontal', { x: ex, y: row }, { x: ex + 1, y: row });
 
           if (dobleDobla) {
-            // Solo hacia afuera, por lo mismo de arriba.
-            for (const col of [ex - 1, ex + 1]) {
-              addAlong('vertical', { x: col, y: ey }, { x: col, y: ey - 1 });
-              addAlong('vertical', { x: col, y: ey }, { x: col, y: ey + 1 });
-            }
+            addAlong('horizontal', { x: ex - 1, y: ey }, { x: ex - 2, y: ey });
+            addAlong('horizontal', { x: ex + 1, y: ey }, { x: ex + 2, y: ey });
           }
         }
 

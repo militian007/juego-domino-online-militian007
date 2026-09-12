@@ -6686,3 +6686,69 @@ El unico cuidado: sin mas, el boton caia justo sobre el numero de VOS. Se le die
 aire a los lados del renglon de los marcadores. **En los dos lados**, aunque el boton este en
 uno solo: si el aire va solo a la izquierda, los dos marcadores quedan descentrados uno
 respecto del otro y se nota.
+
+---
+
+## 145. El doble contra la pared, por fin cruzado (2026-09-12)
+
+Jonathan: *"ve se puso mal el doble"*, con una captura: el doble acostado al lado de su
+vecina, tapandola casi entera.
+
+**Es la tercera vez que reporta lo mismo** (§90 y §127 son el mismo bicho). Las dos veces
+anteriores se arreglo el caso de la captura; esta vez se midio primero, y resulto que no era
+un caso raro: **le pasaba al 11,38% de los dobles**.
+
+### Que estaba mal
+
+Cuando la cadena llega a la pared, el doble no cabe pasando la punta. Para eso existe el
+rescate `dobleDobla`. Lo que ofrecia el rescate era esto:
+
+```
+. . . . . . . . . . . . . . D D      <- el doble, acostado en la fila de arriba
+e f f g g h h i i v v                <- la cadena, acostada tambien
+```
+
+El doble quedaba **en la misma direccion que su vecina y justo encima**. El comentario del
+codigo decia que el doble tenia que cruzarse, pero el codigo hacia lo contrario: con la punta
+horizontal, ofrecia el doble horizontal.
+
+Y no habia forma de salvarlo moviendolo de columna: con la punta pegada a la pared, una ficha
+de dos casillas centrada sobre la punta solo puede caer encima de la anterior.
+
+### El arreglo
+
+El doble se queda **perpendicular a la ficha anterior**, y en vez de ir una casilla mas alla
+de la punta se planta en la casilla DE la punta, saliendo de lado:
+
+```
+. . . . . . . . . . . . . . . D      <- el doble, de pie sobre la punta
+e f f g g h h i i j j                <- la cadena
+```
+
+Eso es lo que se ve ahora en esa misma posicion (partida de prueba `dob-0`, el doble 5|5).
+
+Hubo que tocar tambien el **dibujo**. `joinOffset` centra el doble sobre la union con su
+vecina, que es lo correcto cuando el doble cruza pasando la punta. Aqui las dos se tocan **por
+el canto** —la vecina esta en la prolongacion del lado largo del doble— y centrarlo lo corria
+ficha y media y lo montaba encima de la cadena. Ahora, si se tocan por el canto, no se centra.
+
+### Medido
+
+| | antes | ahora |
+| --- | --- | --- |
+| dobles en paralelo con la vecina | **11,38%** | **0,00%** |
+| solape medio de esos | 75% | — |
+| fichas trabadas | 0,197% de los turnos | 0,179% |
+
+400 partidas, 12.923 dobles jugados. Las trabadas **bajaron**: el arreglo no cerro ninguna
+jugada, al reves.
+
+Los 85 tests del motor siguen pasando, incluido el de §127 (`doble contra el borde: entra
+doblando, y NUNCA en linea`), que es el que vigila que contra la pared el doble se pueda poner.
+
+### Lo que NO se comprobo a mano
+
+La geometria esta comprobada por simulacion, no jugando hasta una esquina con el dedo: llegar
+a una punta contra la pared con un doble en la mano lleva media partida y depende del reparto.
+Lo que si se vio corriendo es el juego entero con el motor nuevo, repartiendo y pintando
+normal.
