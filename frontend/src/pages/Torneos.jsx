@@ -114,7 +114,7 @@ export default function Torneos() {
           TORNEOS
         </h1>
         <p className="mt-1 text-sm text-domino-cream/55">
-          Entrá, ganá la llave y llevate los puntos
+          Entra, gana la llave y llévate los puntos
         </p>
 
         {error && <p className="mt-6 text-sm text-red-400">{error}</p>}
@@ -183,7 +183,7 @@ export default function Torneos() {
 
                   {estoyAnotado && (
                     <p className="mt-3 text-[11px] leading-relaxed text-domino-dark/60">
-                      Cuando arranque te va a saltar tu mesa. Si no entrás a tiempo, quedás
+                      Cuando arranque te va a saltar tu mesa. Si no entras a tiempo, quedas
                       fuera del cuadro.
                     </p>
                   )}
@@ -209,7 +209,7 @@ export default function Torneos() {
 
               {datos.palmares.length === 0 ? (
                 <p className="mt-3 text-sm leading-relaxed text-domino-dark/60">
-                  Todavía no hay campeones. El primero que gane un torneo queda acá.
+                  Todavía no hay campeones. El primero que gane un torneo queda aquí.
                 </p>
               ) : (
                 <ul className="mt-3 divide-y divide-black/10">

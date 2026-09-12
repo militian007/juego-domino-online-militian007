@@ -6862,3 +6862,76 @@ unico que se puede hacer con una foto que no deberia estar es borrarla a mano en
 Mientras el club sea gente conocida no pasa nada; el dia que entre cualquiera, esto hace falta
 antes que despues. La palanca ya existe (`FotoDePerfil.quitar`), lo que falta es el boton de
 denunciar y a quien le llega.
+
+---
+
+## 148. La mesa habla venezolano (2026-09-12)
+
+Raul, del equipo de PrivoyTruco, lo pidio: el juego es venezolano y toda la mesa hablaba en
+voseo rioplatense. «Tocá una ficha», «Levantá una», «No podés jugar», «Sos el primero: poné una
+ficha en el centro», «vos», «tenés», «querés», «acá». En Venezuela nadie habla asi: se tutea.
+Toca, levanta, no puedes, eres el primero, tu, tienes, quieres, aqui.
+
+### Que se cambio
+
+Solo las palabras. Ni el sentido ni el humor de los consejos, ni el layout, ni un color, ni un
+tamaño. Cada cambio es un renglon de texto y alrededor no se reformateo nada, para que la mezcla
+con lo que otros estan tocando en paralelo (el 2v2, los grises, las fichas WebP, el bot) sea
+limpia.
+
+Ejemplos, antes → despues:
+
+- «Tocá una ficha tuya y después el imán azul para ponerla» → «Toca una ficha tuya y después el
+  imán azul para ponerla» (el Panita).
+- «Sos el primero: poné una ficha en el centro» → «Eres el primero: pon una ficha en el centro».
+- «Levantá una · quedan 7» → «Levanta una · quedan 7» (el pozo).
+- «No podés jugar. Levantá una ficha del montón.» → «No puedes jugar. Levanta una ficha del montón.»
+- «Por qué no podés jugar» → «Por qué no puedes jugar».
+- «JUGÁ» → «JUEGA» (el reloj del turno).
+- «¿Salir? La mesa se cierra y perdés lo jugado.» → «... y pierdes lo jugado.»
+- «Todavía no dijo nada nadie. Empezá vos.» → «Todavía nadie ha dicho nada. Empieza tú.» (chat global).
+- «Escribí algo...» → «Escribe algo...» (los dos chats).
+- «No tenés avisos todavía. Acá van a llegar...» → «No tienes avisos todavía. Aquí van a llegar...».
+- «Entrá, ganá la llave y llevate los puntos» → «Entra, gana la llave y llévate los puntos» (torneos).
+- «Dominó venezolano, doble seis. Sentate en la mesa.» → «... Siéntate en la mesa.» (portada).
+- «Jugá 2 partidas», «Ganá un torneo», «Saludá en el chat global», «Traé 3 panas» → «Juega»,
+  «Gana», «Saluda», «Trae» (las misiones del pase).
+- «No podés retarte a vos mismo» → «No puedes retarte a ti mismo» (servidor, retos).
+- «Iniciá sesión para escribir» → «Inicia sesión para escribir» (servidor, chats).
+- «pasás de ronda» → «pasas de ronda» (aviso del torneo; `test-torneos.js` buscaba ese titulo
+  y se actualizo con el).
+
+«Pana» se queda: es venezolano. El «Dale pues» del bot Chuo tambien.
+
+### La placa del marcador
+
+Decia VOS y ELLOS. Ahora:
+
+- **1 vs 1** (con persona o con bot): los NOMBRES, el tuyo a la izquierda y el del rival a la
+  derecha, en mayusculas. Si un nombre pasa de 9 caracteres se recorta y se le pone «…», para
+  que no pise el centro de la placa en un telefono.
+- **2 vs 2**: NOSOTROS y ELLOS.
+
+Los nombres salen del estado de la partida (`players`, cada uno con su `seat`): el mio es
+`miJugador` y el rival en 1 vs 1 es el unico otro asiento. `Tablero` recibe los dos rotulos ya
+resueltos (`myLabel`, `theirLabel`) y no sabe nada de equipos.
+
+### Numeros
+
+84 cadenas de texto en 33 archivos (24 del frontend, 9 del backend), mas la placa
+(`Tablero.jsx` y `Game.jsx`). `npm run build` del frontend pasa. Un grep de voseo (vos, sos,
+podés, tenés, querés, levantá, jugá, tocá, poné, acá y las demas formas) sobre `frontend/src` y
+`backend/src` da cero en textos de usuario.
+
+### Lo que se dejo a proposito
+
+Quedan formas de vos en **comentarios de codigo**, que no ve nadie: `Board.jsx` («cuando te
+toca a vos»), `Game.jsx` («cuando no podés jugar», «sos el equipo 2»), `Landing.jsx`,
+`Perfil.jsx`, `MesaIcono.jsx`, `AvisoDeTorneo.jsx`, `Pase.jsx` («traé a tus panas») y
+`DominoGame.js`. Y en `backend/src/game/test.js` el jugador de prueba se llama «Vos»: es un
+test, no le llega a nadie.
+
+### Lo que NO se comprobo
+
+Se construyo el frontend y se paso el grep; no se abrio el juego a jugar una partida. La placa
+con nombres se razono sobre el estado que ya traia la mesa, no se vio pintada.

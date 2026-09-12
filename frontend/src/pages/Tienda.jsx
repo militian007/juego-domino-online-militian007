@@ -129,7 +129,7 @@ export default function Tienda() {
           </Link>
 
           <span className="flex items-center gap-2 rounded-full border border-domino-accent/35 bg-black/40 px-3 py-1">
-            <span className="text-[10px] uppercase tracking-wider text-domino-cream/45">Tenés</span>
+            <span className="text-[10px] uppercase tracking-wider text-domino-cream/45">Tienes</span>
             <Moneda cuanto={vitrina?.saldo ?? 0} className="text-sm font-bold text-domino-accent" />
           </span>
         </div>
@@ -219,7 +219,7 @@ export default function Tienda() {
         )}
 
         <p className="mt-6 text-center text-[11px] leading-snug text-domino-cream/35">
-          Lo que se vende acá no sale del pase de batalla:
+          Lo que se vende aquí no sale del pase de batalla:
           <br />
           los premios del pase se ganan jugando, no se compran.
         </p>

@@ -121,7 +121,7 @@ export default function Campana() {
 
           {avisos.length === 0 ? (
             <p className="px-4 py-6 text-center text-xs leading-relaxed text-domino-cream/50">
-              No tenés avisos todavía. Acá van a llegar los retos que te hagan y los
+              No tienes avisos todavía. Aquí van a llegar los retos que te hagan y los
               torneos cuando estén.
             </p>
           ) : (

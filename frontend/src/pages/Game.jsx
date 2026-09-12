@@ -475,7 +475,7 @@ export default function Game() {
       if (!code) return;
       s.emit('room:join', { code }, (res) => {
         if (!res?.ok) {
-          setError('Se perdió la conexión con la mesa. Volvé a entrar.');
+          setError('Se perdió la conexión con la mesa. Vuelve a entrar.');
           olvidarPartida();
         } else {
           setError('');
@@ -1176,6 +1176,10 @@ export default function Game() {
   // entras de segundo sos el equipo 2, y "Vos" mostraba los puntos del rival.
   const miEquipo = miJugador?.team ?? 1;
   const equipoRival = miEquipo === 1 ? 2 : 1;
+  // La placa: en 1 vs 1 van los nombres; en 2 vs 2, "Nosotros" y "Ellos".
+  const shortName = (name) => (name.length > 9 ? `${name.slice(0, 9)}…` : name);
+  const myLabel = is1v1 ? shortName(miJugador?.username ?? 'Tú') : 'Nosotros';
+  const theirLabel = is1v1 ? shortName(seatTop?.username ?? 'Rival') : 'Ellos';
 
   // Como cerro la ronda, en palabras.
   const cierreDeRonda = tituloDeRonda({
@@ -1229,7 +1233,7 @@ export default function Game() {
               <div className="fixed inset-0 z-40" onClick={() => setConfirmandoSalida(false)} />
               <div className="absolute left-0 top-11 z-50 w-52 rounded-xl border border-domino-crimson/40 bg-domino-felt/95 p-3 shadow-2xl backdrop-blur">
                 <p className="mb-2 text-[11px] leading-snug text-domino-cream">
-                  ¿Salir? La mesa se cierra y perdés lo jugado.
+                  ¿Salir? La mesa se cierra y pierdes lo jugado.
                 </p>
                 <button
                   type="button"
@@ -1258,6 +1262,8 @@ export default function Game() {
           pozo={gameState.hasPool ? gameState.poolCount : null}
           sala={gameState.roomCode}
           modalidad={gameState.modalidad}
+          myLabel={myLabel}
+          theirLabel={theirLabel}
         />
       </div>
 
@@ -1655,7 +1661,7 @@ export default function Game() {
                 {myTurn && !gameState.canPlay && (
                   <div className="mt-2 max-h-24 overflow-y-auto rounded-lg border border-slate-700/60 bg-black/25 p-2 text-left">
                     <p className="mb-1.5 text-[10px] uppercase tracking-widest text-slate-500">
-                      Por qué no podés jugar
+                      Por qué no puedes jugar
                       {explicacion?.ends
                         ? ` · extremos ${explicacion.ends.left} y ${explicacion.ends.right}`
                         : ''}
@@ -1681,7 +1687,7 @@ export default function Game() {
                     mesa. Aca solo queda el aviso de que hay que robar. */}
                 {myTurn && gameState.canDraw && (
                   <p className="mt-2 text-center text-[11px] italic leading-tight text-domino-accent">
-                    No podés jugar. Levantá una ficha del montón.
+                    No puedes jugar. Levanta una ficha del montón.
                   </p>
                 )}
 

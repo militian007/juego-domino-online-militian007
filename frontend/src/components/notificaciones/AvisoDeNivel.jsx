@@ -52,7 +52,7 @@ export default function AvisoDeNivel() {
           <p className="truncate text-[11px] text-domino-cream/70">
             {cosas.length
               ? `Ganaste: ${cosas.map((c) => c.nombre).join(', ')}`
-              : 'Tocá para ver lo que viene'}
+              : 'Toca para ver lo que viene'}
           </p>
         </div>
       </Link>

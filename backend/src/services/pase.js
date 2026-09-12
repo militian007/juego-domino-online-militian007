@@ -56,7 +56,7 @@ const avisarDeNiveles = async (userId, resultado) => {
   const premios = resultado.premios.filter((p) => p.tipo === 'desbloqueo');
   const cuerpo = premios.length
     ? `Ganaste: ${premios.map((p) => p.nombre).join(', ')}.`
-    : 'Seguí jugando que el próximo premio está cerca.';
+    : 'Sigue jugando que el próximo premio está cerca.';
 
   try {
     const guardado = await Notificacion.crear({

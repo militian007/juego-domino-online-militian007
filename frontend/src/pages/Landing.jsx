@@ -190,7 +190,7 @@ export default function Landing() {
               lleva la marca, no un texto de venta. */}
           <Logo variante="titulo" className="md:items-start" />
           <p className="mt-4 hidden max-w-sm text-sm leading-relaxed text-domino-cream/85 drop-shadow md:block">
-            Dominó venezolano, doble seis. Sentate en la mesa.
+            Dominó venezolano, doble seis. Siéntate en la mesa.
           </p>
 
           {/* En el telefono los botones van abajo, donde llega el pulgar, y manda

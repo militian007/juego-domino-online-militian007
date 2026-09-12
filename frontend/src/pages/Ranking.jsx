@@ -125,7 +125,7 @@ export default function Ranking() {
             {vista === 'semana'
               ? 'Esta semana todavía no jugó nadie. El primero que gane una partida encabeza la tabla.'
               : vista === 'torneos'
-                ? 'Todavía no hay campeones. El primero que gane un torneo queda acá.'
+                ? 'Todavía no hay campeones. El primero que gane un torneo queda aquí.'
                 : 'Todavía no hay nadie clasificado. Se entra jugando una partida contra otra persona.'}
           </p>
         )}
@@ -166,7 +166,7 @@ export default function Ranking() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold">
                           {f.username}
-                          {soyYo && <span className="ml-1.5 text-[10px] font-semibold opacity-60">vos</span>}
+                          {soyYo && <span className="ml-1.5 text-[10px] font-semibold opacity-60">tú</span>}
                         </p>
                         <p className="mt-0.5 truncate text-[11px] text-domino-dark/55">
                           {detalle(f, vista)}

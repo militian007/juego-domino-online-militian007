@@ -33,7 +33,7 @@ export function Marcador({ equipo1 = 0, equipo2 = 0, objetivo = 100, ronda = 1, 
           <div className="mb-1 flex items-baseline justify-between">
             <span className={`text-[11px] ${e.texto}`}>
               Equipo {e.n}
-              {miEquipo === e.n && <span className="ml-1 text-slate-500">· vos</span>}
+              {miEquipo === e.n && <span className="ml-1 text-slate-500">· tú</span>}
             </span>
             <span className={`font-mono text-lg font-bold leading-none ${e.texto}`}>{e.puntos}</span>
           </div>
@@ -71,7 +71,7 @@ export function Jugador({ jugador, fichas = 0, enTurno = false, esRival = false 
               <span className="text-[10px] capitalize text-slate-500">{jugador.difficulty}</span>
             </div>
           ) : (
-            <div className="text-[10px] text-slate-500">{esRival ? 'Rival' : 'Vos'}</div>
+            <div className="text-[10px] text-slate-500">{esRival ? 'Rival' : 'Tú'}</div>
           )}
         </div>
 

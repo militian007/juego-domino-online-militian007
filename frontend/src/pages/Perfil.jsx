@@ -178,8 +178,8 @@ export default function Perfil() {
 
             {datos.resumen.porcentaje !== null && (
               <p className="mt-3 text-center text-sm text-domino-cream/60">
-                Ganás el <span className="font-semibold text-domino-accent">{datos.resumen.porcentaje}%</span> de
-                las que jugás
+                Ganas el <span className="font-semibold text-domino-accent">{datos.resumen.porcentaje}%</span> de
+                las que juegas
               </p>
             )}
 
@@ -192,7 +192,7 @@ export default function Perfil() {
                   MIS TÍTULOS
                 </h2>
                 <p className="mt-1 text-[11px] leading-relaxed text-domino-cream/40">
-                  El que elijas se ve al lado de tu nombre en el chat. Tocalo otra vez para
+                  El que elijas se ve al lado de tu nombre en el chat. Tócalo otra vez para
                   quitártelo.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">

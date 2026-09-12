@@ -180,7 +180,7 @@ export default function PozoEnLaMesa({
           desparramadas el texto suelto no se lee. */}
       <div className="pointer-events-none absolute inset-x-0 top-24 flex justify-center">
         <span className="rounded-full border border-domino-accent/40 bg-black/75 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-domino-accent">
-          {barajeando ? 'Barajando' : `Levantá una · quedan ${cantidad}`}
+          {barajeando ? 'Barajando' : `Levanta una · quedan ${cantidad}`}
         </span>
       </div>
     </div>

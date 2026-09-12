@@ -98,7 +98,7 @@ export function registrarRetos(io, socket, roomManager) {
   // ------------------------------------------------------------ torneos
   socket.on('torneo:anotarse', async ({ torneoId, anotarse } = {}, callback) => {
     const yo = quienSoy();
-    if (!yo) return callback?.({ ok: false, error: 'Iniciá sesión para anotarte' });
+    if (!yo) return callback?.({ ok: false, error: 'Inicia sesión para anotarte' });
 
     try {
       const torneo = await Torneo.porId(torneoId);
@@ -128,14 +128,14 @@ export function registrarRetos(io, socket, roomManager) {
   // ------------------------------------------------------------ retar
   socket.on('reto:enviar', async ({ paraId, paraNombre } = {}, callback) => {
     const yo = quienSoy();
-    if (!yo) return callback?.({ ok: false, error: 'Iniciá sesión para retar a alguien' });
+    if (!yo) return callback?.({ ok: false, error: 'Inicia sesión para retar a alguien' });
 
     const destino = Number(paraId);
     if (!Number.isInteger(destino) || destino <= 0) {
-      return callback?.({ ok: false, error: 'No sé a quién querés retar' });
+      return callback?.({ ok: false, error: 'No sé a quién quieres retar' });
     }
     if (destino === Number(yo.id)) {
-      return callback?.({ ok: false, error: 'No podés retarte a vos mismo' });
+      return callback?.({ ok: false, error: 'No puedes retarte a ti mismo' });
     }
     if (!estaEnLinea(io, destino)) {
       return callback?.({ ok: false, error: `${paraNombre || 'Esa persona'} no está en línea` });
@@ -143,13 +143,13 @@ export function registrarRetos(io, socket, roomManager) {
 
     const ahora = Date.now();
     if (ahora - (ultimoReto.get(yo.id) ?? 0) < ESPERA_ENTRE_RETOS_MS) {
-      return callback?.({ ok: false, error: 'Esperá un momento antes de retar de nuevo' });
+      return callback?.({ ok: false, error: 'Espera un momento antes de retar de nuevo' });
     }
 
     // Un solo reto vivo por pareja: si no, se puede llenar el buzon del otro.
     for (const r of retos.values()) {
       if (r.deId === yo.id && r.paraId === destino) {
-        return callback?.({ ok: false, error: 'Ya lo retaste, esperá que conteste' });
+        return callback?.({ ok: false, error: 'Ya lo retaste, espera que conteste' });
       }
     }
 
@@ -187,7 +187,7 @@ export function registrarRetos(io, socket, roomManager) {
     await avisar(io, destino, {
       tipo: TIPO.RETO,
       titulo: `${yo.nombre} te retó a jugar`,
-      cuerpo: '1 vs 1. Tenés un minuto para contestar.',
+      cuerpo: '1 vs 1. Tienes un minuto para contestar.',
       datos: { retoId: id, deId: yo.id, deNombre: yo.nombre }
     });
 
@@ -197,7 +197,7 @@ export function registrarRetos(io, socket, roomManager) {
   // ------------------------------------------------------------ contestar
   socket.on('reto:responder', async ({ id, acepto } = {}, callback) => {
     const yo = quienSoy();
-    if (!yo) return callback?.({ ok: false, error: 'Iniciá sesión' });
+    if (!yo) return callback?.({ ok: false, error: 'Inicia sesión' });
 
     const reto = retos.get(id);
     if (!reto) return callback?.({ ok: false, error: 'Ese reto ya no está disponible' });
@@ -212,7 +212,7 @@ export function registrarRetos(io, socket, roomManager) {
       await avisar(io, reto.deId, {
         tipo: TIPO.RETO_RECHAZADO,
         titulo: `${yo.nombre} no aceptó`,
-        cuerpo: 'Probá con otro, o buscá partida rápida.',
+        cuerpo: 'Prueba con otro, o busca partida rápida.',
         datos: { retoId: id }
       });
       return callback?.({ ok: true, acepto: false });

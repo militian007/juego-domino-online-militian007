@@ -48,7 +48,7 @@ export default function Register() {
 
           {invitadoPor && (
             <p className="mb-6 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-center text-sm text-emerald-200">
-              Te invitó <strong>{invitadoPor}</strong>. Jugá tu primera partida y le sumás
+              Te invitó <strong>{invitadoPor}</strong>. Juega tu primera partida y le sumas
               experiencia en su pase.
             </p>
           )}

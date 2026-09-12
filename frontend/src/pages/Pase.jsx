@@ -195,7 +195,7 @@ export default function Pase() {
   };
 
   const compartir = async () => {
-    const texto = `Jugá dominó conmigo en el Club Premier. Entrá por acá: ${link}`;
+    const texto = `Juega dominó conmigo en el Club Premier. Entra por aquí: ${link}`;
     if (navigator.share) {
       try {
         await navigator.share({ title: 'Dominó Online', text: texto, url: link });
@@ -256,7 +256,7 @@ export default function Pase() {
         <section className="mt-6 rounded-2xl border border-emerald-400/30 bg-emerald-400/5 p-4">
           <h2 className="flex items-center gap-2 text-sm font-black tracking-wide">
             <Users size={16} aria-hidden="true" className="text-emerald-300" />
-            TRAÉ A TUS PANAS
+            TRAE A TUS PANAS
           </h2>
           <p className="mt-1 text-xs leading-relaxed text-domino-cream/65">
             Cada pana que entre con tu link y juegue su primera partida te da{' '}

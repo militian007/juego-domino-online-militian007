@@ -89,20 +89,20 @@ export default function InstalarApp() {
 
             {esIPhone() ? (
               <ol className="mt-4 space-y-2 text-left text-sm leading-relaxed text-domino-cream/75">
-                <li>1. Tocá el botón <b className="text-domino-accent">Compartir</b> de Safari, el cuadradito con la flecha hacia arriba.</li>
-                <li>2. Bajá y elegí <b className="text-domino-accent">Añadir a pantalla de inicio</b>.</li>
-                <li>3. Tocá <b className="text-domino-accent">Añadir</b>. Ahí vas a ver el icono.</li>
+                <li>1. Toca el botón <b className="text-domino-accent">Compartir</b> de Safari, el cuadradito con la flecha hacia arriba.</li>
+                <li>2. Baja y elige <b className="text-domino-accent">Añadir a pantalla de inicio</b>.</li>
+                <li>3. Toca <b className="text-domino-accent">Añadir</b>. Ahí vas a ver el icono.</li>
               </ol>
             ) : (
               <ol className="mt-4 space-y-2 text-left text-sm leading-relaxed text-domino-cream/75">
-                <li>1. Abrí el menú del navegador, los <b className="text-domino-accent">tres puntitos</b> de arriba.</li>
-                <li>2. Elegí <b className="text-domino-accent">Instalar aplicación</b> o <b className="text-domino-accent">Añadir a pantalla de inicio</b>.</li>
-                <li>3. Confirmá. Ahí vas a ver el icono.</li>
+                <li>1. Abre el menú del navegador, los <b className="text-domino-accent">tres puntitos</b> de arriba.</li>
+                <li>2. Elige <b className="text-domino-accent">Instalar aplicación</b> o <b className="text-domino-accent">Añadir a pantalla de inicio</b>.</li>
+                <li>3. Confirma. Ahí vas a ver el icono.</li>
               </ol>
             )}
 
             <p className="mt-4 text-[11px] leading-relaxed text-domino-cream/45">
-              Si ya la tenías instalada de antes, borrala y volvé a instalarla: el icono
+              Si ya la tenías instalada de antes, bórrala y vuelve a instalarla: el icono
               viejo se queda guardado.
             </p>
 

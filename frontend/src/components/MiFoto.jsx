@@ -75,7 +75,7 @@ export default function MiFoto({ nombre, foto, onCambio }) {
       return;
     }
     if (archivo.size > MAX_ORIGEN) {
-      setAviso({ ok: false, texto: 'Esa imagen es enorme, probá con otra' });
+      setAviso({ ok: false, texto: 'Esa imagen es enorme, prueba con otra' });
       return;
     }
 

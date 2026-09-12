@@ -44,7 +44,7 @@ export default function ChangePassword() {
         <div className="card p-6 sm:p-8">
           <h1 className="mb-1 text-2xl font-bold">Cambiar contraseña</h1>
           <p className="mb-6 text-sm text-slate-400">
-            Necesitás tu contraseña actual para poder cambiarla.
+            Necesitas tu contraseña actual para poder cambiarla.
           </p>
 
           {listo ? (

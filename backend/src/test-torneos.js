@@ -131,7 +131,7 @@ async function main() {
   check(avisosDeMesa.length === 2, 'Se arma UNA mesa y a los dos les llega el aviso');
 
   const pasaDeArriba = bandeja.find(
-    (b) => b.evento === 'notif:nueva' && b.datos?.titulo?.includes('pasás de ronda')
+    (b) => b.evento === 'notif:nueva' && b.datos?.titulo?.includes('pasas de ronda')
   );
   check(Boolean(pasaDeArriba), 'Con numero impar, uno pasa de arriba sin jugar');
 

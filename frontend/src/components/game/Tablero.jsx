@@ -46,7 +46,7 @@ function Puntaje({ etiqueta, valor, tono }) {
 /** Como se llama la modalidad en la placa. `pozo` es la de siempre y no se rotula. */
 const ROTULO = { tranca: 'Tranca', cinco: 'Cinco' };
 
-export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala, modalidad }) {
+export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala, modalidad, myLabel, theirLabel }) {
   return (
     <div className="pointer-events-none">
     <div
@@ -76,7 +76,7 @@ export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala, moda
             los DOS lados aunque el boton este en uno solo: si no, los dos
             marcadores quedan descentrados uno respecto del otro y se nota. */}
         <div className="flex items-center px-7">
-          <Puntaje etiqueta="Vos" valor={mios} tono="text-sky-100" />
+          <Puntaje etiqueta={myLabel} valor={mios} tono="text-sky-100" />
 
           <div className="flex flex-col items-center gap-[3px] px-2">
             <span
@@ -134,7 +134,7 @@ export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala, moda
             </span>
           </div>
 
-          <Puntaje etiqueta="Ellos" valor={suyos} tono="text-rose-100" />
+          <Puntaje etiqueta={theirLabel} valor={suyos} tono="text-rose-100" />
         </div>
       </div>
     </div>

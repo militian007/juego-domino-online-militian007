@@ -153,7 +153,7 @@ export default function ChatGlobal() {
       <div className="flex-1 space-y-2 overflow-y-auto px-4 py-3">
         {mensajes.length === 0 ? (
           <p className="pt-6 text-center text-xs text-domino-cream/50">
-            Todavía no dijo nada nadie. Empezá vos.
+            Todavía nadie ha dicho nada. Empieza tú.
           </p>
         ) : (
           mensajes.map((m) => (
@@ -231,7 +231,7 @@ export default function ChatGlobal() {
           <input
             value={texto}
             onChange={(e) => setTexto(e.target.value.slice(0, LARGO_MAXIMO))}
-            placeholder="Escribí algo..."
+            placeholder="Escribe algo..."
             maxLength={LARGO_MAXIMO}
             className="min-w-0 flex-1 rounded-lg border border-domino-accent/25 bg-black/50 px-3 py-2 text-sm text-domino-cream placeholder:text-domino-cream/35 focus:border-domino-accent focus:outline-none"
           />
@@ -246,9 +246,9 @@ export default function ChatGlobal() {
       ) : (
         <p className="border-t border-domino-accent/20 p-3 text-center text-xs text-domino-cream/60">
           <Link to="/login" className="font-semibold text-domino-accent hover:underline">
-            Iniciá sesión
+            Inicia sesión
           </Link>{' '}
-          para escribir. Mientras tanto podés leer.
+          para escribir. Mientras tanto puedes leer.
         </p>
       )}
     </div>

@@ -154,7 +154,7 @@ export default function PanelDeChat({ abierto, onCerrar, mensajes, enviar, miId 
         <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-3 py-2">
           {mensajes.length === 0 ? (
             <p className="pt-4 text-center text-xs text-domino-cream/45">
-              Todavía no dijo nada nadie.
+              Todavía nadie ha dicho nada.
             </p>
           ) : (
             mensajes.map((m) => (
@@ -182,7 +182,7 @@ export default function PanelDeChat({ abierto, onCerrar, mensajes, enviar, miId 
           <input
             value={texto}
             onChange={(e) => setTexto(e.target.value.slice(0, LARGO_MAXIMO))}
-            placeholder="Escribí algo..."
+            placeholder="Escribe algo..."
             maxLength={LARGO_MAXIMO}
             autoComplete="off"
             className="min-w-0 flex-1 rounded-lg border border-domino-accent/25 bg-black/40 px-3 py-2 text-sm text-domino-cream placeholder:text-domino-cream/30 focus:border-domino-accent/60 focus:outline-none"

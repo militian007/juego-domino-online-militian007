@@ -30,20 +30,20 @@ import { semanaActual } from './Ranking.js';
  */
 export const CATALOGO = [
   // ---- diarias ----
-  { clave: 'd-jugar-2', clase: 'diaria', texto: 'Jugá 2 partidas', evento: 'partida', meta: 2, xp: 20 },
-  { clave: 'd-ganar-1', clase: 'diaria', texto: 'Ganá 1 partida', evento: 'victoria', meta: 1, xp: 30 },
-  { clave: 'd-personas', clase: 'diaria', texto: 'Ganale a una persona, no al bot', evento: 'victoria-personas', meta: 1, xp: 40 },
-  { clave: 'd-pareja', clase: 'diaria', texto: 'Jugá una partida en pareja', evento: 'partida-2v2', meta: 1, xp: 25 },
-  { clave: 'd-chat', clase: 'diaria', texto: 'Saludá en el chat global', evento: 'mensaje-chat', meta: 1, xp: 15 },
-  { clave: 'd-torneo', clase: 'diaria', texto: 'Jugá un torneo', evento: 'torneo-jugado', meta: 1, xp: 40 },
-  { clave: 'd-paliza', clase: 'diaria', texto: 'Ganá dejando al rival en menos de 30', evento: 'paliza', meta: 1, xp: 45 },
+  { clave: 'd-jugar-2', clase: 'diaria', texto: 'Juega 2 partidas', evento: 'partida', meta: 2, xp: 20 },
+  { clave: 'd-ganar-1', clase: 'diaria', texto: 'Gana 1 partida', evento: 'victoria', meta: 1, xp: 30 },
+  { clave: 'd-personas', clase: 'diaria', texto: 'Gánale a una persona, no al bot', evento: 'victoria-personas', meta: 1, xp: 40 },
+  { clave: 'd-pareja', clase: 'diaria', texto: 'Juega una partida en pareja', evento: 'partida-2v2', meta: 1, xp: 25 },
+  { clave: 'd-chat', clase: 'diaria', texto: 'Saluda en el chat global', evento: 'mensaje-chat', meta: 1, xp: 15 },
+  { clave: 'd-torneo', clase: 'diaria', texto: 'Juega un torneo', evento: 'torneo-jugado', meta: 1, xp: 40 },
+  { clave: 'd-paliza', clase: 'diaria', texto: 'Gana dejando al rival en menos de 30', evento: 'paliza', meta: 1, xp: 45 },
 
   // ---- semanales ----
-  { clave: 's-jugar-10', clase: 'semanal', texto: 'Jugá 10 partidas', evento: 'partida', meta: 10, xp: 100 },
-  { clave: 's-ganar-5', clase: 'semanal', texto: 'Ganá 5 partidas', evento: 'victoria', meta: 5, xp: 130 },
-  { clave: 's-personas-5', clase: 'semanal', texto: 'Ganale 5 veces a personas', evento: 'victoria-personas', meta: 5, xp: 160 },
-  { clave: 's-torneos-2', clase: 'semanal', texto: 'Jugá 2 torneos', evento: 'torneo-jugado', meta: 2, xp: 120 },
-  { clave: 's-torneo-ganar', clase: 'semanal', texto: 'Ganá un torneo', evento: 'torneo-ganado', meta: 1, xp: 200 },
+  { clave: 's-jugar-10', clase: 'semanal', texto: 'Juega 10 partidas', evento: 'partida', meta: 10, xp: 100 },
+  { clave: 's-ganar-5', clase: 'semanal', texto: 'Gana 5 partidas', evento: 'victoria', meta: 5, xp: 130 },
+  { clave: 's-personas-5', clase: 'semanal', texto: 'Gánale 5 veces a personas', evento: 'victoria-personas', meta: 5, xp: 160 },
+  { clave: 's-torneos-2', clase: 'semanal', texto: 'Juega 2 torneos', evento: 'torneo-jugado', meta: 2, xp: 120 },
+  { clave: 's-torneo-ganar', clase: 'semanal', texto: 'Gana un torneo', evento: 'torneo-ganado', meta: 1, xp: 200 },
 
   // ---- de temporada ----
   // La de los panas es la mas gorda de todas a proposito: es la unica que hace
@@ -51,14 +51,14 @@ export const CATALOGO = [
   {
     clave: 't-panas',
     clase: 'temporada',
-    texto: 'Traé 3 panas: que se registren con tu link y jueguen su primera partida',
+    texto: 'Trae 3 panas: que se registren con tu link y jueguen su primera partida',
     evento: 'amigo-confirmado',
     meta: 3,
     xp: 300,
     premio: { tipo: 'desbloqueo', clave: 'titulo:padrino', nombre: 'Título "Padrino"' }
   },
-  { clave: 't-veterano', clase: 'temporada', texto: 'Jugá 100 partidas en la temporada', evento: 'partida', meta: 100, xp: 400 },
-  { clave: 't-campeon', clase: 'temporada', texto: 'Ganá 30 partidas en la temporada', evento: 'victoria', meta: 30, xp: 400 }
+  { clave: 't-veterano', clase: 'temporada', texto: 'Juega 100 partidas en la temporada', evento: 'partida', meta: 100, xp: 400 },
+  { clave: 't-campeon', clase: 'temporada', texto: 'Gana 30 partidas en la temporada', evento: 'victoria', meta: 30, xp: 400 }
 ];
 
 const POR_CLAVE = new Map(CATALOGO.map((m) => [m.clave, m]));
