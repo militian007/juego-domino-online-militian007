@@ -204,6 +204,10 @@ colocación, **vuelve a medir esto** antes y después.
 - **Los consejos los dice El Panita** (§123, §125, §126), en un globo, sobre la mano. Cada consejo
   sale UNA vez por ronda y se pueden apagar desde la solapa de la mesa (se recuerda). Si agregás
   uno, que salga de un cambio real del estado del servidor, nunca de una suposición.
+- **Nunca dibujes una ficha con una `<img>` suelta.** Usá siempre el componente `Tile`. Una ficha
+  es un solo archivo horizontal que se GIRA 0/90/180/270 según cómo va colocada; cualquier `<img>`
+  con medidas a mano pierde el giro, la proporción o las dos. Ya mordió tres veces (§122, §134,
+  §135): el rebote, el volteo al ponerla y la ficha recortada al arrastrarla.
 - **Ojo con los hooks detrás de un `return`.** `Game` tiene CINCO `return` tempranos y `Board` uno.
   Un `useState`/`useEffect` escrito debajo de ellos rompe React con *"Rendered more hooks than during
   the previous render"* y deja la mesa en blanco. Pasó dos veces (§122 y §123).
