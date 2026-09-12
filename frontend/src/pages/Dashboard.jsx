@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
 import SelectorModos, { MODOS } from '../components/SelectorModos.jsx';
 import Monedas from '../components/Monedas.jsx';
+import { Store, ChevronRight } from 'lucide-react';
 import Logo from '../components/Logo.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { pantallaCompleta } from '../utils/pantalla.js';
@@ -62,6 +63,21 @@ export default function Dashboard() {
             <Monedas />
           </span>
         </div>
+
+        {/* La tienda, con su propia fila. Estaba solo detras del saldo de
+            monedas —un circulito de once pixeles— y Jonathan no la encontraba:
+            *"no veo la tienda"*. */}
+        <Link
+          to="/tienda"
+          className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-domino-accent/25 bg-domino-card/70 px-3.5 py-2.5 transition hover:border-domino-accent/55 hover:bg-domino-card active:scale-[0.99]"
+        >
+          <span className="flex items-center gap-2.5">
+            <Store size={20} strokeWidth={1.9} className="shrink-0 text-domino-accent" />
+            <span className="text-sm font-bold text-domino-cream">Tienda</span>
+            <span className="text-[11px] text-domino-cream/45">fichas y paños</span>
+          </span>
+          <ChevronRight size={16} className="shrink-0 text-domino-accent/60" />
+        </Link>
 
         <SelectorModos onElegir={startGame} />
 

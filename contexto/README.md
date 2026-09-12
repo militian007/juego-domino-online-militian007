@@ -6506,3 +6506,21 @@ comprar desde la pantalla (500 → 200, el boton del siguiente pasa a decir "Te 
 
 Tocando el saldo de monedas del menu. Es donde uno mira cuando se pregunta "¿y esto para que
 sirve?", asi que es donde tiene que estar la respuesta.
+
+### Como se entra, corregido
+
+La primera version la puso **solo detras del saldo de monedas**: un circulito de once pixeles
+en una esquina del menu. Jonathan, mirando: *"no veo la tienda"*. Tenia razon — y ademas los
+atajos laterales (PASE, TORNEOS, TABLA) **solo salen en la portada**, no en el menu, que es
+donde el estaba.
+
+Ahora se entra por tres sitios:
+
+- **Una fila propia en el menu**, justo arriba de los modos: "Tienda · fichas y paños".
+- **El atajo lateral de la portada**, entre PASE y TORNEOS.
+- El saldo de monedas, como antes.
+
+El icono de la tienda es de `lucide-react` y no dorado de Gemini como los otros tres atajos.
+Es lo que hay hoy y la regla 1.1 admite libreria; si algun dia se pide el dorado que pega con
+los demas, se cambia en un sitio.
+
