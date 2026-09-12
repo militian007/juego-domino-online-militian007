@@ -138,13 +138,13 @@ export default function PanelDeChat({ abierto, onCerrar, mensajes, enviar, miId 
 
       <div className="absolute left-1/2 top-1/2 z-50 flex h-[62%] w-[86%] max-w-sm -translate-x-1/2 -translate-y-1/2 flex-col rounded-2xl border-2 border-domino-accent/50 bg-domino-felt shadow-2xl">
         <div className="flex items-center justify-between border-b border-domino-accent/20 px-3 py-2">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-domino-accent/80">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-domino-accent">
             Chat de la mesa
           </span>
           <button
             type="button"
             onClick={onCerrar}
-            className="text-lg leading-none text-domino-cream/50 transition hover:text-domino-cream"
+            className="text-lg leading-none text-domino-cream-dim transition hover:text-domino-cream"
             aria-label="Cerrar el chat"
           >
             ×
@@ -153,7 +153,7 @@ export default function PanelDeChat({ abierto, onCerrar, mensajes, enviar, miId 
 
         <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-3 py-2">
           {mensajes.length === 0 ? (
-            <p className="pt-4 text-center text-xs text-domino-cream/45">
+            <p className="pt-4 text-center text-xs font-medium text-domino-cream-dim">
               Todavía no dijo nada nadie.
             </p>
           ) : (
@@ -161,13 +161,13 @@ export default function PanelDeChat({ abierto, onCerrar, mensajes, enviar, miId 
               <div key={m.id} className="text-sm leading-snug">
                 <span
                   className={`text-[11px] font-semibold ${
-                    String(m.userId) === String(miId) ? 'text-domino-accent' : 'text-domino-cream/85'
+                    String(m.userId) === String(miId) ? 'text-domino-accent' : 'text-domino-cream'
                   }`}
                 >
                   {m.username}
                 </span>
                 {/* React escapa el texto solo: nadie mete HTML por aca. */}
-                <p className="break-words text-[13px] text-domino-cream/80">{m.texto}</p>
+                <p className="break-words text-[13px] font-medium text-domino-cream">{m.texto}</p>
               </div>
             ))
           )}
@@ -185,7 +185,7 @@ export default function PanelDeChat({ abierto, onCerrar, mensajes, enviar, miId 
             placeholder="Escribí algo..."
             maxLength={LARGO_MAXIMO}
             autoComplete="off"
-            className="min-w-0 flex-1 rounded-lg border border-domino-accent/25 bg-black/40 px-3 py-2 text-sm text-domino-cream placeholder:text-domino-cream/30 focus:border-domino-accent/60 focus:outline-none"
+            className="min-w-0 flex-1 rounded-lg border border-domino-accent/25 bg-black/40 px-3 py-2 text-sm text-domino-cream placeholder:text-domino-cream-dim/80 focus:border-domino-accent/60 focus:outline-none"
           />
           <button
             type="submit"

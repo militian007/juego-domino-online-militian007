@@ -120,15 +120,19 @@ export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala, moda
                 {pozo}
               </span>
             ) : (
-              <span className="text-[10px] uppercase tracking-wider text-amber-100/45">sin pozo</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-100/85">sin pozo</span>
             )}
 
             {/* El codigo de la mesa, justo debajo del pozo. Antes colgaba
                 fuera de la placa, en la franja negra: ahi parecia un numero de
                 version perdido y no el codigo que uno le pasa a un pana. */}
             <span
-              className="font-mono text-[9px] tracking-[0.22em] text-amber-100/40"
-              style={{ textShadow: '0 1px 2px rgba(0,0,0,.9)' }}
+              className="rounded-full px-2 font-mono text-[9px] font-bold tracking-[0.24em] text-domino-accent-bright"
+              style={{
+                background: 'linear-gradient(180deg, rgba(30,18,6,.85), rgba(52,34,14,.85))',
+                boxShadow: 'inset 0 1px 2px rgba(0,0,0,.8), 0 1px 0 rgba(255,225,180,.18)',
+                textShadow: '0 1px 2px rgba(0,0,0,.9)'
+              }}
             >
               {sala}
             </span>

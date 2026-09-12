@@ -6862,3 +6862,86 @@ unico que se puede hacer con una foto que no deberia estar es borrarla a mano en
 Mientras el club sea gente conocida no pasa nada; el dia que entre cualquiera, esto hace falta
 antes que despues. La palanca ya existe (`FotoDePerfil.quitar`), lo que falta es el boton de
 denunciar y a quien le llega.
+
+---
+
+## 149. Rótulos que se leen y la solapa a la vista (2026-09-12)
+
+Raúl revisa la mesa por capturas en el teléfono, y tiene una regla: **nada de gris flojo sobre
+fondo oscuro**. Un texto al 40 % de opacidad se ve bien en un monitor grande y en un teléfono
+de 375 px al sol no se ve. La respuesta cuando algo se ve tenue es subir tono y peso, no
+achicarlo. Y la solapa de los controles (sonido, color de mesa, consejos, gestos, chat) era un
+chevron de 13 px en una lengüeta de 16 px de ancho pegada a la baranda: nadie la descubría.
+
+### Los tonos, antes y después
+
+Todo lo de la mesa (`Game.jsx`, `Tablero.jsx` y los componentes de `components/game/`). El
+patrón es siempre el mismo: cuerpo en crema con peso 500, rótulos chiquitos en mayúscula con
+peso 600 o 700 y espaciado entre letras. Crema es `domino-cream` (#f4ecd8) y crema apagada
+`domino-cream-dim` (#c9bfa3); ninguna de las dos lleva opacidad.
+
+| Dónde | Antes | Después |
+|---|---|---|
+| "TU MANO · 7" sobre la mano | `cream/50`, peso 400 | crema, peso 700, espaciado 0,2 em |
+| "ESPERANDO" | `cream/40`, peso 400 | crema, peso 700 |
+| "TU TURNO" | esmeralda 300, peso 700 | igual, ya era brillante |
+| "Arrastra una ficha válida a la mesa" | `slate-500` cursiva, 10 px | crema apagada, peso 500, cursiva, 11 px |
+| Rótulo "POR QUÉ NO PODÉS JUGAR · EXTREMOS 2 Y 6" | `slate-500`, peso 400 | crema, peso 600, espaciado 0,18 em |
+| Filas de ese panel (motivo por ficha) | `slate-400` | crema apagada, peso 500; la jugable en esmeralda 300 |
+| Código de la sala en la placa | `amber-100/40`, peso 400, pelado sobre la madera | cartucho oscuro (el mismo degradado de los demás), dorado `accent-bright` (#f5cf5c), peso 700, espaciado 0,24 em |
+| "SIN POZO" en la placa | `amber-100/45` | `amber-100/85`, peso 600 |
+| "compa" bajo el compañero (2v2) | `sky-200/70`, 9 px, peso 400 | `sky-200`, mayúscula, peso 600, espaciado 0,16 em |
+| Número de fichas del rival | `cream/60`, 9 px | crema, 10 px, peso 700 |
+| "PUNTOS" y "Quedaste #N" en el cierre | `cream/40` y `cream/60` | crema apagada, 600 y 500 |
+| Desglose de la ronda (`RoundBreakdown`) | `slate-300/400/500` | crema y crema apagada, 500 y 600 |
+| Chat de la mesa | cabecera `accent/80`, nombres `cream/85`, mensajes `cream/80`, vacío `cream/45` | dorado pleno, crema, crema 500, crema apagada 500 |
+
+El código de la sala merecía atención aparte: es lo que uno le dicta a un pana para que entre,
+y estaba en crema al 40 % sobre la veta clara del nogal, o sea invisible. Sobre madera clara
+lo que salva un texto es fondo oscuro, no más opacidad: por eso va en un cartucho como el de
+"Ronda 1 · a 100". El cartucho **no lleva relleno vertical** para que la placa no crezca:
+medida antes y después, sigue en **72 px** de alto.
+
+`Hud.jsx`, `Scoreboard.jsx`, `PlayerInfo.jsx` y `OpponentHand.jsx` se alinearon con el mismo
+criterio aunque hoy no se pintan en la mesa del teléfono (van en el bloque `hidden` o no se
+usan): si algún día vuelven, que vuelvan bien.
+
+### La versión, solo en desarrollo
+
+El "v0.0.54" de la esquina de abajo sirve para saber si el navegador corre el build nuevo o
+uno cacheado. Eso es para nosotros, no para el que juega: ahora `Version.jsx` devuelve nada si
+no es `import.meta.env.DEV`. Comprobado en el bundle de producción: la cadena "0.0.54" no
+aparece.
+
+### La solapa: una pestaña que se ve
+
+La lengüeta pasó de 16 x 76 px a **44 x 64 px**, que además es la zona de toque mínima. Va
+pegada al borde izquierdo de la mesa, con fondo oscuro translúcido (`domino-dark` al 85 %
+con desenfoque), borde de 2 px en dorado `domino-accent` y esquinas redondeadas solo a la
+derecha, para que se lea como una pestaña que sale de la baranda.
+
+- **Cerrada** muestra un icono a color de ajustes. Regla del repo (CLAUDE.md 1.1): los iconos
+  de la mesa son de Fluent Emoji a color, nunca a mano ni de lucide. Se agregó `ajustes:
+  'control-knobs'` a la lista `QUIERO` de `tools/extraer-iconos.cjs` y se volvió a correr:
+  `iconosColor.js` pasó de 7 a 8 iconos. Se eligió `control-knobs` y no `gear` porque el
+  engranaje de ese set es gris pelado y no se ve "a color".
+- **Abierta** muestra una flecha hacia la izquierda (dorado brillante, trazo grueso) que dice
+  "guárdame", y los botones de siempre se despliegan en columna a su derecha. Abre y cierra
+  la misma solapa que antes; no cambió nada de lo que hay adentro.
+
+**Dónde va a lo alto.** A media altura de lo que se ve de la mesa, descontando la mano:
+medido, el centro de la pestaña cae a 286 px del borde de arriba de una mesa cuyo paño
+visible mide 572. En 2v2 el rival de la izquierda vive justo a media altura, así que ahí la
+pestaña sube al primer cuarto (centro a 183 px de 730); con la columna abierta tampoco lo
+pisa. No tapa la cadena en ningún modo: la cadena nunca llega a menos de 50 px del borde en
+1v1 ni de 90 en 2v2.
+
+El contenedor de la pestaña ocupa toda la altura del lado izquierdo pero no captura toques
+(`pointer-events-none`); solo la pestaña, los botones y el selector de paño los reciben. El
+botón de salir, arriba a la izquierda sobre la placa, no se tocó.
+
+### Comprobado
+
+Con el guion de puppeteer a 375 px, 1v1 y 2v2 contra bots: los rótulos de la mano, el panel
+de "por qué no", el desglose de la ronda, la etiqueta "compa", los contadores de los rivales,
+el código de la sala y la pestaña cerrada y abierta. `npm run build` pasa.

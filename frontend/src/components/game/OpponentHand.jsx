@@ -12,7 +12,7 @@ export default function OpponentHand({ count = 0, position = 'top' }) {
           />
         ))}
         {count > 0 && (
-          <span className="ml-2 text-xs text-slate-400 self-center">({count})</span>
+          <span className="ml-2 text-xs font-semibold text-domino-cream-dim self-center">({count})</span>
         )}
       </div>
     );
@@ -29,7 +29,7 @@ export default function OpponentHand({ count = 0, position = 'top' }) {
           />
         ))}
         {count > 0 && (
-          <span className="mt-1 text-xs text-slate-400">{count}</span>
+          <span className="mt-1 text-xs font-semibold text-domino-cream-dim">{count}</span>
         )}
       </div>
     );
@@ -45,7 +45,7 @@ export default function OpponentHand({ count = 0, position = 'top' }) {
         />
       ))}
       {count > 0 && (
-        <span className="ml-2 text-xs text-slate-400 self-center">({count})</span>
+        <span className="ml-2 text-xs font-semibold text-domino-cream-dim self-center">({count})</span>
       )}
     </div>
   );
