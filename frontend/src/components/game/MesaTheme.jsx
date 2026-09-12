@@ -70,6 +70,31 @@ export const FICHAS = [
     // escribir en la tabla de desbloqueos el dia que alguien llegue al nivel.
     clave: 'fichas:oro',
     comoSeGana: 'Premio del pase de batalla'
+  },
+
+  // Las tres de la tienda (§139). Estas NO son premio del pase: se compran con
+  // monedas. Asi la tienda tiene que vender sin quitarle nada al pase, que era
+  // lo que la frenaba.
+  {
+    id: 'marmol',
+    nombre: 'Mármol',
+    carpeta: '/tiles-marmol',
+    clave: 'fichas:marmol',
+    comoSeGana: 'Se compra en la tienda'
+  },
+  {
+    id: 'jade',
+    nombre: 'Jade',
+    carpeta: '/tiles-jade',
+    clave: 'fichas:jade',
+    comoSeGana: 'Se compra en la tienda'
+  },
+  {
+    id: 'madera',
+    nombre: 'Madera',
+    carpeta: '/tiles-madera',
+    clave: 'fichas:madera',
+    comoSeGana: 'Se compra en la tienda'
   }
 ];
 
@@ -93,8 +118,9 @@ export const ContextoFichas = createContext('/tiles');
  *     izquierdo cortado y las esquinas mordidas.
  * 3 = entraron las negro y oro, y de paso se rehicieron las de hueso con el
  *     script nuevo, que arma las dos pintas con la misma geometria.
+ * 4 = entraron marmol, jade y madera.
  */
-export const VERSION_FICHAS = 3;
+export const VERSION_FICHAS = 4;
 
 export const useCarpetaDeFichas = () => useContext(ContextoFichas);
 

@@ -6366,3 +6366,44 @@ Los dos primeros intentos de `tranca` y `ganaste` salieron los dos diciendo **"�
 pidiendole varias imagenes en el MISMO chat, arrastra la anterior como referencia y devuelve
 una variacion en vez de una imagen nueva. **Un chat limpio por cada imagen.**
 
+---
+
+## 139. Tres pintas de fichas nuevas: marmol, jade y madera (2026-09-12)
+
+Llegaron de Gemini y ya estan las 84 fichas (28 por pinta). `npm run fichas`.
+
+**Son las primeras que NO son premio del pase: se compran con monedas.** Eso desbloquea lo que
+frenaba la tienda —no tener que vender sin quitarle nada al pase— y por eso llevan
+`clave: 'fichas:<id>'` y `comoSeGana: 'Se compra en la tienda'`.
+
+### El recorte del marmol necesitaba otra forma
+
+Las pintas viejas se recortan **por neutralidad**: se borra el gris del fondo, y el dibujo se
+salva solo porque es calido (el marfil, el oro).
+
+**Con el marmol eso no sirve: el marmol es blanco y NEUTRO**, asi que el recorte se comeria la
+ficha entera. Se agrego un recorte **por color**, que mira la distancia al `#808080` del fondo
+en vez de la neutralidad: el marmol esta a mas de cien de distancia y se queda.
+
+Las tres nuevas usan el de color; las dos viejas siguen con el de siempre, sin tocarlas.
+
+### Lo que pesan
+
+| pinta | por ficha | la pinta entera |
+| --- | --- | --- |
+| hueso | 103 KB | 2,9 MB |
+| clasicas | 136 KB | 3,8 MB |
+| **marmol** | **120 KB** | **3,4 MB** |
+| oro | 160 KB | 4,5 MB |
+| **jade** | **172 KB** | **4,7 MB** |
+| **madera** | **232 KB** | **6,5 MB** |
+
+Estan en la misma liga que las que ya habia, y **cada quien se baja solo la pinta que usa**.
+La de madera es la mas pesada porque la textura tiene mucho grano y el PNG comprime mal el
+ruido: si algun dia molesta, es la primera candidata a rehacer con una veta mas limpia.
+
+### La de madera salio clara
+
+Se pidio nogal oscuro y vino roble claro, casi blanqueado. Se lee perfecto y es bien distinta
+de las otras, asi que se deja. Queda anotado por si se quiere volver a pedir.
+

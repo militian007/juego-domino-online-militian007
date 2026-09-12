@@ -25,7 +25,9 @@
 // cuadritos sueltos dentro de la ficha.
 import fs from 'node:fs';
 import path from 'node:path';
-import { leer, en, quitarElFondo, recortar, escalar, pegar, clonar, aPng } from './imagen.mjs';
+import {
+  leer, en, quitarElFondo, quitarElFondoPorColor, recortar, escalar, pegar, clonar, aPng
+} from './imagen.mjs';
 
 const RAIZ = process.cwd();
 const FUENTE = path.join(RAIZ, 'arte-fuente');
@@ -70,6 +72,36 @@ const PINTAS = [
     // 0,87 de alto.
     areaPuntos: { x1: 0.06, x2: 0.46, y1: 0.14, y2: 0.87 },
     ladoPunto: 0.17
+  },
+
+  // Las tres de la tanda de septiembre. Las tres vienen sobre gris #808080 y
+  // con la raya del medio ya dibujada, asi que se recortan por COLOR.
+  {
+    id: 'marmol',
+    nombre: 'Mármol',
+    recorteFicha: { porColor: true },
+    recortePunto: { porColor: true },
+    lineaPropia: true,
+    areaPuntos: { x1: 0.04, x2: 0.46, y1: 0.08, y2: 0.92 },
+    ladoPunto: 0.19
+  },
+  {
+    id: 'jade',
+    nombre: 'Jade',
+    recorteFicha: { porColor: true },
+    recortePunto: { porColor: true },
+    lineaPropia: true,
+    areaPuntos: { x1: 0.04, x2: 0.46, y1: 0.08, y2: 0.92 },
+    ladoPunto: 0.19
+  },
+  {
+    id: 'madera',
+    nombre: 'Madera',
+    recorteFicha: { porColor: true },
+    recortePunto: { porColor: true },
+    lineaPropia: true,
+    areaPuntos: { x1: 0.04, x2: 0.46, y1: 0.08, y2: 0.92 },
+    ladoPunto: 0.19
   }
 ];
 
@@ -106,8 +138,23 @@ function armarPinta(pinta) {
     return;
   }
 
-  const ficha = recortar(quitarElFondo(leer(rutaFicha), pinta.recorteFicha));
-  const punto = recortar(quitarElFondo(leer(rutaPunto), pinta.recortePunto));
+  // Hay dos formas de quitar el fondo, y cual sirve depende del material.
+  //
+  // Por NEUTRALIDAD (lo de siempre): se borra el gris. Sirve cuando el dibujo es
+  // calido —el marfil, el oro— porque entonces el dibujo no es neutro y se
+  // salva solo.
+  //
+  // Por COLOR: se borra lo que este cerca de un gris concreto. Hace falta para
+  // el marmol, que es blanco y NEUTRO: buscando neutralidad, el recorte se
+  // comeria la ficha entera. Mirando la distancia al #808080 del fondo, el
+  // marmol —que esta a mas de cien de distancia— se queda.
+  const quitar = (ruta, cfg = {}) =>
+    recortar(cfg.porColor
+      ? quitarElFondoPorColor(leer(ruta), { color: [128, 128, 128], tolerancia: cfg.tolerancia ?? 60 })
+      : quitarElFondo(leer(ruta), cfg));
+
+  const ficha = quitar(rutaFicha, pinta.recorteFicha);
+  const punto = quitar(rutaPunto, pinta.recortePunto);
 
   const cuerpo = escalar(ficha, ANCHO, ALTO);
   const ladoDelPunto = Math.round(ALTO * pinta.ladoPunto);
