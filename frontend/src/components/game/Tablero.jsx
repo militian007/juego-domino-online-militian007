@@ -48,7 +48,7 @@ const ROTULO = { tranca: 'Tranca', cinco: 'Cinco' };
 
 export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala, modalidad }) {
   return (
-    <div className="pointer-events-none pb-1">
+    <div className="pointer-events-none">
     <div
       className="rounded-[10px]"
       style={{
@@ -60,7 +60,7 @@ export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala, moda
     >
       {/* Filo de laton por dentro, como el de la baranda */}
       <div
-        className="relative rounded-[10px] px-3 py-2"
+        className="relative rounded-[10px] px-3 pb-3 pt-2"
         style={{
           boxShadow:
             'inset 0 0 0 1px rgba(0,0,0,.55), inset 0 0 0 2px rgba(206,168,86,.5), inset 0 0 14px rgba(0,0,0,.45)'
@@ -123,18 +123,20 @@ export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala, moda
               <span className="text-[10px] uppercase tracking-wider text-amber-100/45">sin pozo</span>
             )}
 
+            {/* El codigo de la mesa, justo debajo del pozo. Antes colgaba
+                fuera de la placa, en la franja negra: ahi parecia un numero de
+                version perdido y no el codigo que uno le pasa a un pana. */}
+            <span
+              className="font-mono text-[9px] tracking-[0.22em] text-amber-100/40"
+              style={{ textShadow: '0 1px 2px rgba(0,0,0,.9)' }}
+            >
+              {sala}
+            </span>
           </div>
 
           <Puntaje etiqueta="Ellos" valor={suyos} tono="text-rose-100" />
         </div>
       </div>
-    </div>
-
-    <div
-      className="mt-0.5 text-center font-mono text-[9px] tracking-[0.22em] text-amber-100/35"
-      style={{ textShadow: '0 1px 3px rgba(0,0,0,.9)' }}
-    >
-      {sala}
     </div>
     </div>
   );

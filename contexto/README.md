@@ -6752,3 +6752,29 @@ La geometria esta comprobada por simulacion, no jugando hasta una esquina con el
 a una punta contra la pared con un doble en la mano lleva media partida y depende del reparto.
 Lo que si se vio corriendo es el juego entero con el motor nuevo, repartiendo y pintando
 normal.
+
+---
+
+## 146. Los tres remates de la placa (2026-09-12)
+
+Jonathan, despues de ver la §144: la placa ya era ancha, pero tres cosas no cuadraban.
+
+**1. Que pegue con el borde de la mesa.** Medido en pantalla: la placa iba de 4 a 746 y la
+mesa de 0 a 750, o sea cuatro pixeles adentro por cada lado. Era el `px-1` del contenedor.
+Fuera: ahora las dos van de borde a borde y comprobado que los numeros coinciden exactos.
+
+**2. El boton de salir, centrado.** Estaba **6,75 px por debajo** del centro de la placa. El
+motivo: el boton se centraba sobre el CONTENEDOR, y el contenedor llevaba relleno arriba pero
+no abajo, mas el renglon del codigo de sala colgando. Con el relleno igual arriba y abajo, y
+el codigo movido adentro, el desfase quedo en **0**.
+
+**3. El codigo de la mesa, debajo del pozo.** Colgaba fuera de la placa, en la franja negra,
+donde parecia un numero de version perdido y no el codigo que uno le pasa a un pana. Ahora va
+dentro, justo debajo del contador del pozo.
+
+Al meterlo dentro quedaba pegado al filo de abajo, medio comido por el reborde y los
+tornillos. Con un poco mas de aire abajo despega: medido, **12 px** de aire y sin pisar el
+tornillo.
+
+La placa crecio de 63,5 a 72 px de alto, pero el renglon que colgaba debajo se llevaba 19, asi
+que la cabecera entera quedo **mas corta que antes**: la mesa gano sitio.

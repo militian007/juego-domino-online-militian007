@@ -1174,7 +1174,7 @@ export default function Game() {
           la placa arrancaba despegada del borde y se veia mas chica de lo que
           da la pantalla. Encima no estorba, porque los marcadores se centran en
           su mitad y esa esquina de la placa es madera vacia. */}
-      <div className="relative shrink-0 px-1 pt-1.5">
+      <div className="relative shrink-0 py-1.5">
         <div className="absolute left-2 top-1/2 z-30 -translate-y-1/2">
           <button
             type="button"
