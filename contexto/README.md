@@ -6524,3 +6524,78 @@ El icono de la tienda es de `lucide-react` y no dorado de Gemini como los otros 
 Es lo que hay hoy y la regla 1.1 admite libreria; si algun dia se pide el dorado que pega con
 los demas, se cambia en un sitio.
 
+
+---
+
+## 142. El recorte del fondo se estaba comiendo las fichas (2026-09-12)
+
+Jonathan: *"la ficha de jade sale horrible en la tienda"*. Tenia razon, y el problema era mas
+grande que el jade: **de las tres pintas nuevas, dos salieron rotas** y no se habia medido.
+
+### Lo que pasaba
+
+Las tres se recortan del fondo gris #808080 que devuelve Gemini, borrando todo lo que quede a
+menos de **60** de ese gris. Ese numero se puso a ojo, y a ojo se ve bien en el marmol, que es
+blanco y esta lejisimos del gris. En las otras dos no.
+
+Medido sobre las tres imagenes, contando los saltos del borde (lo mordido) y los agujeros
+dentro de la ficha:
+
+| pinta | saltos del borde | agujeros dentro |
+| --- | --- | --- |
+| marmol | 0 | 1,8% |
+| **jade** | **81 filas, hasta 58 px** | 2,1% |
+| **madera** | 0 | **64,9%** |
+
+Al jade se le comia el **filo palido y traslucido** del canto —que si esta cerca del gris— y
+por eso se veia con el borde mordido. A la madera se le comia **el 65% de la veta**: el nogal
+oscuro tiene medios tonos grises, y quedaba como madera lavada, de driftwood.
+
+### Los dos arreglos
+
+**1. Borrar solo desde el borde.** `quitarElFondoPorColor` borraba el color *donde estuviera*.
+Ahora acepta `desdeElBorde` y hace lo mismo que `quitarElFondo`: un relleno que entra desde el
+borde de la imagen. Un gris rodeado de dibujo se queda, porque entonces no es fondo, es la
+veta. Esto solo ya dejo el marmol perfecto (0 agujeros).
+
+**2. La tolerancia, medida.** Barrida de 10 a 60 sobre las tres:
+
+| tolerancia | resultado |
+| --- | --- |
+| 10 | no llega a borrar el fondo entero (el JPEG lo deja moteado) |
+| **20** | **limpio en las tres: 0 saltos, 0 agujeros** |
+| 30-50 | empieza a morder el jade |
+| 60 | jade mordido, madera al 52% de agujeros |
+
+Asi que **20**, no 60.
+
+### Y el punto del jade no era un punto
+
+`jade-punto.png` no es un punto: es un **plato**, un disco plano con reborde ancho. A tamano de
+ficha se leia como un remache atornillado. El punto de la pinta de oro si es una media esfera
+dorada, y al jade se le habian pedido justamente "puntos de oro viejo": se reusa ese. El script
+aprendio un campo `punto` para decir de que pinta sale el punto.
+
+**No hizo falta volver a Gemini para nada de esto.** El arte estaba bien; lo que estaba mal era
+el recorte.
+
+`VERSION_FICHAS` sube a **5** para que los telefonos pidan las nuevas: los archivos se llaman
+igual.
+
+### De paso, el escaparate de la tienda
+
+Las fichas se enseñaban a **40 px de alto sobre fondo negro**. Lo unico que se vende ahi es el
+material, y a ese tamano no se distinguia el marmol del jade. Ahora van **al 76% del ancho de
+la tarjeta y sobre el paño verde**, que es como van a verse en la mesa.
+
+### Los prompts, completos
+
+Jonathan: *"dame los pront completos que ladilla cambiando y copiando a cada rato"*. Tenia
+razon: `tanda-para-gemini.md` pedia copiar un bloque fijo y pegarle una linea de sujeto, o
+reemplazar `{{MATERIAL}}` a mano. Reescrito: **cada recuadro esta completo y se pega tal cual**.
+Quedan los cuatro que faltan de verdad —icono de la tienda, banner de la tienda, baranda y los
+cuatro stickers—; las fichas y los paños salieron de la lista porque ya estan puestos.
+
+El icono de la tienda ya esta enchufado en `generar-iconos-atajos.mjs`, y el script dejo de
+morirse cuando falta un archivo: se salta el que no este. Los iconos no salen todos el mismo
+dia y no tiene sentido que no se pueda rehacer la copa porque todavia no esta la bolsa.

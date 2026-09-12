@@ -110,19 +110,59 @@ export function quitarElFondo(img, { difMax = 16, minBrillo = null, porTodaLaIma
  * como fondo. Medido sobre el primer sticker: el fondo queda a menos de 60 y lo
  * mas cercano del dibujo esta a mas de 120, asi que 90 corta por el medio del
  * hueco y no toca nada.
+ *
+ * ## `desdeElBorde`: borrar solo el fondo de verdad
+ *
+ * Con el magenta de los stickers da igual, porque ese color no sale en el
+ * dibujo. Con el GRIS de las fichas si importa: el gris tambien esta dentro del
+ * dibujo. Medido sobre las tres pintas de septiembre, borrando por toda la
+ * imagen: la madera perdia el 64% de su interior —quedaba como madera lavada— y
+ * al jade se le mordian el 63% de las filas por los bordes.
+ *
+ * Con `desdeElBorde` se borra solo el gris que se pueda alcanzar caminando
+ * desde el borde de la imagen, igual que `quitarElFondo`. Un gris rodeado de
+ * dibujo se queda, porque entonces no es fondo: es la veta.
  */
-export function quitarElFondoPorColor(img, { color = [255, 0, 255], tolerancia = 90 } = {}) {
+export function quitarElFondoPorColor(
+  img,
+  { color = [255, 0, 255], tolerancia = 90, desdeElBorde = false } = {}
+) {
   const [cr, cg, cb] = color;
-  const { px } = img;
+  const { ancho, alto, px } = img;
 
-  for (let i = 0; i < px.length; i += 4) {
-    const d = Math.max(
+  const esFondo = (i) =>
+    Math.max(
       Math.abs(px[i] - cr),
       Math.abs(px[i + 1] - cg),
       Math.abs(px[i + 2] - cb)
-    );
-    if (d <= tolerancia) px[i + 3] = 0;
+    ) <= tolerancia;
+
+  if (!desdeElBorde) {
+    for (let i = 0; i < px.length; i += 4) if (esFondo(i)) px[i + 3] = 0;
+    return img;
   }
+
+  const visto = new Uint8Array(ancho * alto);
+  const pila = [];
+
+  const meter = (x, y) => {
+    if (x < 0 || y < 0 || x >= ancho || y >= alto) return;
+    const k = y * ancho + x;
+    if (visto[k] || !esFondo(k * 4)) return;
+    visto[k] = 1;
+    pila.push(x, y);
+  };
+
+  for (let x = 0; x < ancho; x++) { meter(x, 0); meter(x, alto - 1); }
+  for (let y = 0; y < alto; y++) { meter(0, y); meter(ancho - 1, y); }
+
+  while (pila.length) {
+    const y = pila.pop();
+    const x = pila.pop();
+    meter(x + 1, y); meter(x - 1, y); meter(x, y + 1); meter(x, y - 1);
+  }
+
+  for (let k = 0; k < visto.length; k++) if (visto[k]) px[k * 4 + 3] = 0;
   return img;
 }
 

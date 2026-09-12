@@ -136,10 +136,12 @@ export const ContextoFichas = createContext('/tiles');
  * 3 = entraron las negro y oro, y de paso se rehicieron las de hueso con el
  *     script nuevo, que arma las dos pintas con la misma geometria.
  * 4 = entraron marmol, jade y madera.
- * 5 = entraron los panos granate y azul noche (no cambian fichas, pero el
- *     numero de catalogo si tiene que subir para que se vean).
+ * 5 = se rehicieron las tres: el recorte del fondo se estaba comiendo dibujo.
+ *     Al jade le mordia el filo palido (saltos de hasta 58 px) y a la madera le
+ *     borraba el 52% de la veta, que salia como madera lavada. Ademas el jade
+ *     lleva ahora el punto dorado de la pinta de oro: el suyo era un plato.
  */
-export const VERSION_FICHAS = 4;
+export const VERSION_FICHAS = 5;
 
 export const useCarpetaDeFichas = () => useContext(ContextoFichas);
 

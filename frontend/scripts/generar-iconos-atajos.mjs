@@ -33,7 +33,10 @@ const ICONOS = [
   { origen: 'icono-tabla.png', destino: 'tabla.png' },
   // El escudo del pase de batalla. Ya esta listo aunque el pase todavia no
   // exista: cuando se haga, el icono no es lo que va a faltar.
-  { origen: 'icono-pase.png', destino: 'pase.png' }
+  { origen: 'icono-pase.png', destino: 'pase.png' },
+  // La bolsa de la tienda. Todavia no esta dibujada: mientras no aparezca, el
+  // atajo usa el icono de libreria y este renglon se salta solo.
+  { origen: 'icono-tienda.png', destino: 'tienda.png' }
 ];
 
 /** Encaja el dibujo dentro del cuadrado sin deformarlo. */
@@ -58,16 +61,16 @@ function encajar(img, lado) {
 }
 
 function main() {
-  const faltan = ICONOS.filter((i) => !fs.existsSync(path.join(FUENTE, i.origen)));
-  if (faltan.length) {
-    console.error('Faltan en arte-fuente/: ' + faltan.map((i) => i.origen).join(', '));
-    process.exit(1);
-  }
+  // Los que falten se saltan en vez de cortar el script. Los iconos no salen
+  // todos el mismo dia —cada uno hay que pedirselo a Gemini— y no tiene sentido
+  // que no se pueda rehacer la copa porque todavia no esta la bolsa.
+  const hay = ICONOS.filter((i) => fs.existsSync(path.join(FUENTE, i.origen)));
+  const faltan = ICONOS.filter((i) => !hay.includes(i));
 
   fs.mkdirSync(SALIDA, { recursive: true });
   console.log('');
 
-  for (const { origen, destino } of ICONOS) {
+  for (const { origen, destino } of hay) {
     // `porTodaLaImagen` borra el gris este donde este, no solo el que se toca
     // con el borde. Hace falta por el fondo que queda ATRAPADO dentro del aro
     // de las asas de la copa: ahi el relleno desde el borde no llega y quedaba
@@ -83,6 +86,10 @@ function main() {
     const buf = aPng(encajar(img, LADO));
     fs.writeFileSync(path.join(SALIDA, destino), buf);
     console.log(`  ${destino.padEnd(14)} ${LADO}x${LADO}  ${(buf.length / 1024).toFixed(1)} KB   (origen ${img.ancho}x${img.alto})`);
+  }
+
+  for (const { origen } of faltan) {
+    console.log(`  ${origen.padEnd(20)} SALTADO: todavia no esta en arte-fuente/`);
   }
 
   console.log('');

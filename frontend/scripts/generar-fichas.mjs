@@ -89,7 +89,12 @@ const PINTAS = [
     id: 'jade',
     nombre: 'Jade',
     recorteFicha: { porColor: true },
-    recortePunto: { porColor: true },
+    // El `jade-punto.png` que devolvio Gemini no es un punto: es un PLATO, un
+    // disco plano con reborde. A tamano de ficha se leia como un remache
+    // atornillado. El punto de la pinta de oro si es una media esfera dorada, y
+    // el jade pedia justamente puntos de oro viejo: se reusa ese.
+    punto: 'oro',
+    recortePunto: { difMax: 16 },
     lineaPropia: true,
     areaPuntos: { x1: 0.04, x2: 0.46, y1: 0.08, y2: 0.92 },
     ladoPunto: 0.19
@@ -131,7 +136,7 @@ const PUNTOS = {
 /** Arma las 28 fichas de una pinta. */
 function armarPinta(pinta) {
   const rutaFicha = path.join(FUENTE, `${pinta.id}-ficha.png`);
-  const rutaPunto = path.join(FUENTE, `${pinta.id}-punto.png`);
+  const rutaPunto = path.join(FUENTE, `${pinta.punto ?? pinta.id}-punto.png`);
 
   if (!fs.existsSync(rutaFicha) || !fs.existsSync(rutaPunto)) {
     console.log(`  ${pinta.nombre.padEnd(14)} SALTADA: faltan ${pinta.id}-ficha.png o ${pinta.id}-punto.png`);
@@ -148,9 +153,25 @@ function armarPinta(pinta) {
   // el marmol, que es blanco y NEUTRO: buscando neutralidad, el recorte se
   // comeria la ficha entera. Mirando la distancia al #808080 del fondo, el
   // marmol —que esta a mas de cien de distancia— se queda.
+  //
+  // La tolerancia salio de medirla, no de probar a ojo. Barrida de 10 a 60
+  // sobre las tres pintas, contando saltos del borde (lo mordido) y agujeros
+  // dentro de la ficha:
+  //
+  //   tol 10 → no llega a borrar el fondo entero (el JPEG lo deja moteado)
+  //   tol 20 → limpio en las tres: 0 saltos, 0 agujeros
+  //   tol 60 → al jade se le muerde el borde (saltos de hasta 58 px, era el
+  //            filo palido y traslucido) y la madera pierde el 52% de su veta
+  //
+  // Por eso 20 y no 60. Ademas se borra SOLO desde el borde: un gris rodeado de
+  // dibujo no es fondo, es la veta de la madera.
   const quitar = (ruta, cfg = {}) =>
     recortar(cfg.porColor
-      ? quitarElFondoPorColor(leer(ruta), { color: [128, 128, 128], tolerancia: cfg.tolerancia ?? 60 })
+      ? quitarElFondoPorColor(leer(ruta), {
+          color: [128, 128, 128],
+          tolerancia: cfg.tolerancia ?? 20,
+          desdeElBorde: true
+        })
       : quitarElFondo(leer(ruta), cfg));
 
   const ficha = quitar(rutaFicha, pinta.recorteFicha);

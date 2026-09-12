@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
 import Navbar from '../components/Navbar.jsx';
+import { VERSION_FICHAS } from '../components/game/MesaTheme.jsx';
 import { tiendaApi } from '../services/api.js';
 
 /**
@@ -21,12 +22,24 @@ import { tiendaApi } from '../services/api.js';
  * dibuja y se manda QUE se quiere comprar, nunca cuanto cuesta (regla 8).
  */
 
-/** Se enseña la ficha 3|5, que tiene puntos en las dos mitades y se ve bien. */
+/**
+ * El escaparate de un articulo.
+ *
+ * Se enseña la ficha 3|5, que tiene puntos en las dos mitades y se ve bien.
+ *
+ * Va **grande y sobre el paño**, no chiquita contra el negro: lo unico que se
+ * vende aqui es el material, y a 40 px de alto no se distinguia el marmol del
+ * jade. Puesta sobre la tela se ve tal cual va a verse en la mesa.
+ *
+ * `VERSION_FICHAS` viaja pegado a la direccion por lo de siempre: los archivos
+ * se llaman igual cuando se rehacen, y sin el numero el navegador enseña el
+ * que tenia guardado.
+ */
 function Muestra({ articulo }) {
   if (articulo.tipo === 'pano') {
     return (
       <div
-        className="h-16 w-full rounded-lg border border-black/40"
+        className="h-24 w-full rounded-lg border border-black/40"
         style={{
           backgroundImage: `url('${articulo.muestra}')`,
           backgroundSize: '150px 150px',
@@ -37,8 +50,19 @@ function Muestra({ articulo }) {
     );
   }
   return (
-    <div className="flex h-16 items-center justify-center rounded-lg bg-black/30">
-      <img src={articulo.muestra} alt="" className="h-10 w-auto drop-shadow-lg" />
+    <div
+      className="flex h-24 items-center justify-center rounded-lg border border-black/40"
+      style={{
+        backgroundImage: "url('/pano-tela.webp')",
+        backgroundSize: '150px 150px',
+        backgroundRepeat: 'repeat'
+      }}
+    >
+      <img
+        src={`${articulo.muestra}?v=${VERSION_FICHAS}`}
+        alt=""
+        className="w-[76%] max-w-[220px] drop-shadow-[0_6px_10px_rgba(0,0,0,.55)]"
+      />
     </div>
   );
 }
