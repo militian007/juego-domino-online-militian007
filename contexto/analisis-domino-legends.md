@@ -177,7 +177,9 @@ Estas las tiene que decidir Jonathan, porque cambian qué clase de juego es:
 9. **Monedas, tienda, ruleta y coste de entrada.** Es un modelo de negocio entero. Sin pasarela
    de pago en Venezuela, hoy solo serviría como moneda de juego. **Mi opinión: esperar**, y que
    el pase de batalla siga siendo el sistema de recompensas.
-10. **Ligas con divisiones.** Se puede montar encima de la clasificación que ya existe.
+10. ~~**Ligas con divisiones.**~~ **DECIDIDO (2026-09-11): NO van.** Jonathan: *"las ligas
+    dejala igual que PrivoyTruco"*. Se queda la tabla de puntos y puesto, sin rangos con
+    nombre, como en la §99. Cerrado, no hace falta volver a proponerlo.
 
 ---
 

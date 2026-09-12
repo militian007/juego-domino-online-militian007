@@ -6310,3 +6310,31 @@ Es el mismo error que el volteo de la §134 y que el rebote de la §122: **dibuj
 fuera del componente que dibuja fichas**. Cada vez que alguien pone una `<img>` suelta con
 medidas a mano, se pierde el giro, la proporcion o las dos. Si hay que dibujar una ficha, se
 usa `Tile`.
+
+---
+
+## 136. Decidido: las ligas se quedan como PrivoyTruco (2026-09-11)
+
+Jonathan: *"las ligas dejala igual que PrivoyTruco"*. **No van divisiones ni rangos con
+nombre.** Se queda la tabla de puntos y puesto de la §99.
+
+Es la segunda vez que se cierra lo mismo, asi que queda escrito en los dos sitios —aqui y en
+el plan de Domino Legends— para no volver a proponerlo.
+
+Del paso 4 del plan ya no queda nada sin decidir: Hint y Spy fuera (§129), ligas fuera (esta),
+y la tienda esperando a tener que vender.
+
+## 137. El clac mas bajo y el monton mas alto (2026-09-11)
+
+Jonathan, jugando: *"cuando pones la ficha bajale el volumen un poco, y cuando barajeas subele
+un poco"*.
+
+| | antes | ahora |
+| --- | --- | --- |
+| la ficha al ponerse (`VOLUMEN_CLAC`) | 1,00 | **0,82** |
+| el monton revuelto (`VOLUMEN_POZO`) | 0,25-0,43 | **0,44-0,77** |
+
+Los dos son numeros con nombre arriba del archivo, no valores sueltos: subirlos o bajarlos es
+tocar uno solo. El del monton se movia al azar en cada golpe y lo sigue haciendo, alrededor del
+nuevo valor, para que no suenen todos iguales.
+

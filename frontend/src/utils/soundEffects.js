@@ -82,10 +82,21 @@ const ARCHIVO_CLAC = '/sonidos/clac.wav';
 const ARCHIVO_POZO = '/sonidos/clac-pozo.wav';
 
 /**
- * El volumen del clac. **Este es el numero que se toca para subirlo o bajarlo.**
- * 1 = como vino la grabacion. 1,12 es aproximadamente un decibel mas.
+ * El volumen del monton revuelto, aparte del clac.
+ *
+ * Va aparte porque son dos sonidos distintos y Jonathan los pidio al reves: el
+ * clac mas bajo y el revoltijo mas alto. Cada golpe del monton se mueve un poco
+ * alrededor de este numero, para que no suenen todos iguales.
  */
-export const VOLUMEN_CLAC = 1;
+export const VOLUMEN_POZO = 0.55;
+
+/**
+ * El volumen del clac. **Este es el numero que se toca para subirlo o bajarlo.**
+ * 1 = como vino la grabacion. 1,12 es aproximadamente un decibel mas, 0,89 uno
+ * menos. A pedido de Jonathan esta en 0,82: casi dos decibeles por debajo del
+ * original, que es como lo queria.
+ */
+export const VOLUMEN_CLAC = 0.82;
 
 /** Cuanto se le mueve el tono a cada golpe, para que no haya dos iguales. */
 const VARIACION_TONO = 0.08;
@@ -233,7 +244,7 @@ export function playShuffleSound(duracionMs = 800) {
       // Abanico de tonos corto. Con el de antes —de 0,82 a 1,32— los golpes
       // subian y bajaban tanto que se oian como un barrido, no como fichas.
       tono: 0.92 + Math.random() * 0.26,
-      volumen: 0.25 + Math.random() * 0.18,
+      volumen: VOLUMEN_POZO * (0.8 + Math.random() * 0.4),
       pozo: true
     });
   }
