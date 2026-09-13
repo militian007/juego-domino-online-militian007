@@ -7754,3 +7754,40 @@ la culebra va sola por donde menos se aleja la camara.
 
 Pruebas: motor 85/85, servidor 87/87. El fixture de `test/destrancar.test.js` (`veto-15`,
 42 jugadas, ficha 0-6) sigue valiendo con la regla nueva; `tools/buscar-veto.mjs` lo confirma.
+
+## 171. La mesa minuscula al reenganchar, y el vigilante del dibujo (2026-09-13)
+
+Raul, probando 1 contra 1 con un amigo desde dos telefonos, mando dos capturas: en la ronda 1
+dos fichas paradas en linea que se pisaban un cuarto ("solapamiento"), y en la ronda 3 la
+cadena entera minuscula en medio del paño ("no se que paso, se puso asi, super alejado").
+
+**La mesa minuscula: reproducida y arreglada.** `diag-recarga.mjs` (scratchpad) juega tres
+fichas, recarga la pagina (el juego se reengancha a la misma sala por `CLAVE_PARTIDA`) y mide
+las fichas de la mesa: antes de recargar, escala 0,497 y fichas de 32 px; despues, escala 0,25
+y fichas de 16 px. La causa esta en la camara quieta de la 164: al montar el tablero con la
+mesa ya puesta, el primer dibujo sale ANTES de medir el paño, con el minimo de 120 px de
+`anchoUtil`/`altoUtil`, y esa vista alejadisima se guardaba en `vistaRef`; como en ella
+"cabe" todo, la histeresis no la soltaba nunca. En el telefono pasa sin recargar a mano:
+iOS recarga la pestaña al volver de otra app, y el servidor mostro a Ajaiajaba
+reconectando tres veces en esa partida. Tres candados en `Board.jsx`:
+
+1. Sin paño medido (`pano.ancho`/`alto` en 0) no se guarda ninguna vista.
+2. La vista guardada lleva el tamaño del paño con que se calculo; si cambio, no vale.
+3. Una vista mas de una vez y media mas lejos que la ideal tampoco vale.
+
+Despues del arreglo la misma prueba da la misma escala antes y despues de recargar
+(0,873 y 0,873). Sin errores de consola en una ronda entera.
+
+**La montada: no reproducida, y ahora se vigila el dibujo.** El vigilante del servidor
+(seccion 169) no anoto nada, y no puede: en el motor dos fichas paradas en linea llevan
+corrimiento cero, y `placementsFor` para un doble en la punta solo ofrece casillas cruzadas,
+asi que ninguna version de la regla arma ese dibujo en coordenadas. Seis rondas mas en el
+navegador midiendo el DOM (umbral 20 %): cero. Lo que se pisa es el DIBUJO en el telefono
+(alguna animacion o nodo que se queda donde no va), asi que el vigilante nuevo mira eso:
+`frontend/src/components/game/vigilanteDeDibujo.js`, llamado desde `Board.jsx` 900 ms
+despues de cada cambio de la mesa con la mesa quieta (sin vuelo ni asiento), mide las fichas
+en pantalla y si dos se pisan mas de un quinto manda al servidor la mesa, los corrimientos,
+las medidas, clases, `transform` y estilo de los dos nodos, la escala, el paño, la
+visibilidad y el navegador. El servidor lo guarda en `backend/montadas-cliente.log` (ruta
+`POST /api/diag/montada`, `routes/diag.js`, fuera de git). Solo en desarrollo, y no toca el
+juego. La proxima vez que Raul la vea, la mesa exacta y su dibujo quedan anotados.

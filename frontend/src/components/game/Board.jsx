@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useMemo, useState, useCallback } fr
 import { useLupa } from '../../hooks/useLupa';
 import Tile from './Tile.jsx';
 import Iman from './Iman.jsx';
+import { vigilarDibujo } from './vigilanteDeDibujo.js';
 import {
   DEFAULT_LAYOUT,
   placementsFor,
@@ -333,15 +334,25 @@ export default function Board({
   // reencuadra cuando la cadena se sale, o cuando arranca una mano nueva. Sin
   // esto cada ficha corria la mesa un poco, y se sentia que las fichas "se
   // acomodaban" despues de puestas.
+  //
+  // Tres candados (§171), porque la quietud se volvia trampa: al reenganchar
+  // una partida a medias (recargar, o el telefono que vuelve de dormir) la
+  // mesa se dibujaba una vez ANTES de medir el paño, con el minimo de 120 px,
+  // y esa vista alejadisima se quedaba para siempre porque en ella "cabia"
+  // todo. Raul la vio: la cadena minuscula en medio del paño.
+  //   1. Sin paño medido no se guarda ninguna vista.
+  //   2. Si el paño cambio de tamaño, la vista guardada no vale.
+  //   3. Una vista mas de una vez y media mas lejos que la ideal tampoco.
   const vistaRef = useRef(null);
+  const panoMedido = pano.ancho > 0 && pano.alto > 0;
   let vista;
-  if (!cajaCadena || anchoUtil <= 0 || altoUtil <= 0) {
+  if (!cajaCadena || !panoMedido) {
     vistaRef.current = null;
     vista = { escala: escalaIdeal, cx: centroCadenaX, cy: centroCadenaY };
   } else {
     const previa = vistaRef.current;
     let sirve = false;
-    if (previa) {
+    if (previa && previa.ancho === pano.ancho && previa.alto === pano.alto && previa.escala * 1.5 >= escalaIdeal) {
       const visX = anchoUtil / (CELL_SIZE * previa.escala);
       const visY = altoUtil / (CELL_SIZE * previa.escala);
       sirve =
@@ -350,7 +361,9 @@ export default function Board({
         encuadre.y1 >= previa.cy - visY / 2 &&
         encuadre.y2 <= previa.cy + visY / 2;
     }
-    vista = sirve ? previa : { escala: escalaIdeal, cx: centroCadenaX, cy: centroCadenaY };
+    vista = sirve
+      ? previa
+      : { escala: escalaIdeal, cx: centroCadenaX, cy: centroCadenaY, ancho: pano.ancho, alto: pano.alto };
     vistaRef.current = vista;
   }
   const escala = vista.escala;
@@ -608,6 +621,14 @@ export default function Board({
     const id = setTimeout(() => setAsentando(null), 260);
     return () => clearTimeout(id);
   }, [asentando]);
+
+  // El vigilante del dibujo (§171): con la mesa quieta, mide las fichas en
+  // pantalla y si dos se pisan lo anota en el servidor. Solo en desarrollo.
+  useEffect(() => {
+    if (!import.meta.env.DEV || !board || board.length < 2 || volando || asentando) return;
+    const id = setTimeout(() => vigilarDibujo(containerRef.current, board, boardOffsets, escala), 900);
+    return () => clearTimeout(id);
+  }, [board, boardOffsets, escala, volando, asentando]);
 
   if (!board || board.length === 0) {
     return (

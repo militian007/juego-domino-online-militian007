@@ -11,6 +11,7 @@ import desbloqueosRoutes from './routes/desbloqueos.js';
 import monedasRoutes from './routes/monedas.js';
 import tiendaRoutes from './routes/tienda.js';
 import paseRoutes from './routes/pase.js';
+import diagRoutes from './routes/diag.js';
 import { roomManager } from './RoomManager.js';
 import { setupGameSocket } from './sockets/gameSocket.js';
 import { registrarChat } from './sockets/chatSocket.js';
@@ -44,6 +45,7 @@ app.use('/api/desbloqueos', desbloqueosRoutes);
 app.use('/api/monedas', monedasRoutes);
 app.use('/api/tienda', tiendaRoutes);
 app.use('/api/pase', paseRoutes);
+app.use('/api/diag', diagRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', game: 'dominó online', rooms: roomManager.rooms.size });
