@@ -711,3 +711,50 @@
 @media (prefers-reduced-motion: reduce) {
   .cinco-sube { animation: none; }
 }
+
+/* El iman de bronce (ver Iman.jsx). Late despacio mientras espera y se planta
+   quieto, mas grande y con halo, cuando la ficha ya esta imantada. El aro que
+   se abre es un efecto, no un dibujo. */
+.iman {
+  position: absolute;
+  z-index: 30;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 50%;
+  pointer-events: auto;
+  cursor: pointer;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.65));
+  animation: iman-late 1.6s ease-in-out infinite;
+  transition: transform 150ms ease-out, filter 150ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+.iman::before {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+  border: 2px solid rgba(212, 175, 55, 0.6);
+  animation: iman-aro 1.6s ease-out infinite;
+}
+.iman-activo {
+  animation: none;
+  transform: scale(1.3);
+  filter: drop-shadow(0 0 10px rgba(245, 207, 92, 0.95));
+}
+.iman-activo::before {
+  animation: none;
+  inset: -4px;
+  border-color: #f5cf5c;
+}
+@keyframes iman-late {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+@keyframes iman-aro {
+  0% { transform: scale(0.7); opacity: 0.9; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .iman, .iman::before { animation: none; }
+}

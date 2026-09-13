@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar.jsx';
 import Board from '../components/game/Board.jsx';
 import MesaThemePicker, { useMesaTheme, ContextoFichas } from '../components/game/MesaTheme.jsx';
 import PozoEnLaMesa from '../components/game/PozoEnLaMesa.jsx';
-import RoundBreakdown from '../components/game/RoundBreakdown.jsx';
+import CartelDeRonda from '../components/game/CartelDeRonda.jsx';
 import { Marcador, Jugador, Mesa } from '../components/game/Hud.jsx';
 import Hand from '../components/game/Hand.jsx';
 import OpponentHand from '../components/game/OpponentHand.jsx';
@@ -15,9 +15,7 @@ import AvisoDeCinco from '../components/game/AvisoDeCinco.jsx';
 import ConsejoDeMesa, {
   useConsejos, consejosEncendidos, alternarConsejos
 } from '../components/game/ConsejoDeMesa.jsx';
-import PuntosQueVuelan from '../components/game/PuntosQueVuelan.jsx';
 import CelebracionDeRonda, {
-  Cartel,
   MS_GRITO,
   tituloDeRonda,
   useNumeroQueSube
@@ -30,14 +28,13 @@ import Tablero from '../components/game/Tablero.jsx';
 import Scoreboard from '../components/game/Scoreboard.jsx';
 import SidePicker from '../components/game/SidePicker.jsx';
 import AdSidebar from '../components/AdSidebar.jsx';
-import TopBanner from '../components/TopBanner.jsx';
 import { connectSocket } from '../services/socket.js';
 import { paseApi, perfilApi } from '../services/api.js';
 import CargandoFichas from '../components/CargandoFichas.jsx';
 import PanelDeChat, { BurbujaDeChat, useChatDeMesa } from '../components/game/ChatDeMesa.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
-  playTileSound, playDrawSound, estaSilenciado, alternarSilencio, prepararSonidos
+  playTileSound, playDrawSound, estaSilenciado, alternarSilencio, prepararSonidos, sonar
 } from '../utils/soundEffects.js';
 import { ChevronRight, Lock, LogOut } from 'lucide-react';
 
@@ -693,9 +690,28 @@ export default function Game() {
     rondaGritada.current = cual;
 
     setGritando(true);
+    // El aviso: primero el tranque si lo hubo, y enseguida como te fue.
+    const miTeam = gameState.players?.find((p) => p.id === myPlayerId)?.team;
+    const gane = Boolean(gameState.winningTeam) && gameState.winningTeam === miTeam;
+    if (gameState.endReason === 'blocked') sonar('tranque');
+    const aviso = setTimeout(
+      () => sonar(gameState.winningTeam ? (gane ? 'rondaGanada' : 'rondaPerdida') : 'tranque'),
+      gameState.endReason === 'blocked' ? 520 : 120
+    );
     const id = setTimeout(() => setGritando(false), MS_GRITO);
-    return () => clearTimeout(id);
+    return () => {
+      clearTimeout(id);
+      clearTimeout(aviso);
+    };
   }, [gameState?.status, gameState?.round, gameState?.endReason]);
+
+  // "Te toca": suena cuando el turno pasa a ser tuyo, solo con la ronda viva.
+  const turnoAvisado = useRef(false);
+  useEffect(() => {
+    const esMio = Boolean(myTurn) && gameState?.status === 'playing';
+    if (esMio && !turnoAvisado.current) sonar('teToca');
+    turnoAvisado.current = esMio;
+  }, [myTurn, gameState?.status]);
 
   // El puntaje de la ronda, contando hacia arriba en vez de saltar. Va aca
   // arriba y no al lado del panel: `useNumeroQueSube` es un hook, y mas abajo
@@ -731,7 +747,9 @@ export default function Game() {
   // Se pide sola, sin que haya que apretar nada.
   useEffect(() => {
     if (!socket || !actualRoomCode) return;
-    if (!myTurn || gameState?.canPlay !== false) {
+    // Con la ronda cerrada no hay nada que explicar: al ganar por domino la
+    // mano queda vacia, `canPlay` es falso y el panel salia encima del grito.
+    if (!myTurn || gameState?.canPlay !== false || gameState?.status !== 'playing') {
       setExplicacion(null);
       return;
     }
@@ -746,7 +764,7 @@ export default function Game() {
     // `manoFirma` es imprescindible: al robar del pozo la mano crece pero el
     // tablero y `canPlay` no cambian, asi que sin ella el efecto no se repetia
     // y el panel seguia explicando la mano vieja, sin la ficha recien robada.
-  }, [socket, actualRoomCode, myTurn, gameState?.canPlay, gameState?.board?.length, manoFirma]);
+  }, [socket, actualRoomCode, myTurn, gameState?.canPlay, gameState?.status, gameState?.board?.length, manoFirma]);
 
   const isHost = lobby?.players.find((p) => p.isHost)?.id === myPlayerId;
   const isAutoStart = AUTO_START_MODES.includes(mode);
@@ -1181,7 +1199,8 @@ export default function Game() {
   const cierreDeRonda = tituloDeRonda({
     motivo: gameState.endReason,
     equipoGanador: gameState.winningTeam,
-    miEquipo
+    miEquipo,
+    players: gameState.players
   });
 
 
@@ -1306,7 +1325,7 @@ export default function Game() {
                 {gameState.hasPool && (
                   <PozoEnLaMesa
                     cantidad={gameState.poolCount}
-                    activo={myTurn && gameState.canDraw}
+                    activo={myTurn && gameState.canDraw && gameState.status === 'playing'}
                     robando={isPlacing}
                     onRobar={handleDraw}
                     margenes={{
@@ -1636,6 +1655,7 @@ export default function Game() {
                       validIndices={validIndices}
                       selectedIndex={selectedTile?.index}
                       onSelect={handleTileClick}
+                      onNoVa={() => sonar('noVa')}
                       canPlay={myTurn && !isPlacing && !draggedTile}
                       draggedTile={draggedTile}
                       onDragStart={handleDragStart}
@@ -1740,142 +1760,47 @@ export default function Game() {
           <CelebracionDeRonda
             activa={gritando}
             titulo={cierreDeRonda.texto}
+            quien={cierreDeRonda.quien}
             gane={cierreDeRonda.gane}
             arte={cierreDeRonda.arte}
             puntos={cierreDeRonda.gane ? gameState.roundPoints : 0}
           />
         )}
 
+        {/* El cartel de cuentas, al estilo del club (ver CartelDeRonda). El
+            anuncio que iba adentro se fue: en la plataforma la publicidad es
+            cosa de la casa, no de la mesa. */}
         {gameState.status === 'round-end' && !gritando && (
-          <div className="fixed inset-0 z-40 bg-black/70 flex items-center justify-center p-4">
-            <div
-              ref={panelDeRonda}
-              className="card relative p-6 sm:p-8 max-w-md w-full text-center max-h-[90vh] overflow-y-auto"
-            >
-              {/* Los pips del perdedor, viajando hasta el total. */}
-              <PuntosQueVuelan contenedor={panelDeRonda} activo={gameState.endReason !== 'forfeit'} />
-
-              <h2 className="text-2xl sm:text-3xl font-bold mb-2">
-                {gameState.winningTeam
-                  ? `¡Ganó el equipo ${gameState.winningTeam}!`
-                  : '¡Empate!'}
-              </h2>
-              <p className="text-slate-400 mb-2">
-                {gameState.endReason === 'domino'
-                  ? 'Un jugador se quedó sin fichas'
-                  : gameState.endReason === 'forfeit'
-                    ? `${gameState.players?.[gameState.forfeitedSeat]?.username ?? 'Un jugador'} dejó la partida`
-                    : 'El juego se trancó'}
-              </p>
-
-              {/* En un abandono no hay ronda cerrada: no hay puntos que sumar
-                  ni manos que revelar. Mostrar "+0 puntos" y un desglose vacio
-                  haria parecer que algo fallo. */}
-              {gameState.endReason !== 'forfeit' && (
-                <>
-                  {/* Sube en vez de saltar: es lo que hace que se mire, y le
-                      da tiempo a los pips a llegar volando. */}
-                  <p
-                    data-total-puntos=""
-                    className="text-3xl font-black tabular-nums text-domino-accent mb-4"
-                  >
-                    +{puntosQueSuben} puntos
-                  </p>
-
-                  <RoundBreakdown
-                    manos={gameState.revealedHands}
-                    equipoGanador={gameState.winningTeam}
-                    motivo={gameState.endReason}
-                    puntos={gameState.roundPoints}
-                  />
-                </>
-              )}
-
-              <div className="my-4">
-                <TopBanner />
-              </div>
-
-              <div className="space-y-2">
-                {gameState.status === 'round-end' && gameState.winningTeam !== 0 && (
-                  <button onClick={handleNextRound} className="btn-primary w-full">
-                    Siguiente ronda
-                  </button>
-                )}
-                <button onClick={salirDeLaPartida} className="btn-secondary w-full">
-                  Salir de la partida
-                </button>
-              </div>
-            </div>
-          </div>
+          <CartelDeRonda
+            modo="ronda"
+            panelRef={panelDeRonda}
+            players={gameState.players}
+            revealedHands={gameState.revealedHands}
+            miEquipo={miEquipo}
+            winningTeam={gameState.winningTeam}
+            endReason={gameState.endReason}
+            forfeitedSeat={gameState.forfeitedSeat}
+            roundPoints={gameState.roundPoints}
+            puntosQueSuben={puntosQueSuben}
+            teamScores={gameState.teamScores}
+            targetPoints={gameState.targetPoints ?? 100}
+            round={gameState.round}
+            onNext={handleNextRound}
+            onExit={salirDeLaPartida}
+          />
         )}
 
         {gameState.status === 'game-over' && (
-          <div className="fixed inset-0 z-40 bg-black/70 flex items-center justify-center p-4">
-            <div className="card p-6 sm:p-8 max-w-md w-full text-center">
-              {/* Al ganar la partida entera va el cartel pintado, si esta
-                  (§130). Si no, el titulo de siempre. */}
-              {gameState.winningTeam === miEquipo ? (
-                <Cartel
-                  arte="ganaste"
-                  texto="¡Ganaste la partida!"
-                  gane
-                  className="mb-3 w-[min(70vw,300px)]"
-                />
-              ) : (
-                <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-domino-accent">
-                  ¡Partida terminada!
-                </h2>
-              )}
-              <p className="text-slate-300 mb-6">
-                {gameState.winningTeam
-                  ? `El equipo ${gameState.winningTeam} ganó ${Math.max(
-                      gameState.teamScores[1],
-                      gameState.teamScores[2]
-                    )} a ${Math.min(gameState.teamScores[1], gameState.teamScores[2])}`
-                  : 'Empate técnico'}
-              </p>
-              {/* Lo que se movio el ranking. Solo aparece en las partidas
-                  entre personas: contra la maquina no suma nada, y ahi el
-                  servidor no manda ningun cambio. */}
-              {cambioDeRanking && (
-                <div className="mb-6 rounded-xl border border-domino-accent/25 bg-black/40 p-4">
-                  <div className="flex items-center justify-center gap-3">
-                    <span
-                      className={`text-3xl font-black tabular-nums ${
-                        cambioDeRanking.cambio > 0 ? 'text-green-400' : 'text-red-400'
-                      }`}
-                    >
-                      {cambioDeRanking.cambio > 0 ? '+' : ''}{cambioDeRanking.cambio}
-                    </span>
-                    <div className="text-left">
-                      <div className="text-lg font-bold tabular-nums text-domino-cream">
-                        {cambioDeRanking.despues}
-                      </div>
-                      <div className="text-[10px] tracking-widest text-domino-cream/40">PUNTOS</div>
-                    </div>
-                  </div>
-
-                  {cambioDeRanking.puesto && (
-                    <p className="mt-3 text-xs text-domino-cream/60">
-                      Quedaste{' '}
-                      <span className="font-bold text-domino-accent">
-                        #{cambioDeRanking.puesto}
-                      </span>{' '}
-                      en la clasificación
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <Link to="/ranking" className="mb-2 block text-xs tracking-widest text-domino-cream/55 underline-offset-4 hover:text-domino-accent hover:underline">
-                VER LA CLASIFICACIÓN
-              </Link>
-
-              <Link to="/dashboard" className="btn-primary w-full block">
-                Volver al dashboard
-              </Link>
-            </div>
-          </div>
+          <CartelDeRonda
+            modo="partida"
+            players={gameState.players}
+            miEquipo={miEquipo}
+            winningTeam={gameState.winningTeam}
+            endReason={gameState.endReason}
+            teamScores={gameState.teamScores}
+            targetPoints={gameState.targetPoints ?? 100}
+            cambioDeRanking={cambioDeRanking}
+          />
         )}
       </div>
     </div>

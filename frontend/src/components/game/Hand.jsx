@@ -52,6 +52,7 @@ export default function Hand({
   validIndices = [],
   selectedIndex,
   onSelect,
+  onNoVa,
   canPlay,
   draggedTile = null,
   onDragStart,
@@ -169,7 +170,11 @@ export default function Hand({
                 ancho={anchoFicha}
                 selected={isSelected}
                 dim={canPlay && !isValid}
-                onClick={() => !draggedTile && isValid && onSelect && onSelect(i)}
+                onClick={() => {
+                  if (draggedTile) return;
+                  if (isValid) onSelect && onSelect(i);
+                  else if (canPlay) onNoVa && onNoVa(i);
+                }}
                 draggable={false}
               />
             </div>

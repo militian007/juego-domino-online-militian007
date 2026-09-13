@@ -175,42 +175,9 @@ export function prepararSonidos() {
   if (ctx) cargarClac(ctx);
 }
 
-/**
- * Plays a card/tile sliding draw sound
- */
+/** Robar del pozo: ahora es un aviso mas de la familia elegida (ver abajo). */
 export function playDrawSound() {
-  const ctx = getAudioContext();
-  if (!ctx) return;
-
-  const now = ctx.currentTime;
-
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-
-  // Sine sliding from lower pitch to slightly higher, resembling pulling a tile
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(140, now);
-  osc.frequency.exponentialRampToValueAtTime(450, now + 0.16);
-
-  gain.gain.setValueAtTime(0.001, now);
-  gain.gain.linearRampToValueAtTime(0.12, now + 0.04);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
-
-  // Bandpass filter to make it sound more like friction/paper sliding
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.frequency.value = 800;
-  filter.Q.value = 1.0;
-
-  // Re-route connection through filter
-  osc.disconnect();
-  osc.connect(filter);
-  filter.connect(gain);
-
-  osc.start(now);
-  osc.stop(now + 0.17);
+  sonar('robar');
 }
 
 /**
@@ -247,5 +214,198 @@ export function playShuffleSound(duracionMs = 800) {
       volumen: VOLUMEN_POZO * (0.8 + Math.random() * 0.4),
       pozo: true
     });
+  }
+}
+
+/**
+ * LOS AVISOS DE LA MESA
+ *
+ * Seis momentos que antes pasaban en silencio o con un sonido inventado con
+ * osciladores: te toca, ronda ganada, ronda perdida, tranque, la ficha que no
+ * va, y robar del pozo. Hay TRES familias para elegir, y la eleccion vive en
+ * el navegador mientras se decide (`?sonidos=fichas|madera|club` en la URL, o
+ * la pagina /sonidos). Cuando Raul elija una, las otras dos se van.
+ *
+ * - fichas: SOLO las grabaciones del clac y del pozo, repetidas y afinadas.
+ *   Es la familia que sigue al pie la conclusion de la seccion 124: dar los
+ *   mismos numeros no es sonar igual; lo grabado suena a ficha.
+ * - madera: golpes secos de madera sintetizados, la misma familia que el Ludo
+ *   de la casa (tac corto con caida de tono).
+ * - club: campanitas suaves con dos parciales, discretas, de club y no de feria.
+ */
+const LLAVE_FAMILIA = 'domino-sonidos';
+export const FAMILIAS = { fichas: 'Fichas', madera: 'Madera', club: 'Club' };
+export const AVISOS = {
+  teToca: 'Te toca',
+  rondaGanada: 'Ronda ganada',
+  rondaPerdida: 'Ronda perdida',
+  tranque: 'Tranque',
+  noVa: 'Esa ficha no va',
+  robar: 'Robar del pozo'
+};
+const FAMILIA_POR_DEFECTO = 'fichas';
+
+export function familiaElegida() {
+  try {
+    const pedida = new URLSearchParams(window.location.search).get('sonidos');
+    if (pedida && FAMILIAS[pedida]) {
+      localStorage.setItem(LLAVE_FAMILIA, pedida);
+      return pedida;
+    }
+    const guardada = localStorage.getItem(LLAVE_FAMILIA);
+    return FAMILIAS[guardada] ? guardada : FAMILIA_POR_DEFECTO;
+  } catch {
+    return FAMILIA_POR_DEFECTO;
+  }
+}
+
+export function elegirFamilia(familia) {
+  if (!FAMILIAS[familia]) return familiaElegida();
+  try {
+    localStorage.setItem(LLAVE_FAMILIA, familia);
+  } catch {
+    // sin almacenamiento se usa en memoria y listo
+  }
+  return familia;
+}
+
+/** Golpe seco de madera: seno que cae de tono mas un chasquido de ruido. */
+function golpe(ctx, t, { tono = 1900, dur = 0.055, gana = 0.16 } = {}) {
+  const o = ctx.createOscillator();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(tono, t);
+  o.frequency.exponentialRampToValueAtTime(tono * 0.45, t + dur);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(gana, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g);
+  g.connect(ctx.destination);
+  o.start(t);
+  o.stop(t + dur + 0.01);
+  ruido(ctx, t, { dur: 0.018, gana: gana * 0.9, hz: 3200 });
+}
+
+/** Un soplo de ruido filtrado: el chasquido del golpe o el roce de la ficha. */
+function ruido(ctx, t, { dur = 0.05, gana = 0.1, hz = 1800, q = 1.2 } = {}) {
+  const n = Math.max(1, Math.floor(ctx.sampleRate * dur));
+  const buffer = ctx.createBuffer(1, n, ctx.sampleRate);
+  const datos = buffer.getChannelData(0);
+  for (let i = 0; i < n; i++) datos[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  const fuente = ctx.createBufferSource();
+  fuente.buffer = buffer;
+  const filtro = ctx.createBiquadFilter();
+  filtro.type = 'bandpass';
+  filtro.frequency.value = hz;
+  filtro.Q.value = q;
+  const g = ctx.createGain();
+  g.gain.value = gana;
+  fuente.connect(filtro);
+  filtro.connect(g);
+  g.connect(ctx.destination);
+  fuente.start(t);
+}
+
+/** Campanita: fundamental mas un parcial agudo que muere antes. */
+function campana(ctx, t, { hz = 880, dur = 0.55, gana = 0.14 } = {}) {
+  const partes = [
+    { mult: 1, gana: gana, dur },
+    { mult: 2.76, gana: gana * 0.35, dur: dur * 0.45 }
+  ];
+  for (const p of partes) {
+    const o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.value = hz * p.mult;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(p.gana, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + p.dur);
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.start(t);
+    o.stop(t + p.dur + 0.02);
+  }
+}
+
+/** Un clac grabado, afinado. Si la grabacion no llego todavia, no suena. */
+function clac(ctx, t, { tono = 1, volumen = 1, pozo = false } = {}) {
+  armarClac(ctx, ctx.destination, t, { tono, volumen, pozo });
+}
+
+const DO5 = 523.25, MI5 = 659.25, SOL5 = 783.99, DO6 = 1046.5, LA3 = 220, MI4 = 329.63, DO4 = 261.63;
+
+const RECETAS = {
+  fichas: {
+    teToca: (c, t) => clac(c, t, { tono: 1.3, volumen: 0.55 }),
+    rondaGanada: (c, t) => {
+      [0.95, 1.1, 1.3, 1.55].forEach((tono, i) => clac(c, t + i * 0.11, { tono, volumen: 0.8 + i * 0.05 }));
+    },
+    rondaPerdida: (c, t) => {
+      clac(c, t, { tono: 0.72, volumen: 0.8 });
+      clac(c, t + 0.26, { tono: 0.6, volumen: 0.7 });
+    },
+    tranque: (c, t) => [0, 0.15, 0.3].forEach((d) => clac(c, t + d, { tono: 0.8, volumen: 0.85 })),
+    noVa: (c, t) => clac(c, t, { tono: 0.62, volumen: 0.6, pozo: true }),
+    robar: (c, t) => {
+      clac(c, t, { tono: 0.9, volumen: 0.75, pozo: true });
+      clac(c, t + 0.06, { tono: 1.05, volumen: 0.55, pozo: true });
+    }
+  },
+  madera: {
+    teToca: (c, t) => golpe(c, t, { tono: 2100, gana: 0.12 }),
+    rondaGanada: (c, t) => {
+      [DO5, MI5, SOL5, DO6].forEach((hz, i) => golpe(c, t + i * 0.1, { tono: hz * 2.4, dur: 0.09, gana: 0.16 }));
+    },
+    rondaPerdida: (c, t) => {
+      golpe(c, t, { tono: 900, dur: 0.12, gana: 0.16 });
+      golpe(c, t + 0.28, { tono: 640, dur: 0.16, gana: 0.15 });
+    },
+    tranque: (c, t) => [0, 0.16, 0.32].forEach((d) => golpe(c, t + d, { tono: 760, dur: 0.1, gana: 0.17 })),
+    noVa: (c, t) => golpe(c, t, { tono: 420, dur: 0.11, gana: 0.15 }),
+    robar: (c, t) => [0, 0.05, 0.1].forEach((d, i) => golpe(c, t + d, { tono: 1500 + i * 250, dur: 0.045, gana: 0.09 }))
+  },
+  club: {
+    teToca: (c, t) => campana(c, t, { hz: 880, dur: 0.5, gana: 0.11 }),
+    rondaGanada: (c, t) => {
+      [DO5, MI5, SOL5, DO6].forEach((hz, i) => campana(c, t + i * 0.13, { hz, dur: 0.9 - i * 0.1, gana: 0.12 }));
+    },
+    rondaPerdida: (c, t) => {
+      campana(c, t, { hz: MI4, dur: 0.6, gana: 0.1 });
+      campana(c, t + 0.32, { hz: DO4, dur: 0.8, gana: 0.1 });
+    },
+    tranque: (c, t) => [0, 0.2].forEach((d) => campana(c, t + d, { hz: LA3, dur: 0.35, gana: 0.13 })),
+    noVa: (c, t) => {
+      const o = c.createOscillator();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(180, t);
+      o.frequency.exponentialRampToValueAtTime(120, t + 0.09);
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+      o.connect(g);
+      g.connect(c.destination);
+      o.start(t);
+      o.stop(t + 0.11);
+    },
+    robar: (c, t) => ruido(c, t, { dur: 0.14, gana: 0.14, hz: 900, q: 0.8 })
+  }
+};
+
+/**
+ * Suena un aviso con la familia elegida (o una forzada, para la pagina de
+ * escuchar). Todo va envuelto: el sonido jamas puede romper una jugada.
+ */
+export function sonar(aviso, familia = familiaElegida()) {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const receta = RECETAS[familia]?.[aviso];
+    if (!receta) return;
+    if (familia === 'fichas' && !muestraClac) {
+      cargarClac(ctx);
+      return;
+    }
+    receta(ctx, ctx.currentTime + 0.005);
+  } catch {
+    // sin sonido antes que con un error
   }
 }

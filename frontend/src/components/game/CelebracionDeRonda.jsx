@@ -36,18 +36,26 @@ const COLORES = ['#d4af37', '#f6e6bd', '#e0684f', '#5fa8d3', '#7bc47f', '#e8c974
  * ganar lo tienen: un banner pintado para "Tranca perdida" seria celebrar que
  * perdiste. Los de perder se quedan en tipografia sobria, a proposito.
  */
-export function tituloDeRonda({ motivo, equipoGanador, miEquipo }) {
+export function tituloDeRonda({ motivo, equipoGanador, miEquipo, players = [] }) {
   if (equipoGanador === 0 || equipoGanador == null) {
-    return { texto: '¡Empate!', gane: false, arte: null };
+    return { texto: '¡Empate!', gane: false, arte: null, quien: 'Nadie suma' };
   }
   const gane = equipoGanador === miEquipo;
+  // Quien gano, con nombre: "el equipo 2" no le dice nada a nadie.
+  const ganadores = players.filter((p) => p.team === equipoGanador).map((p) => p.username);
+  const enParejas = players.length === 4;
+  const quien = gane
+    ? enParejas ? 'Ganamos' : 'Ganaste'
+    : ganadores.length > 1
+      ? `Ganaron ${ganadores.slice(0, -1).join(', ')} y ${ganadores[ganadores.length - 1]}`
+      : `Ganó ${ganadores[0] ?? 'el rival'}`;
   if (motivo === 'blocked') {
-    return { texto: gane ? '¡Tranca ganada!' : 'Tranca perdida', gane, arte: gane ? 'tranca' : null };
+    return { texto: gane ? '¡Tranca ganada!' : 'Tranca', gane, arte: gane ? 'tranca' : null, quien };
   }
   if (motivo === 'forfeit') {
-    return { texto: gane ? 'Ronda ganada' : 'Ronda perdida', gane, arte: null };
+    return { texto: gane ? 'Ronda ganada' : 'Ronda perdida', gane, arte: null, quien };
   }
-  return { texto: gane ? '¡Dominó!' : 'Se quedó sin fichas', gane, arte: gane ? 'domino' : null };
+  return { texto: '¡Dominó!', gane, arte: gane ? 'domino' : null, quien };
 }
 
 /**
@@ -167,7 +175,7 @@ function Confeti() {
   );
 }
 
-export default function CelebracionDeRonda({ activa, titulo, gane, puntos, arte = null }) {
+export default function CelebracionDeRonda({ activa, titulo, quien = '', gane, puntos, arte = null }) {
   if (!activa) return null;
 
   return (
@@ -183,6 +191,15 @@ export default function CelebracionDeRonda({ activa, titulo, gane, puntos, arte 
 
       <div className="grito-entra relative px-6 text-center">
         <Cartel arte={arte} texto={titulo} gane={gane} />
+        {quien && (
+          <p
+            className={`mt-2 text-2xl font-extrabold drop-shadow-[0_3px_6px_rgba(0,0,0,.9)] ${
+              gane ? 'text-domino-accent-bright' : 'text-domino-cream'
+            }`}
+          >
+            {quien}
+          </p>
+        )}
         {puntos > 0 && (
           <p className="mt-2 text-lg font-bold tabular-nums text-domino-cream/90 drop-shadow-[0_3px_6px_rgba(0,0,0,.9)]">
             +{puntos}

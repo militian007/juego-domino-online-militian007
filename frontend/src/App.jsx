@@ -11,6 +11,7 @@ import Pase from './pages/Pase.jsx';
 import Tienda from './pages/Tienda.jsx';
 import ChangePassword from './pages/ChangePassword.jsx';
 import Game from './pages/Game.jsx';
+import Sonidos from './pages/Sonidos.jsx';
 import Version from './components/Version.jsx';
 import AvisoDeTorneo from './components/notificaciones/AvisoDeTorneo.jsx';
 import AvisoDeNivel from './components/notificaciones/AvisoDeNivel.jsx';
@@ -40,6 +41,8 @@ function App() {
       <Route path="/cambiar-clave" element={<PrivateRoute><ChangePassword /></PrivateRoute>} />
       <Route path="/game" element={<Game />} />
       <Route path="/game/:roomCode" element={<Game />} />
+      {/* Solo en desarrollo: la pagina para escuchar y elegir los sonidos. */}
+      {import.meta.env.DEV && <Route path="/sonidos" element={<Sonidos />} />}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
 

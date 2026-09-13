@@ -6862,3 +6862,96 @@ unico que se puede hacer con una foto que no deberia estar es borrarla a mano en
 Mientras el club sea gente conocida no pasa nada; el dia que entre cualquiera, esto hace falta
 antes que despues. La palanca ya existe (`FotoDePerfil.quitar`), lo que falta es el boton de
 denunciar y a quien le llega.
+
+## 153. El iman de bronce, con tres piezas para elegir (2026-09-12)
+
+El iman era un circulo azul electrico con un emoji de iman adentro, y era lo unico en la
+mesa que no era verde, madera ni oro. Raul (PrivoyTruco) lo vio en la auditoria en telefono
+y lo mando liquidar: "traeme tres opciones ya desarrolladas".
+
+Las tres son piezas generadas con IA (regla 1.1: nada dibujado a mano), sobre un fondo
+magenta liso para poder recortarlas, y guardadas a 128 px en WebP en `public/imanes/`:
+
+- **tachuela**: cabeza de tachuela de bronce martillado, la de una baranda de cuero.
+- **punto**: un punto de domino de oro pulido, media esfera con brillo.
+- **sello**: un medallon de bronce con una ficha grabada.
+
+El recorte del magenta necesito dos pasadas: la primera dejaba un filo rosado por la
+sombra tenida, y a 30 px se veia. Se erosiona la mascara 35 px sobre la imagen de 2048
+y ademas se descarta cualquier pixel con tinte magenta. Comprobado: cero pixeles rosados
+visibles en las tres.
+
+El componente es `Iman.jsx`. La pieza late despacio mientras espera (escala 1 a 1,12 en
+1,6 s) con un aro de oro que se abre, y se planta quieta, mas grande y con halo cuando la
+ficha ya esta imantada. Ademas **la silueta punteada entera recibe el toque**, no solo la
+pieza: 24 px era poco para un dedo.
+
+Mientras se decide, la pieza se elige con `?iman=tachuela|punto|sello` en la URL (queda
+guardada en el navegador). Cuando Raul y Jonathan elijan, las otras dos y el interruptor
+se van. Por defecto sale la tachuela.
+
+## 154. El cartel de cierre, como el del club (2026-09-12)
+
+El panel de fin de ronda decia "¡Gano el equipo 2!" en un 1 contra 1 y "Un jugador se
+quedo sin fichas" sin decir quien. Y era un cuadro plano. Raul pidio copiarse del cierre
+de mano de privoytruco.com.
+
+`CartelDeRonda.jsx` es ese cartel con los MISMOS valores del RoundEndCard y la
+VictoryCeremony del truco: fondo negro verdoso (#10231B a #080d0a), borde de oro con halo,
+Cinzel en el titulo (se agrego la fuente a index.html; los rotulos van en Inter porque en
+Cinzel el 1 parece una I romana y "RONDA 1" se leia "RONDA I"). Tres bloques en orden:
+
+1. Quien gano y por que, con nombres: "Gano La Comadre" / "Ganaron Yubi y La Zurda" /
+   "Ganaste" / "Ganamos", y debajo "La Comadre se quedo sin fichas" o "Se tranco y tenias
+   menos puntos".
+2. Con que fichas: las manos que quedaron y sus puntos. Los puntos del que perdio siguen
+   volando hasta el total (`PuntosQueVuelan` y `useNumeroQueSube` quedaron iguales).
+3. Como va la partida: dos plaquetas, la del que va ganando en oro, con el "+N" de esta
+   ronda y "Faltan N para 100".
+
+Regla de color del club: VERDE es lo que ganaste tu; ORO es quien va ganando y el marco;
+CREMA es lo de ellos, que se informa y no se castiga. En 1v1 las plaquetas dicen "Tu" y el
+nombre del rival; en 2v2, "Nosotros" y "Ellos".
+
+El mismo cartel sirve para el fin de la partida (`modo="partida"`): el arte de "ganaste"
+si ganaste, y si no, "Gano El Tigre" con las plaquetas finales y el cambio de ranking.
+
+Dos cosas mas que salieron de la misma captura:
+
+- El grito de fin de ronda ahora lleva el nombre debajo ("¡Domino!" y abajo "Gano La
+  Comadre" en crema, o "Ganaste" en oro). `tituloDeRonda` recibe los jugadores.
+- Al ganar por domino con la mano vacia, `canPlay` es falso y el servidor manda
+  `canDraw`: el pozo desparramado y el panel de "por que no puedes jugar" salian ENCIMA del
+  grito. Los dos se apagan cuando la ronda no esta en `playing`.
+
+El anuncio (`TopBanner`) que iba dentro del panel se quito de ahi: en la plataforma la
+publicidad es cosa de la casa, no de la mesa. El componente sigue existiendo.
+
+`RoundBreakdown.jsx` ya no lo usa nadie; se deja para que el diff sea legible y se borra
+en la limpieza siguiente.
+
+## 155. Los avisos de la mesa, con tres familias para elegir (2026-09-12)
+
+La mesa tenia dos sonidos (el clac y el clac del pozo, grabaciones CC0) y uno fabricado
+con osciladores para robar, que es justo el camino que la seccion 124 descarto. Faltaban
+los momentos que la gente espera oir: te toca, ronda ganada, ronda perdida, tranque y la
+ficha que no va.
+
+`soundEffects.js` tiene ahora `sonar(aviso)` con seis avisos y TRES familias, para que
+Raul elija oyendolas en el telefono (pagina `/sonidos`, solo en desarrollo):
+
+- **fichas**: solo las dos grabaciones, repetidas y afinadas (te toca = un clac agudo y
+  bajito; ronda ganada = cuatro clacs subiendo; perdida = dos clacs graves; tranque = tres
+  clacs iguales; no va = un golpe sordo del pozo; robar = dos golpes del pozo). Es la que
+  sigue al pie la conclusion de la 124: lo grabado suena a ficha.
+- **madera**: golpes secos de madera sintetizados, la familia del Ludo de la casa.
+- **club**: campanitas suaves de dos parciales.
+
+La eleccion se guarda en el navegador (`?sonidos=fichas|madera|club` o el boton de la
+pagina). Por defecto suena `fichas`. Cuando Raul elija, las otras dos se van.
+
+Donde suenan: "te toca" cuando el turno pasa a ser tuyo con la ronda viva; el resultado
+120 ms despues de que arranca el grito (con tranque, primero el tranque y el resultado a
+los 520 ms); "no va" al tocar una ficha apagada en tu turno (`Hand` avisa con `onNoVa`);
+"robar" reemplaza al oscilador de antes. Todo va envuelto en try/catch: el sonido jamas
+puede romper una jugada.
