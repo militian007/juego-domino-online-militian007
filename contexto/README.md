@@ -7535,3 +7535,17 @@ confeti viejo por CSS (36 papelitos) y la entrada `grito-entra` se van. Con
 
 Se grabo con puppeteer (26 cuadros con su tiempo real cada uno) para que Raul lo vea en
 movimiento antes de decidir.
+
+## 163. El marco de telefono en la PC (2026-09-12)
+
+Raul: "acomoda para que en la PC se vea como en el telefono y asi poder probar y jugar
+bien, como hicimos con el Ludo". Es la misma receta del truco y del Ludo de la casa:
+`MarcoDeTelefono.jsx` envuelve la app en `main.jsx`. En un monitor la app vive en una
+columna del ancho de un telefono, centrada (ancho = alto de la ventana por 0,58, tope 620
+px), y a los lados queda la mesa desenfocada y apagada. En el telefono manda el
+`min(100%)` y no cambia nada.
+
+La columna no lleva transform: lo que va en `position: fixed` (la ceremonia, el cartel de
+cuentas, los velos) sigue midiendose contra la ventana entera, y como todo eso va
+centrado, cae igual sobre la columna. El paño se mide con su ResizeObserver, asi que la
+camara y la mano se calculan con el ancho de la columna, como en un telefono.
