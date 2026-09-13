@@ -50,12 +50,12 @@ export function tituloDeRonda({ motivo, equipoGanador, miEquipo, players = [] })
       ? `Ganaron ${ganadores.slice(0, -1).join(', ')} y ${ganadores[ganadores.length - 1]}`
       : `Ganó ${ganadores[0] ?? 'el rival'}`;
   if (motivo === 'blocked') {
-    return { texto: gane ? '¡Tranca ganada!' : 'Tranca', gane, arte: gane ? 'tranca' : null, quien };
+    return { texto: gane ? '¡Tranca ganada!' : '¡Tranca!', gane, arte: gane ? 'tranca' : 'tranca-rival', quien };
   }
   if (motivo === 'forfeit') {
     return { texto: gane ? 'Ronda ganada' : 'Ronda perdida', gane, arte: null, quien };
   }
-  return { texto: '¡Dominó!', gane, arte: gane ? 'domino' : null, quien };
+  return { texto: '¡Dominó!', gane, arte: gane ? 'domino' : 'domino-rival', quien };
 }
 
 /**
@@ -79,7 +79,7 @@ export function Cartel({ arte, texto, gane, className = '' }) {
         src={`/carteles/${arte}.${formato}`}
         alt={texto}
         onError={() => (formato === 'webp' ? setFormato('png') : setSinArte(true))}
-        className={`mx-auto h-auto w-[min(86vw,420px)] drop-shadow-[0_8px_20px_rgba(0,0,0,.85)] ${className}`}
+        className={`mx-auto h-auto ${gane ? 'w-[min(86vw,420px)]' : 'w-[min(72vw,340px)]'} drop-shadow-[0_8px_20px_rgba(0,0,0,.85)] ${className}`}
       />
     );
   }

@@ -322,7 +322,7 @@ export default function CartelDeRonda({
                               ) : (
                                 <div className="flex flex-wrap gap-1">
                                   {m.tiles.map((t, i) => (
-                                    <Tile key={`${m.id}-${i}`} tile={t} orientation="horizontal" size="sm" />
+                                    <Tile key={`${m.id}-${i}`} tile={t} orientation="vertical" ancho={30} />
                                   ))}
                                 </div>
                               )}

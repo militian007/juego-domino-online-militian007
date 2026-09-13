@@ -7479,3 +7479,24 @@ imantada la silueta se planta en oro solido. Se grabaron los tres en movimiento 
 puppeteer (16 cuadros a 110 ms) para que Raul decida viendolos, no leyendolos.
 
 Por defecto queda `respira`. Cuando Raul elija, los otros dos y el interruptor se van.
+
+## 160. El cierre, segunda vuelta: fichas paradas y el cartel del rival (2026-09-12)
+
+Raul sobre la seccion 154: "el cierre me gusta, pero las fichas vamos a ponerlas en
+vertical", y del grito: le encanto el "¡DOMINÓ!" pintado de cuando ganas, y "Gano La
+Comadre" en letra pelada cuando pierdes no le gusto; quiere uno parecido.
+
+Tres cosas:
+
+1. En "Fichas que quedaron" las fichas van paradas (`orientation="vertical"`, 30 px de
+   ancho). Nueve fichas caben en dos filas.
+2. El rival tiene su cartel pintado: `domino-rival` y `tranca-rival`, generados con IA
+   usando el `domino.png` de Jonathan como referencia exacta de la letra, pero en plata y
+   acero en vez de oro. Recortados a 220 px de alto como los otros (seccion 138), en PNG
+   y WebP. Sale un poco mas chico que el de oro (72 % del ancho contra 86 %): la fiesta es
+   del que gano. La seccion 130 decia que los de perder se quedaban en tipografia a
+   proposito; Raul lo decidio distinto y aqui manda el.
+3. Bug visto en la captura de Raul: al ganar por domino con la mano vacia, el panel de
+   "por que no puedes jugar" y el aviso de robar seguian saliendo debajo del grito
+   (`canPlay` falso con la ronda cerrada). Los tres avisos de la mano se apagan cuando la
+   ronda no esta en `playing`.

@@ -1687,13 +1687,13 @@ export default function Game() {
 
                 </div>
 
-                {myTurn && gameState.canPlay && !draggedTile && (
+                {myTurn && gameState.canPlay && !draggedTile && gameState.status === 'playing' && (
                   <p className="text-center text-[11px] sm:text-xs font-medium italic text-domino-cream-dim mt-2">
                     Arrastra una ficha válida a la mesa
                   </p>
                 )}
 
-                {myTurn && !gameState.canPlay && (
+                {myTurn && !gameState.canPlay && gameState.status === 'playing' && (
                   <div className="mt-2 max-h-24 overflow-y-auto rounded-lg border border-slate-700/60 bg-black/25 p-2 text-left">
                     <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-domino-cream">
                       Por qué no puedes jugar
@@ -1720,7 +1720,7 @@ export default function Game() {
 
                 {/* El pozo ya no vive aca abajo: es el monton del medio de la
                     mesa. Aca solo queda el aviso de que hay que robar. */}
-                {myTurn && gameState.canDraw && (
+                {myTurn && gameState.canDraw && gameState.status === 'playing' && (
                   <p className="mt-2 text-center text-[11px] italic leading-tight text-domino-accent">
                     No puedes jugar. Levanta una ficha del montón.
                   </p>
