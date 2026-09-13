@@ -7549,3 +7549,28 @@ La columna no lleva transform: lo que va en `position: fixed` (la ceremonia, el 
 cuentas, los velos) sigue midiendose contra la ventana entera, y como todo eso va
 centrado, cae igual sobre la columna. El paño se mide con su ResizeObserver, asi que la
 camara y la mano se calculan con el ancho de la columna, como en un telefono.
+
+## 164. La camara mas quieta, menos zoom y un solo sitio por punta (2026-09-12)
+
+Raul, jugando en la PC: "la primera ficha se juega y empieza muy grande, es mucho zoom; y
+no me gusta como se van acomodando las fichas desde que las colocas". Tres cambios:
+
+1. **Menos zoom.** El tope de la ficha baja de 0,22 a 0,15 del lado corto del paño: en un
+   telefono de 375, la primera ficha mide 47 px de alto en vez de 69. Sigue siendo mas
+   grande que las 35 de la seccion 88 y las dos puntas siguen a la vista.
+2. **La camara se queda quieta mientras pueda.** Antes se reencuadraba en cada jugada,
+   aunque fuera un poco, y esa correccion es lo que se sentia como que las fichas "se
+   acomodaban" despues de puestas. Ahora guarda el encuadre y solo lo cambia cuando lo que
+   hay que mostrar (la cadena mas dos celdas por punta) ya no entra en lo que se ve, o
+   cuando arranca una mano nueva. Y cuando se mueve, se desliza en 650 ms en vez de 420.
+3. **Un solo sitio por punta.** Antes se ofrecian TODAS las casillas posibles (hasta ocho
+   imanes) y la cadena salia como cada uno la fuera doblando. Ahora se ofrece por punta
+   la casilla que el motor considera mas derecha (`straightestPlacement`, la misma regla
+   que usa el bot y la que el motor aplica cuando no llega colocacion), y para la primera
+   ficha, una sola. Arrastrar sigue igual: se imanta a esos sitios.
+
+Lo que se queda: la colocacion libre del motor (la rejilla de 16, `placementsFor`, la
+pasada de rescate) no se toco; solo se ofrecen menos opciones al dedo. La medicion de
+fichas trabadas de la seccion 81 sigue valiendo porque el motor valida igual.
+
+Se grabo la cadena armandose, antes y despues, cuadro por jugada, para que Raul lo vea.

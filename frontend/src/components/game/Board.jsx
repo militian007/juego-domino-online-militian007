@@ -5,6 +5,7 @@ import Iman from './Iman.jsx';
 import {
   DEFAULT_LAYOUT,
   placementsFor,
+  straightestPlacement,
   computeBoardOffsets,
   anchorOffsetFor
 } from '@privoytruco/domino-engine';
@@ -95,7 +96,7 @@ const ZOOM_FICHAS = 1.30;
 // En un telefono de 375 el lado corto son 315 px:
 //   maximo 0,22 -> ficha de 69 px de alto   (Domino Legends: 78)
 //   minimo 0,035 -> ficha de 11 px de alto  (Domino Legends: 13)
-const ALTO_MAXIMO_FICHA = 0.22;
+const ALTO_MAXIMO_FICHA = 0.15;
 const ALTO_MINIMO_FICHA = 0.035;
 
 // Cuanto sitio se reserva MAS ALLA DE LAS PUNTAS al encuadrar.
@@ -182,17 +183,19 @@ export default function Board({
   const ghostPlacements = useMemo(() => {
     if (!myTurn || !activeTileForPlacements) return [];
     
+    // Un solo sitio por punta: el que el motor considera mas derecho (§164).
+    // Antes se ofrecian todas las casillas posibles y la cadena salia como
+    // cada uno la fuera doblando; Raul: "no me gusta como se van acomodando".
     if (!board || board.length === 0) {
-      return getValidPlacementsForTile(board, activeTileForPlacements, 'first');
+      return getValidPlacementsForTile(board, activeTileForPlacements, 'first').slice(0, 1);
     }
 
     const placements = [];
-    const leftPlacements = getValidPlacementsForTile(board, activeTileForPlacements, 'left');
-    const rightPlacements = getValidPlacementsForTile(board, activeTileForPlacements, 'right');
-    
-    placements.push(...leftPlacements);
-    placements.push(...rightPlacements);
-    
+    for (const side of ['left', 'right']) {
+      const opciones = getValidPlacementsForTile(board, activeTileForPlacements, side);
+      const mejor = straightestPlacement(board, opciones, side);
+      if (mejor) placements.push(mejor);
+    }
     return placements;
   }, [board, activeTileForPlacements, myTurn]);
 
@@ -308,7 +311,7 @@ export default function Board({
   const centroCadenaX = encuadre ? (encuadre.x1 + encuadre.x2) / 2 : GRID_SIZE / 2;
   const centroCadenaY = encuadre ? (encuadre.y1 + encuadre.y2) / 2 : GRID_SIZE / 2;
 
-  const escala = useMemo(() => {
+  const escalaIdeal = useMemo(() => {
     if (anchoUtil <= 0 || altoUtil <= 0) return 1;
 
     const menorLado = Math.min(anchoUtil, altoUtil);
@@ -326,14 +329,38 @@ export default function Board({
     return clamp(cabe, minima, maxima);
   }, [anchoUtil, altoUtil, cajaCadena, encuadre]);
 
+  // La camara se queda quieta mientras pueda (§164). Si lo que hay que mostrar
+  // todavia entra en lo que ya se ve, no se mueve ni se acerca: solo se
+  // reencuadra cuando la cadena se sale, o cuando arranca una mano nueva. Sin
+  // esto cada ficha corria la mesa un poco, y se sentia que las fichas "se
+  // acomodaban" despues de puestas.
+  const vistaRef = useRef(null);
+  let vista;
+  if (!cajaCadena || anchoUtil <= 0 || altoUtil <= 0) {
+    vistaRef.current = null;
+    vista = { escala: escalaIdeal, cx: centroCadenaX, cy: centroCadenaY };
+  } else {
+    const previa = vistaRef.current;
+    let sirve = false;
+    if (previa) {
+      const visX = anchoUtil / (CELL_SIZE * previa.escala);
+      const visY = altoUtil / (CELL_SIZE * previa.escala);
+      sirve =
+        encuadre.x1 >= previa.cx - visX / 2 &&
+        encuadre.x2 <= previa.cx + visX / 2 &&
+        encuadre.y1 >= previa.cy - visY / 2 &&
+        encuadre.y2 <= previa.cy + visY / 2;
+    }
+    vista = sirve ? previa : { escala: escalaIdeal, cx: centroCadenaX, cy: centroCadenaY };
+    vistaRef.current = vista;
+  }
+  const escala = vista.escala;
+
   const celdasVisiblesX = anchoUtil > 0 ? anchoUtil / (CELL_SIZE * escala) : LADO_CELDAS;
   const celdasVisiblesY = altoUtil > 0 ? altoUtil / (CELL_SIZE * escala) : LADO_CELDAS;
 
-  // Con el encuadre siguiendo a la cadena, la camara se centra en la CADENA y no
-  // en el centro de la rejilla. Antes se centraba en la rejilla porque la vista
-  // era fija y la cadena siempre entraba; ahora la cadena manda.
-  const centroX = centroCadenaX;
-  const centroY = centroCadenaY;
+  const centroX = vista.cx;
+  const centroY = vista.cy;
   const origenX = centroX - celdasVisiblesX / 2;
   const origenY = centroY - celdasVisiblesY / 2;
   const desplazamientoX = margenes.izquierda - origenX * CELL_SIZE * escala;
