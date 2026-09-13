@@ -7500,3 +7500,9 @@ Tres cosas:
    "por que no puedes jugar" y el aviso de robar seguian saliendo debajo del grito
    (`canPlay` falso con la ronda cerrada). Los tres avisos de la mano se apagan cuando la
    ronda no esta en `playing`.
+
+## 161. Decidido: el iman es la silueta que respira (2026-09-12)
+
+Raul vio los tres efectos de la seccion 159 en movimiento y eligio el primero: la silueta
+punteada de la casilla se enciende y se apaga despacio, en oro. Se van la ficha fantasma,
+la onda y el interruptor `?iman=`. `Iman.jsx` queda en veinte lineas.

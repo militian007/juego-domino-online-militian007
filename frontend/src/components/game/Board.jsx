@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useMemo, useState, useCallback } from 'react';
 import { useLupa } from '../../hooks/useLupa';
 import Tile from './Tile.jsx';
-import Iman, { imanElegido } from './Iman.jsx';
+import Iman from './Iman.jsx';
 import {
   DEFAULT_LAYOUT,
   placementsFor,
@@ -438,10 +438,7 @@ export default function Board({
           {/* La casilla entera es el iman: un efecto sobre la silueta, sin
               ninguna pieza encima del paño (ver Iman.jsx). */}
           <Iman
-            efecto={imanElegido()}
             activo={Boolean(isSnappedActive)}
-            tile={displayTile}
-            orientation={opt.orientation}
             onClick={(e) => {
               e.stopPropagation();
               onPlayTile && onPlayTile(opt.side, opt);
