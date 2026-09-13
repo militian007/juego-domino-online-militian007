@@ -27,9 +27,9 @@ const MODES = MODE_CONFIG;
  * entera corra en segundos.
  */
 const BOT_THINK_MS = {
-  opening: [1500, 2400],
-  forced: [500, 800],
-  choice: [1100, 2100]
+  opening: [1000, 1300],
+  forced: [400, 600],
+  choice: [850, 1150]
 };
 const tope = Number(process.env.BOT_DELAY_MS);
 export const BOT_DELAY_MS = process.env.BOT_DELAY_MS != null && Number.isFinite(tope) ? tope : null;

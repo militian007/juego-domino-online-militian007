@@ -7449,3 +7449,12 @@ Lo que cambia: la placa del rival mide 52 px en vez de 58, y el margen lateral p
 (con las esquinas eran 315). Con cuatro fichas en la mesa, la ficha midio 31,3 px
 en la partida de prueba; la forma de la cadena cambia en cada partida, asi que ese numero
 es solo una referencia.
+
+## 158. El bot piensa un segundo (2026-09-12)
+
+Raul probo la seccion 152 y pidio menos: "bajalo a 1 segundo". Los rangos quedan asi:
+con varias jugadas, entre 850 y 1150 ms; con una sola o solo pasar, entre 400 y 600 ms;
+la primera ficha de la ronda, entre 1000 y 1300 ms. Sigue variando cada vez para que no
+suene a metronomo, y `BOT_DELAY_MS` sigue siendo el tope para las pruebas.
+
+En 2 vs 2 con tres bots la vuelta queda alrededor de tres segundos.
