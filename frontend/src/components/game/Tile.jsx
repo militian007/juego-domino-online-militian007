@@ -1,4 +1,5 @@
-import { useCarpetaDeFichas, VERSION_FICHAS } from './MesaTheme.jsx';
+import { useState } from 'react';
+import { useCarpetaDeFichas, rutaDeFicha } from './MesaTheme.jsx';
 
 export default function Tile({
   tile,
@@ -24,12 +25,13 @@ export default function Tile({
   // de un `if`, o React se pierde con el orden entre renders.
   const carpeta = useCarpetaDeFichas();
 
+  // Se pide en WebP y, si el navegador no lo carga, se cae al PNG una sola vez.
+  const [formato, setFormato] = useState('webp');
+
   if (!tile) return null;
   const [a, b] = tile;
 
-  const min = Math.min(a, b);
-  const max = Math.max(a, b);
-  const imgSrc = `${carpeta}/tile_${min}_${max}.png?v=${VERSION_FICHAS}`;
+  const imgSrc = rutaDeFicha(carpeta, a, b, formato);
 
   const finalSize = size === 'md' && small ? 'sm' : size;
 
@@ -122,6 +124,7 @@ export default function Tile({
         src={imgSrc}
         alt={`tile [${a}|${b}]`}
         style={imgStyle}
+        onError={() => setFormato('png')}
         className="max-w-none"
       />
       <span className="tile-sheen" aria-hidden="true" />

@@ -10,6 +10,7 @@
     "icono": "node scripts/generar-icono.mjs",
     "iconos-atajos": "node scripts/generar-iconos-atajos.mjs",
     "fichas": "node scripts/generar-fichas.mjs",
+    "webp": "python scripts/generar-webp.py",
     "stickers": "node scripts/generar-stickers.mjs",
     "carteles": "node scripts/generar-carteles.mjs",
     "panos": "node scripts/generar-panos.mjs"

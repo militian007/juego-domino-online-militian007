@@ -6862,3 +6862,110 @@ unico que se puede hacer con una foto que no deberia estar es borrarla a mano en
 Mientras el club sea gente conocida no pasa nada; el dia que entre cualquiera, esto hace falta
 antes que despues. La palanca ya existe (`FotoDePerfil.quitar`), lo que falta es el boton de
 denunciar y a quien le llega.
+
+---
+
+## 151. Las fichas en WebP, precargadas y en caché (2026-09-12)
+
+### Que habia
+
+Cada pinta de fichas son 28 PNG en `frontend/public/tiles*/`, de 100 a 200 KB cada uno:
+clasicas 3,9 MB, hueso 2,9 MB (la de fabrica), marmol 3,5, oro 4,6, jade 4,9, madera 5,5.
+24,8 MB en total. Los carteles de fin de ronda (`frontend/public/carteles/*.png`) tambien
+eran PNG, de unos 210 KB cada uno.
+
+Se bajaban una por una, la primera vez que cada ficha aparecia en la mesa: no habia precarga
+(`new Image` no estaba en ningun lado) y el service worker guardaba solo `/` (§98). Medido en
+la primera mano contra el bot, en un telefono de 375 y con el navegador limpio: **1,43 MB de
+fichas** para ver siete fichas en la mano. En una red 3G rapida emulada (1,6 Mb/s, 150 ms de
+ida) la mano tardaba **11,3 s** en verse completa. Y la segunda mesa volvia a pedir las quince
+al servidor, aunque fuera solo para que le contestara "no cambio" (304).
+
+### Que se hizo
+
+1. **Un WebP al lado de cada PNG.** Con Pillow, calidad 85, `method=6`, con el canal alfa tal
+   cual (`frontend/scripts/generar-webp.py`, `npm run webp`). **Los PNG no se tocaron**: los
+   recorto Jonathan a mano, siguen en su sitio y son el respaldo. Bytes por carpeta, PNG →
+   WebP:
+
+   | Carpeta | PNG | WebP | Queda |
+   |---|---:|---:|---:|
+   | tiles (clasicas) | 3.903.223 | 423.208 | 11% |
+   | tiles-hueso | 2.945.515 | 125.826 | 4% |
+   | tiles-marmol | 3.473.687 | 180.122 | 5% |
+   | tiles-oro | 4.555.152 | 439.018 | 10% |
+   | tiles-jade | 4.880.114 | 239.920 | 5% |
+   | tiles-madera | 5.500.813 | 567.666 | 10% |
+   | carteles | 655.301 | 106.904 | 16% |
+   | **Total** | **25.913.805** | **2.082.664** | **8%** |
+
+   Comprobado a ojo, PNG y WebP lado a lado y con una esquina ampliada tres veces: los
+   puntos, el relieve y la filigrana del marco estan iguales. La transparencia es identica
+   pixel por pixel, y en los pixeles visibles la diferencia media con el PNG es de 1 a 3
+   sobre 255 en las fichas (ningun pixel pasa de 33) y de 3 en los carteles.
+
+2. **`Tile` pide `.webp` y cae al `.png` una sola vez** si el navegador no lo carga
+   (`onError`). Lo mismo en `CargandoFichas`, en las muestras del selector de pinta y en el
+   `Cartel` de fin de ronda, que ya caia al texto y ahora va WebP → PNG → texto. La ruta se
+   arma en un solo sitio, `rutaDeFicha` en `MesaTheme.jsx`, y `VERSION_FICHAS` subio a 6
+   para que nadie mezcle versiones.
+
+3. **Precarga.** Al entrar a la mesa (`Game.jsx`, junto a `prepararSonidos`),
+   `precargarPinta(carpeta)` pide las 28 fichas de la pinta activa con `new Image()`, sin
+   bloquear nada: el navegador las baja por detras. Si el jugador cambia de pinta, se
+   precarga la nueva. Cada pinta se pide una vez por sesion.
+
+4. **Cache de assets en el service worker.** Una cache aparte, `domino-assets-v1`,
+   cache-first para `/tiles*/`, `/carteles/`, `/sonidos/`, `/avatares/` e `/iconos/`; solo
+   guarda respuestas 200 del mismo origen, y al activarse borra las caches de versiones
+   anteriores. **La pagina y el JS siguen exactamente como estaban (§98):** eso no se guarda,
+   a proposito, para que nadie se quede con una version vieja del juego. Las imagenes y los
+   sonidos si se pueden guardar porque no cambian con cada despliegue, y cuando cambian,
+   cambian de direccion (`?v=N`).
+
+### Por que
+
+Una ficha de domino no necesita 140 KB. El PNG guarda cada pixel sin perder nada, que es
+lo que uno quiere para editar, pero no para servir: el WebP con perdida a calidad 85 deja el
+dibujo indistinguible a tamaño real (una ficha en la mesa mide 64x32) con un 4% a un 11% del
+peso. Y con las fichas pesando 5 a 20 KB, pedir las 28 de golpe al entrar ya no cuesta nada
+(126 KB la pinta de fabrica), asi que la mano nunca muestra huecos esperando un dibujo. La
+cache del service worker es el tercer tramo: la segunda mesa no pide ni una ficha.
+
+### Medidas
+
+Puppeteer, mesa 1 vs bot, telefono de 375, con el build publicado y `vite preview`. No se
+midio con `vite dev` porque el service worker se registra solo en la version publicada (§98),
+y sin el no hay cache que medir. Lo que "salio a la red" se leyo desde el propio worker
+(sesion CDP sobre el), porque la pagina ve todo como "lo dio el service worker", lo haya
+bajado o no.
+
+| | Antes | Despues |
+|---|---|---|
+| Primera entrada: fichas que salieron a la red | 12 PNG (mas 2 revalidaciones) | 35 WebP: las 7 de la mano, las 5 de la espera, el logo y las 28 de la precarga |
+| Primera entrada: bytes de fichas por la red | 1.428.248 | 210.290 (15%) |
+| Segunda entrada: peticiones de fichas a la red | 15 (14 revalidaciones 304 y 1 ficha nueva de 104 KB) | **0** (las 35 salen de `domino-assets-v1`) |
+| 3G rapida emulada: mano completa, primera entrada | 11,3 s | 3,0 s |
+| 3G rapida emulada: mano completa, segunda entrada | 1,4 s | 0,7 s |
+
+En local sin freno las dos versiones tardan lo mismo (unos 200 ms): la ganancia esta en la
+red, que es donde estan los jugadores.
+
+### Lo que hay que saber
+
+- **Si se rehace una pinta o un cartel, hay que correr `npm run webp`** ademas de subir
+  `VERSION_FICHAS`. El juego pide primero el WebP: si queda uno viejo al lado del PNG nuevo,
+  se ve el dibujo viejo.
+- Lo que se pide SIN `?v=` desde esas carpetas (el logo, las muestras del pase y de la
+  tienda, los iconos, los sonidos) se queda en la cache hasta que cambie el nombre de
+  `CACHE_ASSETS` en `sw.js`. Si cambia uno de esos sin cambiar de nombre de archivo, subir a
+  `domino-assets-v2`.
+- Quedaron en PNG, fuera de la mesa: el logo (`Logo.jsx`, dos fichas clasicas de 140 KB en
+  cada pagina), las muestras del pase (`Pase.jsx`) y de la tienda (`Tienda.jsx`). Son un
+  cambio de una linea cada uno, cuando se toque esos archivos.
+- La espera de la mesa (`CargandoFichas`) pinta cinco fichas clasicas aunque la pinta
+  elegida sea otra, porque se dibuja fuera del `ContextoFichas.Provider`. Antes eran 700 KB de
+  mas; ahora son 75 KB. Moverla adentro del proveedor es cosa del armado de `Game.jsx`.
+- `frontend/public/banner-berkana.png` (7,1 MB) y `banner-publicidad.png` (6,3 MB) no los
+  pide nadie: el codigo pide los `.webp`. Van en cada build. Se quedan hasta que Jonathan
+  decida.

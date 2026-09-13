@@ -141,10 +141,49 @@ export const ContextoFichas = createContext('/tiles');
  *     Al jade le mordia el filo palido (saltos de hasta 58 px) y a la madera le
  *     borraba el 52% de la veta, que salia como madera lavada. Ademas el jade
  *     lleva ahora el punto dorado de la pinta de oro: el suyo era un plato.
+ * 6 = las fichas pasan a pedirse en WebP (§151). El dibujo es el mismo, pero
+ *     el service worker ahora guarda las fichas, y el numero nuevo evita que
+ *     alguien se quede con una mezcla de versiones.
  */
-export const VERSION_FICHAS = 5;
+export const VERSION_FICHAS = 6;
 
 export const useCarpetaDeFichas = () => useContext(ContextoFichas);
+
+/**
+ * La direccion de una ficha.
+ *
+ * Se pide en WebP: pesa entre un 4% y un 11% de lo que pesa el PNG con el mismo
+ * dibujo (§151). Los PNG siguen en la carpeta, al lado, y quien pinta la
+ * ficha cae a ellos una sola vez si el navegador no carga el WebP.
+ */
+export function rutaDeFicha(carpeta, a, b, formato = 'webp') {
+  const min = Math.min(a, b);
+  const max = Math.max(a, b);
+  return `${carpeta}/tile_${min}_${max}.${formato}?v=${VERSION_FICHAS}`;
+}
+
+const pintasPrecargadas = new Set();
+
+/**
+ * Pide las 28 fichas de una pinta de una vez, sin esperar a que salgan en la
+ * mesa. Antes cada ficha se bajaba la primera vez que aparecia, y en la primera
+ * mano se veian huecos donde todavia no habia llegado el dibujo.
+ *
+ * No bloquea nada: el navegador las baja por detras y las deja en su cache, y
+ * el service worker las guarda para las mesas siguientes. Cada pinta se pide
+ * una sola vez por sesion.
+ */
+export function precargarPinta(carpeta) {
+  if (typeof Image === 'undefined' || pintasPrecargadas.has(carpeta)) return;
+  pintasPrecargadas.add(carpeta);
+  for (let a = 0; a <= 6; a += 1) {
+    for (let b = a; b <= 6; b += 1) {
+      const imagen = new Image();
+      imagen.decoding = 'async';
+      imagen.src = rutaDeFicha(carpeta, a, b);
+    }
+  }
+}
 
 /**
  * Con que mesa empieza el que nunca eligio nada.
@@ -266,6 +305,7 @@ function Muestra({ clase, activo, titulo, onClick, alto = 'h-9', abierta = true 
  */
 export default function MesaThemePicker({ tema, setTema, enMenu = false, puedeUsar = () => true }) {
   const [abierto, setAbierto] = useState(false);
+  const [formatoMuestra, setFormatoMuestra] = useState('webp');
 
   const cuerpo = (
     <>
@@ -309,13 +349,17 @@ export default function MesaThemePicker({ tema, setTema, enMenu = false, puedeUs
                   igual, apagada: hay que ver lo que uno se esta perdiendo, si
                   no el premio no motiva a nadie. */}
               <span className="relative block h-6 w-12 rounded-sm bg-black/40">
-                {/* Si la pinta todavia no tiene sus imagenes, la muestra se
-                    esconde sola y queda el candado sobre el hueco oscuro. Sin
-                    esto se veria el icono de imagen rota. */}
+                {/* Si el navegador no carga el WebP se prueba el PNG, y si la
+                    pinta todavia no tiene sus imagenes, la muestra se esconde
+                    sola y queda el candado sobre el hueco oscuro. Sin esto se
+                    veria el icono de imagen rota. */}
                 <img
-                  src={`${f.carpeta}/tile_6_6.png`}
+                  src={rutaDeFicha(f.carpeta, 6, 6, formatoMuestra)}
                   alt=""
-                  onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+                  onError={(e) => {
+                    if (formatoMuestra === 'webp') setFormatoMuestra('png');
+                    else e.currentTarget.style.visibility = 'hidden';
+                  }}
                   className={`h-6 w-12 rounded-sm ${abierta ? '' : 'opacity-30 grayscale'}`}
                 />
                 {!abierta && (

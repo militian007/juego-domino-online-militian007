@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
 import Board from '../components/game/Board.jsx';
-import MesaThemePicker, { useMesaTheme, ContextoFichas } from '../components/game/MesaTheme.jsx';
+import MesaThemePicker, { useMesaTheme, ContextoFichas, precargarPinta } from '../components/game/MesaTheme.jsx';
 import PozoEnLaMesa from '../components/game/PozoEnLaMesa.jsx';
 import RoundBreakdown from '../components/game/RoundBreakdown.jsx';
 import { Marcador, Jugador, Mesa } from '../components/game/Hud.jsx';
@@ -660,6 +660,9 @@ export default function Game() {
   useEffect(() => {
     prepararSonidos();
   }, []);
+
+  // Las 28 fichas de la pinta puesta se piden al entrar, no cuando van saliendo (§151).
+  useEffect(() => { precargarPinta(carpetaFichas); }, [carpetaFichas]);
 
   // Los consejos que dice el Panita (§123, §126). Se pueden apagar desde la
   // solapa de la mesa: a quien ya sabe jugar, uno cada ronda le sobra.
