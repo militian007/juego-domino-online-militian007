@@ -97,7 +97,7 @@ function consejosDelCambio(antes, ahora, { myTurn, miId }) {
   if (mesa === 0 && esPrimeraVez()) {
     salida.push({
       clave: 'primera-vez',
-      texto: 'Toca una ficha tuya y después el imán azul para ponerla'
+      texto: 'Toca una ficha tuya y después el imán para ponerla'
     });
     anotarQueYaJugo();
   }
