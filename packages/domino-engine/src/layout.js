@@ -649,6 +649,38 @@ export function preferirCompactas(board, placements, ventana = VENTANA_TELEFONO)
   return caben.length > 0 && caben.length < placements.length ? caben : placements;
 }
 
+/**
+ * Se queda con las colocaciones que no dejan la cadena PEGADA a si misma (§174).
+ *
+ * Raul, con la culebra bajando en columna al lado de la otra columna: "mira
+ * como se pego eso". El motor no deja rozar en celdas, pero el dibujo lleva el
+ * corrimiento de los dobles (media celda por cada uno) y dos fichas a una celda
+ * de distancia pueden quedar dibujadas a media. Aqui se mira el dibujo: si hay
+ * casillas que quedan a una celda entera de toda ficha que no sea la punta, se
+ * descartan las que quedan mas cerca. Si ninguna se salva, se dejan todas.
+ */
+export function preferirDespegadas(board, placements, side, layout = DEFAULT_LAYOUT) {
+  if (!board || board.length < 2 || !placements || placements.length < 2) return placements;
+  if (side !== 'left' && side !== 'right') return placements;
+  const cell = layout.cell;
+  const offsets = computeBoardOffsets(board, layout);
+  const rects = board.map((t, i) => rectOf(t, offsets[i], cell));
+  const anchorIdx = side === 'left' ? 0 : board.length - 1;
+  const despegadas = placements.filter((p) => {
+    const off = p.tile ? joinOffset(board[anchorIdx], p, offsets[anchorIdx], cell) : offsets[anchorIdx];
+    const r = rectOf(p, off, cell);
+    for (let i = 0; i < board.length; i += 1) {
+      if (i === anchorIdx) continue;
+      const a = rects[i];
+      const dx = Math.max(a.left - (r.left + r.width), r.left - (a.left + a.width), 0);
+      const dy = Math.max(a.top - (r.top + r.height), r.top - (a.top + a.height), 0);
+      if (dx < cell - 1 && dy < cell - 1) return false;
+    }
+    return true;
+  });
+  return despegadas.length > 0 && despegadas.length < placements.length ? despegadas : placements;
+}
+
 export function straightestPlacement(board, placements, side, layout = DEFAULT_LAYOUT) {
   if (!placements || placements.length === 0) return null;
   // La primera ficha se pone para que la cadena SALGA A LO LARGO de la
@@ -705,6 +737,8 @@ export function straightestPlacement(board, placements, side, layout = DEFAULT_L
   //    mas (ver la seccion 170, con los numeros).
   // 2. Seguir derecho, entre las que quedan: nada de escaleras.
   placements = preferirCompactas(board, placements);
+  // 1b. No pegarse a la propia cadena en el dibujo (§174).
+  placements = preferirDespegadas(board, placements, side, layout);
   const rectasCompactas = placements.filter((p) => rectas.includes(p));
   if (rectasCompactas.length > 0) placements = rectasCompactas;
 

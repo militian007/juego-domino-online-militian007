@@ -7826,3 +7826,41 @@ De paso Raul vio la culebra "pegada": la punta izquierda bajo en columna al lado
 derecha, con media celda dibujada de por medio. El motor no deja rozar en celdas, pero el
 corrimiento de los dobles (media celda por cada uno) acerca el dibujo. Queda anotado, no se
 toco.
+
+## 174. La culebra pegada a si misma: lo que se pudo, y lo que cuesta lo demas (2026-09-13)
+
+Raul, con la punta izquierda bajando en columna al lado de la derecha: "mira como se pego eso".
+En celdas habia una columna libre entre las dos (x = 6 y x = 8); en el dibujo, el corrimiento de
+los dobles (media celda por cada uno) las dejo a media celda.
+
+**La medida.** `tools/medir-pegadas.mjs`: turnos en los que dos fichas que no son vecinas en
+la cadena quedan dibujadas a menos de una celda. Con la regla de la 170: 27,7 % de los turnos
+en 1v1 (55 % de las rondas), 39,9 % en 2v2. Casi siempre es la cadena que llega a la pared de
+la rejilla, planta un doble de canto (rescate) y vuelve en paralelo.
+
+**Lo que se hizo: `preferirDespegadas`**, en la misma regla compartida, despues de no salirse de
+la ventana y antes de seguir derecho: si hay casillas que quedan a una celda entera en el
+dibujo de toda ficha que no sea la punta, se descartan las que quedan mas cerca; si ninguna
+se salva, se dejan todas. Cuesta nada (85/85, veto total 0,154 % igual, zoom igual) y quita
+poco: 27,7 % -> 27,5 % en 1v1, 39,9 % -> 38,9 % en 2v2. Se queda porque es gratis, pero no
+resuelve: cuando la cadena vuelve de la pared no hay casilla que no quede cerca.
+
+**Lo que se probo y no se dejo**, medido:
+
+| variante                                   | pegada 1v1 | veto total | camara alejada 1v1 | pruebas |
+|--------------------------------------------|------------|------------|--------------------|---------|
+| la 170 (base)                              | 27,7 %     | 0,154 %    | 26,9 %             | 85/85   |
+| + despegadas (esta)                        | 27,5 %     | 0,154 %    | 27,0 %             | 85/85   |
+| + doblar una ficha antes de la pared       | 26,5 %     | 0,179 %    | 23,5 %             | 80/85   |
+| rozar en el dibujo prohibido en el motor   | 20,2 %     | 0,163 %    | 27,6 %             | 80/85   |
+| rejilla de 20 x 20 (era 16, seccion 88)    | 18,9 %     | 0,023 %    | 37,3 %             | 81/85   |
+
+"Doblar antes de la pared" mueve poco y tumba el fixture de destranque y la prueba del bot
+dificil (58/100, borde del 60 %). Prohibir rozar en el dibujo tumba la prueba de los dobles
+cruzados y deja el 20 % igual, porque lo que queda viene del rescate. La rejilla de 20 es la
+que mas destraba (siete veces menos vetos) y despega mas, pero la camara se aleja mas: la
+cadena se estira antes de doblar. Jonathan eligio 16 en la seccion 88 cuando la camara
+dibujaba la rejilla entera; hoy la camara encuadra la cadena, asi que el tamaño de la rejilla
+ya no manda en el tamaño de la ficha. Decision para Raul (y para el informe a Jonathan):
+rejilla 16 con la cadena mas apretada, o 20 con la cadena mas suelta y siete veces menos
+destranques.
