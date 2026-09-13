@@ -73,9 +73,11 @@ export default function Tile({
     angle = a <= b ? 90 : 270;
   }
 
-  // Highlight/glow effect for the newest placed tile
+  // La ultima ficha puesta solo lleva un brillo suave (§166). Antes iba un 5 %
+  // mas grande, con aro y resplandor fuerte, y se veia levantada, a otra altura
+  // que sus vecinas; Raul: "no se ve parejo". Misma medida para todas.
   const newestShadow = isNewest
-    ? 'shadow-[0_0_18px_rgba(212,175,55,0.95)] ring-2 ring-domino-accent/60 z-10 scale-105'
+    ? 'shadow-[0_0_14px_rgba(212,175,55,0.7)] z-10'
     : '';
 
   const reliefClass = onClick ? 'tile-hand' : 'tile-3d';

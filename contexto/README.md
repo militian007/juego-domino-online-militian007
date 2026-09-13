@@ -7613,3 +7613,14 @@ Nota de medicion: el "1 s de la primera jugada" que se anoto en la auditoria no 
 juego, era del propio guion de capturas, que sacaba dos fotos antes de mirar si la
 jugada se habia confirmado. Con la rafaga de veinte fotos "tardaba" 5,8 s. La jugada
 se confirma en 10 ms desde la primera.
+
+## 166. La ultima ficha, pareja con las demas (2026-09-13)
+
+Raul, despues de la 165: "me encanta, pero todavia hay algo: cuando entra una nueva se ve
+rara, como a otra altura, no se ve parejo". Se miro con zoom, ficha por ficha: la rejilla
+esta bien, los dobles centrados y las esquinas donde toca. Lo que no estaba parejo era la
+ULTIMA ficha: se dibujaba un 5 % mas grande (`scale-105`), con un aro de dos pixeles y un
+resplandor fuerte, por encima de las vecinas. Eso se lee como una ficha levantada.
+
+Ahora todas miden lo mismo. La ultima lleva solo un brillo dorado suave, para saber cual
+fue, y el asiento de la 165 baja de 1,09 a 1,04: un toque, no un salto.
