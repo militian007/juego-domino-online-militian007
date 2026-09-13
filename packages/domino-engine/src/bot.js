@@ -1,7 +1,7 @@
 import { createRng } from './rng.js';
 import { generateSet, tileKey, pips, isDouble } from './tiles.js';
 
-import { espacioEnLaPunta, aperturaFutura, distanciaAlCentro } from './layout.js';
+import { espacioEnLaPunta, aperturaFutura, distanciaAlCentro, preferirCompactas, straightestPlacement } from './layout.js';
 
 export const DIFFICULTY = {
   NOVATO: 'novato',
@@ -174,7 +174,13 @@ export function chooseAction(view, opts = {}) {
   //
   // Recien despues se prefiere seguir derecho: una cadena recta se traba menos
   // que una que serpentea (medido: 32% contra 44% de bloqueo geometrico).
-  if (view.board.length === 0) return mejor.opciones[0];
+  if (view.board.length === 0) {
+    // La primera tambien la decide la regla compartida: parada (§170).
+    const conFicha = mejor.opciones.map((a) => ({ ...a.placement, tile: a.tile }));
+    const primera = straightestPlacement([], conFicha, 'first', view.layout);
+    const k = conFicha.indexOf(primera);
+    return k >= 0 ? mejor.opciones[k] : mejor.opciones[0];
+  }
 
   const grid = view.layout?.grid ?? 20;
   const aire = (a) => {
@@ -191,60 +197,18 @@ export function chooseAction(view, opts = {}) {
     if (cruzadas.length > 0) opciones = cruzadas;
   }
 
-  // SEGUIR DERECHO MANDA, igual que en layout.js (seccion 167): si se puede
-  // seguir en linea, se sigue, y solo se dobla contra el borde. Si el extremo
-  // es un doble, "derecho" es cruzado.
-  {
-    const ext = extremoDe(opciones[0]);
-    const esDoble = ext.tile[0] === ext.tile[1];
-    const enLinea = opciones.filter((a) =>
-      esDoble
-        ? a.placement.orientation !== ext.orientation
-        : a.placement.orientation === ext.orientation
-    );
-    if (enLinea.length > 0) opciones = enLinea;
-  }
-
-  // El mismo cerebro que usa el jugador (ver layout.js): entre las colocaciones
-  // de esta ficha gana la que deja el tablero mas abierto para la siguiente.
-  // Solo se compara dentro de la MISMA punta: cual punta conviene ya lo decidio
-  // la estrategia de arriba y no se toca.
-  const conPlacement = opciones.filter((a) => a.placement);
-  if (conPlacement.length > 1) {
-    const aperturas = conPlacement.map((a) =>
-      aperturaFutura(view.board, { ...a.placement, tile: fichaOrientada(view, a) }, a.side, view.layout)
-    );
-    const mejor2 = Math.max(...aperturas);
-    opciones = conPlacement.filter((a, i) => aperturas[i] === mejor2);
-  }
-
-  const mejorAire = Math.max(...opciones.map(aire));
-  const holgadas = opciones.filter((a) => aire(a) === mejorAire);
-
-  const extremo = extremoDe(holgadas[0]);
-  // Si el extremo es un doble, la cadena sale CRUZADA respecto de el, no por su
-  // mismo eje: un doble va acostado sobre la cadena, no de pie en la fila.
-  const extremoEsDoble = extremo.tile[0] === extremo.tile[1];
-  const rectas = holgadas.filter((a) =>
-    extremoEsDoble
-      ? a.placement.orientation !== extremo.orientation
-      : a.placement.orientation === extremo.orientation
-  );
-
-  // Entre las que siguen derecho gana la que deja mas sitio libre alrededor.
-  // El orden importa: mirar el sitio libre antes que la recta empeora las cosas.
-  // Ver contexto/README.md seccion 73.
-  const pool = rectas.length > 0 ? rectas : holgadas;
-  if (pool.length === 1) return pool[0];
-  const espacios = pool.map((a) => espacioEnLaPunta(view.board, a.placement, a.side, view.layout));
-  const mejorEspacio = Math.max(...espacios);
-  const finalistas = pool.filter((a, i) => espacios[i] === mejorEspacio);
-
-  // Mismo desempate que en layout.js: devolver la cadena hacia el centro.
-  if (finalistas.length === 1) return finalistas[0];
-  const distancias = finalistas.map((a) => distanciaAlCentro(view.board, a.placement, view.layout));
-
-  return finalistas[distancias.indexOf(Math.min(...distancias))];
+  // DONDE ponerla lo decide la MISMA regla que la casilla sugerida del jugador
+  // (`straightestPlacement`, secciones 167 y 170): cruzada si el extremo es un
+  // doble, sin salirse de la ventana del telefono, parada mientras se pueda,
+  // derecho, y los desempates del cerebro. Antes el bot llevaba su propia copia
+  // de la regla y las dos se separaban solas.
+  const grupo = opciones.filter((a) => a.placement && a.side === opciones[0].side);
+  if (grupo.length <= 1) return opciones[0];
+  // El placement de una accion viene sin la ficha, y el cerebro la necesita.
+  const conFicha = grupo.map((a) => ({ ...a.placement, tile: fichaOrientada(view, a) }));
+  const elegida = straightestPlacement(view.board, conFicha, grupo[0].side, view.layout);
+  const k = conFicha.indexOf(elegida);
+  return k >= 0 ? grupo[k] : grupo[0];
 }
 
 export function createBot(opts = {}) {

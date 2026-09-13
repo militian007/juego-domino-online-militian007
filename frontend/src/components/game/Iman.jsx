@@ -8,12 +8,12 @@
  * imagen. La silueta entera recibe el toque, y cuando la ficha arrastrada ya
  * esta imantada se planta en oro solido.
  *
- * Desde la seccion 169 hay dos clases de casilla: la SUGERIDA (la que sigue
- * derecho) respira, y las demas opciones se ven apagadas, quietas, pero se
- * tocan igual: la gente elige hacia donde dobla la culebra.
+ * Hay una sola casilla por punta (seccion 170): la que dicta la estructura
+ * del telefono. La 169 mostraba ademas las otras opciones apagadas para que
+ * la gente eligiera; Raul prefirio que no elija.
  */
-export default function Iman({ activo = false, sugerida = true, onClick }) {
-  const clase = activo ? 'iman-activo' : sugerida ? 'iman-respira' : 'iman-opcion';
+export default function Iman({ activo = false, onClick }) {
+  const clase = activo ? 'iman-activo' : 'iman-respira';
   return (
     <div
       className={`iman-slot ${clase}`}

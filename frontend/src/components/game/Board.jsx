@@ -5,7 +5,6 @@ import Iman from './Iman.jsx';
 import {
   DEFAULT_LAYOUT,
   placementsFor,
-  placementKey,
   straightestPlacement,
   computeBoardOffsets,
   anchorOffsetFor
@@ -184,22 +183,17 @@ export default function Board({
   const ghostPlacements = useMemo(() => {
     if (!myTurn || !activeTileForPlacements) return [];
     
-    // Todas las casillas por punta, y la que sigue derecho marcada como
-    // SUGERIDA (§169). La 164 dejaba una sola por punta y la cadena salia
-    // recta, pero Raul quiere que la gente pueda elegir hacia donde dobla la
-    // culebra: se ofrecen todas, la sugerida respira en oro y las otras se ven
-    // apagadas pero se pueden tocar igual.
-    if (!board || board.length === 0) {
-      return getValidPlacementsForTile(board, activeTileForPlacements, 'first').map((p, i) => ({ ...p, sugerida: i === 0 }));
-    }
-
+    // UNA sola casilla por punta, la que dicta la estructura del telefono
+    // (§170): la cadena sale a lo largo de la pantalla, no se sale de la
+    // ventana mientras pueda y sigue derecho. La 169 ofrecia todas las
+    // casillas para que la gente eligiera hacia donde dobla la culebra; Raul
+    // prefirio que no elija, a cambio de que la culebra vaya siempre por el
+    // camino que menos aleja la camara. El bot usa la misma regla.
+    const lados = !board || board.length === 0 ? ['first'] : ['left', 'right'];
     const placements = [];
-    for (const side of ['left', 'right']) {
-      const opciones = getValidPlacementsForTile(board, activeTileForPlacements, side);
-      const mejor = straightestPlacement(board, opciones, side);
-      for (const p of opciones) {
-        placements.push({ ...p, sugerida: mejor != null && placementKey(p) === placementKey(mejor) });
-      }
+    for (const side of lados) {
+      const mejor = straightestPlacement(board, getValidPlacementsForTile(board, activeTileForPlacements, side), side);
+      if (mejor) placements.push(mejor);
     }
     return placements;
   }, [board, activeTileForPlacements, myTurn]);
@@ -471,7 +465,6 @@ export default function Board({
               ninguna pieza encima del paño (ver Iman.jsx). */}
           <Iman
             activo={Boolean(isSnappedActive)}
-            sugerida={opt.sugerida !== false}
             onClick={(e) => {
               e.stopPropagation();
               onPlayTile && onPlayTile(opt.side, opt);

@@ -7702,3 +7702,55 @@ despues de cada jugada y de cada destranque revisa el dibujo con los mismos corr
 que dibuja el cliente, y si dos fichas se solapan mas de un cuarto guarda la mesa entera en
 `backend/montadas.log` (fuera de git). La proxima vez que Raul la vea, la mesa exacta queda
 anotada y se reproduce con ella. No toca el juego: solo mira y anota.
+
+## 170. La estructura del telefono: la culebra va por donde menos se aleja la camara (2026-09-13)
+
+Raul, sobre la 169 (todas las casillas para elegir hacia donde dobla la culebra): "prefiero que
+la gente no elija, pero si lo hacemos bien: quitarle la libertad a la gente siempre y cuando
+hagas un trabajo excepcional en como se va a estructurar la cosa". Y el objetivo: "que la
+culebra vaya por el camino que haga menos zoom-out, para que las fichas no se vean minusculas".
+
+**La vara.** La pantalla del telefono, a la escala mas cercana que permite la mesa, mide unas
+9 celdas de ancho por 14 de alto (`VENTANA_TELEFONO` en `layout.js`). Cada colocacion se mide
+contra esa ventana: `alejamiento = max(ancho/9, alto/14)` de la caja de la cadena con la ficha
+puesta. 1 es que cabe justo; mas de 1 es que la camara tiene que alejarse. `tools/medir-compacta.mjs`
+lo promedia sobre 200 partidas de bots, turno por turno.
+
+**La regla, en `straightestPlacement` (la misma para la casilla del jugador y para el bot):**
+
+1. La primera ficha se pone para que la cadena SALGA A LO LARGO de la pantalla. La cadena
+   sale por el eje de una ficha suelta y por los costados de un doble: una suelta va parada
+   y un doble va acostado. Casi siempre abre un doble.
+2. Si el extremo es un doble, cruzada (como siempre, seccion 76).
+3. No salirse de la ventana: si hay casillas que caben en la pantalla y otras que no, se
+   descartan las que no caben (`preferirCompactas`). Solo eso.
+4. Seguir derecho entre las que quedan (seccion 167). Despues los desempates de siempre.
+
+El bot ya no lleva su copia de la regla: `bot.js` le pasa sus opciones a
+`straightestPlacement` con la ficha orientada (`fichaOrientada`), y la primera ficha con la
+ficha real. Antes las dos copias se separaban solas.
+
+**Lo que se probo y se descarto**, medido con `medir-compacta.mjs` (zoom) y
+`medir-destranque.mjs` (fichas trabadas):
+
+| regla                                   | alejamiento 1v1 | turnos con camara alejada | veto total |
+|-----------------------------------------|-----------------|---------------------------|------------|
+| derecho primero (seccion 167, la vieja) | 1,030           | 50,9 %                    | 0,073 %    |
+| siempre la mas compacta                 | 0,731           | 10,8 %                    | 1,66 %     |
+| columnas (parada siempre que quepa)     | 0,883           | 23,8 %                    | 0,563 %    |
+| **no salirse de la ventana (esta)**     | **0,921**       | **26,9 %**                | **0,154 %**|
+
+"Siempre la mas compacta" enrosca la cadena sobre si misma y multiplica por veinte las
+trabadas. "Columnas" (crecer parada, puente acostado al tocar el borde, y otra vez parada)
+aleja un poco menos la camara pero traba ocho veces mas y tumba cinco pruebas del motor. La
+que queda es la que menos sacrifica: la camara alejada baja de la mitad de los turnos a uno
+de cada cuatro (2v2: de 58,2 % a 38,8 %), la caja media pasa de 7,9 x 11,2 a 6,8 x 11,5 (alta y
+angosta, como la pantalla), y el veto total sube de 0,073 % a 0,154 %, todos destrancados
+(106 de 106; 2,35 % de las rondas ven alguno). Montadas: cero en `buscar-montadas.mjs`.
+
+**En la mesa.** Vuelve UNA sola casilla por punta (`Board.jsx`), la que dicta esta regla: se
+fue la clase `iman-opcion` y la propiedad `sugerida` del iman. El jugador no elige el lado;
+la culebra va sola por donde menos se aleja la camara.
+
+Pruebas: motor 85/85, servidor 87/87. El fixture de `test/destrancar.test.js` (`veto-15`,
+42 jugadas, ficha 0-6) sigue valiendo con la regla nueva; `tools/buscar-veto.mjs` lo confirma.

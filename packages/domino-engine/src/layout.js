@@ -599,9 +599,68 @@ export function distanciaAlCentro(board, placement, layout = DEFAULT_LAYOUT) {
   return Math.hypot(cx - centro, cy - centro);
 }
 
+/**
+ * La ventana del telefono, en celdas, a la escala mas cercana que permite la
+ * mesa (§170): unas 9 de ancho por 14 de alto. Es la vara para saber si una
+ * colocacion obliga a la camara a alejarse.
+ */
+export const VENTANA_TELEFONO = { ancho: 9, alto: 14 };
+
+/** La caja que ocupa la cadena (en celdas), sumandole `p` si se pasa. */
+export function cajaDeLaCadena(board, p = null) {
+  let x1 = Infinity, x2 = -Infinity, y1 = Infinity, y2 = -Infinity;
+  const mirar = (t) => {
+    x1 = Math.min(x1, t.x, t.x2); x2 = Math.max(x2, t.x, t.x2);
+    y1 = Math.min(y1, t.y, t.y2); y2 = Math.max(y2, t.y, t.y2);
+  };
+  for (const t of board) mirar(t);
+  if (p) mirar(p);
+  return { ancho: x2 - x1 + 1, alto: y2 - y1 + 1 };
+}
+
+/**
+ * Cuanto se tiene que alejar la camara del telefono para que la cadena quepa
+ * si se agrega `p`: 1 = cabe justo, mas de 1 = hay que alejarse.
+ */
+export function alejamiento(board, p, ventana = VENTANA_TELEFONO) {
+  const c = cajaDeLaCadena(board, p);
+  return Math.max(c.ancho / ventana.ancho, c.alto / ventana.alto);
+}
+
+/**
+ * Se queda con las colocaciones que MENOS obligan a alejar la camara (§170).
+ *
+ * Raul: "que la culebra vaya por el camino que haga menos zoom-out, para que
+ * las fichas no se vean minusculas". La pantalla del telefono es alta y
+ * angosta, asi que la cadena tiene que crecer a lo largo y doblar antes de
+ * ensancharse. Mientras seguir derecho no aleje la camara mas que doblar, se
+ * sigue derecho (el desempate de abajo); cuando una punta ya obliga a alejar,
+ * gana la que menos aleja.
+ */
+export function preferirCompactas(board, placements, ventana = VENTANA_TELEFONO) {
+  if (!placements || placements.length < 2) return placements;
+  const puntajes = placements.map((p) => alejamiento(board, p, ventana));
+  // Solo se interviene cuando hay opciones que CABEN y otras que no: se
+  // descartan las que alejan la camara. Si todas caben, o ninguna, se dejan
+  // todas y decide la recta. Elegir siempre la mas compacta enroscaba la
+  // cadena sobre si misma y multiplicaba por veinte las fichas trabadas
+  // (medido: veto total 0,07 % -> 1,66 %).
+  const caben = placements.filter((p, i) => puntajes[i] <= 1 + 1e-9);
+  return caben.length > 0 && caben.length < placements.length ? caben : placements;
+}
+
 export function straightestPlacement(board, placements, side, layout = DEFAULT_LAYOUT) {
   if (!placements || placements.length === 0) return null;
-  if (!board || board.length === 0) return placements[0];
+  // La primera ficha se pone para que la cadena SALGA A LO LARGO de la
+  // pantalla del telefono, que es alta y angosta (§170). La cadena sale por el
+  // eje de una ficha suelta, pero por los COSTADOS de un doble: por eso una
+  // suelta va parada y un doble va acostado. Casi siempre abre un doble.
+  if (!board || board.length === 0) {
+    const t = placements[0].tile;
+    const esDoble = Array.isArray(t) && t[0] === t[1];
+    const buscada = esDoble ? 'horizontal' : 'vertical';
+    return placements.find((p) => p.orientation === buscada) || placements[0];
+  }
 
   const grid = layout.grid;
   const endTile = side === 'left' ? board[0] : board[board.length - 1];
@@ -637,7 +696,17 @@ export function straightestPlacement(board, placements, side, layout = DEFAULT_L
           ? p.x === cx2 && p.y === cy2 && p.x2 === cx && p.y2 === cy
           : p.x === cx && p.y === cy && p.x2 === cx2 && p.y2 === cy2
       );
-  if (rectas.length > 0) placements = rectas;
+  // LA ESTRUCTURA DEL TELEFONO (§170), en este orden:
+  //
+  // 1. No salirse de la ventana: si hay casillas que caben en la pantalla del
+  //    telefono y otras que no, se descartan las que no caben. Solo eso: se
+  //    probo tambien "siempre la mas compacta" y "siempre parada" (columnas),
+  //    y las dos alejan menos la camara pero traban la cadena 4 y 20 veces
+  //    mas (ver la seccion 170, con los numeros).
+  // 2. Seguir derecho, entre las que quedan: nada de escaleras.
+  placements = preferirCompactas(board, placements);
+  const rectasCompactas = placements.filter((p) => rectas.includes(p));
+  if (rectasCompactas.length > 0) placements = rectasCompactas;
 
   // Despues el cerebro: entre las que quedan gana la que deja mas abierto el
   // tablero para la jugada siguiente.

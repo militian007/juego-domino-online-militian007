@@ -804,10 +804,6 @@
     box-shadow: 0 0 14px 2px rgba(245, 207, 92, 0.45);
   }
 }
-.iman-opcion {
-  border: 2px dashed rgba(212, 175, 55, 0.32);
-  background: rgba(212, 175, 55, 0.04);
-}
 .iman-activo {
   border: 2px solid #f5cf5c;
   background: rgba(245, 207, 92, 0.25);
