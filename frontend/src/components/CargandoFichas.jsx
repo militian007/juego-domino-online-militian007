@@ -8,7 +8,8 @@
  * aparte: se ve el mismo material y no hay arte nuevo que mantener. Cambian con
  * la pinta que tenga elegida el jugador, porque salen del contexto.
  */
-import { useCarpetaDeFichas, VERSION_FICHAS } from './game/MesaTheme.jsx';
+import { useState } from 'react';
+import { useCarpetaDeFichas, rutaDeFicha } from './game/MesaTheme.jsx';
 
 /** Cinco fichas cualesquiera. Se ven de canto, asi que los puntos casi no cuentan. */
 const FILA = [
@@ -24,6 +25,7 @@ const RETRASO = 0.14;
 
 export default function CargandoFichas({ alto = 'h-14' }) {
   const carpeta = useCarpetaDeFichas();
+  const [formato, setFormato] = useState('webp');
 
   return (
     <div className={`flex items-end justify-center gap-[3px] ${alto}`} aria-label="Cargando">
@@ -40,8 +42,9 @@ export default function CargandoFichas({ alto = 'h-14' }) {
               El giro de la CAIDA va en el envoltorio: si los dos giros
               estuvieran en la imagen, se pisarian el mismo transform. */}
           <img
-            src={`${carpeta}/tile_${a}_${b}.png?v=${VERSION_FICHAS}`}
+            src={rutaDeFicha(carpeta, a, b, formato)}
             alt=""
+            onError={() => setFormato('png')}
             className="absolute left-1/2 top-1/2 h-[22px] w-14 max-w-none"
             style={{ transform: 'translate(-50%, -50%) rotate(-90deg)' }}
           />

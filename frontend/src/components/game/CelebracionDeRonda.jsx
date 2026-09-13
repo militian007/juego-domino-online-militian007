@@ -65,16 +65,20 @@ export function tituloDeRonda({ motivo, equipoGanador, miEquipo, players = [] })
  * la descarga— se cae solo al texto. Asi el juego nunca depende de que el arte
  * este puesto, que es la unica forma de poder soltarlo cuando llegue sin tocar
  * codigo.
+ *
+ * Se pide primero en WebP, que pesa una sexta parte del PNG (§151); si el
+ * navegador no lo carga, se prueba el PNG, y recien despues el texto.
  */
 export function Cartel({ arte, texto, gane, className = '' }) {
   const [sinArte, setSinArte] = useState(false);
+  const [formato, setFormato] = useState('webp');
 
   if (arte && !sinArte) {
     return (
       <img
-        src={`/carteles/${arte}.png`}
+        src={`/carteles/${arte}.${formato}`}
         alt={texto}
-        onError={() => setSinArte(true)}
+        onError={() => (formato === 'webp' ? setFormato('png') : setSinArte(true))}
         className={`mx-auto h-auto w-[min(86vw,420px)] drop-shadow-[0_8px_20px_rgba(0,0,0,.85)] ${className}`}
       />
     );
