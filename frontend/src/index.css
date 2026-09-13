@@ -621,31 +621,75 @@
   -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 1) 0%, transparent 62%);
 }
 
-@keyframes grito-entra {
-  0% { transform: scale(0.55); opacity: 0; }
-  55% { transform: scale(1.12); opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .rayos-de-sol, .cere-rayos, .cere-destello, .cere-velo, .cere-golpe, .cere-cae, .cere-linea, .cere-puntos, .cere-chispa { animation: none; opacity: 1; }
+}
+
+/* LA CEREMONIA DE FIN DE RONDA (ver CelebracionDeRonda.jsx). Al ganar:
+   destello, rayos que se encienden, el cartel entra de un golpe, la linea y
+   los puntos suben despues. Al perder: la mesa se oscurece y el cartel de
+   plata baja con un rebote corto. */
+@keyframes cere-destello {
+  0% { opacity: 0; }
+  12% { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+.cere-destello {
+  background: radial-gradient(circle, rgba(255, 244, 200, 0.95) 0%, rgba(245, 207, 92, 0.5) 35%, transparent 70%);
+  animation: cere-destello 700ms ease-out both;
+}
+@keyframes cere-rayos-entran {
+  from { opacity: 0; transform: scale(0.6) rotate(0deg); }
+  to { opacity: 0.32; transform: scale(1) rotate(0deg); }
+}
+.cere-rayos {
+  opacity: 0.32;
+  animation: rayos-giran 14s linear infinite, cere-rayos-entran 600ms ease-out both;
+}
+@keyframes cere-velo {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.cere-velo {
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.55) 100%);
+  animation: cere-velo 500ms ease-out both;
+}
+@keyframes cere-golpe {
+  0% { transform: scale(2.4); opacity: 0; }
+  55% { transform: scale(0.92); opacity: 1; }
+  75% { transform: scale(1.05); }
   100% { transform: scale(1); opacity: 1; }
 }
-
-.grito-entra {
-  animation: grito-entra 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+.cere-golpe { animation: cere-golpe 520ms cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+@keyframes cere-cae {
+  0% { transform: translateY(-46px) scale(0.9); opacity: 0; }
+  60% { transform: translateY(8px) scale(1.02); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
 }
-
-@keyframes confeti-cae {
-  from { transform: translateY(-12vh) rotate(var(--confeti-giro, 0deg)); opacity: 1; }
-  to { transform: translateY(105vh) rotate(calc(var(--confeti-giro, 0deg) + 540deg)); opacity: 0.9; }
+.cere-cae { animation: cere-cae 560ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes cere-sube {
+  from { transform: translateY(18px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
-
-.confeti {
-  animation-name: confeti-cae;
-  animation-timing-function: linear;
-  animation-fill-mode: both;
+.cere-linea { animation: cere-sube 380ms ease-out 320ms both; }
+@keyframes cere-puntos {
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .rayos-de-sol { animation: none; }
-  .confeti { display: none; }
-  .grito-entra { animation: none; }
+.cere-puntos { animation: cere-puntos 460ms cubic-bezier(0.34, 1.56, 0.64, 1) 520ms both; }
+@keyframes cere-chispa {
+  0%, 100% { transform: scale(0.2) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1) rotate(45deg); opacity: 1; }
+}
+.cere-chispa {
+  position: absolute;
+  background: radial-gradient(circle, #fff8dc 0%, #f5cf5c 45%, transparent 70%);
+  border-radius: 50%;
+  box-shadow: 0 0 6px 2px rgba(245, 207, 92, 0.8);
+  animation-name: cere-chispa;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
 }
 
 /* Los pips del perdedor viajando hasta el total de la ronda (§123).
@@ -712,10 +756,8 @@
   .cinco-sube { animation: none; }
 }
 
-/* EL IMAN COMO EFECTO (ver Iman.jsx). La casilla donde cabe la ficha es la
-   que avisa; no hay ninguna pieza encima del paño. Los tres efectos se
-   eligen con ?iman=; cuando la ficha arrastrada ya esta imantada, la
-   silueta se planta en oro solido. Los px se escalan con la camara. */
+/* EL IMAN (ver Iman.jsx): la silueta de la casilla respira en oro y se planta
+   en oro solido cuando la ficha arrastrada ya esta imantada. */
 .iman-slot {
   position: absolute;
   inset: 0;
@@ -741,59 +783,11 @@
     box-shadow: 0 0 14px 2px rgba(245, 207, 92, 0.45);
   }
 }
-.iman-fantasma {
-  border: 2px dashed rgba(212, 175, 55, 0.5);
-  background: rgba(212, 175, 55, 0.05);
-}
-.iman-fantasma-ficha {
-  position: absolute;
-  inset: 0;
-  border: 0;
-  background: transparent;
-  opacity: 0.5;
-  pointer-events: none;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6));
-  animation: iman-flota 1.8s ease-in-out infinite;
-}
-@keyframes iman-flota {
-  0%, 100% { transform: translateY(-2px); }
-  50% { transform: translateY(2px); }
-}
-.iman-onda {
-  border: 2px solid rgba(212, 175, 55, 0.35);
-  background: rgba(212, 175, 55, 0.08);
-}
-span.iman-onda {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 22px;
-  height: 22px;
-  margin: -11px 0 0 -11px;
-  border: 3px solid rgba(245, 207, 92, 0.95);
-  box-shadow: 0 0 8px rgba(245, 207, 92, 0.7);
-  border-radius: 50%;
-  background: transparent;
-  pointer-events: none;
-  animation: iman-onda 1.4s ease-out infinite;
-}
-span.iman-onda::after {
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  border: 3px solid rgba(245, 207, 92, 0.95);
-  animation: iman-onda 1.4s ease-out 0.7s infinite;
-}
-@keyframes iman-onda {
-  0% { transform: scale(0.35); opacity: 1; }
-  100% { transform: scale(3.2); opacity: 0; }
-}
 .iman-activo {
   border: 2px solid #f5cf5c;
   background: rgba(245, 207, 92, 0.25);
   box-shadow: 0 0 16px 3px rgba(245, 207, 92, 0.55);
 }
 @media (prefers-reduced-motion: reduce) {
-  .iman-respira, .iman-fantasma-ficha, span.iman-onda, span.iman-onda::after { animation: none; }
+  .iman-respira { animation: none; }
 }

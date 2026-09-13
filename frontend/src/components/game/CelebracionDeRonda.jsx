@@ -1,73 +1,73 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
- * El grito de fin de ronda: "¡DOMINÓ!", los rayos y el confeti.
+ * LA CEREMONIA DE FIN DE RONDA.
  *
- * Punto 5 del plan de Domino Legends (§123). Ellos cierran la ronda con un
- * texto dorado enorme, rayos de sol detras y confeti, y recien despues baja el
- * panel con las cuentas. Nosotros pasabamos de la ultima ficha a un cuadro con
- * numeros, sin respirar.
+ * Punto 5 del plan de Domino Legends (§123): primero el grito sobre la mesa,
+ * y recien cuando se va, el panel con las cuentas. Si salieran juntos, el panel
+ * taparia la jugada que acaba de cerrar la ronda.
  *
- * ## Por que va ANTES del panel y no encima
+ * Segunda vuelta (§162), a pedido de Raul: las letras grandes dicen GANASTE o
+ * PERDISTE (GANAMOS / PERDIMOS en parejas), no el nombre de la jugada; la
+ * jugada va debajo, en una linea. Y la fiesta es de verdad: destello, rayos,
+ * dos cañones de confeti tricolor mas lluvia, chispas alrededor del cartel y
+ * el cartel entrando de un golpe. Al perder no hay fiesta: el cartel de plata
+ * baja con un rebote corto y la mesa se oscurece un poco. Respeto al que perdio.
  *
- * El panel tapa la mesa entera. Si el grito sale al mismo tiempo, no se ve la
- * jugada que acaba de cerrar la ronda —que es justo lo que uno quiere mirar—.
- * Asi que primero el grito sobre la mesa (1,8 s), y cuando se va, entra el
- * panel con las cuentas.
+ * El confeti va con la Web Animations API (`element.animate`) y no con estado
+ * de React: corre una vez al montar y cada papelito se borra solo al terminar.
+ * Es lo mismo que hace la ceremonia de fin de partida del truco de la casa.
  *
- * ## Nada dibujado a mano
- *
- * Los rayos son un `conic-gradient` y el confeti son rectangulos de color: son
- * EFECTOS, no ilustraciones. Ningun icono ni figura se dibuja aca (regla 1.1).
+ * Nada dibujado a mano: las letras son arte generado con la referencia de
+ * Jonathan, los rayos son un gradiente y las chispas y el confeti son efectos.
  */
 
-/** Cuanto dura el grito antes de dar paso al panel. */
-export const MS_GRITO = 1800;
+/** Cuanto dura la ceremonia antes de dar paso al panel. */
+export const MS_GRITO = 2600;
 
-/** Cuantos papelitos. Mas que esto no se distingue y cuesta en telefono viejo. */
-const PAPELITOS = 36;
-
-const COLORES = ['#d4af37', '#f6e6bd', '#e0684f', '#5fa8d3', '#7bc47f', '#e8c974'];
+/** Confeti tricolor mas destello crema: la paleta aprobada del club. */
+const COLORES_CONFETI = ['#F7D002', '#003DA5', '#CE1126', '#F7D002', '#F4E2A8', '#D4AF37'];
 
 /**
  * Que dice el cartel, segun como cerro la ronda y como te fue.
  *
- * `arte` es el cartel PINTADO que le corresponde, si lo hay (§130). Solo los de
- * ganar lo tienen: un banner pintado para "Tranca perdida" seria celebrar que
- * perdiste. Los de perder se quedan en tipografia sobria, a proposito.
+ * `arte` es el cartel pintado (GANASTE, GANAMOS, PERDISTE, PERDIMOS). `texto`
+ * es lo que se lee si el arte no carga. `quien` es la linea de abajo: la
+ * jugada que cerro y, al perder, quien gano.
  */
 export function tituloDeRonda({ motivo, equipoGanador, miEquipo, players = [] }) {
   if (equipoGanador === 0 || equipoGanador == null) {
     return { texto: '¡Empate!', gane: false, arte: null, quien: 'Nadie suma' };
   }
   const gane = equipoGanador === miEquipo;
-  // Quien gano, con nombre: "el equipo 2" no le dice nada a nadie.
-  const ganadores = players.filter((p) => p.team === equipoGanador).map((p) => p.username);
   const enParejas = players.length === 4;
-  const quien = gane
-    ? enParejas ? 'Ganamos' : 'Ganaste'
-    : ganadores.length > 1
-      ? `Ganaron ${ganadores.slice(0, -1).join(', ')} y ${ganadores[ganadores.length - 1]}`
-      : `Ganó ${ganadores[0] ?? 'el rival'}`;
-  if (motivo === 'blocked') {
-    return { texto: gane ? '¡Tranca ganada!' : '¡Tranca!', gane, arte: gane ? 'tranca' : 'tranca-rival', quien };
+  const ganadores = players.filter((p) => p.team === equipoGanador).map((p) => p.username);
+  const nombres = ganadores.length > 1
+    ? `${ganadores.slice(0, -1).join(', ')} y ${ganadores[ganadores.length - 1]}`
+    : ganadores[0] ?? 'el rival';
+  const jugada = motivo === 'blocked' ? '¡Tranca!' : motivo === 'forfeit' ? 'Se fue' : '¡Dominó!';
+
+  if (gane) {
+    return {
+      texto: enParejas ? '¡Ganamos!' : '¡Ganaste!',
+      gane,
+      arte: enParejas ? 'ganamos' : 'ganaste',
+      quien: motivo === 'forfeit' ? `Se fue ${nombres === 'el rival' ? 'el rival' : 'el otro'}` : jugada
+    };
   }
-  if (motivo === 'forfeit') {
-    return { texto: gane ? 'Ronda ganada' : 'Ronda perdida', gane, arte: null, quien };
-  }
-  return { texto: '¡Dominó!', gane, arte: gane ? 'domino' : 'domino-rival', quien };
+  return {
+    texto: enParejas ? '¡Perdimos!' : '¡Perdiste!',
+    gane,
+    arte: enParejas ? 'perdimos' : 'perdiste',
+    quien: motivo === 'blocked' ? `Tranca: ganó ${nombres}` : motivo === 'forfeit' ? 'Ronda cerrada' : `Ganó ${nombres}`
+  };
 }
 
 /**
  * El cartel: pintado si existe, y si no, la tipografia de siempre.
  *
- * El dibujo se pide por `<img>` y si no esta —todavia no lo generamos, o fallo
- * la descarga— se cae solo al texto. Asi el juego nunca depende de que el arte
- * este puesto, que es la unica forma de poder soltarlo cuando llegue sin tocar
- * codigo.
- *
- * Se pide primero en WebP, que pesa una sexta parte del PNG (§151); si el
- * navegador no lo carga, se prueba el PNG, y recien despues el texto.
+ * El dibujo se pide por `<img>` (WebP, y PNG si no carga) y si no esta se cae
+ * solo al texto. Asi el juego nunca depende de que el arte este puesto.
  */
 export function Cartel({ arte, texto, gane, className = '' }) {
   const [sinArte, setSinArte] = useState(false);
@@ -79,7 +79,7 @@ export function Cartel({ arte, texto, gane, className = '' }) {
         src={`/carteles/${arte}.${formato}`}
         alt={texto}
         onError={() => (formato === 'webp' ? setFormato('png') : setSinArte(true))}
-        className={`mx-auto h-auto ${gane ? 'w-[min(86vw,420px)]' : 'w-[min(72vw,340px)]'} drop-shadow-[0_8px_20px_rgba(0,0,0,.85)] ${className}`}
+        className={`mx-auto h-auto ${gane ? 'w-[min(86vw,420px)]' : 'w-[min(74vw,350px)]'} drop-shadow-[0_8px_20px_rgba(0,0,0,.85)] ${className}`}
       />
     );
   }
@@ -124,7 +124,6 @@ export function useNumeroQueSube(objetivo, activo, ms = 900) {
 
     const paso = (ahora) => {
       const t = Math.min(1, (ahora - desde) / ms);
-      // Frena al final, como un contador mecanico.
       setValor(Math.round(objetivo * (1 - Math.pow(1 - t, 3))));
       if (t < 1) cuadro.current = requestAnimationFrame(paso);
     };
@@ -140,38 +139,72 @@ export function useNumeroQueSube(objetivo, activo, ms = 900) {
   return valor;
 }
 
-function Confeti() {
-  // Los papelitos se sortean UNA vez: si se recalcularan en cada render,
-  // saltarian de sitio a mitad de la caida.
-  const papeles = useMemo(
-    () =>
-      Array.from({ length: PAPELITOS }).map((_, i) => ({
-        i,
-        x: Math.random() * 100,
-        color: COLORES[i % COLORES.length],
-        ancho: 5 + Math.random() * 5,
-        alto: 8 + Math.random() * 8,
-        demora: Math.random() * 700,
-        duracion: 1400 + Math.random() * 1100,
-        giro: Math.random() * 360
-      })),
-    []
-  );
+/**
+ * Un cañon de confeti (o la lluvia, sin `desde`). Cada papelito es un div con
+ * su propia animacion y se borra al terminar.
+ */
+function lanzarConfeti(host, cantidad, { desde = null, demora = 0 } = {}) {
+  const W = host.clientWidth;
+  const H = host.clientHeight;
+  for (let i = 0; i < cantidad; i += 1) {
+    const el = document.createElement('span');
+    const ancho = 6 + Math.random() * 5;
+    el.style.cssText = `position:absolute;width:${ancho}px;height:${ancho * 1.6}px;pointer-events:none;opacity:0;top:0;left:0;` +
+      `background:${COLORES_CONFETI[i % COLORES_CONFETI.length]};border-radius:${i % 3 === 0 ? '50%' : '2px'}`;
+    let x0, y0, dx, dy;
+    if (desde === 'izquierda') {
+      x0 = 6; y0 = H - 6; dx = 40 + Math.random() * W * 0.7; dy = -(H * 0.45 + Math.random() * H * 0.45);
+    } else if (desde === 'derecha') {
+      x0 = W - 6; y0 = H - 6; dx = -(40 + Math.random() * W * 0.7); dy = -(H * 0.45 + Math.random() * H * 0.45);
+    } else {
+      x0 = W * 0.1 + Math.random() * W * 0.8; y0 = -12; dx = (Math.random() - 0.5) * 120; dy = H + 40;
+    }
+    el.style.left = `${x0}px`;
+    el.style.top = `${y0}px`;
+    host.appendChild(el);
+    const giro = 360 + Math.random() * 540;
+    const anim = el.animate(
+      [
+        { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+        { transform: `translate(${dx * 0.8}px,${desde ? dy : dy * 0.55}px) rotate(${giro * 0.6}deg)`, opacity: 1, offset: 0.55 },
+        { transform: `translate(${dx}px,${desde ? dy * 0.3 : dy}px) rotate(${giro}deg)`, opacity: 0 }
+      ],
+      {
+        duration: 1500 + Math.random() * 900,
+        delay: demora + Math.random() * 240,
+        easing: desde ? 'cubic-bezier(0.15,0.6,0.4,1)' : 'cubic-bezier(0.3,0.2,0.6,1)',
+        fill: 'forwards'
+      }
+    );
+    anim.onfinish = () => el.remove();
+  }
+}
 
+/** Chispas de oro alrededor del cartel: puntos que titilan, sorteados una vez. */
+function Chispas() {
+  const [chispas] = useState(() =>
+    Array.from({ length: 14 }).map((_, i) => ({
+      i,
+      x: 4 + Math.random() * 92,
+      y: 8 + Math.random() * 84,
+      tamano: 5 + Math.random() * 8,
+      demora: Math.random() * 1200,
+      duracion: 900 + Math.random() * 700
+    }))
+  );
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      {papeles.map((p) => (
+    <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+      {chispas.map((c) => (
         <span
-          key={p.i}
-          className="confeti absolute top-0 block rounded-[1px]"
+          key={c.i}
+          className="cere-chispa"
           style={{
-            left: `${p.x}%`,
-            width: `${p.ancho}px`,
-            height: `${p.alto}px`,
-            background: p.color,
-            animationDelay: `${p.demora}ms`,
-            animationDuration: `${p.duracion}ms`,
-            '--confeti-giro': `${p.giro}deg`
+            left: `${c.x}%`,
+            top: `${c.y}%`,
+            width: `${c.tamano}px`,
+            height: `${c.tamano}px`,
+            animationDelay: `${c.demora}ms`,
+            animationDuration: `${c.duracion}ms`
           }}
         />
       ))}
@@ -179,25 +212,42 @@ function Confeti() {
   );
 }
 
+function Fiesta() {
+  const host = useRef(null);
+  useEffect(() => {
+    const el = host.current;
+    if (!el) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    lanzarConfeti(el, 60, { desde: 'izquierda', demora: 120 });
+    lanzarConfeti(el, 60, { desde: 'derecha', demora: 120 });
+    lanzarConfeti(el, 70, { demora: 450 });
+  }, []);
+  return <div ref={host} className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true" />;
+}
+
 export default function CelebracionDeRonda({ activa, titulo, quien = '', gane, puntos, arte = null }) {
   if (!activa) return null;
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
-      {gane && <Confeti />}
-
-      {gane && (
-        <div
-          className="rayos-de-sol absolute h-[160vmax] w-[160vmax] rounded-full opacity-30"
-          aria-hidden="true"
-        />
+      {gane ? (
+        <>
+          <div className="cere-destello absolute inset-0" aria-hidden="true" />
+          <div className="rayos-de-sol cere-rayos absolute h-[160vmax] w-[160vmax] rounded-full" aria-hidden="true" />
+          <Fiesta />
+        </>
+      ) : (
+        <div className="cere-velo absolute inset-0" aria-hidden="true" />
       )}
 
-      <div className="grito-entra relative px-6 text-center">
-        <Cartel arte={arte} texto={titulo} gane={gane} />
+      <div className={`relative px-4 text-center ${gane ? 'cere-golpe' : 'cere-cae'}`}>
+        <div className="relative">
+          {gane && <Chispas />}
+          <Cartel arte={arte} texto={titulo} gane={gane} />
+        </div>
         {quien && (
           <p
-            className={`mt-2 text-2xl font-extrabold drop-shadow-[0_3px_6px_rgba(0,0,0,.9)] ${
+            className={`cere-linea mt-3 text-2xl font-extrabold drop-shadow-[0_3px_6px_rgba(0,0,0,.9)] ${
               gane ? 'text-domino-accent-bright' : 'text-domino-cream'
             }`}
           >
@@ -205,7 +255,7 @@ export default function CelebracionDeRonda({ activa, titulo, quien = '', gane, p
           </p>
         )}
         {puntos > 0 && (
-          <p className="mt-2 text-lg font-bold tabular-nums text-domino-cream/90 drop-shadow-[0_3px_6px_rgba(0,0,0,.9)]">
+          <p className="cere-puntos mt-1 text-3xl font-black tabular-nums text-domino-cream drop-shadow-[0_3px_6px_rgba(0,0,0,.9)]">
             +{puntos}
           </p>
         )}

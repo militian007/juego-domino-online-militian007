@@ -7506,3 +7506,32 @@ Tres cosas:
 Raul vio los tres efectos de la seccion 159 en movimiento y eligio el primero: la silueta
 punteada de la casilla se enciende y se apaga despacio, en oro. Se van la ficha fantasma,
 la onda y el interruptor `?iman=`. `Iman.jsx` queda en veinte lineas.
+
+## 162. La ceremonia de fin de ronda, con GANASTE y PERDISTE (2026-09-12)
+
+Raul, sobre la seccion 160: le gustaron las letras pintadas, pero no la palabra. Las letras
+grandes tienen que decir lo que le paso a uno, GANASTE o PERDISTE, y la jugada (domino,
+tranca) va debajo. Y pidio "efectos bonitos, animaciones profesionales, confeti y tal".
+
+Los carteles: `ganaste` es el de Jonathan (ya existia para el fin de partida y sirve tal
+cual); `ganamos`, `perdiste` y `perdimos` se generaron con IA usando `domino.png` como
+referencia exacta de la letra, los de ganar en oro y los de perder en plata. Recortados a
+220 px de alto, PNG y WebP. Los `domino-rival` y `tranca-rival` de la seccion 160 se borran.
+
+La ceremonia (`CelebracionDeRonda.jsx`, 2,6 s):
+
+- Al ganar: un destello dorado que se apaga en 700 ms, los rayos que se encienden mientras
+  giran, el cartel que entra de un golpe desde el doble de su tamaño con un rebote corto,
+  catorce chispas titilando alrededor, dos cañones de confeti tricolor desde las esquinas
+  de abajo (60 papelitos cada uno) mas una lluvia de 70 desde arriba, la linea de la jugada
+  subiendo a los 320 ms y los puntos saltando a los 520 ms.
+- Al perder: la mesa se oscurece hacia los bordes y el cartel de plata baja con un rebote
+  corto; debajo, quien gano. Sin confeti ni rayos: respeto al que perdio.
+
+El confeti va con la Web Animations API (`element.animate`), igual que la ceremonia de fin
+de partida del truco de la casa: corre una vez al montar y cada papelito se borra solo. El
+confeti viejo por CSS (36 papelitos) y la entrada `grito-entra` se van. Con
+`prefers-reduced-motion` no hay confeti ni entradas: todo aparece quieto.
+
+Se grabo con puppeteer (26 cuadros con su tiempo real cada uno) para que Raul lo vea en
+movimiento antes de decidir.
