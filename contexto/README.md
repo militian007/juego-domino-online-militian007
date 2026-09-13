@@ -7675,3 +7675,30 @@ cambiar de golpe.
 Pendiente, del mismo estilo: el panel "por que no puedes jugar" y el boton "Pasar" siguen
 entrando en flujo debajo de la mano y la suben cuando aparecen. Son momentos raros (solo
 cuando no tienes jugada); si molestan, van encima de la mano como capa.
+
+## 169. Elegir hacia donde dobla la culebra, y el vigilante de las montadas (2026-09-13)
+
+Raul, con una captura: "aqui quedo montada, ¿que paso? Ahora hazlo bien, tirate las pruebas
+necesarias. ¿Y pusiste para que solo vaya en una direccion? La gente no puede elegir hacia
+que lado hacer la culebra".
+
+**Elegir el lado.** La 164 dejaba una sola casilla por punta y la cadena salia recta, pero
+le quitaba al jugador la eleccion. Ahora se ofrecen TODAS las casillas validas por punta,
+con la que sigue derecho marcada como SUGERIDA: respira en oro. Las otras se ven apagadas
+y quietas, pero se tocan igual, y al arrastrar la ficha se imanta a cualquiera. El bot
+sigue la sugerida. Asi la mesa arranca recta por defecto y la gente dobla donde quiera.
+
+**La montada.** No se pudo reproducir: `tools/buscar-montadas.mjs` (partidas enteras de
+bots con destranque, todas las parejas de fichas revisadas tras cada jugada: 16.000 turnos,
+2.051 dobles, cero), `tools/buscar-montadas-relayout.mjs` (388 cadenas por las cuatro
+formas del destranque: cero) y cinco rondas jugadas en el navegador midiendo el DOM
+(cero). `medir-dobles.mjs` da lo mismo con la regla vieja y con la nueva: 0 % de dobles en
+paralelo. El motor rechaza al colocar cualquier casilla que se solape visualmente
+(`solapa-visualmente`), asi que si paso fue despues de colocar, o en un estado que no
+alcanzamos.
+
+En vez de adivinar, el servidor lleva un vigilante (`backend/src/game/vigilanteMontadas.js`):
+despues de cada jugada y de cada destranque revisa el dibujo con los mismos corrimientos
+que dibuja el cliente, y si dos fichas se solapan mas de un cuarto guarda la mesa entera en
+`backend/montadas.log` (fuera de git). La proxima vez que Raul la vea, la mesa exacta queda
+anotada y se reproduce con ella. No toca el juego: solo mira y anota.

@@ -5,6 +5,7 @@ import Iman from './Iman.jsx';
 import {
   DEFAULT_LAYOUT,
   placementsFor,
+  placementKey,
   straightestPlacement,
   computeBoardOffsets,
   anchorOffsetFor
@@ -183,18 +184,22 @@ export default function Board({
   const ghostPlacements = useMemo(() => {
     if (!myTurn || !activeTileForPlacements) return [];
     
-    // Un solo sitio por punta: el que el motor considera mas derecho (§164).
-    // Antes se ofrecian todas las casillas posibles y la cadena salia como
-    // cada uno la fuera doblando; Raul: "no me gusta como se van acomodando".
+    // Todas las casillas por punta, y la que sigue derecho marcada como
+    // SUGERIDA (§169). La 164 dejaba una sola por punta y la cadena salia
+    // recta, pero Raul quiere que la gente pueda elegir hacia donde dobla la
+    // culebra: se ofrecen todas, la sugerida respira en oro y las otras se ven
+    // apagadas pero se pueden tocar igual.
     if (!board || board.length === 0) {
-      return getValidPlacementsForTile(board, activeTileForPlacements, 'first').slice(0, 1);
+      return getValidPlacementsForTile(board, activeTileForPlacements, 'first').map((p, i) => ({ ...p, sugerida: i === 0 }));
     }
 
     const placements = [];
     for (const side of ['left', 'right']) {
       const opciones = getValidPlacementsForTile(board, activeTileForPlacements, side);
       const mejor = straightestPlacement(board, opciones, side);
-      if (mejor) placements.push(mejor);
+      for (const p of opciones) {
+        placements.push({ ...p, sugerida: mejor != null && placementKey(p) === placementKey(mejor) });
+      }
     }
     return placements;
   }, [board, activeTileForPlacements, myTurn]);
@@ -466,6 +471,7 @@ export default function Board({
               ninguna pieza encima del paño (ver Iman.jsx). */}
           <Iman
             activo={Boolean(isSnappedActive)}
+            sugerida={opt.sugerida !== false}
             onClick={(e) => {
               e.stopPropagation();
               onPlayTile && onPlayTile(opt.side, opt);

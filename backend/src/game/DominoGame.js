@@ -13,6 +13,7 @@ import {
   ACTION
 } from '@privoytruco/domino-engine';
 import { MODALIDADES, overridesDeModalidad } from '@privoytruco/domino-engine';
+import { vigilarMontadas } from './vigilanteMontadas.js';
 
 export const GRID_SIZE = 20;
 
@@ -372,6 +373,7 @@ export class DominoGame {
     }
     const r = this._dispatch(playerId, action);
     if (!r.ok) return r;
+    vigilarMontadas(this.state.board, { momento: 'jugada', jugador: playerId, accion });
     return { ok: true };
   }
 
@@ -418,7 +420,9 @@ export class DominoGame {
     if (!r.ok) return null;
 
     this.state = r.state;
-    return r.events.find((e) => e.kind === 'RELAYOUT')?.forma ?? 'compacta';
+    const forma = r.events.find((e) => e.kind === 'RELAYOUT')?.forma ?? 'compacta';
+    vigilarMontadas(this.state.board, { momento: 'destranque', forma });
+    return forma;
   }
 
   startNextRound() {
