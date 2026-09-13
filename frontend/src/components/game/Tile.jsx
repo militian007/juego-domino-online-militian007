@@ -79,7 +79,7 @@ export default function Tile({
     : '';
 
   const reliefClass = onClick ? 'tile-hand' : 'tile-3d';
-  const baseClasses = `transition-all duration-300 select-none relative rounded ${reliefClass} ${newestShadow}`;
+  const baseClasses = `transition-transform duration-300 select-none relative rounded ${reliefClass} ${newestShadow}`;
 
   const interactiveClasses = onClick
     ? 'cursor-pointer hover:shadow-[0_0_12px_rgba(212,175,55,0.4)] active:scale-95 hover:scale-105'

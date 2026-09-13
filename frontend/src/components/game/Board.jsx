@@ -96,7 +96,7 @@ const ZOOM_FICHAS = 1.30;
 // En un telefono de 375 el lado corto son 315 px:
 //   maximo 0,22 -> ficha de 69 px de alto   (Domino Legends: 78)
 //   minimo 0,035 -> ficha de 11 px de alto  (Domino Legends: 13)
-const ALTO_MAXIMO_FICHA = 0.15;
+const ALTO_MAXIMO_FICHA = 0.11;
 const ALTO_MINIMO_FICHA = 0.035;
 
 // Cuanto sitio se reserva MAS ALLA DE LAS PUNTAS al encuadrar.
@@ -501,6 +501,8 @@ export default function Board({
   // con la mesa puesta, y React se caia con "Rendered more hooks than during the
   // previous render" en cuanto entraba la primera ficha.
   const [volando, setVolando] = useState(null);
+  // La ficha que acaba de aterrizar: se asienta con un toque corto (§165).
+  const [asentando, setAsentando] = useState(null);
   const ultimoVuelo = useRef(null);
 
   useLayoutEffect(() => {
@@ -595,9 +597,18 @@ export default function Board({
   // Al terminar el viaje, la ficha de verdad ya esta en su sitio y esta se va.
   useEffect(() => {
     if (!volando) return;
-    const id = setTimeout(() => setVolando(null), MS_VUELO + 40);
+    const id = setTimeout(() => {
+      setAsentando({ indice: volando.indice, id: volando.id });
+      setVolando(null);
+    }, MS_VUELO + 40);
     return () => clearTimeout(id);
   }, [volando]);
+
+  useEffect(() => {
+    if (!asentando) return;
+    const id = setTimeout(() => setAsentando(null), 260);
+    return () => clearTimeout(id);
+  }, [asentando]);
 
   if (!board || board.length === 0) {
     return (
@@ -712,18 +723,22 @@ export default function Board({
 
           return (
             <div
-              key={`tile-${i}`}
+              key={`${tile[0]}-${tile[1]}`}
               data-ficha-mesa={i}
+              // La llave es la FICHA, no su indice (§165): cuando entra una
+              // ficha por la punta izquierda todos los indices corren uno, y
+              // con llave por indice cada nodo pasaba a dibujar la ficha de al
+              // lado, transicionando tamaño, giro y sitio: la cadena entera se
+              // veia morfando. Con la llave por ficha solo entra la nueva.
               // La transicion de sitio es para el DESTRANQUE: cuando la cadena
               // se vuelve a trazar, las fichas se deslizan a su lugar nuevo en
-              // vez de saltar. En el juego normal no se nota, porque una ficha
-              // ya puesta nunca se mueve.
+              // vez de saltar.
               // Ya no lleva `tile-placed`: ese rebote empezaba en `scale(0.3)`
               // con opacidad 0, asi que despues de aterrizar la ficha
               // desaparecia y volvia a aparecer de un salto. El viaje ES la
               // animacion de poner la ficha; lo unico que queda es dejarla por
               // encima de sus vecinas.
-              className={`absolute ficha-de-mesa ${isNewest ? 'z-10' : ''}`}
+              className={`absolute ficha-de-mesa ${isNewest ? 'z-10' : ''} ${asentando?.indice === i ? 'ficha-asienta' : ''}`}
               style={{ left: `${left}px`, top: `${top}px`, visibility: esLaQueVuela ? 'hidden' : undefined }}
             >
               <Tile

@@ -7574,3 +7574,42 @@ pasada de rescate) no se toco; solo se ofrecen menos opciones al dedo. La medici
 fichas trabadas de la seccion 81 sigue valiendo porque el motor valida igual.
 
 Se grabo la cadena armandose, antes y despues, cuadro por jugada, para que Raul lo vea.
+
+## 165. La fluidez: la cadena morfaba, y cinco remates (2026-09-12)
+
+Raul, jugando en la PC: "se ve mucho mejor; menos zoom todavia, y siento que puedes
+mejorar la fluidez, que todo se vea mas fluido, no desencajado". Se grabo una jugada
+cuadro a cuadro (20 cuadros con su tiempo real) y se miro el DOM a los 120, 250, 340 y
+500 ms de tocar el iman. Ahi estaba lo desencajado:
+
+**El bug.** Las fichas de la mesa llevaban de llave su INDICE (`tile-0`, `tile-1`...).
+Cuando una ficha entra por la punta IZQUIERDA, todos los indices corren uno, y React le
+da a cada nodo la ficha de al lado: cada ficha ya puesta pasaba a dibujar otra, con otra
+cara y a veces otra orientacion, y como `Tile` llevaba `transition-all`, ese cambio de
+tamaño y giro se ANIMABA 300 ms. Medido: a los 120 ms de la jugada, la ficha 0 media
+50x54 (a medio camino entre acostada y parada) y el relieve de la que volaba media
+137x169, un rectangulo negro encima de la cadena. La cadena entera se veia morfando en
+cada jugada por la izquierda.
+
+Arreglo: la llave es la ficha (`5-3`), que en la mesa es unica; solo entra el nodo nuevo.
+Y `Tile` transiciona solo `transform`, nunca tamaño.
+
+**Los remates:**
+
+1. Menos zoom: el tope baja de 0,15 a 0,11 del lado corto. En un telefono de 375 la
+   primera ficha mide 35 px de alto, como en la seccion 88.
+2. La camara espera a que la ficha aterrice: la transicion del encuadre lleva 300 ms de
+   retraso (lo que dura el vuelo), asi que primero cae la ficha y despues, si hace
+   falta, se corre la camara. Y `will-change: transform` para que la capa este lista.
+3. La ficha que acaba de aterrizar se asienta: 220 ms de un toque de escala (1,09 a 1)
+   y brillo, como el clac, en cuanto termina el vuelo.
+4. La mano se reacomoda deslizando (FLIP: se mide donde estaba cada ficha, donde
+   quedo, y se la trae desde su sitio viejo en 260 ms). Antes las fichas saltaban a su
+   sitio nuevo al jugar o al robar. Las fichas de la mano llevan de llave la ficha, no
+   el indice, por lo mismo de arriba.
+5. La ficha que llega a la mano (reparto o robada) entra creciendo, 280 ms.
+
+Nota de medicion: el "1 s de la primera jugada" que se anoto en la auditoria no era del
+juego, era del propio guion de capturas, que sacaba dos fotos antes de mirar si la
+jugada se habia confirmado. Con la rafaga de veinte fotos "tardaba" 5,8 s. La jugada
+se confirma en 10 ms desde la primera.

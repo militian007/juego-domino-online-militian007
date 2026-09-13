@@ -120,6 +120,35 @@ export default function Hand({
   // ahi, sin pedirle nada a nadie.
   const anchoFicha = useAnchoDeFicha(handRef, tiles.length);
 
+  // La mano se reacomoda deslizando, no de un salto (§165). Se mide donde
+  // estaba cada ficha y donde quedo, y se la trae desde su sitio viejo. La que
+  // no estaba (recien robada, o el reparto) entra creciendo.
+  const rectsPrevios = useRef(new Map());
+  useLayoutEffect(() => {
+    const raiz = handRef.current;
+    if (!raiz) return;
+    const ahora = new Map();
+    for (const nodo of raiz.querySelectorAll('[data-ficha-id]')) {
+      const r = nodo.getBoundingClientRect();
+      ahora.set(nodo.dataset.fichaId, r);
+      const antes = rectsPrevios.current.get(nodo.dataset.fichaId);
+      if (!antes) {
+        nodo.classList.add('ficha-llega');
+        continue;
+      }
+      const dx = antes.left - r.left;
+      const dy = antes.top - r.top;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
+      nodo.style.transition = 'none';
+      nodo.style.transform = `translate(${dx}px, ${dy}px)`;
+      requestAnimationFrame(() => {
+        nodo.style.transition = 'transform 260ms cubic-bezier(0.22, 1, 0.36, 1)';
+        nodo.style.transform = '';
+      });
+    }
+    rectsPrevios.current = ahora;
+  }, [tiles, anchoFicha]);
+
   if (!tiles || tiles.length === 0) {
     return (
       <div className="text-center text-domino-cream-dim font-medium italic text-sm py-4">
@@ -155,10 +184,11 @@ export default function Hand({
 
           return (
             <div
-              key={i}
+              key={`${tile[0]}-${tile[1]}`}
               // Lo lee la mesa para saber DE DONDE sale la ficha al jugarla, y
               // poder hacerla volar desde ahi (§122).
               data-ficha-mano={i}
+              data-ficha-id={`${tile[0]}-${tile[1]}`}
               className="shrink-0 relative touch-none"
               style={{ opacity: isDragging ? 0 : 1 }}
               onMouseDown={handleMouseDown}

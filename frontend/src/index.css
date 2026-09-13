@@ -255,7 +255,10 @@
      420 ms: mas corto se siente brusco, mas largo se siente pesado y encima
      compite con la ficha que esta cayendo. */
   .camara-de-mesa {
-    transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+    /* Espera 300 ms: lo que tarda la ficha en aterrizar. Asi primero cae la
+       ficha y despues, si hace falta, se corre la camara; no los dos a la vez. */
+    transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1) 300ms;
+    will-change: transform;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -287,6 +290,24 @@
 
   @media (prefers-reduced-motion: reduce) {
     .ficha-de-mesa { transition: none; }
+  }
+
+  /* La ficha que acaba de aterrizar se asienta: un toque corto, como el clac. */
+  @keyframes ficha-asienta {
+    0% { transform: scale(1.09); filter: brightness(1.18); }
+    100% { transform: scale(1); filter: brightness(1); }
+  }
+  .ficha-asienta { animation: ficha-asienta 220ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+  /* La ficha que llega a la mano (reparto o robada) entra creciendo. */
+  @keyframes ficha-llega {
+    from { transform: translateY(16px) scale(0.6); opacity: 0; }
+    to { transform: none; opacity: 1; }
+  }
+  .ficha-llega { animation: ficha-llega 280ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ficha-asienta, .ficha-llega { animation: none; }
   }
 
   /* El telon de los menus.
