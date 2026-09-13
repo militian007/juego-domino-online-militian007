@@ -56,12 +56,12 @@ const puedeEscribir = (userId) => {
 
   const anterior = ultimoMensaje.get(userId) ?? 0;
   if (ahora - anterior < ESPERA_ENTRE_MENSAJES_MS) {
-    return 'Esperá un segundo antes de escribir otra vez';
+    return 'Espera un segundo antes de escribir otra vez';
   }
 
   const recientes = (mensajesDelMinuto.get(userId) ?? []).filter((t) => ahora - t < 60_000);
   if (recientes.length >= MAXIMO_POR_MINUTO) {
-    return 'Estás escribiendo demasiado rápido, esperá un minuto';
+    return 'Estás escribiendo demasiado rápido, espera un minuto';
   }
 
   ultimoMensaje.set(userId, ahora);
@@ -122,7 +122,7 @@ export function registrarChat(io, socket) {
   socket.on('chat:enviar', async ({ texto } = {}) => {
     const quien = identificar(socket);
     if (!quien) {
-      return socket.emit('chat:error', { mensaje: 'Iniciá sesión para escribir' });
+      return socket.emit('chat:error', { mensaje: 'Inicia sesión para escribir' });
     }
 
     const limpio = ChatGlobal.limpiar(texto);
@@ -157,7 +157,7 @@ export function registrarChat(io, socket) {
       }
     } catch (err) {
       console.error('Error guardando mensaje del chat:', err.message);
-      socket.emit('chat:error', { mensaje: 'No se pudo enviar, probá de nuevo' });
+      socket.emit('chat:error', { mensaje: 'No se pudo enviar, prueba de nuevo' });
     }
   });
 

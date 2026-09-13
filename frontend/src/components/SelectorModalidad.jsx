@@ -15,7 +15,7 @@ export const MODALIDADES = [
   {
     id: 'pozo',
     label: 'Con pozo',
-    desc: 'Si no podés jugar, levantás del montón hasta poder. Es la de siempre.'
+    desc: 'Si no puedes jugar, levantas del montón hasta poder. Es la de siempre.'
   },
   {
     id: 'tranca',
@@ -25,7 +25,7 @@ export const MODALIDADES = [
   {
     id: 'cinco',
     label: 'Cinco',
-    desc: 'Sumás cada vez que las dos puntas dan 5, 10, 15... Se juega a 200.'
+    desc: 'Sumas cada vez que las dos puntas dan 5, 10, 15... Se juega a 200.'
   }
 ];
 

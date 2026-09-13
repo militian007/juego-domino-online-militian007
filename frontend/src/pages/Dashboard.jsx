@@ -104,7 +104,7 @@ export default function Dashboard() {
           </button>
         </form>
         <p className="pista-codigo mt-1.5 px-1 text-[10px] uppercase tracking-wider text-domino-cream/30">
-          ¿Te pasaron un código? Escribilo aquí
+          ¿Te pasaron un código? Escríbelo aquí
         </p>
       </main>
     </div>

@@ -89,7 +89,7 @@ export default function RelojDeTurno({ restanteMs, turnoId, total, esMiTurno, no
       </div>
 
       <span className="mt-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-domino-cream/85">
-        {esMiTurno ? 'JUGÁ' : (nombre ? nombre.toUpperCase() : 'RIVAL')}
+        {esMiTurno ? 'JUEGA' : (nombre ? nombre.toUpperCase() : 'RIVAL')}
       </span>
     </div>
   );

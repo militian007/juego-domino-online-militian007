@@ -59,7 +59,7 @@ export default function RoundBreakdown({ manos, equipoGanador, motivo, puntos })
           {suman.map((m) => m.pips).join(' + ')} = <b className="text-domino-accent">{totalQueSuma}</b>
           {totalQueSuma !== puntos && (
             <span className="ml-2 text-red-400">
-              (el servidor otorgó {puntos} — avisá si no coincide)
+              (el servidor otorgó {puntos} — avisa si no coincide)
             </span>
           )}
         </div>

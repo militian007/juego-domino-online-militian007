@@ -112,7 +112,7 @@ const armarMesa = async (torneo, unoId, unoNombre, dosId, dosNombre) => {
     await avisar(id, {
       tipo: TIPO.TORNEO,
       titulo: `${torneo.nombre}: te toca jugar`,
-      cuerpo: `Contra ${contra}. Entrá a la mesa antes de que se te pase.`,
+      cuerpo: `Contra ${contra}. Entra a la mesa antes de que se te pase.`,
       datos: { torneoId: torneo.id, code: sala.code }
     });
   }
@@ -218,8 +218,8 @@ async function seguirLaLlave(torneoId) {
     await Torneo.pasarDeRonda(torneoId, pasanDeArriba.userId, ronda);
     await avisar(pasanDeArriba.userId, {
       tipo: TIPO.TORNEO,
-      titulo: `${torneo.nombre}: pasás de ronda`,
-      cuerpo: 'Esta vuelta te tocó descansar. Esperá tu próxima mesa.',
+      titulo: `${torneo.nombre}: pasas de ronda`,
+      cuerpo: 'Esta vuelta te tocó descansar. Espera tu próxima mesa.',
       datos: { torneoId }
     });
   }
@@ -260,7 +260,7 @@ export const alTerminarPartida = async (sala, ganadorId, perdedorId) => {
       await avisar(ganadorId, {
         tipo: TIPO.TORNEO,
         titulo: 'Ganaste tu mesa',
-        cuerpo: 'Seguís en el torneo. Esperá la próxima.',
+        cuerpo: 'Sigues en el torneo. Espera la próxima.',
         datos: { torneoId: sala.torneoId }
       });
     }
@@ -283,7 +283,7 @@ export const arrancarLosQueTocan = async () => {
         await avisar(a.userId, {
           tipo: TIPO.TORNEO,
           titulo: `${torneo.nombre} no se jugó`,
-          cuerpo: 'No se anotó suficiente gente. Probá con el próximo.',
+          cuerpo: 'No se anotó suficiente gente. Prueba con el próximo.',
           datos: { torneoId: torneo.id }
         });
       }

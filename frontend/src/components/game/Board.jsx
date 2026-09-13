@@ -630,7 +630,7 @@ export default function Board({
       {myTurn && !selectedTile && !draggedTile && (
         <div className="pointer-events-none absolute inset-x-0 top-14 flex justify-center px-6">
           <span className="rounded-full border border-domino-accent/30 bg-black/70 px-3 py-1.5 text-center text-[11px] font-semibold text-domino-cream/80">
-            Sos el primero: poné una ficha en el centro
+            Eres el primero: pon una ficha en el centro
           </span>
         </div>
       )}

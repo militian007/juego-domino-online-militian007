@@ -85,7 +85,7 @@ export default function AvisoDeTorneo() {
         </button>
 
         <p className="mt-3 text-[10px] leading-relaxed text-domino-cream/40">
-          Si no entrás a tiempo quedás fuera del torneo.
+          Si no entras a tiempo quedas fuera del torneo.
         </p>
       </div>
     </div>

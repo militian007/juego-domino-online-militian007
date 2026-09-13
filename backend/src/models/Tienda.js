@@ -104,7 +104,7 @@ export const comprar = async (userId, clave) => {
   if (!articulo) return { ok: false, error: 'Ese artículo no existe' };
 
   if (await Desbloqueo.tiene(userId, clave)) {
-    return { ok: false, error: 'Ya tenés eso' };
+    return { ok: false, error: 'Ya tienes eso' };
   }
 
   const pago = await Moneda.cobrar(userId, articulo.precio, 'tienda', clave);

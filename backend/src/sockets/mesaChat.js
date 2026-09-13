@@ -74,7 +74,7 @@ const puedeEscribir = (userId) => {
 
   const anterior = ultimoMensaje.get(userId) ?? 0;
   if (ahora - anterior < ESPERA_ENTRE_MENSAJES_MS) {
-    return 'Esperá un segundo antes de escribir otra vez';
+    return 'Espera un segundo antes de escribir otra vez';
   }
 
   const recientes = (mensajesDelMinuto.get(userId) ?? []).filter((t) => ahora - t < 60_000);
@@ -118,7 +118,7 @@ export function registrarChatDeMesa(io, socket, roomManager) {
 
   socket.on('mesa:chat:enviar', ({ code, texto } = {}, callback) => {
     if (socket.isGuest || !socket.userId) {
-      return callback?.({ ok: false, error: 'Iniciá sesión para escribir' });
+      return callback?.({ ok: false, error: 'Inicia sesión para escribir' });
     }
 
     const room = estaSentado(roomManager, code, socket.userId);
