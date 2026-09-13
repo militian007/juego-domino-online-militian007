@@ -13,21 +13,22 @@ import { chooseAction } from '../src/bot.js';
  * ficha que pega con una punta. Es el caso grave: el dibujo lo manda a robar o a
  * pasar cuando la regla del domino dice que tenia jugada.
  *
- * Sale de barrer partidas de bots con semilla fija: con `veto-118`, a las 39
- * jugadas, el asiento 0 tiene el 1|4, pega con la punta izquierda, no hay donde
- * ponerlo, el pozo esta vacio y no tiene ninguna otra jugada.
+ * Sale de barrer partidas de bots con semilla fija (`tools/buscar-veto.mjs`): con
+ * `veto-15`, a las 42 jugadas, el asiento 0 tiene el 0|6, pega con una punta, no
+ * hay donde ponerlo, el pozo esta vacio y no tiene ninguna otra jugada. (Era
+ * `veto-118` a las 39 con el 1|4; cambio con la regla de seguir derecho, §167.)
  *
  * Se reconstruye jugando, no guardando un estado a mano: un estado pegado en el
  * test se queda viejo en cuanto cambia cualquier regla y deja de probar nada.
  */
 function posicionTrancada() {
-  let state = createGame({ gameFormat: 'domino-1v1-v1', seed: 'veto-118' });
+  let state = createGame({ gameFormat: 'domino-1v1-v1', seed: 'veto-15' });
 
-  for (let jugadas = 0; jugadas < 39; jugadas++) {
+  for (let jugadas = 0; jugadas < 42; jugadas++) {
     const seat = currentSeat(state);
     const accion = chooseAction(viewFor(state, seat), {
       difficulty: 'normal',
-      seed: `v-118-${jugadas}`
+      seed: `veto-15-${jugadas}`
     });
     const r = applyAction(state, { ...accion, seat });
     assert.ok(r.ok, `la jugada ${jugadas} deberia entrar`);
@@ -43,7 +44,7 @@ test('la posicion de prueba: tiene ficha que pega y NO puede jugar nada', () => 
 
   const atascadas = jugadasSinSitio(state.board, state.hands[seat], state.ends, DEFAULT_LAYOUT);
   assert.equal(atascadas.length, 1);
-  assert.deepEqual(atascadas[0].tile, [1, 4]);
+  assert.deepEqual(atascadas[0].tile, [0, 6]);
 
   // Esto es lo injusto: la regla dice que tiene jugada y el dibujo dice que no.
   assert.equal(playableMoves(state, seat).length, 0);

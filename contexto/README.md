@@ -7624,3 +7624,32 @@ resplandor fuerte, por encima de las vecinas. Eso se lee como una ficha levantad
 
 Ahora todas miden lo mismo. La ultima lleva solo un brillo dorado suave, para saber cual
 fue, y el asiento de la 165 baja de 1,09 a 1,04: un toque, no un salto.
+
+## 167. La cadena sigue derecho y solo dobla contra el borde (2026-09-13)
+
+Con zoom en la mesa de Raul se vio la otra mitad de "no se ve parejo": la cadena bajaba un
+escalon en medio del paño. Una ficha acostada, la siguiente parada colgando de su punta,
+la siguiente acostada otra vez: escalera. No era el borde; era el "cerebro"
+(`aperturaFutura`) eligiendo doblar porque asi dejaba el tablero mas abierto. La seccion
+81 lo puso primero porque se trababa un pelo menos (0,034 % contra 0,068 %).
+
+Ahora SEGUIR DERECHO manda, en `straightestPlacement` (layout.js) y en el bot (bot.js),
+que lleva su propia copia de la regla: si se puede seguir en linea, se sigue; el cerebro,
+el aire y el sitio libre solo deciden entre las que ya van derecho, o cuando no hay
+recta y toca doblar contra el borde. Si el extremo es un doble, "derecho" es cruzado,
+como siempre.
+
+Medido con `tools/medir-destranque.mjs 400` (183.000 turnos), antes y despues:
+
+  veto parcial (podia jugar otra)     0,290 %  ->  0,117 %
+  veto total   (no podia jugar nada)  0,232 %  ->  0,073 %
+  rondas con algun veto total         3,35 %   ->  1,18 %
+  sin solucion                        0        ->  0
+
+Al reves de lo que decia la 81: con el rescate y el destranque de por medio, la cadena
+recta se traba MENOS que la que dobla por apertura. Y la mesa se lee de un vistazo.
+
+Las cuatro pruebas del destranque armaban su posicion jugando 39 jugadas de bot con la
+semilla `veto-118`; con la regla nueva esa partida ya no se tranca. `tools/buscar-veto.mjs`
+barre semillas y encuentra posiciones trancadas con la regla vigente: la prueba usa ahora
+`veto-15` a las 42 jugadas (el 0|6). Las 85 pruebas en verde.

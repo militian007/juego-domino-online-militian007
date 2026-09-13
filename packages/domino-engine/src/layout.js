@@ -605,26 +605,23 @@ export function straightestPlacement(board, placements, side, layout = DEFAULT_L
 
   const grid = layout.grid;
   const endTile = side === 'left' ? board[0] : board[board.length - 1];
+  const extremoEsDoble = endTile.tile[0] === endTile.tile[1];
 
-  // Si el extremo es un doble, salir CRUZADO va primero, antes que el filtro de
-  // no pegarse al borde. Al reves, las cruzadas se descartaban por estar mas
-  // cerca del borde y el doble terminaba en linea igual.
-  if (endTile.tile[0] === endTile.tile[1]) {
+  // Si el extremo es un doble, salir CRUZADO va primero, antes que cualquier
+  // otro filtro. Un doble va acostado sobre la cadena, asi que la cadena sale
+  // por sus costados, no por su mismo eje (ver contexto/README.md seccion 76).
+  if (extremoEsDoble) {
     const cruzadas = placements.filter((p) => p.orientation !== endTile.orientation);
     if (cruzadas.length > 0) placements = cruzadas;
   }
 
-  // Primero el cerebro: entre las colocaciones posibles gana la que deja mas
-  // abierto el tablero para la jugada siguiente. Va ANTES que no pegarse al
-  // borde y que seguir derecho, que son atajos; esto mira de verdad.
-  if (placements.length > 1) {
-    const aperturas = placements.map((p) => aperturaFutura(board, p, side, layout));
-    const mejorApertura = Math.max(...aperturas);
-    placements = placements.filter((p, i) => aperturas[i] === mejorApertura);
-  }
-
-  const mejorAire = Math.max(...placements.map((p) => aireEnLaPunta(p, side, grid)));
-  placements = placements.filter((p) => aireEnLaPunta(p, side, grid) === mejorAire);
+  // SEGUIR DERECHO MANDA (seccion 167). Si se puede seguir en linea, se sigue;
+  // la cadena solo dobla cuando choca con el borde. Antes iba primero el
+  // "cerebro" (`aperturaFutura`) y doblaba en medio de la mesa cuando eso
+  // dejaba el tablero mas abierto: se trababa un pelo menos (seccion 81) pero
+  // la cadena se veia en escalera, y Raul la quiere recta. Lo que se pierde en
+  // trabadas lo tapa el rescate y el destranque; lo que se gana es una mesa que
+  // se lee de un vistazo.
   const dx = side === 'left' ? endTile.x - endTile.x2 : endTile.x2 - endTile.x;
   const dy = side === 'left' ? endTile.y - endTile.y2 : endTile.y2 - endTile.y;
   const ex = side === 'left' ? endTile.x : endTile.x2;
@@ -633,21 +630,6 @@ export function straightestPlacement(board, placements, side, layout = DEFAULT_L
   const cy = ey + dy;
   const cx2 = cx + dx;
   const cy2 = cy + dy;
-  // Seguir derecho manda: una cadena recta se traba menos que una que
-  // serpentea. Entre las que van derecho (o entre todas si ninguna va derecho)
-  // gana la que deja mas sitio libre alrededor, para no enroscarse.
-  //
-  // Medido en tres tandas de ~120.000 turnos cada una, contra elegir solo la
-  // recta: la ficha trabada baja de 0,61% a 0,45%, de 0,75% a 0,49% y de 0,66%
-  // a 0,53%. Ojo, el orden importa: aplicar el sitio libre ANTES que la recta
-  // la EMPEORA (0,61% -> 0,90%). Ver contexto/README.md seccion 73.
-  //
-  // Pero si el extremo es un DOBLE, "derecho" es al reves. Un doble esta
-  // cruzado sobre la cadena, asi que la cadena sale por sus costados, no por su
-  // mismo eje. Tomando la direccion del propio doble, la cadena le seguia de
-  // largo y el doble quedaba de pie, en linea, en vez de acostado: eso es lo
-  // que reporto el usuario. Ver contexto/README.md seccion 76.
-  const extremoEsDoble = endTile.tile[0] === endTile.tile[1];
   const rectas = extremoEsDoble
     ? placements.filter((p) => p.orientation !== endTile.orientation)
     : placements.filter((p) =>
@@ -655,15 +637,28 @@ export function straightestPlacement(board, placements, side, layout = DEFAULT_L
           ? p.x === cx2 && p.y === cy2 && p.x2 === cx && p.y2 === cy
           : p.x === cx && p.y === cy && p.x2 === cx2 && p.y2 === cy2
       );
-  const pool = rectas.length > 0 ? rectas : placements;
-  if (pool.length === 1) return pool[0];
-  const espacios = pool.map((p) => espacioEnLaPunta(board, p, side, layout));
-  const mejorEspacio = Math.max(...espacios);
-  const finalistas = pool.filter((p, i) => espacios[i] === mejorEspacio);
+  if (rectas.length > 0) placements = rectas;
 
-  // Ultimo desempate: la que deja la cadena mas cerca del centro. Se toca solo
-  // aca, que es donde el orden ya no cambia nada mas: adelantarlo empeora, como
-  // se midio con el criterio de compacidad (ver contexto seccion 88).
+  // Despues el cerebro: entre las que quedan gana la que deja mas abierto el
+  // tablero para la jugada siguiente.
+  if (placements.length > 1) {
+    const aperturas = placements.map((p) => aperturaFutura(board, p, side, layout));
+    const mejorApertura = Math.max(...aperturas);
+    placements = placements.filter((p, i) => aperturas[i] === mejorApertura);
+  }
+
+  // No pegarse al borde.
+  const mejorAire = Math.max(...placements.map((p) => aireEnLaPunta(p, side, grid)));
+  placements = placements.filter((p) => aireEnLaPunta(p, side, grid) === mejorAire);
+  if (placements.length === 1) return placements[0];
+
+  // Entre las que quedan, la que deja mas sitio libre alrededor, para no
+  // enroscarse (seccion 73).
+  const espacios = placements.map((p) => espacioEnLaPunta(board, p, side, layout));
+  const mejorEspacio = Math.max(...espacios);
+  const finalistas = placements.filter((p, i) => espacios[i] === mejorEspacio);
+
+  // Ultimo desempate: la que deja la cadena mas cerca del centro (seccion 88).
   if (finalistas.length === 1) return finalistas[0];
   const distancias = finalistas.map((p) => distanciaAlCentro(board, p, layout));
 

@@ -191,6 +191,20 @@ export function chooseAction(view, opts = {}) {
     if (cruzadas.length > 0) opciones = cruzadas;
   }
 
+  // SEGUIR DERECHO MANDA, igual que en layout.js (seccion 167): si se puede
+  // seguir en linea, se sigue, y solo se dobla contra el borde. Si el extremo
+  // es un doble, "derecho" es cruzado.
+  {
+    const ext = extremoDe(opciones[0]);
+    const esDoble = ext.tile[0] === ext.tile[1];
+    const enLinea = opciones.filter((a) =>
+      esDoble
+        ? a.placement.orientation !== ext.orientation
+        : a.placement.orientation === ext.orientation
+    );
+    if (enLinea.length > 0) opciones = enLinea;
+  }
+
   // El mismo cerebro que usa el jugador (ver layout.js): entre las colocaciones
   // de esta ficha gana la que deja el tablero mas abierto para la siguiente.
   // Solo se compara dentro de la MISMA punta: cual punta conviene ya lo decidio
