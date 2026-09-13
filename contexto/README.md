@@ -7109,3 +7109,111 @@ botón de salir, arriba a la izquierda sobre la placa, no se tocó.
 Con el guion de puppeteer a 375 px, 1v1 y 2v2 contra bots: los rótulos de la mano, el panel
 de "por qué no", el desglose de la ronda, la etiqueta "compa", los contadores de los rivales,
 el código de la sala y la pestaña cerrada y abierta. `npm run build` pasa.
+---
+
+## 150. Las placas del 2 vs 2 a las esquinas de arriba (2026-09-12)
+
+Estaba anotado como pendiente en `contexto/PROMPT-NUEVO-CHAT.md`: en 2 vs 2 las fichas de la
+mesa salen chiquitas, y "ponerlas en las esquinas de arriba las devolveria". Se hizo.
+
+### Que habia
+
+En 2 vs 2 los dos rivales iban a los COSTADOS del paño, a media altura, y para que la cadena
+no les creciera encima el rectangulo de juego cedia **60 px por cada lado**
+(`MARGEN_MESA.lados`). En un telefono de 375 el paño mide 331 de ancho: 120 px de 331 se
+iban en dos placas de 58. La cadena vivia en **211 x 438**.
+
+Medido en 375x812 con bots, ANTES:
+
+| | 1 vs 1 | 2 vs 2 |
+|---|---|---|
+| Rectangulo de la cadena | 315 x 436 | 211 x 438 |
+| Primera ficha (parada) | 35 px de ancho | 35,2 px |
+| Con 4 fichas en la mesa | 24,2 (cadena acostada) | 35,0 (cadena parada) |
+| Con 12 fichas | — | 20,1 px |
+
+Y dos choques mas, los dos en el reparto:
+
+- **"Sos el primero: pone una ficha en el centro"** iba clavado a 56 px del borde de la mesa
+  (`top-14`), o sea de 153 a 183 de la pantalla. La placa del de enfrente termina a 175: la
+  pastilla caia **encima de las fichas boca abajo y del "compa"** del compañero. Se leia
+  montado.
+- **"Esperando que comience la ronda..."** se centraba en el paño ENTERO (424 a 470), justo
+  a la altura de las placas de los costados (411 a 483): les pasaba por encima a las dos.
+
+### Que se hizo
+
+**1. Los rivales, a las esquinas de arriba.** El compañero sigue arriba en el centro; el
+rival de la izquierda va arriba a la izquierda (`left-5 top-2`) y el de la derecha arriba a
+la derecha (`right-5 top-2`). Misma placa de siempre: retrato de 38, nombre debajo en un
+renglon, abanico boca abajo con el numero, punto verde de turno. Las tres en una fila:
+
+| Placa | x | ancho | alto |
+|---|---|---|---|
+| Rival izquierdo | 20 a 78 | 58 | 71,5 |
+| Compañero | 144,5 a 230,5 | 86 | 71,5 |
+| Rival derecho | 297 a 355 | 58 | 71,5 |
+
+Suman 202 px de los 355 que da la pantalla, con 66,5 px de aire entre una y otra. La de la
+izquierda arranca en 20 para no pisar la lengueta de los controles (que va de 0 a 16).
+
+**2. "compa" en la fila de las fichas, no debajo.** La placa del compañero llevaba un cuarto
+renglon ("compa") y media 84,8 de alto contra 71,5 de las otras: con las tres en fila, ese
+renglon de mas bajaba el techo de la cadena para todo el mundo. Ahora va al lado del numero
+(`7 compa`) y la placa se ensancha a 86 px para que quepa. Las tres miden lo mismo y la fila
+termina a **54,5 px del paño**.
+
+**3. Los margenes, en 2 vs 2.** `lados: 60` desaparece; los dos costados quedan con el puro
+borde (8 px), y arriba se reserva `arribaConEsquinas: 56` (la fila mas 1,5 de aire). En 1 vs
+1 no cambia nada: arriba 44, lados 8, igual que estaba. Los dos consumidores (`Board` y
+`PozoEnLaMesa`) reciben el mismo objeto `margenesMesa`, que antes iba repetido a mano.
+
+| | antes | despues |
+|---|---|---|
+| Arriba | 44 | 56 |
+| Lados | 60 y 60 | 8 y 8 |
+| Rectangulo de la cadena | 211 x 438 | **315 x 426** |
+
+**4. Los carteles, al centro del RECTANGULO UTIL.** "Sos el primero" y "Esperando que
+comience la ronda" ya no se posicionan a ojo respecto del paño: van dentro del paño con
+`top/right/bottom/left` iguales a los margenes que recibe `Board`, centrados ahi. Los
+margenes son exactamente lo que las placas y la mano NO ocupan, asi que ahi adentro no pisan
+a nadie, en ningun modo. La pastilla sigue siendo una linea fina y sigue desapareciendo en
+cuanto agarras una ficha (§127): los imanes nunca quedan detras de ella.
+
+**5. Burbujas de chat y gestos.** Con los rivales en las esquinas, sus burbujas salen por
+debajo de la fila de placas (`top-[84px]`, la fila termina en 79,5) y no a media altura; en
+2 vs 2 la del compañero baja tambien a 84 (en 1 vs 1 sigue en `top-16`). Los stickers de los
+rivales salen en su esquina (`left-4 top-8` / `right-4 top-8`), como el del de enfrente sale
+en la suya. Esto se dejo por geometria: con bots no hay chat ni gestos ajenos que disparar.
+
+### Medido despues
+
+| | 1 vs 1 | 2 vs 2 antes | 2 vs 2 despues |
+|---|---|---|---|
+| Rectangulo de la cadena | 315 x 436 | 211 x 438 | 315 x 426 |
+| Primera ficha (parada) | — | 35,2 | **40,1** |
+| Con 4 fichas en la mesa | — | 35,0 | **40,1** (+15 %) |
+| Fila de placas termina en | 163,5 | 174,8 (la de arriba) | 161,5 |
+| "Sos el primero" | 361 a 391 | 153 a 183 (montado) | **366 a 396** |
+| "Esperando..." | 364 a 410 | 424 a 470 (sobre los costados) | **370 a 416** |
+
+Con 4 fichas la cadena todavia va parada y ahi manda el alto, que apenas cambio: por eso el
++15 % y no mas. La ganancia grande llega cuando la cadena dobla: el ancho util paso de 211 a
+315 (+49 %), y con la mesa ancha la cadena se tiende como en 1 vs 1 en vez de bajar en
+palo. Con 15 fichas se midio 17,5 px de celda; con el rectangulo viejo ese mismo tendido
+hubiera dado 11,7. No hay medida "antes" con las mismas 15 fichas: cada partida arma su
+cadena.
+
+En 1 vs 1 la placa del rival (158,5; 92; 58 x 71,5) y la lengueta de los controles (0; 96)
+dan las mismas coordenadas antes y despues, y los margenes son los de siempre. Lo unico que
+se movio en 1 vs 1 son los dos carteles del reparto, que ahora se centran en el rectangulo
+util y no en el paño: "Sos el primero" tambien ahi pisaba el abanico del rival (la placa
+termina en 163,5 y la pastilla arrancaba en 140).
+
+### Lo que NO se comprobo a mano
+
+Las burbujas de chat y los gestos de los rivales en 2 vs 2 se colocaron por medida, no
+mirandolos: con bots en la mesa nadie chatea ni manda stickers. Y la lengueta de los
+controles, cuando se abre, tapa la placa del rival izquierdo mientras esta abierta; se cierra
+y vuelve. Antes tapaba paño vacio.
