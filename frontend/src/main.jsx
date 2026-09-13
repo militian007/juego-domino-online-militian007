@@ -23,6 +23,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 //
 // Sin el, el navegador NO ofrece instalar la app: Chrome exige un service
 // worker con manejador de `fetch` antes de mostrar esa opcion.
+// `?diag=1`: el vigilante del dibujo manda la mesa entera en cada jugada (§172).
+if (import.meta.env.DEV) {
+  try {
+    if (new URLSearchParams(window.location.search).get('diag') === '1') localStorage.setItem('diagDibujo', '1');
+    if (new URLSearchParams(window.location.search).get('diag') === '0') localStorage.removeItem('diagDibujo');
+  } catch { /* nada */ }
+}
+
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch((err) => {

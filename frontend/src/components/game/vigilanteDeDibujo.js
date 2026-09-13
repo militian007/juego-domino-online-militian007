@@ -44,9 +44,13 @@ export function vigilarDibujo(pano, board, offsets, escala) {
         if (s > 0.03) { hallada = { i, k, solape: Math.round(s * 100) }; break; }
       }
     }
-    if (!hallada) return null;
+    // Con `?diag=1` en la direccion se manda TODO, haya pisado o no: asi el
+    // dibujo de la maquina de Raul se compara con el de aqui, ficha por ficha.
+    let siempre = false;
+    try { siempre = localStorage.getItem('diagDibujo') === '1'; } catch { /* nada */ }
+    if (!hallada && !siempre) return null;
 
-    const firma = `${board.length}:${hallada.i}:${hallada.k}`;
+    const firma = `${board.length}:${hallada ? hallada.i : '-'}:${hallada ? hallada.k : '-'}`;
     if (firma === ultimoReporte) return hallada;
     ultimoReporte = firma;
 
@@ -59,12 +63,14 @@ export function vigilarDibujo(pano, board, offsets, escala) {
       animacion: getComputedStyle(nodos[idx]).animationName,
       estilo: nodos[idx].getAttribute('style'),
       offset: { top: nodos[idx].offsetTop, left: nodos[idx].offsetLeft, alto: nodos[idx].offsetHeight },
-      adentro: (() => { const t = nodos[idx].firstElementChild; return t ? { clases: t.className, transform: getComputedStyle(t).transform, rect: redondear(t.getBoundingClientRect()) } : null; })()
+      adentro: (() => { const t = nodos[idx].firstElementChild; return t ? { clases: t.className, transform: getComputedStyle(t).transform, rect: redondear(t.getBoundingClientRect()) } : null; })(),
+      imagen: (() => { const im = nodos[idx].querySelector('img'); return im ? { rect: redondear(im.getBoundingClientRect()), natural: `${im.naturalWidth}x${im.naturalHeight}`, src: (im.getAttribute('src') || '').slice(-40) } : null; })()
     });
     const reporte = {
       montada: hallada,
-      fichas: [detalle(hallada.i), detalle(hallada.k)],
+      fichas: hallada ? [detalle(hallada.i), detalle(hallada.k)] : nodos.map((n, idx) => detalle(idx)),
       nodos: nodos.length,
+      ventana: { dpr: window.devicePixelRatio, ancho: window.innerWidth, alto: window.innerHeight, zoomVisual: window.visualViewport ? window.visualViewport.scale : null },
       board,
       offsets,
       escala,
@@ -79,7 +85,7 @@ export function vigilarDibujo(pano, board, offsets, escala) {
       body: JSON.stringify(reporte),
       keepalive: true
     }).catch(() => {});
-    console.warn(`[dibujo] fichas ${hallada.i} y ${hallada.k} se pisan ${hallada.solape}% en pantalla: anotado en el servidor`);
+    if (hallada) console.warn(`[dibujo] fichas ${hallada.i} y ${hallada.k} se pisan ${hallada.solape}% en pantalla: anotado en el servidor`);
     return hallada;
   } catch {
     return null;

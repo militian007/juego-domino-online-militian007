@@ -7805,3 +7805,24 @@ rectangulo del nodo de adentro. En esta PC no se reproduce: `diag-rects.mjs` (sc
 mide caja e imagen de cada ficha tras cada jugada, en telefono (375x812 a 2x) y en escritorio
 a 1, 1,25, 1,5 y 1,75 de escala de Windows: cero pisados (uno de 1 % por redondeo a 1,75).
 Queda esperar el registro de `montadas-cliente.log` de la maquina de Raul.
+
+## 173. Las fichas "montadas" eran la sombra: resuelto (2026-09-13)
+
+Con el modo `?diag=1` (seccion 172) la maquina de Raul mando la mesa entera, ficha por ficha:
+Edge en Windows, monitor de 3440 x 1440, escala de la camara 1,83. Las cajas de las trece
+fichas se tocaban justo (por ejemplo `top` 613,2 + alto 117 = 730,3, la siguiente en 730,3),
+cero pisado. Lo que se montaba no eran las fichas sino su SOMBRA y su CANTO: `.tile-3d`
+llevaba `drop-shadow(0 2px 1px) drop-shadow(0 5px 6px)` y `.tile-edge` asomaba 3 px por
+debajo de la casilla. En un telefono la camara dibuja a 0,5 y eso son 3 px que no se ven; en
+el monitor de Raul, a 1,83, son unos 20 px de silueta oscura con la forma de la ficha cayendo
+sobre la de abajo, que se lee como "una ficha encima de la otra". Reproducido aqui con
+`diag-rects.mjs` a 3440 x 1440: el mismo dibujo.
+
+Arreglo en `index.css`: en la mesa la sombra es `drop-shadow(0 1px 1px)` y el canto se queda
+dentro de la casilla (`.tile-3d .tile-edge { bottom: 0 }`). La mano no cambia. Despues, a la
+misma escala, cada ficha termina donde empieza la siguiente.
+
+De paso Raul vio la culebra "pegada": la punta izquierda bajo en columna al lado de la punta
+derecha, con media celda dibujada de por medio. El motor no deja rozar en celdas, pero el
+corrimiento de los dobles (media celda por cada uno) acerca el dibujo. Queda anotado, no se
+toco.

@@ -501,10 +501,17 @@
 
   /* ── Fichas con relieve ─────────────────────────────────────────── */
 
+  /* En la mesa la sombra y el canto se quedan DENTRO de la casilla (§173).
+     Antes la sombra caia 5 px con 6 de desenfoque y el canto asomaba 3 px por
+     debajo: en un telefono no se nota, pero en el monitor grande de Raul la
+     camara dibuja las fichas casi al doble y cada una parecia montada sobre
+     la de abajo. Medido: las cajas se tocaban justo; lo que pisaba era la
+     sombra. */
   .tile-3d {
-    filter:
-      drop-shadow(0 2px 1px rgba(0, 0, 0, 0.45))
-      drop-shadow(0 5px 6px rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+  }
+  .tile-3d .tile-edge {
+    bottom: 0;
   }
 
   .tile-hand {
