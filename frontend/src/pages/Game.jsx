@@ -151,7 +151,7 @@ function PlacaAsiento({ jugador, fichas, enTurno, esCompanero, className = '' })
   return (
     <div
       className={`pointer-events-none absolute z-20 flex flex-col items-center gap-0.5 text-center ${
-        esCompanero ? 'w-[86px]' : 'w-[58px]'
+        esCompanero ? 'w-[86px]' : 'w-[52px]'
       } ${className}`}
       style={{ textShadow: '0 1px 3px rgba(0,0,0,.95)' }}
     >
@@ -217,10 +217,9 @@ const AUTO_START_MODES = ['1v1bot', '2v2bots'];
 // ven (21,5) sale de ZOOM_FICHAS y no cambia; lo unico que cambia es cuantos
 // pixeles mide cada celda. Mas alto = fichas mas grandes, mismas celdas.
 //
-// En 2 vs 2 los rivales ya no van a los costados sino a las esquinas de
-// arriba (§150): los lados quedan con el puro borde y arriba se reserva lo
-// que mide la fila de placas (termina a 54,5 px del paño, medido).
-const MARGEN_MESA = { arriba: 44, arribaConEsquinas: 56, abajo: 8, borde: 8 };
+// En 2 vs 2 los rivales van a los COSTADOS, como sentados en la mesa (§157):
+// cada placa mide 52 px y el rectangulo de la cadena empieza justo por dentro.
+const MARGEN_MESA = { arriba: 44, abajo: 8, lados: 52, borde: 8 };
 
 const GUEST_ALLOWED_MODES = ['1v1bot', '2v2bots'];
 
@@ -1204,12 +1203,11 @@ export default function Game() {
   const seatLeft = conFoto(totalAsientos === 4 ? porAsiento(3) : null);
   const esCompanero = (p) => p && miJugador && p.team === miJugador.team;
   // El rectangulo donde vive la cadena: el paño menos las placas y la mano.
-  const hayEsquinas = Boolean(seatLeft || seatRight);
   const margenesMesa = {
-    arriba: hayEsquinas ? MARGEN_MESA.arribaConEsquinas : MARGEN_MESA.arriba,
-    derecha: MARGEN_MESA.borde,
+    arriba: MARGEN_MESA.arriba,
+    derecha: seatRight ? MARGEN_MESA.lados : MARGEN_MESA.borde,
     abajo: altoMano + MARGEN_MESA.abajo,
-    izquierda: MARGEN_MESA.borde
+    izquierda: seatLeft ? MARGEN_MESA.lados : MARGEN_MESA.borde
   };
   // El marcador se rotula segun TU equipo, no segun el numero de equipo: si
   // entras de segundo sos el equipo 2, y "Vos" mostraba los puntos del rival.
@@ -1379,16 +1377,14 @@ export default function Game() {
                     estar abriendo un panel para ver si le hablaron. */}
                 {chat.ultimos.map((m) => {
                   const mio = String(m.userId) === String(myPlayerId);
-                  // Con los rivales en las esquinas (§150) las tres burbujas
-                  // salen por debajo de la fila de placas, no encima.
                   const donde = mio
                     ? 'left-1/2 -translate-x-1/2'
                     : String(m.userId) === String(seatTop?.id)
-                      ? `left-1/2 ${hayEsquinas ? 'top-[84px]' : 'top-16'} -translate-x-1/2`
+                      ? 'left-1/2 top-16 -translate-x-1/2'
                       : String(m.userId) === String(seatLeft?.id)
-                        ? 'left-2 top-[84px]'
+                        ? 'left-2 top-1/2 -translate-y-1/2'
                         : String(m.userId) === String(seatRight?.id)
-                          ? 'right-2 top-[84px]'
+                          ? 'right-2 top-1/2 -translate-y-1/2'
                           : null;
                   if (!donde) return null;
                   // La propia va JUSTO ENCIMA de la mano. El contenedor de la
@@ -1411,12 +1407,10 @@ export default function Game() {
                   enviar={chat.enviar}
                   miId={myPlayerId}
                 />
-                {/* El de enfrente arriba en el centro y, en 2 vs 2, los rivales
-                    en las esquinas de arriba (§150): a los costados se comian
-                    120 px de paño y las fichas salian chiquitas. Las placas se
-                    apoyan en el borde y el rectangulo de juego (los margenes
-                    que recibe Board) empieza justo por debajo de la fila, asi
-                    que la cadena nunca les crece encima. */}
+                {/* Cada uno en su lado de la mesa, como sentados (§157). Las placas se
+                    apoyan en el borde y el rectangulo de juego (los margenes que
+                    recibe Board) empieza justo por dentro, asi que la cadena nunca
+                    les crece encima. */}
                 <PlacaAsiento
                   jugador={seatTop}
                   fichas={gameState.handCounts[seatTop?.id]}
@@ -1429,14 +1423,14 @@ export default function Game() {
                   fichas={gameState.handCounts[seatLeft?.id]}
                   enTurno={gameState.currentPlayerId === seatLeft?.id}
                   esCompanero={esCompanero(seatLeft)}
-                  className="left-5 top-2"
+                  className="left-0.5 top-1/2 -translate-y-1/2"
                 />
                 <PlacaAsiento
                   jugador={seatRight}
                   fichas={gameState.handCounts[seatRight?.id]}
                   enTurno={gameState.currentPlayerId === seatRight?.id}
                   esCompanero={esCompanero(seatRight)}
-                  className="right-5 top-2"
+                  className="right-0.5 top-1/2 -translate-y-1/2"
                 />
 
                 {/* La solapa de controles. La pestaña es una lengüeta de
@@ -1551,9 +1545,9 @@ export default function Game() {
                   } else if (seatTop && pIdStr === String(seatTop.id)) {
                     posClass = "top-8 left-1/2 -translate-x-1/2";
                   } else if (seatLeft && pIdStr === String(seatLeft.id)) {
-                    posClass = "left-4 top-8";
+                    posClass = "left-8 top-1/2 -translate-y-1/2";
                   } else if (seatRight && pIdStr === String(seatRight.id)) {
-                    posClass = "right-4 top-8";
+                    posClass = "right-8 top-1/2 -translate-y-1/2";
                   } else {
                     return null;
                   }

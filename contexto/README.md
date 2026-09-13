@@ -7431,3 +7431,21 @@ En el cartel de cierre decia "13 pips". Raul: en la mesa venezolana eso se dice
 el motor y en el estado el campo sigue siendo `pips`, que es su nombre tecnico.
 
 `RoundBreakdown.jsx` se borra: desde la seccion 154 no lo usaba nadie.
+
+## 157. Las placas del 2 vs 2 vuelven a los costados (2026-09-12)
+
+Raul vio la seccion 150 en el telefono y la deshizo: "las placas de los rivales estan
+bien donde estaban, donde deben ir si estan sentados en una mesa". Tiene razon en lo
+que importa: en una mesa de domino los rivales estan a los lados, y el dibujo tiene que
+decir eso antes que ganar pixeles.
+
+Lo que se conserva de la 150: la placa compacta (avatar de 40, nombre debajo, fichas
+boca abajo con el numero), la etiqueta "compa" en la fila de las fichas, y los avisos
+"Eres el primero" y "Esperando que comience la ronda" centrados en el rectangulo util
+de la cadena, que era el choque real.
+
+Lo que cambia: la placa del rival mide 52 px en vez de 58, y el margen lateral pasa de
+60 a 52. En un telefono de 375 el rectangulo de la cadena pasa de 211 a 227 px de ancho
+(con las esquinas eran 315). Con cuatro fichas en la mesa, la ficha midio 31,3 px
+en la partida de prueba; la forma de la cadena cambia en cada partida, asi que ese numero
+es solo una referencia.
