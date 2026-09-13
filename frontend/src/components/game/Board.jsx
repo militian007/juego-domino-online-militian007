@@ -758,7 +758,7 @@ export default function Board({
               // desaparecia y volvia a aparecer de un salto. El viaje ES la
               // animacion de poner la ficha; lo unico que queda es dejarla por
               // encima de sus vecinas.
-              className={`absolute ficha-de-mesa ${isNewest ? 'z-10' : ''} ${asentando?.indice === i ? 'ficha-asienta' : ''}`}
+              className={`absolute ficha-de-mesa ${asentando?.indice === i ? 'ficha-asienta' : ''}`}
               style={{ left: `${left}px`, top: `${top}px`, visibility: esLaQueVuela ? 'hidden' : undefined }}
             >
               <Tile

@@ -76,9 +76,9 @@ export default function Tile({
   // La ultima ficha puesta solo lleva un brillo suave (§166). Antes iba un 5 %
   // mas grande, con aro y resplandor fuerte, y se veia levantada, a otra altura
   // que sus vecinas; Raul: "no se ve parejo". Misma medida para todas.
-  const newestShadow = isNewest
-    ? 'shadow-[0_0_14px_rgba(212,175,55,0.7)] z-10'
-    : '';
+  // Y desde la 172 ni el brillo: Raul, con la ficha nueva brillando encima de
+  // la vecina, "ese efecto no me gusta". Todas iguales, sin resaltar.
+  const newestShadow = '';
 
   const reliefClass = onClick ? 'tile-hand' : 'tile-3d';
   const baseClasses = `transition-[transform,opacity,filter] duration-300 select-none relative rounded ${reliefClass} ${newestShadow}`;

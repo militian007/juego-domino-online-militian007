@@ -7791,3 +7791,17 @@ las medidas, clases, `transform` y estilo de los dos nodos, la escala, el paño,
 visibilidad y el navegador. El servidor lo guarda en `backend/montadas-cliente.log` (ruta
 `POST /api/diag/montada`, `routes/diag.js`, fuera de git). Solo en desarrollo, y no toca el
 juego. La proxima vez que Raul la vea, la mesa exacta y su dibujo quedan anotados.
+
+## 172. La ficha nueva ya no brilla, y el vigilante del dibujo mira mas fino (2026-09-13)
+
+Raul, con un recorte: la ficha recien puesta, con su brillo, montada un cuarto sobre la
+vecina de abajo. "Ese efecto no me gusta". Se fue el brillo y el `z-10` de la nueva
+(`Tile.jsx`, `Board.jsx`): todas iguales, ninguna por encima.
+
+El pisado de su captura es chico, un 12 % de la ficha, por debajo del umbral de los dos
+vigilantes (25 % el del servidor, 20 % el del dibujo). El del dibujo baja a 3 % y manda mas:
+`offsetTop`/`offsetLeft`/`offsetHeight`, la animacion activa, y las clases, `transform` y
+rectangulo del nodo de adentro. En esta PC no se reproduce: `diag-rects.mjs` (scratchpad)
+mide caja e imagen de cada ficha tras cada jugada, en telefono (375x812 a 2x) y en escritorio
+a 1, 1,25, 1,5 y 1,75 de escala de Windows: cero pisados (uno de 1 % por redondeo a 1,75).
+Queda esperar el registro de `montadas-cliente.log` de la maquina de Raul.

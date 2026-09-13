@@ -10,7 +10,7 @@
  *
  * Este vigilante mira el dibujo de verdad, en el navegador de cada jugador:
  * un rato despues de cada cambio de la mesa mide las fichas puestas y, si dos
- * se pisan mas de un quinto, manda al servidor la mesa, las medidas, las clases
+ * se pisan aunque sea un poco (3 %), manda al servidor la mesa, las medidas, las clases
  * y el transform de cada nodo, para reproducir el caso exacto. Solo en
  * desarrollo, y nunca toca el juego.
  */
@@ -41,7 +41,7 @@ export function vigilarDibujo(pano, board, offsets, escala) {
     for (let i = 0; i < nodos.length && !hallada; i += 1) {
       for (let k = i + 1; k < nodos.length; k += 1) {
         const s = solape(rects[i], rects[k]);
-        if (s > 0.2) { hallada = { i, k, solape: Math.round(s * 100) }; break; }
+        if (s > 0.03) { hallada = { i, k, solape: Math.round(s * 100) }; break; }
       }
     }
     if (!hallada) return null;
@@ -56,7 +56,10 @@ export function vigilarDibujo(pano, board, offsets, escala) {
       rect: redondear(rects[idx]),
       clases: nodos[idx].className,
       transform: getComputedStyle(nodos[idx]).transform,
-      estilo: nodos[idx].getAttribute('style')
+      animacion: getComputedStyle(nodos[idx]).animationName,
+      estilo: nodos[idx].getAttribute('style'),
+      offset: { top: nodos[idx].offsetTop, left: nodos[idx].offsetLeft, alto: nodos[idx].offsetHeight },
+      adentro: (() => { const t = nodos[idx].firstElementChild; return t ? { clases: t.className, transform: getComputedStyle(t).transform, rect: redondear(t.getBoundingClientRect()) } : null; })()
     });
     const reporte = {
       montada: hallada,
