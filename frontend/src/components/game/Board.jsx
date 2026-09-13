@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useMemo, useState, useCallback } from 'react';
 import { useLupa } from '../../hooks/useLupa';
 import Tile from './Tile.jsx';
-import Iman, { IMANES, imanElegido } from './Iman.jsx';
+import Iman, { imanElegido } from './Iman.jsx';
 import {
   DEFAULT_LAYOUT,
   placementsFor,
@@ -414,10 +414,6 @@ export default function Board({
       const tileWidth = opt.orientation === 'horizontal' ? CELL_SIZE * 2 : CELL_SIZE;
       const tileHeight = opt.orientation === 'horizontal' ? CELL_SIZE : CELL_SIZE * 2;
 
-      const tamanoIman = IMANES[imanElegido()].tamano;
-      const magnetLeft = tileWidth / 2 - tamanoIman / 2;
-      const magnetTop = tileHeight / 2 - tamanoIman / 2;
-
       // Determinar qué tile mostrar de forma predictiva según el arrastre o la selección
       const currentTile = draggedTile ? draggedTile.tile : (selectedTile ? selectedTile.tile : null);
 
@@ -439,10 +435,13 @@ export default function Board({
             pointerEvents: 'none'
           }}
         >
-          {/* La silueta entera recibe el toque, no solo el iman: 24 px era
-              poco para un dedo. */}
-          <div
-            className="absolute inset-0 rounded border-2 border-dashed border-domino-accent/40 bg-domino-accent/5 pointer-events-auto cursor-pointer"
+          {/* La casilla entera es el iman: un efecto sobre la silueta, sin
+              ninguna pieza encima del paño (ver Iman.jsx). */}
+          <Iman
+            efecto={imanElegido()}
+            activo={Boolean(isSnappedActive)}
+            tile={displayTile}
+            orientation={opt.orientation}
             onClick={(e) => {
               e.stopPropagation();
               onPlayTile && onPlayTile(opt.side, opt);
@@ -460,14 +459,6 @@ export default function Board({
             </div>
           )}
 
-          <Iman
-            activo={Boolean(isSnappedActive)}
-            onClick={(e) => {
-              e.stopPropagation();
-              onPlayTile && onPlayTile(opt.side, opt);
-            }}
-            style={{ left: `${magnetLeft}px`, top: `${magnetTop}px` }}
-          />
         </div>
       );
     });

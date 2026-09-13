@@ -7458,3 +7458,24 @@ la primera ficha de la ronda, entre 1000 y 1300 ms. Sigue variando cada vez para
 suene a metronomo, y `BOT_DELAY_MS` sigue siendo el tope para las pruebas.
 
 En 2 vs 2 con tres bots la vuelta queda alrededor de tres segundos.
+
+## 159. El iman es un efecto sobre la casilla, no una pieza (2026-09-12)
+
+Raul vio en el telefono las tres piezas de bronce de la seccion 153 y las tumbo: "una
+cochinada, vamos a hacer algo que no contamine la mesa; en vez de imagenes, efectos que
+indiquen que puede tocar ahi y poner la pieza". Tiene razon: cualquier cosa puesta encima
+del paño compite con las fichas.
+
+Se borran las tres piezas (`public/imanes/`) y `Iman.jsx` pasa a ser el EFECTO sobre la
+silueta punteada de la casilla, sin ninguna imagen. Tres para elegir, con `?iman=`:
+
+- **respira**: la silueta se enciende y se apaga despacio en oro (1,6 s).
+- **fantasma**: tu ficha, al 50 %, flotando en la casilla donde caeria (1,8 s).
+- **onda**: un anillo de oro nace en el centro de la casilla y se abre (1,4 s, dos anillos
+  desfasados).
+
+En los tres, la silueta entera recibe el toque, y cuando la ficha arrastrada ya esta
+imantada la silueta se planta en oro solido. Se grabaron los tres en movimiento con
+puppeteer (16 cuadros a 110 ms) para que Raul decida viendolos, no leyendolos.
+
+Por defecto queda `respira`. Cuando Raul elija, los otros dos y el interruptor se van.
