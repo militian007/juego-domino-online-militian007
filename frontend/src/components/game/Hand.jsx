@@ -122,7 +122,7 @@ export default function Hand({
 
   if (!tiles || tiles.length === 0) {
     return (
-      <div className="text-center text-slate-400 italic text-sm py-4">
+      <div className="text-center text-domino-cream-dim font-medium italic text-sm py-4">
         Sin fichas en mano
       </div>
     );

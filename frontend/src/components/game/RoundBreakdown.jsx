@@ -15,7 +15,7 @@ export default function RoundBreakdown({ manos, equipoGanador, motivo, puntos })
 
   return (
     <div className="mb-5 rounded-xl border border-slate-700/60 bg-black/25 p-3 text-left">
-      <div className="mb-2 text-[10px] uppercase tracking-widest text-slate-400">
+      <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-domino-cream-dim">
         Fichas que quedaron
       </div>
 
@@ -25,7 +25,7 @@ export default function RoundBreakdown({ manos, equipoGanador, motivo, puntos })
           return (
             <div key={m.id}>
               <div className="mb-1 flex items-baseline justify-between text-xs">
-                <span className={ganador ? 'text-domino-accent' : 'text-slate-300'}>
+                <span className={ganador ? 'font-medium text-domino-accent' : 'font-medium text-domino-cream'}>
                   {m.username}
                   {ganador && ' · ganó'}
                 </span>
@@ -34,14 +34,14 @@ export default function RoundBreakdown({ manos, equipoGanador, motivo, puntos })
                     `PuntosQueVuelan` por este atributo. */}
                 <span
                   data-pips-volando={ganador ? undefined : ''}
-                  className={ganador ? 'text-slate-500' : 'font-bold text-domino-accent'}
+                  className={ganador ? 'font-medium text-domino-cream-dim' : 'font-bold text-domino-accent'}
                 >
                   {m.pips} pips
                 </span>
               </div>
 
               {m.tiles.length === 0 ? (
-                <div className="text-[11px] italic text-slate-500">se quedó sin fichas</div>
+                <div className="text-[11px] font-medium italic text-domino-cream-dim">se quedó sin fichas</div>
               ) : (
                 <div className="flex flex-wrap gap-1">
                   {m.tiles.map((t, i) => (
@@ -55,7 +55,7 @@ export default function RoundBreakdown({ manos, equipoGanador, motivo, puntos })
       </div>
 
       {equipoGanador ? (
-        <div className="mt-3 border-t border-slate-700/60 pt-2 text-[11px] text-slate-400">
+        <div className="mt-3 border-t border-slate-700/60 pt-2 text-[11px] font-medium text-domino-cream-dim">
           {suman.map((m) => m.pips).join(' + ')} = <b className="text-domino-accent">{totalQueSuma}</b>
           {totalQueSuma !== puntos && (
             <span className="ml-2 text-red-400">
@@ -64,7 +64,7 @@ export default function RoundBreakdown({ manos, equipoGanador, motivo, puntos })
           )}
         </div>
       ) : (
-        <div className="mt-3 border-t border-slate-700/60 pt-2 text-[11px] text-slate-400">
+        <div className="mt-3 border-t border-slate-700/60 pt-2 text-[11px] font-medium text-domino-cream-dim">
           Empate de pips: no suma nadie.
         </div>
       )}

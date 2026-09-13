@@ -25,7 +25,7 @@ export default function PlayerInfo({ player, count, isTurn, isWinner, team }) {
             {player.username}
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-slate-400 sm:text-xs">
+            <span className="text-[10px] font-semibold text-domino-cream-dim sm:text-xs">
               {count} ficha{count !== 1 ? 's' : ''}
             </span>
             {player.estrellas ? <Estrellas cantidad={player.estrellas} /> : null}

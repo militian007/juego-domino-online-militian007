@@ -17,7 +17,8 @@ const QUIERO = {
   gesto: 'grinning-face',
   salir: 'cross-mark',
   chat: 'speech-balloon',
-  consejo: 'light-bulb'
+  consejo: 'light-bulb',
+  ajustes: 'control-knobs'
 };
 
 const salida = {};

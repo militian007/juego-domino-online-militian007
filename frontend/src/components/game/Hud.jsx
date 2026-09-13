@@ -10,7 +10,7 @@ function Panel({ children, className = '' }) {
 
 function Rotulo({ children }) {
   return (
-    <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500">{children}</div>
+    <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-domino-cream-dim">{children}</div>
   );
 }
 
@@ -22,7 +22,7 @@ export function Marcador({ equipo1 = 0, equipo2 = 0, objetivo = 100, ronda = 1, 
     <Panel className="p-3">
       <div className="mb-2.5 flex items-baseline justify-between">
         <Rotulo>Ronda {ronda}</Rotulo>
-        <span className="text-[10px] text-slate-500">a {objetivo}</span>
+        <span className="text-[10px] font-medium text-domino-cream-dim">a {objetivo}</span>
       </div>
 
       {[
@@ -68,7 +68,7 @@ export function Jugador({ jugador, fichas = 0, enTurno = false, esRival = false 
           {jugador.estrellas ? (
             <div className="mt-0.5 flex items-center gap-1.5">
               <Estrellas cantidad={jugador.estrellas} />
-              <span className="text-[10px] capitalize text-slate-500">{jugador.difficulty}</span>
+              <span className="text-[10px] font-medium capitalize text-domino-cream-dim">{jugador.difficulty}</span>
             </div>
           ) : (
             <div className="text-[10px] text-slate-500">{esRival ? 'Rival' : 'Tú'}</div>
@@ -77,7 +77,7 @@ export function Jugador({ jugador, fichas = 0, enTurno = false, esRival = false 
 
         <div className="shrink-0 text-right">
           <div className="font-mono text-lg font-bold leading-none text-domino-accent">{fichas}</div>
-          <div className="text-[9px] uppercase tracking-wider text-slate-500">fichas</div>
+          <div className="text-[9px] font-semibold uppercase tracking-wider text-domino-cream-dim">fichas</div>
         </div>
       </div>
 
@@ -90,7 +90,7 @@ export function Jugador({ jugador, fichas = 0, enTurno = false, esRival = false 
       )}
 
       {jugador.frase && enTurno && (
-        <p className="mt-2 text-[10px] italic leading-tight text-slate-500">"{jugador.frase}"</p>
+        <p className="mt-2 text-[10px] font-medium italic leading-tight text-domino-cream-dim">"{jugador.frase}"</p>
       )}
     </Panel>
   );

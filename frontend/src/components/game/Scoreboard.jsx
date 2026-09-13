@@ -4,7 +4,7 @@ export default function Scoreboard({ teamScores, mode, round, winningTeam, endRe
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-bold text-sm sm:text-base">Ronda {round}</h3>
         {endReason && (
-          <span className="text-[10px] sm:text-xs text-slate-400 italic">
+          <span className="text-[10px] sm:text-xs font-medium text-domino-cream-dim italic">
             {endReason === 'domino' ? 'Dominó' : endReason === 'forfeit' ? 'Abandono' : 'Trancado'}
           </span>
         )}
@@ -17,7 +17,7 @@ export default function Scoreboard({ teamScores, mode, round, winningTeam, endRe
               : 'border-blue-500/50'
           }`}
         >
-          <div className="text-[10px] sm:text-xs text-slate-400">Equipo 1</div>
+          <div className="text-[10px] sm:text-xs font-semibold text-domino-cream-dim">Equipo 1</div>
           <div className="text-lg sm:text-2xl font-black text-blue-400">
             {teamScores[1] || 0}
           </div>
@@ -29,7 +29,7 @@ export default function Scoreboard({ teamScores, mode, round, winningTeam, endRe
               : 'border-red-500/50'
           }`}
         >
-          <div className="text-[10px] sm:text-xs text-slate-400">Equipo 2</div>
+          <div className="text-[10px] sm:text-xs font-semibold text-domino-cream-dim">Equipo 2</div>
           <div className="text-lg sm:text-2xl font-black text-red-400">
             {teamScores[2] || 0}
           </div>

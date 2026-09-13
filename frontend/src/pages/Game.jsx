@@ -36,7 +36,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import {
   playTileSound, playDrawSound, estaSilenciado, alternarSilencio, prepararSonidos, sonar
 } from '../utils/soundEffects.js';
-import { ChevronRight, Lock, LogOut } from 'lucide-react';
+import { ChevronLeft, Lock, LogOut } from 'lucide-react';
 
 /**
  * Los stickers de siempre, por si el servidor no contesta.
@@ -171,10 +171,10 @@ function PlacaAsiento({ jugador, fichas, enTurno, esCompanero, className = '' })
           cuantas son de verdad. */}
       <div className="flex items-end justify-center gap-1">
         <ManoBocaAbajo cantidad={fichas ?? 0} />
-        <span className="text-[9px] leading-none text-domino-cream/60">{fichas ?? 0}</span>
+        <span className="text-[10px] font-bold leading-none text-domino-cream">{fichas ?? 0}</span>
       </div>
       {esCompanero && (
-        <span className="text-[9px] leading-tight text-sky-200/70">compa</span>
+        <span className="text-[9px] font-semibold uppercase leading-tight tracking-[0.16em] text-sky-200">compa</span>
       )}
     </div>
   );
@@ -1424,25 +1424,31 @@ export default function Game() {
                   className="right-0.5 top-1/2 -translate-y-1/2"
                 />
 
-                {/* La solapa de controles. La pestaña va POR DETRAS de los
-                    botones (z menor) y es alargada, para que se lea como una
-                    lengueta que los saca de debajo del borde. */}
-                <div className="absolute left-0 top-3 z-40 flex items-start">
-                  <div className="relative flex items-start">
+                {/* La solapa de controles. La pestaña es una lengüeta de
+                    44 x 64 apoyada en la baranda izquierda, a media altura de
+                    lo que se ve de la mesa, con un icono a color: la de antes
+                    era un chevron de 12 px que nadie descubría. En 2v2 el
+                    rival de la izquierda vive a media altura, así que ahí la
+                    lengüeta sube al primer cuarto. */}
+                <div
+                  className="pointer-events-none absolute left-0 top-0 z-40 flex items-center"
+                  style={{ bottom: seatLeft ? '50%' : altoMano }}
+                >
+                  <div className="pointer-events-auto relative flex items-center">
                     <button
                       type="button"
                       onClick={() => { setSolapa((v) => !v); setAbierto(null); }}
                       title={solapa ? 'Ocultar los controles' : 'Mostrar los controles'}
                       aria-label={solapa ? 'Ocultar los controles' : 'Mostrar los controles'}
                       aria-expanded={solapa}
-                      className={`absolute left-0 top-0 z-0 flex w-4 items-end justify-center rounded-r-lg border border-l-0 border-domino-accent/40 bg-black/45 pb-2 text-domino-accent/70 transition-all hover:bg-black/65 hover:text-domino-accent ${
-                        solapa ? 'h-[218px]' : 'h-[76px]'
-                      }`}
+                      className="flex h-16 w-11 shrink-0 items-center justify-center rounded-r-xl border-2 border-l-0 border-domino-accent bg-domino-dark/85 backdrop-blur-sm transition-colors hover:bg-domino-dark"
+                      style={{ boxShadow: '0 4px 12px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,225,170,.18)' }}
                     >
-                      <ChevronRight
-                        size={13}
-                        className={`transition-transform ${solapa ? 'rotate-180' : ''}`}
-                      />
+                      {solapa ? (
+                        <ChevronLeft size={28} strokeWidth={2.75} className="text-domino-accent-bright" />
+                      ) : (
+                        <IconoColor nombre="ajustes" tamano={28} className="drop-shadow-[0_1px_2px_rgba(0,0,0,.7)]" />
+                      )}
                     </button>
 
                     <div
@@ -1503,8 +1509,8 @@ export default function Game() {
 
                   {solapa && abierto === 'pano' && (
                     <>
-                      <div className="fixed inset-0 -z-10" onClick={() => setAbierto(null)} />
-                      <div className="ml-1.5 w-52 rounded-xl border border-domino-accent/25 bg-domino-felt/95 p-3 shadow-2xl backdrop-blur">
+                      <div className="pointer-events-auto fixed inset-0 -z-10" onClick={() => setAbierto(null)} />
+                      <div className="pointer-events-auto ml-1.5 w-52 rounded-xl border border-domino-accent/25 bg-domino-felt/95 p-3 shadow-2xl backdrop-blur">
                         <MesaThemePicker tema={tema} setTema={setTema} puedeUsar={puedeUsar} enMenu />
                       </div>
                     </>
@@ -1567,12 +1573,12 @@ export default function Game() {
                   background:
                     'linear-gradient(to top, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.90) 62%, rgba(0,0,0,0.55) 84%, rgba(0,0,0,0) 100%)'
                 }}>
-                <div className="mb-1 flex items-center justify-between gap-2 px-1 text-[10px] uppercase tracking-widest">
-                  <span className="text-domino-cream/50">
+                <div className="mb-1 flex items-center justify-between gap-2 px-1 text-[10px] font-bold uppercase tracking-[0.2em] text-domino-cream">
+                  <span>
                     tu mano · {gameState.myHand?.length ?? 0}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className={myTurn ? 'font-bold text-emerald-300' : 'text-domino-cream/40'}>
+                    <span className={myTurn ? 'text-emerald-300' : ''}>
                       {myTurn ? 'tu turno' : 'esperando'}
                     </span>
                   </div>
@@ -1673,21 +1679,21 @@ export default function Game() {
                 </div>
 
                 {myTurn && gameState.canPlay && !draggedTile && (
-                  <p className="text-center text-[10px] sm:text-xs text-slate-500 italic mt-2">
+                  <p className="text-center text-[11px] sm:text-xs font-medium italic text-domino-cream-dim mt-2">
                     Arrastra una ficha válida a la mesa
                   </p>
                 )}
 
                 {myTurn && !gameState.canPlay && (
                   <div className="mt-2 max-h-24 overflow-y-auto rounded-lg border border-slate-700/60 bg-black/25 p-2 text-left">
-                    <p className="mb-1.5 text-[10px] uppercase tracking-widest text-slate-500">
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-domino-cream">
                       Por qué no puedes jugar
                       {explicacion?.ends
                         ? ` · extremos ${explicacion.ends.left} y ${explicacion.ends.right}`
                         : ''}
                     </p>
                     {!explicacion && (
-                      <p className="text-xs italic text-slate-500">revisando tu mano...</p>
+                      <p className="text-xs font-medium italic text-domino-cream-dim">revisando tu mano...</p>
                     )}
                     {explicacion?.error && (
                       <p className="text-xs text-red-300">{explicacion.error}</p>
@@ -1695,7 +1701,7 @@ export default function Game() {
                     {explicacion?.fichas?.map((f) => (
                       <p key={f.index} className="text-xs leading-relaxed">
                         <span className="font-mono text-domino-cream">[{f.tile[0]}|{f.tile[1]}]</span>{' '}
-                        <span className={f.jugable ? 'text-emerald-400' : 'text-slate-400'}>
+                        <span className={f.jugable ? 'font-medium text-emerald-300' : 'font-medium text-domino-cream-dim'}>
                           {f.jugable ? 'se puede jugar' : f.motivo}
                         </span>
                       </p>
