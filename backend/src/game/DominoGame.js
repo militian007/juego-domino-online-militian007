@@ -373,7 +373,7 @@ export class DominoGame {
     }
     const r = this._dispatch(playerId, action);
     if (!r.ok) return r;
-    vigilarMontadas(this.state.board, { momento: 'jugada', jugador: playerId, accion });
+    vigilarMontadas(this.state.board, { momento: 'jugada', jugador: playerId, accion: action });
     return { ok: true };
   }
 
