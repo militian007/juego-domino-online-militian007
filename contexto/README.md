@@ -7423,3 +7423,11 @@ los 520 ms); "no va" al tocar una ficha apagada en tu turno (`Hand` avisa con `o
 "robar" reemplaza al oscilador de antes. Todo va envuelto en try/catch: el sonido jamas
 puede romper una jugada.
 ---
+
+## 156. Los puntos se llaman puntos (2026-09-12)
+
+En el cartel de cierre decia "13 pips". Raul: en la mesa venezolana eso se dice
+"puntos" o "tantos", y "pips" suena a manual. Se cambia en lo que ve el jugador; en
+el motor y en el estado el campo sigue siendo `pips`, que es su nombre tecnico.
+
+`RoundBreakdown.jsx` se borra: desde la seccion 154 no lo usaba nadie.

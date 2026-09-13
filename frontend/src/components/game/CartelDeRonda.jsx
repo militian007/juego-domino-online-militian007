@@ -314,7 +314,7 @@ export default function CartelDeRonda({
                                   className="tabular-nums"
                                   style={{ fontWeight: 800, color: ganador ? SALVIA : ORO }}
                                 >
-                                  {m.pips} pips
+                                  {m.pips} puntos
                                 </span>
                               </div>
                               {m.tiles.length === 0 ? (
