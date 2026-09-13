@@ -7653,3 +7653,25 @@ Las cuatro pruebas del destranque armaban su posicion jugando 39 jugadas de bot 
 semilla `veto-118`; con la regla nueva esa partida ya no se tranca. `tools/buscar-veto.mjs`
 barre semillas y encuentra posiciones trancadas con la regla vigente: la prueba usa ahora
 `veto-15` a las 42 jugadas (el 0|6). Las 85 pruebas en verde.
+
+## 168. La mano ya no salta al agarrar una ficha (2026-09-13)
+
+Raul, en la PC: "cuando agarras el domino para arrastrarlo hay un movimiento de todas las
+fichas que es incomodo". Se midio con el raton: al hacer mousedown y mover, las siete
+fichas de la mano bajaban 24 px de golpe. La causa era el aviso "Arrastra una
+ficha valida a la mesa", que se desmontaba mientras se arrastra (`!draggedTile`): al irse,
+la mano entera caia en su hueco. Y lo mismo pasaba al cambiar el turno, porque el aviso
+solo existe cuando te toca.
+
+Ahora el aviso vive en una fila de alto fijo (20 px) que esta siempre, con o sin texto: al
+arrastrar solo se desvanece, y "No puedes jugar. Levanta una ficha del monton" ocupa esa
+misma fila. Medido despues: 0 px.
+
+Dos remates del mismo momento: las fichas apagadas ya no se encienden todas al agarrar una
+(`canPlay` de la mano no depende de `draggedTile`; los gestos ya lo comprobaban por su
+cuenta), y el apagado de una ficha transiciona opacidad y filtro en 300 ms en vez de
+cambiar de golpe.
+
+Pendiente, del mismo estilo: el panel "por que no puedes jugar" y el boton "Pasar" siguen
+entrando en flujo debajo de la mano y la suben cuando aparecen. Son momentos raros (solo
+cuando no tienes jugada); si molestan, van encima de la mano como capa.

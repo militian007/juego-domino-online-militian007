@@ -1677,7 +1677,7 @@ export default function Game() {
                       selectedIndex={selectedTile?.index}
                       onSelect={handleTileClick}
                       onNoVa={() => sonar('noVa')}
-                      canPlay={myTurn && !isPlacing && !draggedTile}
+                      canPlay={myTurn && !isPlacing}
                       draggedTile={draggedTile}
                       onDragStart={handleDragStart}
                       onDragUpdate={handleDragUpdate}
@@ -1687,11 +1687,19 @@ export default function Game() {
 
                 </div>
 
-                {myTurn && gameState.canPlay && !draggedTile && gameState.status === 'playing' && (
-                  <p className="text-center text-[11px] sm:text-xs font-medium italic text-domino-cream-dim mt-2">
-                    Arrastra una ficha válida a la mesa
-                  </p>
-                )}
+                {/* Una sola fila de aviso, de alto FIJO (§168). Antes el aviso se
+                    desmontaba al agarrar una ficha y al cambiar el turno, y la
+                    mano entera saltaba 24 px cada vez. */}
+                <div className="mt-2 h-5 text-center text-[11px] sm:text-xs font-medium italic leading-5">
+                  {myTurn && gameState.status === 'playing' && gameState.canPlay && (
+                    <p className={`text-domino-cream-dim transition-opacity duration-200 ${draggedTile ? 'opacity-0' : 'opacity-100'}`}>
+                      Arrastra una ficha válida a la mesa
+                    </p>
+                  )}
+                  {myTurn && gameState.status === 'playing' && gameState.canDraw && (
+                    <p className="not-italic text-domino-accent">No puedes jugar. Levanta una ficha del montón.</p>
+                  )}
+                </div>
 
                 {myTurn && !gameState.canPlay && gameState.status === 'playing' && (
                   <div className="mt-2 max-h-24 overflow-y-auto rounded-lg border border-slate-700/60 bg-black/25 p-2 text-left">
@@ -1718,13 +1726,6 @@ export default function Game() {
                   </div>
                 )}
 
-                {/* El pozo ya no vive aca abajo: es el monton del medio de la
-                    mesa. Aca solo queda el aviso de que hay que robar. */}
-                {myTurn && gameState.canDraw && gameState.status === 'playing' && (
-                  <p className="mt-2 text-center text-[11px] italic leading-tight text-domino-accent">
-                    No puedes jugar. Levanta una ficha del montón.
-                  </p>
-                )}
 
                 {myTurn && gameState.canPass && (
                   <button onClick={handlePass} className="btn-secondary w-full mt-3 text-sm">
