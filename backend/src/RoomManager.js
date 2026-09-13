@@ -13,7 +13,26 @@ import { olvidarMesa } from './sockets/mesaChat.js';
 
 const MODES = MODE_CONFIG;
 
-export const BOT_DELAY_MS = Number(process.env.BOT_DELAY_MS ?? 3000);
+/**
+ * Cuanto "piensa" el bot antes de jugar, en milisegundos (§152).
+ *
+ * Era un solo numero, 3000 fijos. En 2v2 hay tres bots entre una jugada de la
+ * persona y la siguiente: nueve segundos de espera por vuelta, siempre iguales,
+ * y ademas la maquina tardaba lo mismo para elegir entre siete fichas que para
+ * pasar sin tener nada. Ahora el tiempo sale de un rango segun lo que tenga
+ * que decidir, y varia un poco cada vez para que no parezca un metronomo.
+ *
+ * `BOT_DELAY_MS` por variable de entorno queda como TOPE: si esta puesta,
+ * ningun tiempo la supera. Las pruebas la ponen en 0 para que una partida
+ * entera corra en segundos.
+ */
+const BOT_THINK_MS = {
+  opening: [1500, 2400],
+  forced: [500, 800],
+  choice: [1100, 2100]
+};
+const tope = Number(process.env.BOT_DELAY_MS);
+export const BOT_DELAY_MS = process.env.BOT_DELAY_MS != null && Number.isFinite(tope) ? tope : null;
 /**
  * Espera artificial en la jugada de una PERSONA. En cero.
  *
@@ -306,8 +325,7 @@ export class RoomManager {
       const current = room.game.getCurrentPlayer();
       if (!current.isBot) break;
 
-      // Esperar antes de realizar la jugada (tiempo de "pensamiento" del bot)
-      await this._sleep(BOT_DELAY_MS);
+      await this._sleep(this._botThinkMs(room, current.id));
 
       // Verificar que el juego sigue activo y sigue siendo el turno del bot después de dormir
       if (room.game.status !== 'playing' || room.game.getCurrentPlayer()?.id !== current.id) {
@@ -335,6 +353,20 @@ export class RoomManager {
 
       this.broadcastState(room);
     }
+  }
+
+  /**
+   * La primera ficha de la ronda se piensa mas; con una sola jugada posible,
+   * o sin ninguna (pasar o robar), no hay nada que pensar.
+   */
+  _botThinkMs(room, playerId) {
+    let rango = BOT_THINK_MS.choice;
+    if (room.game.board.length === 0) rango = BOT_THINK_MS.opening;
+    else if (room.game.getValidMoves(playerId).length <= 1) rango = BOT_THINK_MS.forced;
+
+    const [min, max] = rango;
+    const ms = min + Math.random() * (max - min);
+    return BOT_DELAY_MS == null ? ms : Math.min(ms, BOT_DELAY_MS);
   }
 
   _sleep(ms) {

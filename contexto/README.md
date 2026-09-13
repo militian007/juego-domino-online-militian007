@@ -7323,3 +7323,103 @@ red, que es donde estan los jugadores.
 - `frontend/public/banner-berkana.png` (7,1 MB) y `banner-publicidad.png` (6,3 MB) no los
   pide nadie: el codigo pide los `.webp`. Van en cada build. Se quedan hasta que Jonathan
   decida.
+---
+
+## 152. El bot piensa un tiempo variable (2026-09-12)
+
+### Lo que habia
+
+`BOT_DELAY_MS = 3000`, un solo numero para todo. Cada bot dormia tres segundos antes de
+jugar, daba igual que tuviera siete fichas para elegir o que solo pudiera pasar. En 2v2
+hay tres bots entre una jugada de la persona y la siguiente: **nueve segundos por vuelta,
+siempre iguales**. Medido por socket contra un servidor limpio: 9,03 s de media, minimo
+9,03, maximo 9,05. Un metronomo.
+
+La jugada de la persona ya es instantanea desde §118 (`HUMAN_DELAY_MS` en cero); lo que
+quedaba lento era esperar a la maquina.
+
+### Lo que se hizo
+
+En `backend/src/RoomManager.js`, `playBotTurns` ya no duerme un numero fijo: le pregunta
+a `_botThinkMs` cuanto pensar, y eso depende de lo que el bot tenga que decidir.
+
+| situacion | espera |
+|---|---|
+| tiene varias jugadas posibles | entre 1100 y 2100 ms, uniforme |
+| una sola jugada, o solo puede pasar o robar | entre 500 y 800 ms |
+| la primera ficha de la ronda | entre 1500 y 2400 ms |
+
+`BOT_DELAY_MS` por variable de entorno **sigue funcionando, pero como tope**: si esta
+puesta, ningun tiempo la supera. Las pruebas que la ponen en `0` siguen corriendo una
+partida entera en segundos (`test-e2e-bot.js` en 1v1bot y 2v2bots, comprobado).
+
+El azar de la espera es `Math.random()`, y esta bien que lo sea: es la capa de
+transporte, no el motor. El motor sigue sin relojes y sin azar propio.
+
+**La estrategia del bot no se toco.** Esto es solo cuanto tarda, no que ficha elige.
+
+### Por que estos rangos
+
+Una persona no piensa lo mismo para poner la unica ficha que le sirve que para elegir entre
+cinco. Con tres bots en la mesa, si los tres pensaran lo mismo la espera seguiria siendo
+una suma fija; al depender de la situacion, las vueltas salen distintas y la mesa se
+siente viva en vez de programada. Y la primera ficha de la ronda se piensa un poco mas
+porque es la unica decision sin nada en la mesa que la apure.
+
+### Medido antes y despues
+
+`backend/src/medir-vuelta-bots.js` levanta un servidor propio en `:4100` con una base
+aparte (`data-prueba.db`, se borra al terminar), se registra, arma un 2v2bots, juega la
+primera jugada valida y cronometra cuanto tarda en volverle el turno. Diez vueltas cada
+vez, dentro de la misma ronda.
+
+| | media | minimo | maximo |
+|---|---|---|---|
+| antes (3000 fijos) | 9,03 s | 9,03 s | 9,05 s |
+| despues (rangos) | 3,89 s | 2,70 s | 5,24 s |
+| tope `BOT_DELAY_MS=0` | 0,05 s | 0,04 s | 0,05 s |
+| tope `BOT_DELAY_MS=1000` | 2,69 s | 2,32 s | 3,03 s |
+
+La meta era bajar de ~8 s a ~4,5 s; quedo en 3,9 porque en una vuelta de tres bots casi
+siempre alguno tiene una sola jugada o pasa, y ese piensa poco.
+
+### La fuerza de los bots, medida de nuevo
+
+De paso se reviso como esta programado el bot (`packages/domino-engine/src/bot.js`) y se
+dejo una herramienta para medir su fuerza cuando haga falta:
+`packages/domino-engine/tools/medir-fuerza.mjs [partidas] [puntos]`. Juega cada cruce en
+1v1 con pozo y en 2v2 sin pozo, alternando en que equipo cae cada dificultad para que no
+pese quien sale. El bot solo recibe `viewFor`, igual que en el servidor.
+
+Victorias del primero, 1000 partidas por cruce, a 50 puntos (margen del 95%: unos 3 puntos):
+
+| cruce | 1v1 con pozo | 2v2 sin pozo |
+|---|---|---|
+| hard (maestro) vs easy (facil) | 64,5% | 62,3% |
+| hard vs normal | 57,1% | 55,7% |
+| normal vs easy | 60,7% | 61,1% |
+| easy vs easy (control) | 49,9% | 51,1% |
+
+`INTEGRATION.md` decia 69 / 51 / 61 para el 2v2 con 200 partidas (margen de unos 7
+puntos): entra dentro del error, salvo que el maestro le gana al normal mas de lo que decia
+(56 contra 51). La escalera de §35 (150 partidas) daba numeros mas altos por lo mismo:
+con pocas partidas el margen es grande.
+
+A 100 puntos, que es a lo que se juega de verdad, la diferencia se nota mas porque la
+partida es mas larga y el azar del reparto pesa menos (500 partidas por cruce, margen de
+unos 4 puntos): hard vs easy 70,8% en 1v1 y 71,0% en 2v2; hard vs normal 60,6% y 59,4%;
+normal vs easy 60,6% y 67,4%; easy vs easy 47,4% y 48,8%.
+
+### Lo que se vio y NO se toco (para decidir aparte)
+
+- **En 2v2bots los tres bots juegan con la fuerza del primero.** `startGame` guarda
+  `room.botDifficulty = elegidos[0].difficulty` y `playBotTurns` se la pasa a los tres,
+  aunque cada jugador tenga su propia `difficulty` y sus estrellas en pantalla. La Zurda
+  y Nano en la misma mesa juegan igual. El arreglo es una linea
+  (`current.difficulty`), pero cambia cuanto gana la casa: se mide antes.
+- **El bot no recuerda a que numero paso cada uno.** Ve los pases en `events` (asiento y
+  cuantos van), pero no mira con que puntas estaba la mesa en ese momento, asi que no
+  deduce que a ese jugador le falta ese numero. Es lo que mas lo separa de alguien que
+  juega bien en parejas. Se propone con su A/B en el informe de esta sesion.
+- En `scorePlay`, el castigo de 4 puntos cuando al companero le quedan dos fichas o
+  menos se aplica a todas las jugadas por igual: no cambia ninguna decision.
