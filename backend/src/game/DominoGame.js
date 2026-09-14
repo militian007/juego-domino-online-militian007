@@ -10,7 +10,8 @@ import {
   handPips,
   necesitaDestrancar,
   PHASE,
-  ACTION
+  ACTION,
+  DEFAULT_LAYOUT
 } from '@privoytruco/domino-engine';
 import { MODALIDADES, overridesDeModalidad } from '@privoytruco/domino-engine';
 import { vigilarMontadas } from './vigilanteMontadas.js';
@@ -72,6 +73,9 @@ export class DominoGame {
     // modalidad lo pida. Se apaga a mano para que la mesa no muestre un monton
     // vacio, que confunde mas de lo que informa.
     if (config.totalPlayers === 4) deLaModalidad.hasPool = false;
+    // Mockup del camino fijo (§175): solo si el servidor arranca con
+    // DOMINO_CAMINO=telefono. La mesa y el bot lo leen del estado.
+    if (process.env.DOMINO_CAMINO) deLaModalidad.layout = { ...DEFAULT_LAYOUT, camino: process.env.DOMINO_CAMINO };
 
     this.state = createGame({
       gameFormat: config.gameFormat,

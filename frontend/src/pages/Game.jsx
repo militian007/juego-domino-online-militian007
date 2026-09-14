@@ -1312,6 +1312,7 @@ export default function Game() {
               <div className="absolute inset-0">
                 <div className="relative h-full w-full">
                 <Board
+                  layout={gameState.layout}
                   margenes={margenesMesa}
                   clasePano={clasePano}
                   claseBaranda={claseBaranda}

@@ -13,6 +13,8 @@ import {
   createGame, applyAction, currentSeat, isTerminal, viewFor, playableMoves,
   ACTION, PHASE, DEFAULT_LAYOUT
 } from '../src/index.js';
+import { DEFAULT_LAYOUT as LAYOUT_BASE } from '../src/layout.js';
+const CFG_CAMINO = process.env.DOMINO_CAMINO ? { layout: { ...LAYOUT_BASE, camino: process.env.DOMINO_CAMINO } } : undefined;
 import { jugadasSinSitio, destrancarCadena } from '../src/layout.js';
 import { chooseAction } from '../src/bot.js';
 
@@ -25,7 +27,7 @@ let rondas = 0, rondasConVetoTotal = new Set();
 
 for (const formato of ['domino-1v1-v1', 'domino-2v2-v1']) {
   for (let p = 0; p < partidas; p++) {
-    let state = createGame({ gameFormat: formato, seed: `casos-${formato}-${p}` });
+    let state = createGame({ config: CFG_CAMINO,  gameFormat: formato, seed: `casos-${formato}-${p}` });
     let guardias = 0;
 
     while (!isTerminal(state) && guardias++ < 500) {

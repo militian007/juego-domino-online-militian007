@@ -9,6 +9,8 @@
 //
 //   node tools/medir-compacta.mjs [partidas]
 import { createGame, applyAction, currentSeat, viewFor, PHASE, DEFAULT_LAYOUT } from '../src/index.js';
+import { DEFAULT_LAYOUT as LAYOUT_BASE } from '../src/layout.js';
+const CFG_CAMINO = process.env.DOMINO_CAMINO ? { layout: { ...LAYOUT_BASE, camino: process.env.DOMINO_CAMINO } } : undefined;
 import { chooseAction } from '../src/bot.js';
 
 const partidas = Number(process.argv[2] || 200);
@@ -27,7 +29,7 @@ const res = {};
 for (const formato of ['domino-1v1-v1', 'domino-2v2-v1']) {
   let turnos = 0, suma = 0, fuera = 0, sumaAncho = 0, sumaAlto = 0, peor = 0;
   for (let n = 0; n < partidas; n += 1) {
-    let state = createGame({ gameFormat: formato, seed: `compacta-${n}` });
+    let state = createGame({ config: CFG_CAMINO,  gameFormat: formato, seed: `compacta-${n}` });
     for (let j = 0; j < 200 && state.phase === PHASE.PLAYING; j += 1) {
       const seat = currentSeat(state);
       const accion = chooseAction(viewFor(state, seat), { difficulty: 'normal', seed: `c-${n}-${j}` });

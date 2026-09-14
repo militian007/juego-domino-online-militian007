@@ -681,6 +681,67 @@ export function preferirDespegadas(board, placements, side, layout = DEFAULT_LAY
   return despegadas.length > 0 && despegadas.length < placements.length ? despegadas : placements;
 }
 
+/**
+ * EL CAMINO FIJO DEL TELEFONO (§175, mockup C): la culebra sigue un recorrido
+ * predeterminado, alto y angosto. Cada punta baja (o sube) en columna; al
+ * tocar la pared pone un puente acostado de una ficha hacia afuera (la punta
+ * derecha hacia la derecha, la izquierda hacia la izquierda) y vuelve en la
+ * columna siguiente, en sentido contrario. Las columnas quedan a tres celdas,
+ * asi que nunca se pegan. Los dobles van cruzados como siempre; el puente en
+ * la pared es la unica curva.
+ *
+ * Con que sentido fluye la punta: el de la ultima ficha parada de ese lado,
+ * volteado por cada puente (acostada suelta) que haya despues de ella.
+ */
+function sentidoDeLaPunta(board, side, grid) {
+  const n = board.length;
+  for (let k = 0; k < n; k += 1) {
+    const t = side === 'left' ? board[k] : board[n - 1 - k];
+    // Un puente (acostada suelta) marca la curva: si esta abajo, la columna
+    // nueva sube; si esta arriba, baja.
+    if (t.orientation === 'horizontal' && t.tile[0] !== t.tile[1] && t.side !== 'first') {
+      return t.y >= grid / 2 ? -1 : 1;
+    }
+    if (t.orientation === 'vertical' && t.tile[0] !== t.tile[1]) {
+      return side === 'left' ? Math.sign(t.y - t.y2) : Math.sign(t.y2 - t.y);
+    }
+  }
+  return side === 'left' ? -1 : 1;
+}
+
+function columnaDeLaPunta(board, side) {
+  const n = board.length;
+  for (let k = 0; k < n; k += 1) {
+    const t = side === 'left' ? board[k] : board[n - 1 - k];
+    if (t.orientation === 'vertical') return t.x;
+  }
+  return null;
+}
+
+export function preferirCamino(board, placements, side, layout = DEFAULT_LAYOUT) {
+  if (!board || board.length === 0 || !placements || placements.length < 2) return placements;
+  if (side !== 'left' && side !== 'right') return placements;
+  const grid = layout.grid;
+  const dy = sentidoDeLaPunta(board, side, grid);
+  // Las columnas viven entre la fila 1 y la penultima: la ventana del telefono
+  // mide 14 celdas de alto, y asi la culebra dobla antes de la pared.
+  const paradas = placements.filter((p) =>
+    p.orientation === 'vertical'
+    && (side === 'left' ? Math.sign(p.y - p.y2) : Math.sign(p.y2 - p.y)) === dy
+    && Math.min(p.y, p.y2) >= 1 && Math.max(p.y, p.y2) <= grid - 2
+  );
+  if (paradas.length > 0) {
+    const col = columnaDeLaPunta(board, side);
+    const enColumna = paradas.filter((p) => p.x === col);
+    return enColumna.length > 0 ? enColumna : paradas;
+  }
+  const dx = side === 'left' ? -1 : 1;
+  const puentes = placements.filter((p) =>
+    p.orientation === 'horizontal' && (side === 'left' ? Math.sign(p.x - p.x2) : Math.sign(p.x2 - p.x)) === dx
+  );
+  return puentes.length > 0 ? puentes : placements;
+}
+
 export function straightestPlacement(board, placements, side, layout = DEFAULT_LAYOUT) {
   if (!placements || placements.length === 0) return null;
   // La primera ficha se pone para que la cadena SALGA A LO LARGO de la
@@ -736,9 +797,14 @@ export function straightestPlacement(board, placements, side, layout = DEFAULT_L
   //    y las dos alejan menos la camara pero traban la cadena 4 y 20 veces
   //    mas (ver la seccion 170, con los numeros).
   // 2. Seguir derecho, entre las que quedan: nada de escaleras.
-  placements = preferirCompactas(board, placements);
-  // 1b. No pegarse a la propia cadena en el dibujo (§174).
-  placements = preferirDespegadas(board, placements, side, layout);
+  if (layout.camino === 'telefono') {
+    // Mockup C (§175): el recorrido fijo manda; lo demas solo desempata.
+    placements = preferirCamino(board, placements, side, layout);
+  } else {
+    placements = preferirCompactas(board, placements);
+    // 1b. No pegarse a la propia cadena en el dibujo (§174).
+    placements = preferirDespegadas(board, placements, side, layout);
+  }
   const rectasCompactas = placements.filter((p) => rectas.includes(p));
   if (rectasCompactas.length > 0) placements = rectasCompactas;
 

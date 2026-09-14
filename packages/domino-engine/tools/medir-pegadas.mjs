@@ -4,6 +4,8 @@
 //
 //   node tools/medir-pegadas.mjs [partidas]
 import { createGame, applyAction, currentSeat, viewFor, PHASE, DEFAULT_LAYOUT } from '../src/index.js';
+import { DEFAULT_LAYOUT as LAYOUT_BASE } from '../src/layout.js';
+const CFG_CAMINO = process.env.DOMINO_CAMINO ? { layout: { ...LAYOUT_BASE, camino: process.env.DOMINO_CAMINO } } : undefined;
 import { computeBoardOffsets, rectOf } from '../src/layout.js';
 import { chooseAction } from '../src/bot.js';
 
@@ -29,7 +31,7 @@ const res = {};
 for (const formato of ['domino-1v1-v1', 'domino-2v2-v1']) {
   let turnos = 0, turnosPegados = 0, rondas = 0, rondasPegadas = 0;
   for (let n = 0; n < partidas; n += 1) {
-    let state = createGame({ gameFormat: formato, seed: `pegadas-${n}` });
+    let state = createGame({ config: CFG_CAMINO,  gameFormat: formato, seed: `pegadas-${n}` });
     let rondaPegada = false;
     for (let j = 0; j < 200 && state.phase === PHASE.PLAYING; j += 1) {
       const seat = currentSeat(state);

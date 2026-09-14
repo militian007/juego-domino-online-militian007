@@ -8,6 +8,8 @@
 //   node tools/buscar-montadas.mjs            -> 300 partidas por formato
 //   node tools/buscar-montadas.mjs 1000
 import { createGame, applyAction, currentSeat, viewFor, necesitaDestrancar, ACTION, PHASE, DEFAULT_LAYOUT } from '../src/index.js';
+import { DEFAULT_LAYOUT as LAYOUT_BASE } from '../src/layout.js';
+const CFG_CAMINO = process.env.DOMINO_CAMINO ? { layout: { ...LAYOUT_BASE, camino: process.env.DOMINO_CAMINO } } : undefined;
 import { computeBoardOffsets, rectOf } from '../src/layout.js';
 import { chooseAction } from '../src/bot.js';
 
@@ -37,7 +39,7 @@ function revisar(board, etiqueta) {
 
 for (let n = 0; n < partidas; n += 1) {
   for (const formato of ['domino-1v1-v1', 'domino-2v2-v1']) {
-    let state = createGame({ gameFormat: formato, seed: `montadas-${n}` });
+    let state = createGame({ config: CFG_CAMINO,  gameFormat: formato, seed: `montadas-${n}` });
     let ultimo = null;
     for (let j = 0; j < 2000 && state.phase !== PHASE.GAME_OVER; j += 1) {
       const seat = currentSeat(state);

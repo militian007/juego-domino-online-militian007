@@ -127,7 +127,7 @@ const MS_VUELO = 300;
 // Cuanto puede correrse la camara, en celdas, respecto del centro de la rejilla.
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
-const getValidPlacementsForTile = (board, tile, side) => placementsFor(board, tile, side);
+const getValidPlacementsForTile = (board, tile, side, layout) => placementsFor(board, tile, side, layout);
 
 function getVisualCoords(pos, idx, boardOffsets) {
   const offset = boardOffsets[idx] || { x: 0, y: 0 };
@@ -165,7 +165,9 @@ export default function Board({
   draggedTile = null,
   onSnapChange = null,
   clasePano = 'felt-verde',
-  claseBaranda = 'rail-cognac'
+  claseBaranda = 'rail-cognac',
+  // El layout del motor (rejilla, celda y, en el mockup C, el camino fijo).
+  layout = DEFAULT_LAYOUT
 }) {
   const containerRef = useRef(null);
 
@@ -193,11 +195,11 @@ export default function Board({
     const lados = !board || board.length === 0 ? ['first'] : ['left', 'right'];
     const placements = [];
     for (const side of lados) {
-      const mejor = straightestPlacement(board, getValidPlacementsForTile(board, activeTileForPlacements, side), side);
+      const mejor = straightestPlacement(board, getValidPlacementsForTile(board, activeTileForPlacements, side, layout), side, layout);
       if (mejor) placements.push(mejor);
     }
     return placements;
-  }, [board, activeTileForPlacements, myTurn]);
+  }, [board, activeTileForPlacements, myTurn, layout]);
 
   // Centrar el tablero inicialmente
   // El tablero de 20x20 se escala para entrar entero en el paño. Antes se

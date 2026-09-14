@@ -7864,3 +7864,42 @@ dibujaba la rejilla entera; hoy la camara encuadra la cadena, asi que el tamaño
 ya no manda en el tamaño de la ficha. Decision para Raul (y para el informe a Jonathan):
 rejilla 16 con la cadena mas apretada, o 20 con la cadena mas suelta y siete veces menos
 destranques.
+
+## 175. El camino fijo del telefono, como opcion del motor (mockup C) (2026-09-14)
+
+Raul, ante la rejilla de 20 de la seccion 174: "¿no podemos hacer formas tipo predeterminadas?".
+Jonathan las probo y las descarto en la 19 (serpiente y zigzag fijos) cuando la camara dibujaba
+la rejilla entera; hoy la camara encuadra la cadena, asi que se volvio a mirar, como mockup
+corriendo y medido, para que Raul decida viendolo.
+
+**Como funciona.** `layout.camino = 'telefono'` (opcional; sin eso todo sigue igual). En
+`straightestPlacement`, `preferirCamino` reemplaza a "no salirse de la ventana" y "despegadas":
+cada punta baja o sube en columna (`sentidoDeLaPunta`: el sentido de la ultima ficha parada
+suelta de ese lado, o el que marca el ultimo puente: si el puente esta abajo, la columna nueva
+sube; si esta arriba, baja), las columnas viven entre la fila 1 y la penultima (la ventana del
+telefono mide 14), y cuando la parada no cabe entra un puente acostado de una ficha hacia afuera
+(la punta derecha a la derecha, la izquierda a la izquierda). Los dobles van cruzados como
+siempre. El bot lo lee de `view.layout`; la mesa lo recibe en `gameState.layout` (`Board`
+tiene prop `layout`); el servidor lo enciende con `DOMINO_CAMINO=telefono` (`DominoGame`).
+Las herramientas de medida lo aceptan con la misma variable.
+
+**Medido, 200 partidas por regla:**
+
+| | A (seccion 170, hoy) | C camino fijo | C con puente de dos fichas |
+|---|---|---|---|
+| camara alejada 1v1 | 27,0 % | **22,6 %** | 30,8 % |
+| camara alejada 2v2 | 38,9 % | **30,4 %** | 42,2 % |
+| caja 1v1 | 6,8 x 11,5 | 5,9 x 11,2 | 6,8 x 11,1 |
+| cadena pegada 1v1 | **27,5 %** | 40,2 % | 27,2 % |
+| veto total | **0,154 %** | 0,289 % | 0,315 % |
+| montadas | 0 | 0 | 0 |
+
+C aleja menos la camara, pero las columnas quedan a dos celdas y los dobles cruzados asoman una
+celda a cada lado: un doble queda a media celda de la columna vecina (por eso "pegada" sube), y
+las trabadas se duplican. Con puente de dos fichas (columnas a cuatro) se despega pero la camara
+se aleja mas que hoy. Primera version (columnas hasta la pared y sentido por conteo de puentes)
+se descarto: un doble en la esquina la desviaba y la cadena vagaba (40,8 % alejada).
+
+Capturas reales con `jugar.mjs` y `DOMINO_CAMINO=telefono`: hoja "El Camino Fijo de la
+Culebra" para Raul, con A y C jugada por jugada. Recomendacion: quedarse con A; si Raul prefiere
+C por como se ve, se enciende con la bandera. 85/85, 87/87.
