@@ -7950,3 +7950,25 @@ Claude escogiera. Se generaron tres puntos medios (terraza al atardecer, club co
 persianas abiertas al patio, noche tropical en la veranda) y de la mejor, la noche tropical,
 dos mas sin letras (la primera traia una plaquita con texto en la baranda). Quedo la del farol
 y el cafecito: `public/umbral/portada-d.webp`, por defecto. Las otras siguen con `?portada=`.
+
+## 178. La culebra intermedia: libre, pero dobla una ficha antes de la pared (2026-09-14)
+
+Raul, sobre A (libre, seccion 170) y C (camino fijo, seccion 175): "¿podemos buscar algo
+intermedio entre A y C? Piensa cual es la mejor opcion". Lo unico que vale la pena tomar de C es
+doblar antes de la pared: en A la recta llega hasta el borde, el doble siguiente se planta de
+canto y la cadena vuelve pegada a si misma. `layout.camino = 'intermedio'`: la regla libre
+(ventana, despegadas, derecho) mas un filtro que descarta las casillas que dejan la punta
+clavada en el borde de la rejilla, si hay otras. Medido, 200 partidas por regla:
+
+| | A libre | B intermedia | C camino fijo |
+|---|---|---|---|
+| camara alejada 1v1 / 2v2 | 27,0 / 38,9 % | **23,5 / 35,9 %** | 22,6 / 30,4 % |
+| cadena pegada 1v1 / 2v2 | 27,5 / 38,9 % | **26,5 / 34,7 %** | 40,2 / 42,8 % |
+| veto total | 0,154 % | **0,179 %** | 0,289 % |
+
+B queda ENCENDIDA en la mesa: `DominoGame` pone `layout.camino = 'intermedio'` salvo que
+`DOMINO_CAMINO` diga `telefono` o `libre`. Las pruebas del motor siguen con la regla libre
+como base (`DEFAULT_LAYOUT`, 85/85): la 174 ya midio que este mismo filtro como base tumba el
+fixture de destranque y deja la prueba del bot dificil en 58/100, al borde; como configuracion
+de la mesa no toca ninguna prueba y cumple la regla 7 del motor (toda regla variable va en
+config). Capturas reales 1v1 y 2v2 en la hoja de la culebra. 87/87.

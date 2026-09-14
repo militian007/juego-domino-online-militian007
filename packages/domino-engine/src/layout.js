@@ -804,6 +804,14 @@ export function straightestPlacement(board, placements, side, layout = DEFAULT_L
     placements = preferirCompactas(board, placements);
     // 1b. No pegarse a la propia cadena en el dibujo (§174).
     placements = preferirDespegadas(board, placements, side, layout);
+    if (layout.camino === 'intermedio') {
+      // Mockup B (§178): lo unico que se toma del camino fijo es doblar UNA
+      // ficha antes de la pared. Si la recta deja la punta clavada en el
+      // borde, la ficha siguiente ya no cabe derecha, un doble se planta de
+      // canto y la cadena vuelve pegada a si misma. Con aire, dobla limpia.
+      const conAire = placements.filter((p) => aireEnLaPunta(p, side, grid) > 0);
+      if (conAire.length > 0 && conAire.length < placements.length) placements = conAire;
+    }
   }
   const rectasCompactas = placements.filter((p) => rectas.includes(p));
   if (rectasCompactas.length > 0) placements = rectasCompactas;

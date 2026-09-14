@@ -75,7 +75,11 @@ export class DominoGame {
     if (config.totalPlayers === 4) deLaModalidad.hasPool = false;
     // Mockup del camino fijo (§175): solo si el servidor arranca con
     // DOMINO_CAMINO=telefono. La mesa y el bot lo leen del estado.
-    if (process.env.DOMINO_CAMINO) deLaModalidad.layout = { ...DEFAULT_LAYOUT, camino: process.env.DOMINO_CAMINO };
+    // La culebra de la mesa (seccion 178): por defecto la regla intermedia
+    // (libre, pero dobla una ficha antes de la pared). DOMINO_CAMINO=telefono
+    // enciende el camino fijo; DOMINO_CAMINO=libre deja la regla libre pura.
+    const camino = process.env.DOMINO_CAMINO || 'intermedio';
+    if (camino !== 'libre') deLaModalidad.layout = { ...DEFAULT_LAYOUT, camino };
 
     this.state = createGame({
       gameFormat: config.gameFormat,
