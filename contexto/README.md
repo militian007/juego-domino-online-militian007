@@ -7944,3 +7944,9 @@ y un invitado en la mesa recibe cuatro (stickers, fotos, monedas, desbloqueos). 
 rebota a quien tenia sesion, y esas cuatro llamadas no se hacen sin sesion (`haySesion()`).
 Verificado con `shots/diag-umbral.mjs` en telefono: las tres portadas, la tarjeta, la entrada a
 la mesa con el nombre y la consola limpia. Siguiente tanda: la antesala con panas por codigo.
+
+**La portada que quedo (14-sep, mañana).** Raul pidio "algo intermedio entre A y C" y que
+Claude escogiera. Se generaron tres puntos medios (terraza al atardecer, club con las
+persianas abiertas al patio, noche tropical en la veranda) y de la mejor, la noche tropical,
+dos mas sin letras (la primera traia una plaquita con texto en la baranda). Quedo la del farol
+y el cafecito: `public/umbral/portada-d.webp`, por defecto. Las otras siguen con `?portada=`.

@@ -10,19 +10,20 @@ import { identidad, retratoUrl } from './identidad.js';
  * de reglas. Sin login: la identidad ligera. La landing de Jonathan sigue en
  * /viejo, intacta, para el informe.
  *
- * Las tres portadas se eligen con `?portada=a|b|c` (queda guardada) mientras
- * Raul decide.
+ * Las portadas se eligen con `?portada=a|b|c|d` (queda guardada). La D, la
+ * noche tropical del club, es la que quedo: el punto medio entre el salon (A)
+ * y el patio (C) que pidio Raul.
  */
-const PORTADAS = ['a', 'b', 'c'];
+const PORTADAS = ['a', 'b', 'c', 'd'];
 
 function portadaElegida() {
   try {
     const pedida = new URLSearchParams(window.location.search).get('portada');
     if (pedida && PORTADAS.includes(pedida)) localStorage.setItem('domino-portada', pedida);
     const guardada = localStorage.getItem('domino-portada');
-    return PORTADAS.includes(guardada) ? guardada : 'a';
+    return PORTADAS.includes(guardada) ? guardada : 'd';
   } catch {
-    return 'a';
+    return 'd';
   }
 }
 
