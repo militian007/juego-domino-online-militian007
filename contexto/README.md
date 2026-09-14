@@ -7972,3 +7972,18 @@ como base (`DEFAULT_LAYOUT`, 85/85): la 174 ya midio que este mismo filtro como 
 fixture de destranque y deja la prueba del bot dificil en 58/100, al borde; como configuracion
 de la mesa no toca ninguna prueba y cumple la regla 7 del motor (toda regla variable va en
 config). Capturas reales 1v1 y 2v2 en la hoja de la culebra. 87/87.
+
+## 179. Ver el destranque, y la portada con la culebra bien puesta (2026-09-14)
+
+Raul: "¿que pasa cuando se traba?" y "grabame como se reacomoda". Ruta de diagnostico
+`POST /api/diag/destrancar { code, forma }` (solo fuera de produccion): vuelve a trazar la
+cadena de esa sala con `reconstruirCadena(board.map(t => t.tile), layout, forma)` y la manda
+a todos, igual que el destranque real pero a pedido. `shots/grabar-destranque.mjs` juega hasta
+tener cadena, la pide con la forma "giro" y saca cuadros con el reloj lento (CDP
+`Animation.setPlaybackRate` al 15 %; los tiempos se dividen al armar el clip): se ven las
+fichas deslizando de la forma vieja a la nueva en 420 ms y la camara reencuadrando despues.
+Dos clips en la hoja de la culebra, a velocidad real y a un tercio.
+
+La portada del umbral traia fichas de la IA pegadas a fichas que no eran sus vecinas (Raul se
+rio, pero lo vio). Se regenero con una culebra REAL del juego como segunda referencia y la
+instruccion de copiarla: ahora las fichas van punta con punta en U. `portada-d.webp` nueva.
