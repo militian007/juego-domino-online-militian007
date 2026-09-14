@@ -7995,3 +7995,10 @@ el motor (bots 2v2, regla intermedia) y se dibujo con las fichas del juego
 (`tiles-hueso`, mismos giros que `Tile.jsx`, corrimientos de `computeBoardOffsets`), y se
 puso en perspectiva sobre el paño con PIL (`Image.PERSPECTIVE`, sombra difuminada, tinte
 calido). Cada ficha pega con su vecina porque la jugo el motor. `portada-d.webp` nueva.
+
+**Y al final, a mano (14-sep, tarde).** Raul: la culebra real compuesta "es horrible, jajaja";
+volvio la portada de la IA que le encanto, y la ficha que no cuadraba (marcada por el con un
+circulo rojo: mitad en blanco pegada a un 1) se arreglo pintandole el puntito con PIL: elipse
+oscura de 24 x 17 con brillo arriba a la izquierda y borde suave, en (456, 1390) de la imagen de
+1536 x 2752 (`umbral/salida/E1-fix.png`). Leccion: para una portada, la IA con un retoque a mano
+gana a la composicion exacta.
