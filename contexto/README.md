@@ -7903,3 +7903,44 @@ se descarto: un doble en la esquina la desviaba y la cadena vagaba (40,8 % aleja
 Capturas reales con `jugar.mjs` y `DOMINO_CAMINO=telefono`: hoja "El Camino Fijo de la
 Culebra" para Raul, con A y C jugada por jugada. Recomendacion: quedarse con A; si Raul prefiere
 C por como se ve, se enciende con la bandera. 85/85, 87/87.
+
+## 176. Los avisos de la mesa son grabaciones (2026-09-14)
+
+Raul tumbo las tres familias sintetizadas de la 161 ("una puta mierda") y pidio grabaciones
+reales; el 13 de septiembre dijo "escoge los sonidos". Se bajaron tres paquetes CC0 (el de
+rubberduck de donde salio el clac, y "Casino Audio" y "Music Jingles" de Kenney) y se eligio
+por analisis, no de oido: duracion, energia, brillo (centroide espectral) y, para las
+fanfarrias, si la melodia sube o baja (contorno de tono por FFT). Quedaron seis WAV mono de
+32 kHz, recortados desde el golpe y nivelados con `loudnorm`, en `frontend/public/sonidos/`
+(origen y licencia en su `LEEME.md`): te-toca (golpe de madera suave), no-va (golpe sordo),
+robar (carta deslizando), tranque (portazo de madera), ronda-ganada (steel drum que sube,
+1,4 s), ronda-perdida (steel drum que baja, 0,9 s).
+
+`soundEffects.js` ya no fabrica nada: `sonar(aviso)` toca la grabacion (los golpes con un
+poco de variacion de tono, las fanfarrias no), `prepararAvisos()` las precarga al entrar a
+la mesa. `FAMILIAS` queda con una sola entrada ("Grabaciones") para que la pagina /sonidos y
+el mockup sigan funcionando. Verificado jugando: las ocho grabaciones se piden al entrar y
+la consola queda limpia. El mockup "Los Sonidos de la Mesa" se rehizo con estas.
+
+## 177. El umbral y la identidad ligera (2026-09-14)
+
+Primera tanda de "el domino por fuera", calcando el Ludo y la casa. Raul decidio: identidad
+ligera (sin cuentas) y arrancar por el umbral.
+
+**El umbral** (`frontend/src/umbral/Umbral.jsx`) vive en `/`; la landing de Jonathan queda
+intacta en `/viejo` para el informe. Portada 9:16 generada con nano banana
+(`public/umbral/portada-a|b|c.webp`: A el salon del club de noche, B las fichas en macro, C el
+patio caribeño al atardecer; se elige con `?portada=a|b|c` mientras Raul decide), titulo
+"Domino" en serif oro, JUEGA YA, EL RELAMPAGO (a /torneos) y LAS REGLAS (seis renglones).
+
+**La identidad ligera** (`umbral/identidad.js`, `IdentidadLigera.jsx`): al primer JUEGA YA sale
+la tarjeta "¿Como te llaman?" con nombre (2 a 14 letras) y uno de los doce retratos de
+Jonathan; se guarda en el telefono (`domino-identidad`) y el umbral la muestra arriba a la
+derecha. El socket manda `guestName` en el handshake y el servidor (`gameSocket.js`) lo
+limpia y lo usa como nombre del invitado: la mesa marca "RAUL" en vez de "Invitado".
+
+**Lo que hubo que destrabar:** el interceptor de `api.js` mandaba a /login ante cualquier 401,
+y un invitado en la mesa recibe cuatro (stickers, fotos, monedas, desbloqueos). Ahora solo
+rebota a quien tenia sesion, y esas cuatro llamadas no se hacen sin sesion (`haySesion()`).
+Verificado con `shots/diag-umbral.mjs` en telefono: las tres portadas, la tarjeta, la entrada a
+la mesa con el nombre y la consola limpia. Siguiente tanda: la antesala con panas por codigo.

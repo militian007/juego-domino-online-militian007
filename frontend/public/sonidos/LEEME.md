@@ -41,3 +41,21 @@ medido con la misma vara:
 | **este** | 70 ms | 3751 Hz | 9 / 26 / 58 / 7 % |
 
 **El audio del video de ellos no se usa nunca.** Es su grabación.
+
+## Los avisos de la mesa (2026-09-14)
+
+Seis grabaciones mas, todas CC0 (dominio publico), recortadas desde el golpe, niveladas con
+`loudnorm` y pasadas a WAV mono de 32 kHz. Las eligio Claude por analisis (duracion, tono,
+brillo y sentido de la melodia) a pedido de Raul, que descarto los sonidos sintetizados.
+
+| archivo | para que | original | pack | largo |
+| --- | --- | --- | --- | --- |
+| `te-toca.wav` | te toca jugar | `wood_hit_05.ogg` | rubberduck, "100 CC0 metal and wood SFX" (OpenGameArt) | 250 ms |
+| `no-va.wav` | esa ficha no va | `wood_hit_09.ogg` | rubberduck | 230 ms |
+| `robar.wav` | robar del pozo | `card-slide-2.ogg` | Kenney, "Casino Audio" (kenney.nl) | 580 ms |
+| `tranque.wav` | tranque | `wood_slam_02.ogg` | rubberduck | 480 ms |
+| `ronda-ganada.wav` | ronda ganada | `jingles_STEEL02.ogg` (steel drum, sube) | Kenney, "Music Jingles" (kenney.nl) | 1,4 s |
+| `ronda-perdida.wav` | ronda perdida | `jingles_STEEL05.ogg` (steel drum, baja) | Kenney, "Music Jingles" | 940 ms |
+
+Packs: https://opengameart.org/content/100-cc0-metal-and-wood-sfx ·
+https://kenney.nl/assets/casino-audio · https://kenney.nl/assets/music-jingles

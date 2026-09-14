@@ -19,7 +19,10 @@ export function setupGameSocket(io, roomManager) {
       const propio = socket.handshake.auth?.guestId;
       const valido = typeof propio === 'string' && /^guest-[a-z0-9]{6,40}$/i.test(propio);
       socket.userId = valido ? propio : `guest-${socket.id}`;
-      socket.username = GUEST_NAME;
+      // Identidad ligera (seccion 177): el invitado trae el nombre que eligio en
+      // el umbral. Se limpia aqui: letras, numeros y espacios, de 2 a 14.
+      const nombre = String(socket.handshake.auth?.guestName || '').replace(/[^\p{L}\p{N} ]/gu, '').trim().slice(0, 14);
+      socket.username = nombre.length >= 2 ? nombre : GUEST_NAME;
       socket.isGuest = true;
       return next();
     }

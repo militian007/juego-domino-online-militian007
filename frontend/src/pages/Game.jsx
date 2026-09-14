@@ -29,12 +29,12 @@ import Scoreboard from '../components/game/Scoreboard.jsx';
 import SidePicker from '../components/game/SidePicker.jsx';
 import AdSidebar from '../components/AdSidebar.jsx';
 import { connectSocket } from '../services/socket.js';
-import { paseApi, perfilApi } from '../services/api.js';
+import { haySesion, paseApi, perfilApi } from '../services/api.js';
 import CargandoFichas from '../components/CargandoFichas.jsx';
 import PanelDeChat, { BurbujaDeChat, useChatDeMesa } from '../components/game/ChatDeMesa.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
-  playTileSound, playDrawSound, estaSilenciado, alternarSilencio, prepararSonidos, sonar
+  playTileSound, playDrawSound, estaSilenciado, alternarSilencio, prepararSonidos, prepararAvisos, sonar
 } from '../utils/soundEffects.js';
 import { ChevronLeft, Lock, LogOut } from 'lucide-react';
 
@@ -280,6 +280,8 @@ export default function Game() {
 
   useEffect(() => {
     let vivo = true;
+    // Un invitado no tiene stickers ganados: los de siempre, sin preguntar.
+    if (!haySesion()) { setStickers({ base: BASE_DE_EMERGENCIA, libres: [], premiados: [] }); return undefined; }
     paseApi.stickers()
       .then((r) => { if (vivo) setStickers(r); })
       // Un invitado no tiene stickers ganados; se queda con los de siempre.
@@ -310,6 +312,7 @@ export default function Game() {
     if (ids.length === 0) return;
 
     ids.forEach((id) => fotosPedidas.current.add(id));
+    if (!haySesion()) return undefined;
     let vivo = true;
     perfilApi.fotosDe(ids)
       .then((r) => { if (vivo) setFotos((f) => ({ ...f, ...r })); })
@@ -665,6 +668,7 @@ export default function Game() {
   // son 16 KB, y un clac que llega tarde es peor que ninguno.
   useEffect(() => {
     prepararSonidos();
+    prepararAvisos();
   }, []);
 
   // Las 28 fichas de la pinta puesta se piden al entrar, no cuando van saliendo (§151).

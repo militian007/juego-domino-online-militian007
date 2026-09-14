@@ -20,7 +20,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Solo se rebota al login a quien TENIA sesion y se le vencio. Un invitado
+    // (identidad ligera, seccion 177) recibe 401 en lo que es de cuentas y
+    // sigue jugando como si nada.
+    let habiaSesion = false;
+    try { habiaSesion = Boolean(localStorage.getItem('token')); } catch { /* nada */ }
+    if (error.response?.status === 401 && habiaSesion) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       if (window.location.pathname !== '/login') {
@@ -30,6 +35,11 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+/** Si hay una sesion con cuenta. Un invitado (identidad ligera) no la tiene. */
+export const haySesion = () => {
+  try { return Boolean(localStorage.getItem('token')); } catch { return false; }
+};
 
 export const authApi = {
   register: (data) => api.post('/auth/register', data).then((r) => r.data),

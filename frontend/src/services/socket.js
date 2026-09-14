@@ -11,6 +11,16 @@ const CLAVE_INVITADO = 'domino-guest-id';
  * trata como un jugador nuevo en cada conexion y perdes la partida al
  * refrescar o al salir a otra app.
  */
+/** El nombre de la identidad ligera (seccion 177), si la persona ya lo eligio. */
+function nombreDeInvitado() {
+  try {
+    const id = JSON.parse(localStorage.getItem('domino-identidad') || 'null');
+    return id && typeof id.nombre === 'string' ? id.nombre : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function idDeInvitado() {
   try {
     let id = localStorage.getItem(CLAVE_INVITADO);
@@ -53,7 +63,7 @@ export const connectSocket = (tokenOverride) => {
     opts.auth = { token };
   } else {
     const invitado = idDeInvitado();
-    if (invitado) opts.auth = { guestId: invitado };
+    if (invitado) opts.auth = { guestId: invitado, guestName: nombreDeInvitado() };
   }
   socket = io(SOCKET_URL, opts);
 

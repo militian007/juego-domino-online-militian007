@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Lock } from 'lucide-react';
-import { desbloqueosApi } from '../../services/api.js';
+import { desbloqueosApi, haySesion } from '../../services/api.js';
 
 /**
  * Los paños de la mesa.
@@ -227,6 +227,7 @@ export function useMesaTheme() {
   const [desbloqueadas, setDesbloqueadas] = useState([]);
 
   useEffect(() => {
+    if (!haySesion()) return undefined;
     let vivo = true;
     desbloqueosApi.mios()
       .then((r) => { if (vivo) setDesbloqueadas(r.claves ?? []); })

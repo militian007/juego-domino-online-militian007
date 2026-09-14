@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { monedasApi } from '../services/api.js';
+import { haySesion, monedasApi } from '../services/api.js';
 
 /**
  * Las monedas que llevas ganadas (§133).
@@ -17,6 +17,7 @@ export default function Monedas({ className = '' }) {
   const [saldo, setSaldo] = useState(null);
 
   useEffect(() => {
+    if (!haySesion()) return undefined;
     let vivo = true;
     monedasApi.mias()
       .then((r) => { if (vivo) setSaldo(r.saldo ?? 0); })
