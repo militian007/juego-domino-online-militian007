@@ -7987,3 +7987,11 @@ Dos clips en la hoja de la culebra, a velocidad real y a un tercio.
 La portada del umbral traia fichas de la IA pegadas a fichas que no eran sus vecinas (Raul se
 rio, pero lo vio). Se regenero con una culebra REAL del juego como segunda referencia y la
 instruccion de copiarla: ahora las fichas van punta con punta en U. `portada-d.webp` nueva.
+
+**La culebra de la portada es real (14-sep, mediodía).** Raul vio que aun con la referencia la IA
+pintaba fichas que no pegaban ("ese 1 con el blanco"). Se dejo de pedirle domino a la IA: el
+fondo se genero con el paño VACIO (`umbral/gem_portada_g.py`), una cadena de 14 fichas la jugo
+el motor (bots 2v2, regla intermedia) y se dibujo con las fichas del juego
+(`tiles-hueso`, mismos giros que `Tile.jsx`, corrimientos de `computeBoardOffsets`), y se
+puso en perspectiva sobre el paño con PIL (`Image.PERSPECTIVE`, sombra difuminada, tinte
+calido). Cada ficha pega con su vecina porque la jugo el motor. `portada-d.webp` nueva.
