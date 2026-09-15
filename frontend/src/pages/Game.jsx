@@ -204,6 +204,20 @@ function AsientoLateral({ jugador, fichas, enTurno, esCompanero }) {
 }
 
 const AUTO_START_MODES = ['1v1bot', '2v2bots'];
+
+/**
+ * Que marcador se ve arriba (seccion 180): `?marcador=a|b|c` lo elige y queda
+ * guardado; sin nada, la placa de nogal de siempre. Mientras Raul decide.
+ */
+function varianteDelMarcador() {
+  try {
+    const pedida = new URLSearchParams(window.location.search).get('marcador');
+    if (pedida != null) localStorage.setItem('domino-marcador', pedida);
+    return localStorage.getItem('domino-marcador') || '';
+  } catch {
+    return '';
+  }
+}
 // Cuanto se le quita al paño por cada lado para que quepan las placas de los
 // jugadores. La cadena vive dentro de lo que queda y no se sale de ahi.
 // Cuanto se le reserva a cada borde de la mesa, en pixeles.
@@ -1297,6 +1311,7 @@ export default function Game() {
         </div>
 
         <Tablero
+          variante={varianteDelMarcador()}
           mios={gameState.teamScores?.[miEquipo] ?? 0}
           suyos={gameState.teamScores?.[equipoRival] ?? 0}
           ronda={gameState.round}

@@ -1,11 +1,22 @@
 /**
- * El marcador de la mesa: una placa de nogal atornillada a la baranda.
+ * El marcador de la mesa.
  *
- * La madera sale recortada de la misma imagen de la mesa, asi que es el mismo
- * material y no uno parecido. Lo que la hace ver placa y no tabla pegada son
- * tres cosas: los numeros van en cartuchos hundidos, hay un filo de laton por
- * dentro, y la sombra la separa del paño.
+ * La de siempre es una placa de nogal atornillada a la baranda (la madera sale
+ * recortada de la misma imagen de la mesa). Raul, 15 de septiembre: "la parte
+ * de arriba no me gusta como se ve, creo que podemos mejorarla mucho". Van
+ * tres direcciones mas para que elija, con `?marcador=a|b|c` (queda guardada):
+ *
+ *  - A "la banda de paño": una franja de paño oscuro con un filo de bronce,
+ *    nombres chicos en mayuscula y puntos grandes en Cinzel oro. Sin madera.
+ *  - B "el tablero del club": laca casi negra, los dos numeros grandes lado a
+ *    lado con un punto de bronce en medio, y debajo una linea con ronda, meta
+ *    y pozo. Como un marcador de cancha.
+ *  - C "al aire": nada de placa; dos fichas flotando en las esquinas del paño
+ *    y la ronda en una pastilla chica al centro. Gana paño la mesa.
  */
+
+const SERIF = "'Cinzel', 'Cormorant Garamond', Georgia, serif";
+const BRONCE = '#D8B45C';
 
 const Tornillo = ({ className }) => (
   <span
@@ -26,8 +37,6 @@ function Puntaje({ etiqueta, valor, tono }) {
       >
         {etiqueta}
       </span>
-      {/* Cartucho hundido: el numero se lee porque esta sobre madera oscura,
-          no sobre la veta clara. */}
       <span
         className="flex min-w-[52px] items-center justify-center rounded-[5px] px-2 py-0.5 font-serif text-[26px] font-black leading-none text-amber-50"
         style={{
@@ -46,7 +55,19 @@ function Puntaje({ etiqueta, valor, tono }) {
 /** Como se llama la modalidad en la placa. `pozo` es la de siempre y no se rotula. */
 const ROTULO = { tranca: 'Tranca', cinco: 'Cinco' };
 
-export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala, modalidad, myLabel, theirLabel }) {
+const IconoPozo = ({ className = 'h-[11px] w-[7px]' }) => (
+  <svg viewBox="0 0 10 16" className={className} aria-hidden="true">
+    <rect x="0.5" y="0.5" width="9" height="15" rx="1.6" fill="#20160c" stroke="#c9a24a" strokeWidth="1" />
+    <line x1="1.4" y1="8" x2="8.6" y2="8" stroke="#c9a24a" strokeWidth="0.9" />
+    <circle cx="5" cy="4.3" r="1.1" fill="#e8c974" />
+    <circle cx="5" cy="11.7" r="1.1" fill="#e8c974" />
+  </svg>
+);
+
+/* ------------------------------------------------------------------------- */
+/* La placa de nogal (la de siempre)                                           */
+/* ------------------------------------------------------------------------- */
+function PlacaDeNogal({ mios, suyos, ronda, objetivo, pozo, sala, modalidad, myLabel, theirLabel }) {
   return (
     <div className="pointer-events-none">
     <div
@@ -58,7 +79,6 @@ export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala, moda
           '0 14px 26px -8px rgba(0,0,0,.95), 0 2px 0 rgba(0,0,0,.6), inset 0 1px 0 rgba(255,231,190,.28)'
       }}
     >
-      {/* Filo de laton por dentro, como el de la baranda */}
       <div
         className="relative rounded-[10px] px-3 pb-3 pt-2"
         style={{
@@ -71,10 +91,6 @@ export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala, moda
         <Tornillo className="bottom-[5px] left-[5px]" />
         <Tornillo className="bottom-[5px] right-[5px]" />
 
-        {/* Los 28 px de aire a los lados son el sitio del boton de salir, que
-            va flotando encima de la esquina izquierda de la placa. Se dejan en
-            los DOS lados aunque el boton este en uno solo: si no, los dos
-            marcadores quedan descentrados uno respecto del otro y se nota. */}
         <div className="flex items-center px-7">
           <Puntaje etiqueta={myLabel} valor={mios} tono="text-sky-100" />
 
@@ -89,8 +105,6 @@ export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala, moda
               Ronda {ronda} · a {objetivo}
             </span>
 
-            {/* Con que reglas se juega (§128). Solo se rotula si NO es la de
-                siempre: poner "Con pozo" en todas las mesas seria ruido. */}
             {ROTULO[modalidad] && (
               <span
                 className="rounded-full px-2 py-[1px] text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-100"
@@ -111,21 +125,13 @@ export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala, moda
                   boxShadow: 'inset 0 1px 2px rgba(0,0,0,.8), 0 1px 0 rgba(255,225,180,.18)'
                 }}
               >
-                <svg viewBox="0 0 10 16" className="h-[11px] w-[7px]" aria-hidden="true">
-                  <rect x="0.5" y="0.5" width="9" height="15" rx="1.6" fill="#20160c" stroke="#c9a24a" strokeWidth="1" />
-                  <line x1="1.4" y1="8" x2="8.6" y2="8" stroke="#c9a24a" strokeWidth="0.9" />
-                  <circle cx="5" cy="4.3" r="1.1" fill="#e8c974" />
-                  <circle cx="5" cy="11.7" r="1.1" fill="#e8c974" />
-                </svg>
+                <IconoPozo />
                 {pozo}
               </span>
             ) : (
               <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-100/85">sin pozo</span>
             )}
 
-            {/* El codigo de la mesa, justo debajo del pozo. Antes colgaba
-                fuera de la placa, en la franja negra: ahi parecia un numero de
-                version perdido y no el codigo que uno le pasa a un pana. */}
             <span
               className="rounded-full px-2 font-mono text-[9px] font-bold tracking-[0.24em] text-domino-accent-bright"
               style={{
@@ -144,4 +150,154 @@ export default function Tablero({ mios, suyos, ronda, objetivo, pozo, sala, moda
     </div>
     </div>
   );
+}
+
+/* ------------------------------------------------------------------------- */
+/* A. La banda de paño                                                         */
+/* ------------------------------------------------------------------------- */
+function Lado({ etiqueta, valor, alineado = 'left', vaGanando }) {
+  const derecha = alineado === 'right';
+  return (
+    <div className={`flex min-w-0 flex-1 flex-col ${derecha ? 'items-end text-right' : 'items-start text-left'}`}>
+      <span className="truncate text-[10px] font-bold uppercase tracking-[0.24em] text-domino-cream/70">{etiqueta}</span>
+      <span
+        className="text-[30px] font-bold leading-none"
+        style={{
+          fontFamily: SERIF,
+          color: vaGanando ? BRONCE : '#EFE8D6',
+          textShadow: '0 2px 6px rgba(0,0,0,.8)'
+        }}
+      >
+        {valor}
+      </span>
+    </div>
+  );
+}
+
+function BandaDePano({ mios, suyos, ronda, objetivo, pozo, sala, modalidad, myLabel, theirLabel }) {
+  return (
+    <div
+      className="pointer-events-none relative mx-2 rounded-2xl px-4 py-2"
+      style={{
+        background: 'linear-gradient(180deg, #16382a 0%, #0e2419 100%)',
+        boxShadow: `inset 0 0 0 1px rgba(216,180,92,.55), inset 0 1px 0 rgba(255,235,190,.12), 0 10px 22px -10px rgba(0,0,0,.9)`
+      }}
+    >
+      <div className="flex items-center gap-3 pl-8">
+        <Lado etiqueta={myLabel} valor={mios} vaGanando={mios > suyos} />
+
+        <div className="flex shrink-0 flex-col items-center">
+          <span className="text-[9px] font-bold uppercase tracking-[0.3em]" style={{ color: BRONCE }}>Ronda {ronda}</span>
+          <span className="mt-[1px] text-[11px] font-semibold text-domino-cream/85">a {objetivo}</span>
+          <span className="mt-1 flex items-center gap-1 text-[10px] font-bold text-domino-cream/70">
+            {ROTULO[modalidad] && <span className="uppercase tracking-[0.14em]">{ROTULO[modalidad]} ·</span>}
+            {pozo != null ? (<><IconoPozo className="h-[10px] w-[6px]" /> {pozo}</>) : <span className="uppercase tracking-[0.14em]">sin pozo</span>}
+          </span>
+        </div>
+
+        <Lado etiqueta={theirLabel} valor={suyos} alineado="right" vaGanando={suyos > mios} />
+      </div>
+      <span className="absolute bottom-1 right-3 font-mono text-[8px] font-bold tracking-[0.22em] text-domino-cream/35">{sala}</span>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------------- */
+/* B. El tablero del club                                                      */
+/* ------------------------------------------------------------------------- */
+function TableroDelClub({ mios, suyos, ronda, objetivo, pozo, sala, modalidad, myLabel, theirLabel }) {
+  const Numero = ({ valor, vaGanando }) => (
+    <span
+      className="min-w-[64px] text-center text-[40px] font-bold leading-none"
+      style={{
+        fontFamily: SERIF,
+        color: vaGanando ? BRONCE : '#EFE8D6',
+        textShadow: '0 3px 8px rgba(0,0,0,.9)',
+        fontVariantNumeric: 'tabular-nums'
+      }}
+    >
+      {valor}
+    </span>
+  );
+  return (
+    <div
+      className="pointer-events-none relative mx-2 overflow-hidden rounded-xl"
+      style={{
+        background: 'linear-gradient(180deg, #0c1a14 0%, #060d0a 100%)',
+        boxShadow: 'inset 0 0 0 1px rgba(216,180,92,.5), 0 12px 24px -10px rgba(0,0,0,.95)'
+      }}
+    >
+      <div className="flex items-end justify-center gap-4 px-4 pt-2">
+        <div className="flex flex-col items-center">
+          <Numero valor={mios} vaGanando={mios > suyos} />
+          <span className="mt-1 max-w-[110px] truncate text-[9px] font-bold uppercase tracking-[0.26em] text-domino-cream/75">{myLabel}</span>
+        </div>
+        <span className="mb-5 h-[6px] w-[6px] rounded-full" style={{ background: BRONCE, boxShadow: `0 0 8px ${BRONCE}` }} />
+        <div className="flex flex-col items-center">
+          <Numero valor={suyos} vaGanando={suyos > mios} />
+          <span className="mt-1 max-w-[110px] truncate text-[9px] font-bold uppercase tracking-[0.26em] text-domino-cream/75">{theirLabel}</span>
+        </div>
+      </div>
+      <div
+        className="mt-1.5 flex items-center justify-center gap-2 px-3 py-[5px] text-[9px] font-bold uppercase tracking-[0.22em] text-[#1D2A22]"
+        style={{ background: `linear-gradient(90deg, #b8923f, ${BRONCE} 50%, #b8923f)` }}
+      >
+        <span>Ronda {ronda}</span><span className="opacity-60">·</span>
+        <span>a {objetivo}</span><span className="opacity-60">·</span>
+        {ROTULO[modalidad] && (<><span>{ROTULO[modalidad]}</span><span className="opacity-60">·</span></>)}
+        <span>{pozo != null ? `Pozo ${pozo}` : 'Sin pozo'}</span><span className="opacity-60">·</span>
+        <span className="font-mono tracking-[0.18em]">{sala}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------------- */
+/* C. Al aire                                                                  */
+/* ------------------------------------------------------------------------- */
+function Ficha({ etiqueta, valor, vaGanando, alineado = 'left' }) {
+  return (
+    <div
+      className={`flex min-w-0 max-w-[46%] items-center gap-2 rounded-full py-1 ${alineado === 'right' ? 'flex-row-reverse pl-3 pr-1' : 'pl-1 pr-3'}`}
+      style={{
+        background: 'rgba(6,14,10,.72)',
+        boxShadow: `inset 0 0 0 1px rgba(216,180,92,${vaGanando ? '.75' : '.35'})`,
+        backdropFilter: 'blur(4px)'
+      }}
+    >
+      <span
+        className="flex h-8 min-w-[32px] items-center justify-center rounded-full px-1.5 text-[18px] font-bold leading-none"
+        style={{ fontFamily: SERIF, background: vaGanando ? BRONCE : 'rgba(216,180,92,.18)', color: vaGanando ? '#1D2A22' : '#EFE8D6' }}
+      >
+        {valor}
+      </span>
+      <span className="min-w-0 truncate text-[10px] font-bold uppercase tracking-[0.18em] text-domino-cream/85">{etiqueta}</span>
+    </div>
+  );
+}
+
+function AlAire({ mios, suyos, ronda, objetivo, pozo, sala, modalidad, myLabel, theirLabel }) {
+  return (
+    <div className="pointer-events-none flex items-center justify-between gap-1.5 px-2 pl-12">
+      <Ficha etiqueta={myLabel} valor={mios} vaGanando={mios > suyos} />
+      <div className="flex shrink-0 flex-col items-center">
+        <span className="rounded-full px-2.5 py-[3px] text-[9px] font-bold uppercase tracking-[0.26em]" style={{ background: 'rgba(6,14,10,.72)', color: BRONCE, boxShadow: 'inset 0 0 0 1px rgba(216,180,92,.45)' }}>
+          Ronda {ronda} · a {objetivo}
+        </span>
+        <span className="mt-[3px] flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.16em] text-domino-cream/60">
+          {ROTULO[modalidad] && <span>{ROTULO[modalidad]} ·</span>}
+          {pozo != null ? (<><IconoPozo className="h-[9px] w-[6px]" /> {pozo} ·</>) : <span>sin pozo ·</span>}
+          <span className="font-mono tracking-[0.14em]">{sala}</span>
+        </span>
+      </div>
+      <Ficha etiqueta={theirLabel} valor={suyos} vaGanando={suyos > mios} alineado="right" />
+    </div>
+  );
+}
+
+const VARIANTES = { a: BandaDePano, b: TableroDelClub, c: AlAire };
+
+export default function Tablero({ variante, ...props }) {
+  const Elegida = VARIANTES[variante] || PlacaDeNogal;
+  return <Elegida {...props} />;
 }

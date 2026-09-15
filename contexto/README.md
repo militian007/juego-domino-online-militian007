@@ -8002,3 +8002,16 @@ circulo rojo: mitad en blanco pegada a un 1) se arreglo pintandole el puntito co
 oscura de 24 x 17 con brillo arriba a la izquierda y borde suave, en (456, 1390) de la imagen de
 1536 x 2752 (`umbral/salida/E1-fix.png`). Leccion: para una portada, la IA con un retoque a mano
 gana a la composicion exacta.
+
+## 180. El marcador de arriba: tres direcciones para elegir (2026-09-15)
+
+Raul: "las fichas ya estan bien pero necesito cambiar un poco el tablero; la parte de arriba no
+me gusta como se ve". `Tablero.jsx` guarda la placa de nogal de siempre y suma tres variantes,
+elegibles con `?marcador=a|b|c` (queda en `domino-marcador`; `Game.jsx` la lee con
+`varianteDelMarcador()`): A la banda de paño (franja verde oscura con filo de bronce, puntos
+grandes en Cinzel, el que va ganando en oro, codigo chiquito en la esquina); B el tablero del
+club (laca casi negra, los dos numeros grandes con un punto de bronce en medio y una linea de
+bronce con ronda, meta, pozo y codigo); C al aire (dos fichas flotantes sobre el paño y una
+pastilla al centro; recorta nombres largos). Capturas reales 1v1 y 2v2 con `jugar.mjs` y
+`DOMINO_QUERY`; hoja "El Marcador de la Mesa" con recomendacion B. Sin decision, la placa de
+nogal sigue por defecto.
