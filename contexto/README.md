@@ -8015,3 +8015,11 @@ bronce con ronda, meta, pozo y codigo); C al aire (dos fichas flotantes sobre el
 pastilla al centro; recorta nombres largos). Capturas reales 1v1 y 2v2 con `jugar.mjs` y
 `DOMINO_QUERY`; hoja "El Marcador de la Mesa" con recomendacion B. Sin decision, la placa de
 nogal sigue por defecto.
+
+## 181. El tablero del club es el marcador (2026-09-15)
+
+Raul: "B totalmente". `Tablero.jsx` queda con el tablero del club por defecto (laca casi
+negra, numeros grandes en Cinzel con el que va ganando en oro, punto de bronce en medio, linea
+de bronce con ronda, meta, pozo y codigo). A y C se borraron. La placa de nogal de Jonathan
+sigue con `?marcador=nogal`, para el informe del antes y despues. Verificado en 1v1 y 2v2 sin
+errores de consola.

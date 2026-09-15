@@ -206,8 +206,8 @@ function AsientoLateral({ jugador, fichas, enTurno, esCompanero }) {
 const AUTO_START_MODES = ['1v1bot', '2v2bots'];
 
 /**
- * Que marcador se ve arriba (seccion 180): `?marcador=a|b|c` lo elige y queda
- * guardado; sin nada, la placa de nogal de siempre. Mientras Raul decide.
+ * Que marcador se ve arriba (secciones 180-181): el tablero del club, salvo que
+ * `?marcador=nogal` pida la placa de Jonathan (queda guardado).
  */
 function varianteDelMarcador() {
   try {
