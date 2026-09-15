@@ -8060,3 +8060,14 @@ algo mas bonito y pongamos la parte de atras del domino blanca". Dos cosas:
   se levanta 4 px con aro).
 
 Capturado jugando (`jugar.mjs` hasta que toco robar): antes y despues en la hoja.
+
+## 184. La ficha que levantas del pozo vuela a la mano (2026-09-15)
+
+Raul: "falta acomodar el efecto cuando eliges el domino volteado y llega a tus manos". Antes
+aparecia en la mano de golpe (con el `ficha-llega` de la 165). Ahora `PozoEnLaMesa` manda con
+`onRobar(j, rect)` de donde se toco; `Game.jsx` lo guarda (`roboPendiente`) y, cuando la mano
+crece con una ficha que no estaba, monta `FichaRobada.jsx`: una copia boca abajo que vuela
+desde ese sitio hasta la casilla de la ficha nueva en la mano y ahi cierra el dorso y abre la
+cara, con la misma mecanica y las mismas clases del reparto (182). La ficha de verdad esta
+escondida en su sitio mientras (`fichaOculta` en `Hand`), asi que al terminar no se mueve
+nada. Grabado con `shots/grabar-robo.mjs` (reloj lento) y puesto en la hoja.

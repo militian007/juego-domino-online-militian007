@@ -11,6 +11,7 @@ import Hand from '../components/game/Hand.jsx';
 import OpponentHand from '../components/game/OpponentHand.jsx';
 import ManoBocaAbajo from '../components/game/ManoBocaAbajo.jsx';
 import RepartoDeFichas from '../components/game/RepartoDeFichas.jsx';
+import FichaRobada from '../components/game/FichaRobada.jsx';
 import { modalidadGuardada } from '../components/SelectorModalidad.jsx';
 import AvisoDeCinco from '../components/game/AvisoDeCinco.jsx';
 import ConsejoDeMesa, {
@@ -697,6 +698,25 @@ export default function Game() {
   }, [gameState?.status, gameState?.round, gameState?.board?.length, manoFirma]);
   const terminarReparto = useCallback(() => setReparto(null), []);
 
+  // LA FICHA LEVANTADA (§184): cuando la mano crece justo despues de tocar el
+  // pozo, la ficha nueva vuela desde donde se toco hasta su sitio y se voltea.
+  const roboPendiente = useRef(null);
+  const manoPrevia = useRef([]);
+  const [vueloDeRobo, setVueloDeRobo] = useState(null);
+  useEffect(() => {
+    const ahora = gameState?.myHand || [];
+    const antes = manoPrevia.current;
+    manoPrevia.current = ahora;
+    if (!roboPendiente.current || ahora.length <= antes.length) return;
+    const firma = (t) => `${t[0]}-${t[1]}`;
+    const viejas = new Set(antes.map(firma));
+    const nueva = ahora.find((t) => !viejas.has(firma(t)));
+    const desde = roboPendiente.current;
+    roboPendiente.current = null;
+    if (nueva) setVueloDeRobo({ tile: nueva, desde });
+  }, [manoFirma]);
+  const terminarRobo = useCallback(() => setVueloDeRobo(null), []);
+
   // La grabacion del clac se pide al entrar a la mesa, no en la primera jugada:
   // son 16 KB, y un clac que llega tarde es peor que ninguno.
   useEffect(() => {
@@ -964,10 +984,12 @@ export default function Game() {
     });
   };
 
-  const handleDraw = (poolIndex = null) => {
+  const handleDraw = (poolIndex = null, desde = null) => {
     if (!socket || !actualRoomCode || isPlacing) return;
     setError('');
     setIsPlacing(true);
+    // De donde sale la ficha, para hacerla volar a la mano cuando llegue (§184).
+    roboPendiente.current = desde ? { left: desde.left, top: desde.top, width: desde.width, height: desde.height } : null;
     socket.emit('game:draw', { code: actualRoomCode, poolIndex }, (res) => {
       if (!res.ok) {
         setError(res.error);
@@ -1346,6 +1368,9 @@ export default function Game() {
       {reparto && (
         <RepartoDeFichas tiles={reparto.tiles} rivales={reparto.rivales} onFin={terminarReparto} />
       )}
+      {vueloDeRobo && (
+        <FichaRobada tile={vueloDeRobo.tile} desde={vueloDeRobo.desde} onFin={terminarRobo} />
+      )}
 
       <div className="relative min-h-0 w-full flex-1" data-mesa-centro>
         <div className="relative h-full w-full">
@@ -1719,6 +1744,7 @@ export default function Game() {
                   <div className="flex-1 min-w-0">
                     <Hand
                       oculta={Boolean(reparto)}
+                      fichaOculta={vueloDeRobo ? `${vueloDeRobo.tile[0]}-${vueloDeRobo.tile[1]}` : null}
                       tiles={gameState.myHand}
                       validIndices={validIndices}
                       selectedIndex={selectedTile?.index}

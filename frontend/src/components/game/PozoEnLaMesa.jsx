@@ -118,9 +118,9 @@ export default function PozoEnLaMesa({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activo]);
 
-  const levantar = (j) => {
+  const levantar = (j, desde) => {
     if (barajeando || robando) return;
-    onRobar?.(j);
+    onRobar?.(j, desde);
     // La ficha se va de la mesa y las demas se quedan donde estaban.
     setSitios((antes) => antes.filter((_, i) => i !== j));
   };
@@ -152,7 +152,7 @@ export default function PozoEnLaMesa({
           type="button"
           disabled={barajeando || robando}
           title={barajeando ? 'Barajando...' : 'Levantar esta ficha'}
-          onClick={() => levantar(j)}
+          onClick={(e) => levantar(j, e.currentTarget.getBoundingClientRect())}
           style={{
             width: ANCHO,
             height: Math.round(ANCHO * 1.85),

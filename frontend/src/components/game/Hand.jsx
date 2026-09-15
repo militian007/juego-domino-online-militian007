@@ -59,7 +59,9 @@ export default function Hand({
   onDragUpdate,
   onDragEnd,
   // Mientras el reparto vuela sus copias, la mano de verdad no se ve (§182).
-  oculta = false
+  oculta = false,
+  // La ficha recien levantada del pozo se esconde mientras su copia vuela (§184).
+  fichaOculta = null
 }) {
   // La ficha que se arrastra tambien tiene que salir con la pinta elegida. Se
   // dibuja aparte de `Tile`, con su propia etiqueta de imagen, y por eso se
@@ -192,7 +194,7 @@ export default function Hand({
               data-ficha-mano={i}
               data-ficha-id={`${tile[0]}-${tile[1]}`}
               className="shrink-0 relative touch-none"
-              style={{ opacity: isDragging ? 0 : 1 }}
+              style={{ opacity: isDragging ? 0 : 1, visibility: fichaOculta === `${tile[0]}-${tile[1]}` ? 'hidden' : undefined }}
               onMouseDown={handleMouseDown}
               onTouchStart={handleTouchStart}
             >
