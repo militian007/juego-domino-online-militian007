@@ -1,5 +1,5 @@
 // Trigger Vercel rebuild: 2026-06-11
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar.jsx';
 import Board from '../components/game/Board.jsx';
@@ -10,6 +10,7 @@ import { Marcador, Jugador, Mesa } from '../components/game/Hud.jsx';
 import Hand from '../components/game/Hand.jsx';
 import OpponentHand from '../components/game/OpponentHand.jsx';
 import ManoBocaAbajo from '../components/game/ManoBocaAbajo.jsx';
+import RepartoDeFichas from '../components/game/RepartoDeFichas.jsx';
 import { modalidadGuardada } from '../components/SelectorModalidad.jsx';
 import AvisoDeCinco from '../components/game/AvisoDeCinco.jsx';
 import ConsejoDeMesa, {
@@ -146,7 +147,7 @@ function BotonMesa({ titulo, activo = false, onClick, icono }) {
  * de tamaño segun lo largo del nombre y con el texto de costado, que era
  * justo lo que el usuario no queria.
  */
-function PlacaAsiento({ jugador, fichas, enTurno, esCompanero, className = '' }) {
+function PlacaAsiento({ jugador, fichas, enTurno, esCompanero, className = '', abanicoOculto = false }) {
   if (!jugador) return null;
   return (
     <div
@@ -175,7 +176,7 @@ function PlacaAsiento({ jugador, fichas, enTurno, esCompanero, className = '' })
           "compa" va en la misma fila y no debajo (§150): asi en 2 vs 2 las
           tres placas miden lo mismo y el rectangulo de la cadena empieza
           justo por debajo de la fila, sin perder un renglon de mesa. */}
-      <div className="flex items-end justify-center gap-1">
+      <div className="flex items-end justify-center gap-1" data-mano-rival={jugador.id} style={{ visibility: abanicoOculto ? 'hidden' : 'visible' }}>
         <ManoBocaAbajo cantidad={fichas ?? 0} />
         <span className="text-[10px] font-bold leading-none text-domino-cream">{fichas ?? 0}</span>
         {esCompanero && (
@@ -677,6 +678,24 @@ export default function Game() {
     ? gameState.currentPlayerId === myPlayerId
     : false;
   const manoFirma = (gameState?.myHand || []).map((t) => `${t[0]}${t[1]}`).join(',');
+
+  // EL REPARTO (§182): cuando llega la mano de una ronda nueva y la mesa esta
+  // vacia, las fichas vuelan desde el centro. Al reengancharse a media ronda
+  // (mesa con fichas) no hay reparto: ya estaba repartido.
+  const [reparto, setReparto] = useState(null);
+  const rondaRepartida = useRef(null);
+  useEffect(() => {
+    if (!gameState || gameState.status !== 'playing') return;
+    if ((gameState.board?.length ?? 0) > 0) { rondaRepartida.current = gameState.round; return; }
+    if (!gameState.myHand || gameState.myHand.length < 5) return;
+    if (rondaRepartida.current === gameState.round) return;
+    rondaRepartida.current = gameState.round;
+    const rivales = gameState.players
+      .filter((p) => p.id !== myPlayerId)
+      .map((p) => ({ id: p.id, cantidad: gameState.handCounts?.[p.id] ?? 7 }));
+    setReparto({ ronda: gameState.round, tiles: gameState.myHand, rivales });
+  }, [gameState?.status, gameState?.round, gameState?.board?.length, manoFirma]);
+  const terminarReparto = useCallback(() => setReparto(null), []);
 
   // La grabacion del clac se pide al entrar a la mesa, no en la primera jugada:
   // son 16 KB, y un clac que llega tarde es peor que ninguno.
@@ -1324,7 +1343,11 @@ export default function Game() {
         />
       </div>
 
-      <div className="relative min-h-0 w-full flex-1">
+      {reparto && (
+        <RepartoDeFichas tiles={reparto.tiles} rivales={reparto.rivales} onFin={terminarReparto} />
+      )}
+
+      <div className="relative min-h-0 w-full flex-1" data-mesa-centro>
         <div className="relative h-full w-full">
           <div className="absolute inset-0">
             <div className="relative h-full w-full">
@@ -1432,6 +1455,7 @@ export default function Game() {
                     recibe Board) empieza justo por dentro, asi que la cadena nunca
                     les crece encima. */}
                 <PlacaAsiento
+                    abanicoOculto={Boolean(reparto)}
                   jugador={seatTop}
                   fichas={gameState.handCounts[seatTop?.id]}
                   enTurno={gameState.currentPlayerId === seatTop?.id}
@@ -1439,6 +1463,7 @@ export default function Game() {
                   className="left-1/2 top-2 -translate-x-1/2"
                 />
                 <PlacaAsiento
+                    abanicoOculto={Boolean(reparto)}
                   jugador={seatLeft}
                   fichas={gameState.handCounts[seatLeft?.id]}
                   enTurno={gameState.currentPlayerId === seatLeft?.id}
@@ -1446,6 +1471,7 @@ export default function Game() {
                   className="left-0.5 top-1/2 -translate-y-1/2"
                 />
                 <PlacaAsiento
+                    abanicoOculto={Boolean(reparto)}
                   jugador={seatRight}
                   fichas={gameState.handCounts[seatRight?.id]}
                   enTurno={gameState.currentPlayerId === seatRight?.id}
@@ -1692,6 +1718,7 @@ export default function Game() {
                 <div className="flex w-full items-center">
                   <div className="flex-1 min-w-0">
                     <Hand
+                      oculta={Boolean(reparto)}
                       tiles={gameState.myHand}
                       validIndices={validIndices}
                       selectedIndex={selectedTile?.index}

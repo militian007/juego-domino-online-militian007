@@ -8023,3 +8023,40 @@ negra, numeros grandes en Cinzel con el que va ganando en oro, punto de bronce e
 de bronce con ronda, meta, pozo y codigo). A y C se borraron. La placa de nogal de Jonathan
 sigue con `?marcador=nogal`, para el informe del antes y despues. Verificado en 1v1 y 2v2 sin
 errores de consola.
+
+## 182. El reparto animado (2026-09-15)
+
+Raul: "el reparto de las piezas tenemos que hacer uno animado y no lo tenemos". Antes la mano
+aparecia de golpe. `RepartoDeFichas.jsx`: una capa fija encima de todo que, al llegar la mano
+de una ronda nueva con la mesa vacia (`Game.jsx`, estado `reparto`; al reengancharse a media
+ronda no reparte), mide con el DOM donde queda cada ficha de la mano (`data-ficha-mano`) y cada
+placa de rival (`data-mano-rival`), y hace volar COPIAS desde el centro de la mesa
+(`data-mesa-centro`), boca abajo y en rueda: una para ti, una para cada rival, otra para ti...
+(95 ms entre fichas en 1v1, 75 en 2v2, 650 ms de revoltijo antes). Las tuyas al llegar cierran
+el dorso y abren la cara en dos tiempos (`reparto-dorso-se-cierra` / `reparto-cara-se-abre`;
+el giro en 3D no pintaba la cara en Chrome); las de los rivales se encogen sobre la placa.
+Cada llegada suena con `playDealSound()` (el golpe corto del pozo, bajito). Mientras vuela, la
+mano de verdad y los abanicos de los rivales estan escondidos con `visibility: hidden` (misma
+medida, mismo sitio: cuando la capa se va no se mueve un pixel). El fin lo marca el
+`animationend` de la ultima copia, no un temporizador: asi la grabacion con reloj lento
+(`shots/grabar-reparto.mjs`, CDP `Animation.setPlaybackRate`) muestra lo mismo que la mesa.
+
+El bot no abre encima del reparto: `BOT_THINK_MS.opening` pasa de 1,0-1,3 s a 2,6-2,9 s
+(`RoomManager.js`). Verificado en 1v1 y 2v2 sin errores de consola; clips en la hoja.
+
+## 183. El dorso de hueso y el pozo ordenado (2026-09-15)
+
+Raul, antes de dormir: "cuando hay que recoger ficha parecen unas cucarachas; vamos a hacer
+algo mas bonito y pongamos la parte de atras del domino blanca". Dos cosas:
+
+- **El dorso** (`.pool-tile`, `index.css`) deja de ser madera oscura: es hueso como la cara
+  (tiles-hueso), con canto claro arriba, sombra abajo, filo fino de bronce por dentro y un
+  rombo apenas grabado en el centro. Lo usan el pozo, los abanicos de los rivales
+  (`ManoBocaAbajo`) y el reparto.
+- **El pozo** (`PozoEnLaMesa.jsx`) ya no cae regado con giros de 0 a 360: filas parejas de hasta
+  siete fichas paradas de 34 px, centradas en el paño, con un pelin de giro (±4,5°) y de
+  corrimiento para que parezcan puestas por una mano. El barajeo y la regla de "las que
+  quedan no se mueven" siguen igual. El hover ya no quema el hueso (`brightness-150` fuera;
+  se levanta 4 px con aro).
+
+Capturado jugando (`jugar.mjs` hasta que toco robar): antes y despues en la hoja.

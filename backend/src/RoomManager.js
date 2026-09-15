@@ -27,7 +27,7 @@ const MODES = MODE_CONFIG;
  * entera corra en segundos.
  */
 const BOT_THINK_MS = {
-  opening: [1000, 1300],
+  opening: [2600, 2900], // la primera del bot espera a que termine el reparto animado (seccion 182),
   forced: [400, 600],
   choice: [850, 1150]
 };

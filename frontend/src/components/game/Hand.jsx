@@ -57,7 +57,9 @@ export default function Hand({
   draggedTile = null,
   onDragStart,
   onDragUpdate,
-  onDragEnd
+  onDragEnd,
+  // Mientras el reparto vuela sus copias, la mano de verdad no se ve (§182).
+  oculta = false
 }) {
   // La ficha que se arrastra tambien tiene que salir con la pinta elegida. Se
   // dibuja aparte de `Tile`, con su propia etiqueta de imagen, y por eso se
@@ -158,7 +160,7 @@ export default function Hand({
   }
 
   return (
-    <div ref={handRef} className="w-full overflow-visible py-3">
+    <div ref={handRef} className="w-full overflow-visible py-3" style={{ visibility: oculta ? 'hidden' : 'visible' }}>
       <div className="flex flex-wrap items-center justify-center gap-x-[3px] gap-y-2 px-1">
         {tiles.map((tile, i) => {
           const isValid = validIndices.includes(i);

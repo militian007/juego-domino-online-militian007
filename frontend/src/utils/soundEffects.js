@@ -190,6 +190,21 @@ export function playDrawSound() {
  *
  * @param duracionMs cuanto dura el revoltijo. Se reparten los golpes ahi dentro.
  */
+/** Cada ficha que llega en el reparto (seccion 182): el golpe corto del pozo, bajito. */
+export function playDealSound() {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+  if (!muestraPozo) {
+    cargarClac(ctx);
+    return;
+  }
+  armarClac(ctx, ctx.destination, ctx.currentTime, {
+    tono: 0.95 + Math.random() * 0.2,
+    volumen: 0.4 + Math.random() * 0.15,
+    pozo: true
+  });
+}
+
 export function playShuffleSound(duracionMs = 800) {
   const ctx = getAudioContext();
   if (!ctx) return;

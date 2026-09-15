@@ -39,38 +39,37 @@ const MS_REVOLTIJO = 190;
 const REVOLTIJOS = 4;
 
 /** El ancho de la ficha boca abajo, en pixeles. */
-const ANCHO = 30;
+const ANCHO = 34;
 
 /**
- * Reparte `cuantas` fichas por toda el area, sin grumos.
- *
- * Rejilla con temblor: se divide el area en casillas, una ficha por casilla, y
- * cada una se corre un poco al azar dentro de la suya. Tirandolas del todo al
- * azar quedan pilas en un lado y huecos en el otro; asi cubren parejo y aun asi
- * se ven desordenadas.
+ * Las fichas del pozo, ORDENADAS (§183). Antes caian regadas por toda la mesa
+ * con giros de 0 a 360 y el dorso oscuro: Raul, "parecen unas cucarachas".
+ * Ahora forman filas parejas de hasta siete fichas paradas, centradas en el
+ * paño, cada una con un pelin de giro y de corrimiento para que se vean
+ * puestas por una mano y no por una maquina. El barajeo sigue siendo el
+ * mismo: se reacomodan un par de veces antes de quedar quietas.
  */
+const POR_FILA = 7;
 const repartir = (cuantas) => {
-  const columnas = Math.max(1, Math.ceil(Math.sqrt(cuantas * 1.6)));
-  const filas = Math.max(1, Math.ceil(cuantas / columnas));
-
-  const casillas = [];
-  for (let f = 0; f < filas; f++) {
-    for (let c = 0; c < columnas; c++) casillas.push([c, f]);
+  const filas = Math.max(1, Math.ceil(cuantas / POR_FILA));
+  const anchoFila = (AREA.x2 - AREA.x1);
+  const pasoX = anchoFila / (POR_FILA + 0.5);
+  const altoUtil = (AREA.y2 - AREA.y1);
+  const pasoY = Math.min(0.26, altoUtil / (filas + 0.5));
+  const y0 = AREA.y1 + (altoUtil - pasoY * (filas - 1)) / 2;
+  const sitios = [];
+  for (let i = 0; i < cuantas; i += 1) {
+    const f = Math.floor(i / POR_FILA);
+    const enFila = Math.min(POR_FILA, cuantas - f * POR_FILA);
+    const c = i % POR_FILA;
+    const x0 = AREA.x1 + (anchoFila - pasoX * (enFila - 1)) / 2;
+    sitios.push({
+      x: x0 + c * pasoX + (Math.random() - 0.5) * pasoX * 0.12,
+      y: y0 + f * pasoY + (Math.random() - 0.5) * pasoY * 0.12,
+      giro: (Math.random() - 0.5) * 9
+    });
   }
-  // Se barajan las casillas para que las que sobran no queden todas al final.
-  for (let i = casillas.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [casillas[i], casillas[j]] = [casillas[j], casillas[i]];
-  }
-
-  const anchoCasilla = (AREA.x2 - AREA.x1) / columnas;
-  const altoCasilla = (AREA.y2 - AREA.y1) / filas;
-
-  return casillas.slice(0, cuantas).map(([c, f]) => ({
-    x: AREA.x1 + (c + 0.15 + Math.random() * 0.7) * anchoCasilla,
-    y: AREA.y1 + (f + 0.15 + Math.random() * 0.7) * altoCasilla,
-    giro: Math.random() * 360
-  }));
+  return sitios;
 };
 
 export default function PozoEnLaMesa({
@@ -165,7 +164,7 @@ export default function PozoEnLaMesa({
           className={`pool-tile absolute rounded-[3px] ${
             barajeando
               ? 'cursor-default'
-              : 'cursor-pointer hover:z-10 hover:brightness-150 hover:ring-2 hover:ring-domino-accent'
+              : 'cursor-pointer hover:z-10 hover:-translate-y-1 hover:ring-2 hover:ring-domino-accent'
           }`}
         >
           <span className="sr-only">Ficha {j + 1} del pozo</span>

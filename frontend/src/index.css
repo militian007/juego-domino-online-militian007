@@ -543,16 +543,25 @@
 
 @layer utilities {
   /* Ficha del pozo, boca abajo. Mismo lenguaje visual que las de la mano. */
+  /* EL DORSO DE HUESO (§183). Raul: las fichas del pozo, oscuras y regadas,
+     "parecen unas cucarachas"; y el dorso del domino tiene que ser blanco,
+     como las fichas. Es el mismo hueso de la cara (tiles-hueso), con un
+     canto claro arriba, sombra abajo, un filo fino de bronce por dentro y un
+     rombo apenas grabado en el centro. Lo usan el pozo, los abanicos de los
+     rivales y el reparto. */
   .pool-tile {
-    background-color: #1a1109;
+    background-color: #ece0c8;
     background-image:
-      linear-gradient(160deg, rgba(255, 226, 180, 0.16) 0%, transparent 38%),
-      linear-gradient(0deg, rgba(0, 0, 0, 0.5) 0%, transparent 42%),
-      linear-gradient(180deg, #2c1c0f 0%, #1a1109 55%, #0d0805 100%);
-    border: 1px solid rgba(212, 175, 55, 0.28);
+      radial-gradient(ellipse 34% 26% at 50% 50%, rgba(120, 95, 50, 0.16) 0%, rgba(120, 95, 50, 0.05) 55%, transparent 72%),
+      linear-gradient(160deg, rgba(255, 252, 240, 0.9) 0%, rgba(255, 252, 240, 0) 45%),
+      linear-gradient(0deg, rgba(120, 95, 60, 0.28) 0%, rgba(120, 95, 60, 0) 40%),
+      linear-gradient(180deg, #f6eddb 0%, #ebdfc6 55%, #dccdae 100%);
+    border: 1px solid rgba(110, 85, 45, 0.55);
     box-shadow:
-      inset 0 1px 0 rgba(255, 226, 180, 0.14),
-      0 2px 3px rgba(0, 0, 0, 0.55);
+      inset 0 0 0 2px rgba(255, 250, 236, 0.55),
+      inset 0 0 0 3px rgba(190, 150, 80, 0.35),
+      0 2px 3px rgba(0, 0, 0, 0.55),
+      0 6px 10px -4px rgba(0, 0, 0, 0.5);
   }
 }
 
@@ -594,6 +603,50 @@
 
 /* La ficha viajando de la mano a la mesa (§122).
    Se dibuja en su destino y la animacion la trae desde la mano. */
+/* EL REPARTO (§182): cada copia sale del centro de la mesa boca abajo y llega
+   a su sitio; si es tuya, al llegar el dorso se cierra y la cara se abre
+   (dos tiempos, sin 3D: el giro en 3D no pintaba la cara). `--dx/--dy` es
+   cuanto hay desde su sitio hasta el centro; `--retraso`, cuando le toca. */
+.ficha-en-reparto {
+  animation-delay: var(--retraso);
+  animation-duration: var(--vuelo);
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  opacity: 0;
+}
+.ficha-reparte-mia { animation-name: ficha-reparte-mia; }
+.ficha-reparte-rival { animation-name: ficha-reparte-rival; }
+.ficha-en-reparto .ficha-reparte-dorso,
+.ficha-en-reparto .ficha-reparte-cara {
+  animation-delay: calc(var(--retraso) + var(--vuelo) * 0.75);
+  animation-duration: calc(var(--vuelo) * 0.6);
+  animation-fill-mode: both;
+  animation-timing-function: ease-in-out;
+}
+.ficha-en-reparto .ficha-reparte-dorso { animation-name: reparto-dorso-se-cierra; }
+.ficha-en-reparto .ficha-reparte-cara { animation-name: reparto-cara-se-abre; transform: scaleX(0); }
+@keyframes ficha-reparte-mia {
+  0%   { opacity: 1; transform: translate(var(--dx), var(--dy)) scale(0.55); }
+  100% { opacity: 1; transform: translate(0, 0) scale(1); }
+}
+@keyframes ficha-reparte-rival {
+  0%   { opacity: 1; transform: translate(var(--dx), var(--dy)) scale(1.6); }
+  100% { opacity: 1; transform: translate(0, 0) scale(1); }
+}
+@keyframes reparto-dorso-se-cierra {
+  0%   { transform: scaleX(1); }
+  50%  { transform: scaleX(0); }
+  100% { transform: scaleX(0); }
+}
+@keyframes reparto-cara-se-abre {
+  0%   { transform: scaleX(0); }
+  50%  { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ficha-en-reparto, .ficha-en-reparto .ficha-reparte-dorso, .ficha-en-reparto .ficha-reparte-cara { animation-duration: 1ms; }
+}
+
 @keyframes ficha-vuela {
   from {
     transform: translate(var(--vuelo-dx), var(--vuelo-dy)) scale(var(--vuelo-escala));
