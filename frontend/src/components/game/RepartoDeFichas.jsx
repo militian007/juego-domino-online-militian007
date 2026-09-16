@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Tile from './Tile.jsx';
+import Dorso from './Dorso.jsx';
 import { playDealSound, playShuffleSound } from '../../utils/soundEffects.js';
 
 /**
@@ -52,7 +53,7 @@ export default function RepartoDeFichas({ tiles = [], rivales = [], onFin }) {
       for (let k = 0; k < rondas; k += 1) {
         if (mias[k]) lista.push({ ...mias[k], key: `m${k}`, retraso: MS_REVOLTIJO + n * paso }); n += 1;
         for (const d of deRivales) {
-          if (k < d.cantidad) { lista.push({ tipo: 'rival', key: `r${d.x}-${k}`, x: d.x - 9, y: d.y - 12, w: 18, h: 24, retraso: MS_REVOLTIJO + n * paso }); n += 1; }
+          if (k < d.cantidad) { lista.push({ tipo: 'rival', key: `r${d.x}-${k}`, x: d.x - 9, y: d.y - 18, w: 18, h: 36, retraso: MS_REVOLTIJO + n * paso }); n += 1; }
         }
       }
       for (const carta of lista) {
@@ -107,7 +108,7 @@ export default function RepartoDeFichas({ tiles = [], rivales = [], onFin }) {
             '--vuelo': `${MS_VUELO}ms`
           }}
         >
-          <div className={`pool-tile absolute inset-0 rounded-[3px] ${c.tipo === 'mia' ? 'ficha-reparte-dorso' : ''}`} />
+          <Dorso ancho={c.w} className={`absolute inset-0 ${c.tipo === 'mia' ? 'ficha-reparte-dorso' : ''}`} />
           {c.tipo === 'mia' && (
             <div className="ficha-reparte-cara absolute inset-0">
               <Tile tile={c.tile} orientation="vertical" ancho={c.w} draggable={false} />

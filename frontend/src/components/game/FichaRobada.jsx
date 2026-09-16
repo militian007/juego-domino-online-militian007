@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import Tile from './Tile.jsx';
+import Dorso from './Dorso.jsx';
 
 /**
  * LA FICHA QUE LEVANTAS DEL POZO (seccion 184)
@@ -60,7 +61,7 @@ export default function FichaRobada({ tile, desde, onFin }) {
           '--vuelo': `${MS_VUELO}ms`
         }}
       >
-        <div className="pool-tile ficha-reparte-dorso absolute inset-0 rounded-[3px]" />
+        <Dorso ancho={carta.w} className="ficha-reparte-dorso absolute inset-0" />
         <div className="ficha-reparte-cara absolute inset-0">
           <Tile tile={tile} orientation="vertical" ancho={carta.w} draggable={false} />
         </div>

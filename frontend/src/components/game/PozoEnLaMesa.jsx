@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { playShuffleSound } from '../../utils/soundEffects.js';
+import Dorso from './Dorso.jsx';
 
 /**
  * El pozo: entra a la mesa solo cuando toca robar, y se va cuando termina.
@@ -38,8 +39,9 @@ const AREA = { x1: 0.04, x2: 0.96, y1: 0.05, y2: 0.95 };
 const MS_REVOLTIJO = 190;
 const REVOLTIJOS = 4;
 
-/** El ancho de la ficha boca abajo, en pixeles. */
-const ANCHO = 34;
+/** El ancho de la ficha boca abajo, en pixeles. De 34 a 44 (§185): a 34 el
+ * dorso se veia chiquito y sin la forma de la ficha. */
+const ANCHO = 44;
 
 /**
  * Las fichas del pozo, ORDENADAS (§183). Antes caian regadas por toda la mesa
@@ -49,7 +51,7 @@ const ANCHO = 34;
  * puestas por una mano y no por una maquina. El barajeo sigue siendo el
  * mismo: se reacomodan un par de veces antes de quedar quietas.
  */
-const POR_FILA = 7;
+const POR_FILA = 6;
 const repartir = (cuantas) => {
   const filas = Math.max(1, Math.ceil(cuantas / POR_FILA));
   const anchoFila = (AREA.x2 - AREA.x1);
@@ -155,18 +157,19 @@ export default function PozoEnLaMesa({
           onClick={(e) => levantar(j, e.currentTarget.getBoundingClientRect())}
           style={{
             width: ANCHO,
-            height: Math.round(ANCHO * 1.85),
+            height: ANCHO * 2,
             left: `${s.x * 100}%`,
             top: `${s.y * 100}%`,
             transform: `translate(-50%, -50%) rotate(${s.giro}deg)`,
             transition: `left ${MS_REVOLTIJO}ms ease-in-out, top ${MS_REVOLTIJO}ms ease-in-out, transform ${MS_REVOLTIJO}ms ease-in-out`
           }}
-          className={`pool-tile absolute rounded-[3px] ${
+          className={`ficha-del-pozo absolute rounded ${
             barajeando
               ? 'cursor-default'
               : 'cursor-pointer hover:z-10 hover:-translate-y-1 hover:ring-2 hover:ring-domino-accent'
           }`}
         >
+          <Dorso ancho={ANCHO} />
           <span className="sr-only">Ficha {j + 1} del pozo</span>
         </button>
       ))}

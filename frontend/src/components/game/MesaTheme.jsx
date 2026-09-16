@@ -162,6 +162,14 @@ export function rutaDeFicha(carpeta, a, b, formato = 'webp') {
   return `${carpeta}/tile_${min}_${max}.${formato}?v=${VERSION_FICHAS}`;
 }
 
+/**
+ * El dorso de la pinta (seccion 185): la 0-0 sin la raya del medio, en
+ * `public/dorsos/`. Un archivo por carpeta de fichas, con el mismo nombre.
+ */
+export function rutaDelDorso(carpeta, formato = 'webp') {
+  return `/dorsos/${carpeta.replace(/^\//, '')}.${formato}?v=${VERSION_FICHAS}`;
+}
+
 const pintasPrecargadas = new Set();
 
 /**
@@ -176,6 +184,9 @@ const pintasPrecargadas = new Set();
 export function precargarPinta(carpeta) {
   if (typeof Image === 'undefined' || pintasPrecargadas.has(carpeta)) return;
   pintasPrecargadas.add(carpeta);
+  const dorso = new Image();
+  dorso.decoding = 'async';
+  dorso.src = rutaDelDorso(carpeta);
   for (let a = 0; a <= 6; a += 1) {
     for (let b = a; b <= 6; b += 1) {
       const imagen = new Image();

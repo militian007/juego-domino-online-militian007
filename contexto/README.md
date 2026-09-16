@@ -8071,3 +8071,31 @@ desde ese sitio hasta la casilla de la ficha nueva en la mano y ahi cierra el do
 cara, con la misma mecanica y las mismas clases del reparto (182). La ficha de verdad esta
 escondida en su sitio mientras (`fichaOculta` en `Hand`), asi que al terminar no se mueve
 nada. Grabado con `shots/grabar-robo.mjs` (reloj lento) y puesto en la hoja.
+
+## 185. El dorso es la misma ficha, vista por detras (2026-09-15)
+
+Raul, jugando con el reparto nuevo: "la ficha por detras se ve horrible; hay que ponerla mas
+grande y con la misma forma de la ficha por delante". El dorso de la 183 era un rectangulo
+pintado con CSS (`.pool-tile`): plano, con un marco por dentro que lo hacia parecer un naipe,
+esquinas distintas, sin canto. Al lado de la cara —que es una foto con relieve— cantaba.
+
+Ahora el dorso ES la ficha. `Dorso.jsx` usa la misma caja que `Tile` (mismo `tile-3d`, mismo
+canto, mismo brillo, mismas esquinas) con el dibujo de la 0-0 de la pinta elegida SIN la raya
+del medio: `public/dorsos/<pinta>.webp` (+ `.png` de respaldo), uno por carpeta de fichas,
+generados con `scripts/generar-dorsos.py` (`npm run dorsos`; la raya se tapa con una franja
+espejo de la propia ficha, bordes fundidos; la clasica y la de oro llevan un parche mas ancho
+por el boton y el barrote).
+`rutaDelDorso(carpeta)` vive en `MesaTheme.jsx` al lado de `rutaDeFicha`, `precargarPinta`
+lo pide junto con las 28, y el service worker lo guarda como a las fichas (`/dorsos/`).
+Cambias de pinta y el dorso cambia con ella. `.pool-tile` se fue del CSS.
+
+Lo usan los cuatro sitios donde una ficha se ve por detras, y todos crecieron:
+
+- **El pozo** (`PozoEnLaMesa`): de 34 a 44 px de ancho, filas de seis (antes siete).
+- **El abanico del rival** (`ManoBocaAbajo`): de 9 a 12 px, solape 55 %.
+- **El reparto** (`RepartoDeFichas`): las copias que vuelan a los rivales pasan a 18x36
+  (proporcion de ficha; antes 18x24).
+- **La ficha que levantas** (`FichaRobada`).
+
+Verificado grabando 2v2 y el robo del pozo (`grabar-reparto.mjs`, `grabar-robo.mjs`): sin
+errores de consola; el boton del pozo ahora se llama `.ficha-del-pozo`.
