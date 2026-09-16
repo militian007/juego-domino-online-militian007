@@ -8113,3 +8113,29 @@ abajo (`consejo-entra`; `panita-entra`/`panita-saluda` fuera del CSS). Los conse
 salen y cuanto duran, no cambian. El Panita sigue en el pase y en los gestos.
 
 Jonathan lo habia pedido con la mascota; en el informe antes/despues vera las dos versiones.
+
+## 187. Las tachuelas de bronce y el chat en el marcador (2026-09-16)
+
+Raul, sobre la solapa de controles de la izquierda (la lengueta con el dado azul, §140):
+"eso esta feo". Se le mostraron seis caminos sobre la mesa real; escogio las tachuelas ("me
+gusta la tachuela pero nos jode en el 2 vs 2"), y para el 2v2 la variante F3: "vamos a
+implementar el chat tambien".
+
+- **La solapa se va.** Ya no hay lengueta, ni columna que se abre, ni `BotonMesa`. El estado
+  `solapa` desaparece; `IconoColor` (Fluent Emoji) deja de usarse en la mesa (el componente
+  sigue en el repo porque lo genera `tools/extraer-iconos.cjs`).
+- **Cuatro tachuelas** (`Tachuela` en `Game.jsx`): botones redondos de 32 px con bronce en
+  degradado radial, clavados en la baranda derecha, uno por control: sonido, color de la
+  mesa, consejos, gestos. Icono de linea oscuro (lucide: Volume2/VolumeX, Palette,
+  Lightbulb/LightbulbOff, Smile). Un control apagado apaga su tachuela (menos brillo, icono
+  tachado). El color de la mesa abre su panel hacia la izquierda, pegado a la tachuela.
+- **Donde van.** En 1 contra 1, centradas en lo que se ve de la mesa por encima de la mano
+  (`bottom: altoMano`). En 2 contra 2 el rival de la derecha vive a media altura, asi que
+  suben al tramo libre entre el marcador y el (`bottom: 58%`).
+- **El chat sube al marcador**, gemelo del boton de salir pero en la esquina derecha, con su
+  contador de sin leer. Solo se dibuja en mesas entre personas (`mesaEntrePersonas`), como
+  antes.
+
+Verificado con fotos: 1v1 y 2v2 contra la casa (tachuelas, panel de color, apagadas) y una
+mesa entre dos cuentas (`capturas170` y `capturas171` por emparejamiento rapido): el boton
+del chat, el "1" sin leer, la burbuja y el panel. Sin errores de consola.

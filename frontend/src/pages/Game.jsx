@@ -38,7 +38,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import {
   playTileSound, playDrawSound, estaSilenciado, alternarSilencio, prepararSonidos, prepararAvisos, sonar
 } from '../utils/soundEffects.js';
-import { ChevronLeft, Lock, LogOut } from 'lucide-react';
+import { Lightbulb, LightbulbOff, Lock, LogOut, MessageCircle, Palette, Smile, Volume2, VolumeX } from 'lucide-react';
 
 /**
  * Los stickers de siempre, por si el servidor no contesta.
@@ -87,7 +87,6 @@ function DibujoDeSticker({ sticker, emoji, alto = 'h-8' }) {
     />
   );
 }
-import IconoColor from '../components/IconoColor.jsx';
 import { salirPantallaCompleta } from '../utils/pantalla.js';
 import RelojDeTurno from '../components/game/RelojDeTurno.jsx';
 import AvisoDeAusente from '../components/game/AvisoDeAusente.jsx';
@@ -121,21 +120,33 @@ function olvidarPartida() {
   try { localStorage.removeItem(CLAVE_PARTIDA); } catch { /* nada */ }
 }
 
-function BotonMesa({ titulo, activo = false, onClick, icono }) {
+/**
+ * Una tachuela de bronce clavada en la baranda (seccion 187).
+ *
+ * Los controles de la mesa (sonido, color, consejos, gestos) ya no viven en
+ * una solapa que hay que abrir: son cuatro botoncitos redondos de bronce en
+ * la madera de la derecha, un toque y listo. Raul escogio esta forma (F3)
+ * entre seis. El icono va oscuro sobre el bronce, de linea (lucide), y cuando
+ * el control esta apagado la tachuela se apaga con el: menos brillo y el
+ * icono tachado.
+ */
+function Tachuela({ titulo, apagada = false, onClick, Icono }) {
   return (
     <button
       type="button"
       onClick={onClick}
       title={titulo}
       aria-label={titulo}
-      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
-        activo
-          ? 'border-domino-accent bg-domino-felt shadow-[0_0_10px_rgba(212,175,55,0.45)]'
-          : 'border-domino-accent/40 bg-black/60 hover:border-domino-accent hover:bg-domino-felt/80'
+      aria-pressed={!apagada}
+      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform active:scale-90 ${
+        apagada ? 'opacity-70 saturate-50' : ''
       }`}
-      style={{ boxShadow: activo ? undefined : '0 2px 6px rgba(0,0,0,.6)' }}
+      style={{
+        background: 'radial-gradient(circle at 35% 30%, #f2dc9a, #c99a3c 60%, #8a6420)',
+        boxShadow: '0 2px 5px rgba(0,0,0,.7), inset 0 -1px 2px rgba(0,0,0,.35), inset 0 1px 1px rgba(255,240,200,.6)'
+      }}
     >
-      <IconoColor nombre={icono} tamano={24} className="drop-shadow-[0_1px_2px_rgba(0,0,0,.7)]" />
+      <Icono size={17} strokeWidth={2.3} color="#1a1208" />
     </button>
   );
 }
@@ -728,7 +739,7 @@ export default function Game() {
   useEffect(() => { precargarPinta(carpetaFichas); }, [carpetaFichas]);
 
   // Los consejos que dice el Panita (§123, §126). Se pueden apagar desde la
-  // solapa de la mesa: a quien ya sabe jugar, uno cada ronda le sobra.
+  // baranda de la mesa: a quien ya sabe jugar, uno cada ronda le sobra.
   const [conConsejos, setConConsejos] = useState(consejosEncendidos);
   const consejo = useConsejos(gameState, {
     myTurn,
@@ -957,7 +968,6 @@ export default function Game() {
 
   const [confirmandoSalida, setConfirmandoSalida] = useState(false);
   const [abierto, setAbierto] = useState(null);
-  const [solapa, setSolapa] = useState(false);
   const [silencio, setSilencio] = useState(() => estaSilenciado());
 
   // Salir de verdad: el servidor saca al jugador de la sala y se olvida la
@@ -1308,8 +1318,42 @@ export default function Game() {
           primeros cuarenta pixeles de la pantalla, que en un telefono es mucho:
           la placa arrancaba despegada del borde y se veia mas chica de lo que
           da la pantalla. Encima no estorba, porque los marcadores se centran en
-          su mitad y esa esquina de la placa es madera vacia. */}
+          su mitad y esa esquina de la placa es madera vacia.
+
+          El chat va en la otra esquina, gemelo del salir (seccion 187): es
+          donde uno lo busca, y asi las tachuelas de la baranda quedan en
+          cuatro. Solo si hay con quien hablar. */}
       <div className="relative shrink-0 py-1.5">
+        {mesaEntrePersonas && (
+          <div className="absolute right-2 top-1/2 z-30 -translate-y-1/2">
+            <button
+              type="button"
+              onClick={() => {
+                setAbierto(null);
+                setShowReactionMenu(false);
+                setChatAbierto((v) => !v);
+                chat.marcarLeidos();
+              }}
+              title="Chat de la mesa"
+              aria-label="Chat de la mesa"
+              aria-expanded={chatAbierto}
+              className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
+                chatAbierto
+                  ? 'border-domino-accent bg-domino-accent/20 text-domino-accent'
+                  : 'border-domino-accent/35 bg-black/50 text-domino-cream-dim hover:border-domino-accent hover:text-domino-cream'
+              }`}
+            >
+              <MessageCircle size={18} strokeWidth={1.9} />
+            </button>
+            {/* El contador de sin leer: sin esto uno abre el chat a ver si le
+                hablaron, que es justo lo que no queremos en medio de una partida. */}
+            {!chatAbierto && chat.sinLeer > 0 && (
+              <span className="pointer-events-none absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-domino-accent px-1 text-[9px] font-black text-domino-dark">
+                {chat.sinLeer > 9 ? '9+' : chat.sinLeer}
+              </span>
+            )}
+          </div>
+        )}
         <div className="absolute left-2 top-1/2 z-30 -translate-y-1/2">
           <button
             type="button"
@@ -1504,97 +1548,52 @@ export default function Game() {
                   className="right-0.5 top-1/2 -translate-y-1/2"
                 />
 
-                {/* La solapa de controles. La pestaña es una lengüeta de
-                    44 x 64 apoyada en la baranda izquierda, a media altura de
-                    lo que se ve de la mesa, con un icono a color: la de antes
-                    era un chevron de 12 px que nadie descubría. En 2v2 el
-                    rival de la izquierda vive a media altura, así que ahí la
-                    lengüeta sube al primer cuarto. */}
+                {/* LAS TACHUELAS (seccion 187). Cuatro botones de bronce
+                    clavados en la baranda derecha, uno por control; nada que
+                    abrir. En 1 contra 1 van a media altura de lo que se ve de
+                    la mesa; en 2 contra 2 el rival de la derecha vive a media
+                    altura, asi que suben al tramo libre entre el marcador y
+                    el. El chat no va aqui: esta arriba, en el marcador, al
+                    lado del boton de salir. */}
                 <div
-                  className="pointer-events-none absolute left-0 top-0 z-40 flex items-center"
-                  style={{ bottom: seatLeft ? '50%' : altoMano }}
+                  className="pointer-events-none absolute right-0.5 top-0 z-30 flex flex-col justify-center"
+                  style={{ bottom: seatRight ? '58%' : altoMano }}
                 >
-                  <div className="pointer-events-auto relative flex items-center">
-                    <button
-                      type="button"
-                      onClick={() => { setSolapa((v) => !v); setAbierto(null); }}
-                      title={solapa ? 'Ocultar los controles' : 'Mostrar los controles'}
-                      aria-label={solapa ? 'Ocultar los controles' : 'Mostrar los controles'}
-                      aria-expanded={solapa}
-                      className="flex h-16 w-11 shrink-0 items-center justify-center rounded-r-xl border-2 border-l-0 border-domino-accent bg-domino-dark/85 backdrop-blur-sm transition-colors hover:bg-domino-dark"
-                      style={{ boxShadow: '0 4px 12px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,225,170,.18)' }}
-                    >
-                      {solapa ? (
-                        <ChevronLeft size={28} strokeWidth={2.75} className="text-domino-accent-bright" />
-                      ) : (
-                        <IconoColor nombre="ajustes" tamano={28} className="drop-shadow-[0_1px_2px_rgba(0,0,0,.7)]" />
-                      )}
-                    </button>
+                  <div className="pointer-events-auto relative flex flex-col gap-2.5">
+                    <Tachuela
+                      titulo={silencio ? 'Activar el sonido' : 'Silenciar'}
+                      apagada={silencio}
+                      Icono={silencio ? VolumeX : Volume2}
+                      onClick={() => setSilencio(alternarSilencio())}
+                    />
+                    <Tachuela
+                      titulo="Color de la mesa"
+                      Icono={Palette}
+                      onClick={() => setAbierto((v) => (v === 'pano' ? null : 'pano'))}
+                    />
+                    <Tachuela
+                      titulo={conConsejos ? 'Apagar los consejos de la casa' : 'Encender los consejos de la casa'}
+                      apagada={!conConsejos}
+                      Icono={conConsejos ? Lightbulb : LightbulbOff}
+                      onClick={() => setConConsejos(alternarConsejos())}
+                    />
+                    <Tachuela
+                      titulo="Enviar un gesto"
+                      Icono={Smile}
+                      onClick={() => { setAbierto(null); setShowReactionMenu((v) => !v); }}
+                    />
 
-                    <div
-                      className={`relative z-10 flex flex-col gap-2 overflow-hidden transition-all duration-200 ${
-                        solapa ? 'ml-1 max-w-[52px] opacity-100' : 'ml-0 max-w-0 opacity-0'
-                      }`}
-                    >
-                      <BotonMesa
-                        titulo={silencio ? 'Activar el sonido' : 'Silenciar'}
-                        activo={!silencio}
-                        icono={silencio ? 'silencio' : 'sonido'}
-                        onClick={() => setSilencio(alternarSilencio())}
-                      />
-                      <BotonMesa
-                        titulo="Color de la mesa"
-                        activo={abierto === 'pano'}
-                        icono="paleta"
-                        onClick={() => setAbierto((v) => (v === 'pano' ? null : 'pano'))}
-                      />
-                      <BotonMesa
-                        titulo={conConsejos ? 'Apagar los consejos del Panita' : 'Encender los consejos del Panita'}
-                        activo={conConsejos}
-                        icono="consejo"
-                        onClick={() => setConConsejos(alternarConsejos())}
-                      />
-                      <BotonMesa
-                        titulo="Enviar un gesto"
-                        activo={showReactionMenu}
-                        icono="gesto"
-                        onClick={() => { setAbierto(null); setShowReactionMenu((v) => !v); }}
-                      />
-                      {/* El chat solo aparece si hay con quien hablar. */}
-                      {mesaEntrePersonas && (
-                        <span className="relative">
-                          <BotonMesa
-                            titulo="Chat de la mesa"
-                            activo={chatAbierto}
-                            icono="chat"
-                            onClick={() => {
-                              setAbierto(null);
-                              setShowReactionMenu(false);
-                              setChatAbierto((v) => !v);
-                              chat.marcarLeidos();
-                            }}
-                          />
-                          {/* El contador de sin leer: sin esto uno abre el chat
-                              a ver si le hablaron, que es justo lo que no
-                              queremos que pase en medio de una partida. */}
-                          {!chatAbierto && chat.sinLeer > 0 && (
-                            <span className="pointer-events-none absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-domino-accent px-1 text-[9px] font-black text-domino-dark">
-                              {chat.sinLeer > 9 ? '9+' : chat.sinLeer}
-                            </span>
-                          )}
-                        </span>
-                      )}
-                    </div>
+                    {/* El color de la mesa se abre hacia la izquierda, pegado
+                        a su tachuela. */}
+                    {abierto === 'pano' && (
+                      <>
+                        <div className="fixed inset-0 -z-10" onClick={() => setAbierto(null)} />
+                        <div className="absolute right-10 top-0 w-52 rounded-xl border border-domino-accent/25 bg-domino-felt/95 p-3 shadow-2xl backdrop-blur">
+                          <MesaThemePicker tema={tema} setTema={setTema} puedeUsar={puedeUsar} enMenu />
+                        </div>
+                      </>
+                    )}
                   </div>
-
-                  {solapa && abierto === 'pano' && (
-                    <>
-                      <div className="pointer-events-auto fixed inset-0 -z-10" onClick={() => setAbierto(null)} />
-                      <div className="pointer-events-auto ml-1.5 w-52 rounded-xl border border-domino-accent/25 bg-domino-felt/95 p-3 shadow-2xl backdrop-blur">
-                        <MesaThemePicker tema={tema} setTema={setTema} puedeUsar={puedeUsar} enMenu />
-                      </div>
-                    </>
-                  )}
                 </div>
 
                 {lastAction && myTurn && (
