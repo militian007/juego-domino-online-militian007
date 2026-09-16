@@ -8099,3 +8099,17 @@ Lo usan los cuatro sitios donde una ficha se ve por detras, y todos crecieron:
 
 Verificado grabando 2v2 y el robo del pozo (`grabar-reparto.mjs`, `grabar-robo.mjs`): sin
 errores de consola; el boton del pozo ahora se llama `.ficha-del-pozo`.
+
+## 186. El consejo lo dice la casa, en una placa (2026-09-15)
+
+Raul, en la version para la PAM: "ese domino que habla, vamos a cambiarlo". Se le mostraron
+tres caminos sobre la mesa real (la placa de la casa, un señor del club con globo, un renglon
+fino) y escogio la placa: "totalmente la casa A".
+
+`ConsejoDeMesa.jsx` deja de dibujar el sticker del Panita con el globo (§126). Ahora es una
+placa bronce y crema, con la misma letra del marcador: cejilla "LA CASA" en Cinzel con un
+punto bronce, el consejo en Inter 600 crema, fondo oscuro con filo bronce. Misma entrada desde
+abajo (`consejo-entra`; `panita-entra`/`panita-saluda` fuera del CSS). Los consejos, cuando
+salen y cuanto duran, no cambian. El Panita sigue en el pase y en los gestos.
+
+Jonathan lo habia pedido con la mascota; en el informe antes/despues vera las dos versiones.
