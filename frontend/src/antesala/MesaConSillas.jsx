@@ -118,7 +118,7 @@ export default function MesaConSillas({ modo, ocupantes, onTocar, sillaAbierta, 
       {sillaAbierta != null && (
         <>
           <div className="fixed inset-0 z-30" onClick={onCerrar} />
-          <div className="absolute left-1/2 top-1/2 z-40 w-[220px] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-domino-accent/50 bg-[#09160f]/97 p-3 shadow-2xl">
+          <div className="absolute left-1/2 top-1/2 z-40 w-[220px] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-domino-accent/50 bg-[#09160f]/95 p-3 shadow-2xl">
             <p className="mb-2 text-center text-[10px] font-extrabold tracking-[0.3em] text-domino-accent">ESTA SILLA</p>
             <button type="button" onClick={() => onEscoger(sillaAbierta, true)} className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-white/5" data-escoger="casa">
               <Retrato avatar="pancho" tamano={36} />

@@ -472,6 +472,9 @@ export class DominoGame {
       // cuenta atras equivocada; "faltan 8 segundos" se entiende igual en
       // cualquier reloj. Es null cuando el modo no lleva tiempo.
       turnMs: this.config.turnMs ?? null,
+      // Cuanto espera la mesa al que se le cae la conexion (seccion 191): el
+      // cartel "se te cayo la conexion" cuenta desde aqui.
+      graciaMs: this.config.turnMs ? this.graciaMs ?? null : null,
       turnRestanteMs: this.turnDeadline ? Math.max(0, this.turnDeadline - Date.now()) : null,
       // Cambia con cada turno. Es lo que le dice a la pantalla "esto es un
       // turno nuevo, vuelve a poner el reloj en hora".

@@ -90,6 +90,7 @@ function DibujoDeSticker({ sticker, emoji, alto = 'h-8' }) {
 import { salirPantallaCompleta } from '../utils/pantalla.js';
 import RelojDeTurno from '../components/game/RelojDeTurno.jsx';
 import AvisoDeAusente from '../components/game/AvisoDeAusente.jsx';
+import CartelSinConexion from '../components/game/CartelSinConexion.jsx';
 import AvisoDeSalto from '../components/game/AvisoDeSalto.jsx';
 
 // La partida en curso se recuerda en el navegador para poder volver a ella al
@@ -271,6 +272,8 @@ export default function Game() {
   // calcula DESPUES de que la partida termino: el estado ya se emitio y no se
   // vuelve a emitir.
   const [cambioDeRanking, setCambioDeRanking] = useState(null);
+  // Cuando se me cayo la conexion (seccion 191): el cartel cuenta desde aqui.
+  const [sinConexionDesde, setSinConexionDesde] = useState(null);
   const [lobby, setLobby] = useState(null);
   const [selectedTile, setSelectedTile] = useState(null);
   const [draggedTile, setDraggedTile] = useState(null); // { index, tile, currentX, currentY, isSnapped, activePlacement }
@@ -512,6 +515,7 @@ export default function Game() {
     // Al reconectar (volviste de otra app, se cayo el wifi) el servidor todavia
     // tiene el socketId viejo y no te llega nada. Hay que volver a entrar.
     const onReconnect = () => {
+      setSinConexionDesde(null);
       const code = salaActivaRef.current;
       if (!code) return;
       s.emit('room:join', { code }, (res) => {
@@ -533,8 +537,21 @@ export default function Game() {
     s.on('game:reaction', onReaction);
     s.on('connect', onReconnect);
     s.io.on('reconnect', onReconnect);
+    // Se me cayo: si hay mesa activa, el cartel con la cuenta.
+    const onDisconnect = () => { if (salaActivaRef.current) setSinConexionDesde((d) => d ?? Date.now()); };
+    s.on('disconnect', onDisconnect);
+    // El telefono avisa "sin red" mucho antes de que el socket se de cuenta
+    // (el socket tarda hasta 20 s en darse por caido): el cartel sale de una.
+    window.addEventListener('offline', onDisconnect);
+    // Volvio la red: si el socket nunca llego a caerse, el cartel se va ya; si
+    // se cayo, se va cuando se reconecte.
+    const onOnline = () => { if (s.connected) setSinConexionDesde(null); };
+    window.addEventListener('online', onOnline);
 
     return () => {
+      s.off('disconnect', onDisconnect);
+      window.removeEventListener('offline', onDisconnect);
+      window.removeEventListener('online', onOnline);
       s.off('lobby:update', onLobby);
       s.off('ranking:cambio', onRanking);
       s.off('game:state', onGameState);
@@ -983,8 +1000,9 @@ export default function Game() {
     salirPantallaCompleta();
     if (socket && actualRoomCode) socket.emit('room:leave', { code: actualRoomCode });
     olvidarPartida();
-    // El dashboard pide cuenta: a un invitado lo rebotaba a /login.
-    navigate(user ? '/dashboard' : '/');
+    // El dashboard pide cuenta: a un invitado lo rebotaba a /login. El
+    // invitado vuelve a la antesala (seccion 188): la mesa murio con su partida.
+    navigate(user ? '/dashboard' : '/mesa');
   };
 
   const handlePass = () => {
@@ -1419,6 +1437,12 @@ export default function Game() {
       )}
       {vueloDeRobo && (
         <FichaRobada tile={vueloDeRobo.tile} desde={vueloDeRobo.desde} onFin={terminarRobo} />
+      )}
+      {/* "Se te cayo la conexion" (seccion 191), encima de todo: va aqui y no
+          dentro de la mesa porque la camara de la mesa es su propio mundo y
+          ahi los carteles de la mesa le pasaban por encima. */}
+      {gameState?.status === 'playing' && gameState.graciaMs && (
+        <CartelSinConexion desde={sinConexionDesde} graciaMs={gameState.graciaMs} />
       )}
 
       <div className="relative min-h-0 w-full flex-1" data-mesa-centro>

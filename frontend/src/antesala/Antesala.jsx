@@ -79,9 +79,15 @@ export default function Antesala() {
       if (estado.started) navigate(`/game?join=${estado.code}`, { replace: true });
     };
     const alCerrar = () => { setSala(null); setError('El dueño cerró la mesa.'); };
+    // "Estas?" (seccion 191): la app contesta sola, sin boton. Si no contesta a
+    // tiempo (el telefono dormido, sin señal), la mesa sigue sin ella.
+    const alLlamar = ({ code }) => { socket.emit('mesa:estoy', { code }); };
+    const alSoltar = () => { setSala(null); setError('Se te soltó la silla: tu teléfono no contestó a tiempo. Puedes volver a entrar.'); };
     socket.on('lobby:update', alLobby);
     socket.on('lobby:cerrada', alCerrar);
-    return () => { socket.off('lobby:update', alLobby); socket.off('lobby:cerrada', alCerrar); };
+    socket.on('mesa:estas', alLlamar);
+    socket.on('mesa:soltado', alSoltar);
+    return () => { socket.off('lobby:update', alLobby); socket.off('lobby:cerrada', alCerrar); socket.off('mesa:estas', alLlamar); socket.off('mesa:soltado', alSoltar); };
   }, [nombre, navigate]);
 
   // El tablon se refresca solo mientras uno esta armando.
@@ -106,6 +112,8 @@ export default function Antesala() {
     setError('');
     socket.emit('room:join', { code: limpio }, (r) => {
       setOcupado(false);
+      // El candado: ya estas jugando en otra mesa; la app te lleva a esa.
+      if (!r?.ok && r?.error === 'YA_TIENES_MESA' && r.code) { navigate(`/game?join=${r.code}`, { replace: true }); return; }
       if (!r?.ok) { setError(r?.error || 'No se pudo entrar a esa mesa'); return; }
       setPidiendoCodigo(false);
       if (r.room?.started) navigate(`/game?join=${limpio}`, { replace: true });
@@ -171,6 +179,7 @@ export default function Antesala() {
     const paraPanas = panaEn.size;
     const casaEn = sillas.filter((a) => a !== 0 && !panaEn.has(a));
     socket.emit('room:create', { mode: modo, armada: { casaEn, publica: paraPanas > 0 } }, (r) => {
+      if (!r?.ok && r?.error === 'YA_TIENES_MESA' && r.code) { navigate(`/game?join=${r.code}`, { replace: true }); return; }
       if (!r?.ok) { setOcupado(false); setError(r?.error || 'No se pudo abrir la mesa'); return; }
       if (paraPanas === 0) {
         socket.emit('room:start', { code: r.code }, (s) => {
@@ -265,12 +274,14 @@ export default function Antesala() {
               MANDAR POR WHATSAPP
             </a>
             <p className="mt-3 text-center text-[13px] font-semibold text-domino-cream/85">
-              {faltan > 0
-                ? `${faltan === 1 ? 'Falta 1 silla' : `Faltan ${faltan} sillas`}. Las que queden vacías las ocupa la casa.`
-                : 'Mesa completa. Arrancando...'}
+              {sala.llamando
+                ? `Llamando a la mesa${sala.llamando.faltan?.length ? `: ${sala.llamando.faltan.join(', ')}` : ''}...`
+                : faltan > 0
+                  ? `${faltan === 1 ? 'Falta 1 silla' : `Faltan ${faltan} sillas`}. Las que queden vacías las ocupa la casa.`
+                  : 'Mesa completa. Arrancando...'}
             </p>
             {soyElDueno ? (
-              <button type="button" onClick={arrancarYa} disabled={ocupado} className="mt-3 w-full rounded-xl border border-domino-accent/60 bg-black/35 py-3.5 text-[13px] font-extrabold tracking-[0.22em] text-domino-accent disabled:opacity-60">
+              <button type="button" onClick={arrancarYa} disabled={ocupado || Boolean(sala.llamando)} className="mt-3 w-full rounded-xl border border-domino-accent/60 bg-black/35 py-3.5 text-[13px] font-extrabold tracking-[0.22em] text-domino-accent disabled:opacity-60">
                 ARRANCAR YA
               </button>
             ) : (

@@ -50,6 +50,30 @@ export const BOT_DELAY_MS = process.env.BOT_DELAY_MS != null && Number.isFinite(
  */
 export const HUMAN_DELAY_MS = Number(process.env.HUMAN_DELAY_MS ?? 0);
 
+/**
+ * LAS REGLAS DEL RELOJ Y DE LA GRACIA (seccion 191, ficha 2.3 de la plantilla).
+ *
+ * Son perillas de la casa, iguales en todos los juegos; aqui van por variable
+ * de entorno hasta que el domino tenga su Config con botones (piso 8).
+ *
+ * - `DOMINO_STRIKES`: vencimientos del reloj que cuestan la partida. Tres.
+ * - `DOMINO_RELOJ_CORTO_MS`: tras un vencimiento, el reloj de ese jugador se
+ *   acorta (15 s, minimo 3). El que se durmio una vez no vuelve a tener 25.
+ * - `DOMINO_GRACIA_MS`: cuanto se espera al que se le cayo la conexion antes
+ *   de darlo por ido (70 s, como Raul la puso en el truco).
+ */
+const entero = (llave, porDefecto, minimo = 0) => {
+  const n = Number(process.env[llave]);
+  return Number.isFinite(n) && n >= minimo ? n : porDefecto;
+};
+export const STRIKES = entero('DOMINO_STRIKES', 3, 1);
+export const RELOJ_CORTO_MS = entero('DOMINO_RELOJ_CORTO_MS', 15000, 3000);
+export const GRACIA_MS = entero('DOMINO_GRACIA_MS', 70000, 5000);
+
+/** La llamada de "estas?" antes de repartir (ficha 2.1, regla 2): 3 s con todos conectados, 40 s si a alguno le falta el socket. */
+export const LLAMADA_CORTA_MS = entero('DOMINO_LLAMADA_CORTA_MS', 3000, 500);
+export const LLAMADA_LARGA_MS = entero('DOMINO_LLAMADA_LARGA_MS', 40000, 3000);
+
 export class RoomManager {
   constructor() {
     this.rooms = new Map();
@@ -115,6 +139,53 @@ export class RoomManager {
     return room;
   }
 
+  /**
+   * EL CANDADO (seccion 191, ficha 2.1, regla 1): un jugador, un asiento, y el
+   * candado vive en UNA sola funcion. Antes de sentar a alguien en una mesa
+   * armada se mira donde mas esta:
+   * - en una partida JUGANDO: no se sienta; se le devuelve ESA mesa
+   *   (`YA_TIENES_MESA`) y la app lo lleva;
+   * - en otra mesa armada esperando: se le suelta ese puesto (si era el dueno,
+   *   esa mesa se cierra) y sigue.
+   * Devuelve `{ error, code }` si no puede sentarse; si no, nada.
+   */
+  candado(userId, salvo = null) {
+    for (const [code, room] of this.rooms) {
+      if (code === salvo) continue;
+      const jugador = room.players.find((p) => p.id === userId && !p.isBot);
+      if (!jugador) continue;
+      if (room.started && room.game && room.game.status !== 'game-over') {
+        return { error: 'YA_TIENES_MESA', code };
+      }
+      if (room.started) continue;
+      if (room.armada) this.soltarDeLaMesa(room, userId, 'otra-mesa');
+      else this.leaveRoom(code, userId);
+    }
+    return null;
+  }
+
+  /**
+   * Levanta a alguien de una mesa armada que no ha arrancado. Si era el dueno,
+   * la mesa se cierra y los demas se enteran (`lobby:cerrada`); si no, la mesa
+   * sigue esperando con los que quedan.
+   */
+  soltarDeLaMesa(room, userId, motivo = 'se-fue') {
+    if (!room || room.started) return;
+    const eraElDueno = room.players[0]?.id === userId;
+    if (eraElDueno) {
+      this.cancelarLlamada(room);
+      room.players.forEach((p) => {
+        if (!p.isBot && p.socketId && p.id !== userId) this.io?.to(p.socketId).emit('lobby:cerrada', { code: room.code, motivo });
+      });
+      this.rooms.delete(room.code);
+      olvidarMesa(room.code);
+      return;
+    }
+    room.players = room.players.filter((p) => p.id !== userId);
+    if (room.llamada) room.llamada.contestaron.delete(userId);
+    this.broadcastLobby(room);
+  }
+
   /** Las sillas de una mesa armada, de la 0 (quien la abrio) a la ultima. */
   sillas(room) {
     const total = room.config.totalPlayers;
@@ -137,6 +208,82 @@ export class RoomManager {
     if (room.players.some((p) => p.asiento === asiento)) return { error: 'Esa silla ya está ocupada' };
     if (casa) room.casaEn.add(asiento); else room.casaEn.delete(asiento);
     return { room };
+  }
+
+  /**
+   * NO SE REPARTE A UNA SILLA VACIA (seccion 191, ficha 2.1, regla 2).
+   *
+   * Cuando la mesa armada va a arrancar con mas de una persona, antes de
+   * repartir se les pregunta "estas?" (`mesa:estas`) y cada app contesta sola
+   * (`mesa:estoy`), sin boton. Con todos conectados la llamada dura 3 s; si a
+   * alguno le falta el socket, 40 s. Al que no contesta se le suelta el puesto
+   * (`mesa:soltado`) y la mesa sigue con los demas, esperando a otro. Solo con
+   * todos presentes se reparte. `quienPidio` ya contesto: fue su dedo.
+   */
+  llamarALaMesa(code, quienPidio = null) {
+    const room = this.rooms.get(code);
+    if (!room || !room.armada || room.started) return { error: 'Sala no encontrada' };
+    const personas = room.players.filter((p) => !p.isBot);
+    if (personas.length < 2) return this._repartirMesaArmada(room);
+    if (room.llamada) return { llamando: true };
+
+    const faltaAlguno = personas.some((p) => !p.socketId || !this.io?.sockets?.sockets?.get(p.socketId));
+    const ms = faltaAlguno ? LLAMADA_LARGA_MS : LLAMADA_CORTA_MS;
+    const contestaron = new Set(quienPidio ? [quienPidio] : []);
+    room.llamada = { hasta: Date.now() + ms, contestaron, timer: null };
+    personas.forEach((p) => {
+      if (p.socketId) this.io?.to(p.socketId).emit('mesa:estas', { code, ms });
+    });
+    this.broadcastLobby(room);
+    room.llamada.timer = setTimeout(() => this.cerrarLlamada(room), ms);
+    room.llamada.timer.unref?.();
+    return this._siContestaronTodos(room) || { llamando: true, ms };
+  }
+
+  /** Una app contesto "estoy". Si ya contestaron todos, se reparte. */
+  estoy(code, userId) {
+    const room = this.rooms.get(code);
+    if (!room?.llamada) return { error: 'Nadie esta llamando' };
+    if (!room.players.some((p) => p.id === userId && !p.isBot)) return { error: 'No estas en esa mesa' };
+    room.llamada.contestaron.add(userId);
+    return this._siContestaronTodos(room) || { ok: true };
+  }
+
+  _siContestaronTodos(room) {
+    if (!room.llamada) return null;
+    const personas = room.players.filter((p) => !p.isBot);
+    if (!personas.every((p) => room.llamada.contestaron.has(p.id))) return null;
+    this.cancelarLlamada(room);
+    return this._repartirMesaArmada(room);
+  }
+
+  /** Se acabo la llamada: el que no contesto se levanta; la mesa sigue con los demas. */
+  cerrarLlamada(room) {
+    if (!room.llamada) return;
+    const { contestaron } = room.llamada;
+    this.cancelarLlamada(room);
+    const ausentes = room.players.filter((p) => !p.isBot && !contestaron.has(p.id));
+    for (const p of ausentes) {
+      if (p.socketId) this.io?.to(p.socketId).emit('mesa:soltado', { code: room.code, motivo: 'no-contesto' });
+      this.soltarDeLaMesa(room, p.id, 'no-contesto');
+      if (!this.rooms.has(room.code)) return;
+    }
+    this.broadcastLobby(room);
+  }
+
+  cancelarLlamada(room) {
+    if (!room.llamada) return;
+    clearTimeout(room.llamada.timer);
+    room.llamada = null;
+  }
+
+  _repartirMesaArmada(room) {
+    const r = this.startGame(room.code);
+    if (r.error) return r;
+    this.broadcastLobby(room);
+    this.broadcastState(room);
+    this.playBotTurns(room);
+    return { ok: true, started: true };
   }
 
   /** Cuantas sillas quedan para panas (ni ocupadas ni de la casa). */
@@ -342,7 +489,12 @@ export class RoomManager {
     const room = this.rooms.get(code);
     if (!room) return;
     room.players = room.players.filter((p) => p.id !== userId);
-    if (room.players.length === 0) {
+    // LA MESA MUERE CON SU PARTIDA (seccion 191, regla 4): sin personas la
+    // sala se cierra, tenga o no bots sentados. Antes las mesas contra la
+    // casa se quedaban vivas para siempre porque el bot nunca se levanta.
+    if (!room.players.some((p) => !p.isBot)) {
+      clearTimeout(room._reloj);
+      this.cancelarLlamada(room);
       this.rooms.delete(code);
       olvidarMesa(code);
     }
@@ -424,6 +576,7 @@ export class RoomManager {
       players: room.players,
       seed: room.seed
     });
+    room.game.graciaMs = room.config.reconnectMs ? GRACIA_MS : null;
     room.started = true;
 
     // El reloj arranca aqui y no en quien llame despues. Si dependiera de que
@@ -498,13 +651,16 @@ export class RoomManager {
    * `turnMs`, y el bot no se cuelga.
    */
   _ajustarReloj(room) {
-    const turnMs = room.config?.turnMs;
-    if (!turnMs || !room.game) return;
+    const turnoMs = room.config?.turnMs;
+    if (!turnoMs || !room.game) return;
 
     const enJuego = room.game.status === 'playing';
     const seat = room.game.state.turn;
     const jugador = enJuego ? room.players[seat] : null;
     const leCorre = Boolean(jugador) && !jugador.isBot;
+    // Reloj corto tras un vencimiento (ficha 2.3): el que ya se durmio una vez
+    // juega con menos tiempo el resto de la partida.
+    const turnMs = leCorre && (jugador.strikes ?? 0) > 0 ? Math.min(turnoMs, RELOJ_CORTO_MS) : turnoMs;
 
     // El turno se identifica por ronda y asiento. Mientras sea el mismo, el
     // reloj NO se reinicia: si no, cada vez que se vuelve a emitir el estado
@@ -548,6 +704,23 @@ export class RoomManager {
     const jugador = room.players.find((p) => p.id === playerId);
     const seat = room.game.state.turn;
 
+    // Los strikes (ficha 2.3): al tercer vencimiento se pierde la partida. La
+    // regla de Raul es la del truco: "aceptaste, te quedas"; quien deja correr
+    // el reloj tres veces no esta jugando.
+    jugador.strikes = (jugador.strikes ?? 0) + 1;
+    if (jugador.strikes >= STRIKES) {
+      room.game.saltadoPorTiempo = {
+        seat,
+        username: jugador?.username ?? 'Un jugador',
+        n: (room.game.saltadoPorTiempo?.n ?? 0) + 1,
+        strikes: jugador.strikes,
+        tope: STRIKES,
+        perdio: true
+      };
+      this.abandonarPartida(room.code, playerId);
+      return;
+    }
+
     const r = room.game.timeout(playerId);
     if (r?.ok === false) {
       console.error('No se pudo aplicar el tiempo agotado:', r.error);
@@ -559,7 +732,9 @@ export class RoomManager {
     room.game.saltadoPorTiempo = {
       seat,
       username: jugador?.username ?? 'Un jugador',
-      n: (room.game.saltadoPorTiempo?.n ?? 0) + 1
+      n: (room.game.saltadoPorTiempo?.n ?? 0) + 1,
+      strikes: jugador.strikes,
+      tope: STRIKES
     };
 
     this.broadcastState(room);
@@ -579,7 +754,10 @@ export class RoomManager {
     const room = this.rooms.get(code);
     if (!room?.started || !room.game || room.game.status === 'game-over') return;
 
-    const ms = room.config?.reconnectMs;
+    // La gracia es una perilla de la casa (GRACIA_MS); `reconnectMs` en el modo
+    // solo dice si en esta mesa hay gracia (entre personas) o no (contra la
+    // casa, que ahi nadie pierde por un corte).
+    const ms = room.config?.reconnectMs ? GRACIA_MS : 0;
     if (!ms) return;
 
     const jugador = room.players.find((p) => p.id === userId);
@@ -806,7 +984,8 @@ export class RoomManager {
       // La mesa armada (seccion 188): silla por silla, para dibujar la antesala.
       armada: Boolean(room.armada),
       sillas: room.armada ? this.sillas(room) : undefined,
-      hostId: room.players[0]?.id
+      hostId: room.players[0]?.id,
+      llamando: room.llamada ? { hasta: room.llamada.hasta, faltan: room.players.filter((p) => !p.isBot && !room.llamada.contestaron.has(p.id)).map((p) => p.username) } : null
     };
     room.players.forEach((p) => {
       if (!p.isBot && p.socketId) {

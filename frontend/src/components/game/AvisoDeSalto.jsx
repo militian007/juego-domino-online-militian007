@@ -32,7 +32,16 @@ export default function AvisoDeSalto({ salto }) {
       <div className="flex items-center gap-2 rounded-full border border-domino-accent/40 bg-black/85 px-3 py-1.5 shadow-lg backdrop-blur-sm">
         <span aria-hidden="true">⏱️</span>
         <span className="text-[11px] font-semibold leading-tight text-domino-cream sm:text-xs">
-          A <span className="text-domino-accent">{salto.username}</span> se le pasó el turno
+          {salto.perdio ? (
+            <>
+              <span className="text-domino-accent">{salto.username}</span> dejó correr el reloj {salto.tope} veces: pierde la partida
+            </>
+          ) : (
+            <>
+              A <span className="text-domino-accent">{salto.username}</span> se le pasó el turno
+              {salto.tope ? <span className="text-domino-cream/60"> · {salto.strikes} de {salto.tope}</span> : null}
+            </>
+          )}
         </span>
       </div>
     </div>

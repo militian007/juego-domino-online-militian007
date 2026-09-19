@@ -8228,3 +8228,44 @@ en la 172).
 Lo que la plantilla pide y aqui no aplica todavia: sonido sintetizado (los seis avisos son
 grabaciones chicas, decision de la 176) y el peso del JS (se mide cuando haya build de
 produccion de esta rama).
+
+## 191. Piso 2 de la plantilla: las cuatro reglas de las mesas, strikes y gracia (2026-09-19)
+
+La plantilla de la casa (ficha 2.1) dice que el enganche de las mesas no se copia del truco:
+se copian LAS REGLAS y se arman aqui. Diez de las catorce peleas del truco nacieron de la
+oferta en dos pasos y de repartir sin mirar si habia alguien; las reglas las matan de raiz.
+Todo sobre la mesa armada de la 188; el emparejamiento rapido y la sala privada de Jonathan
+siguen como estaban.
+
+1. **Sentarse es aceptar, y un jugador tiene UN asiento.** `candado(userId)` en `RoomManager`
+   es la unica puerta: si estas JUGANDO en otra mesa, no te sientas y se te devuelve esa
+   (`YA_TIENES_MESA` + codigo; la antesala te lleva); si estabas esperando en otra mesa
+   armada, se te suelta ese puesto (si eras el dueno, esa mesa se cierra) y sigues.
+2. **No se reparte a una silla vacia.** Al llenarse la mesa, o cuando el dueno toca "Arrancar
+   ya", el servidor pregunta "estas?" (`mesa:estas`) y cada app contesta SOLA (`mesa:estoy`),
+   sin boton: 3 s con todos conectados, 40 s si a alguno le falta el socket. Al que no
+   contesta se le suelta el puesto (`mesa:soltado`: "se te solto la silla, puedes volver a
+   entrar") y la mesa sigue con los demas, esperando a otro. Solo con todos presentes se
+   reparte. Con una sola persona (todo la casa) no hay llamada.
+3. **El umbral es el reparto.** Antes: "Levantarse" y "Cerrar la mesa" no cuestan nada, y el
+   que cierra el telefono se levanta solo (189). Despues: te quedas. Gracia de reconexion
+   `DOMINO_GRACIA_MS` (70 s, como en el truco) con el cartel "Se te cayo la conexion" y la
+   cuenta en grande para EL QUE SE CAYO (`CartelSinConexion.jsx`; sale con el `offline` del
+   telefono, que es inmediato, no con el socket, que tarda hasta 20 s en darse cuenta; se va
+   al volver la red o al reconectar). Reloj de turno con strikes: `DOMINO_STRIKES` (3)
+   vencimientos y pierdes la partida (forfeit, el rival cobra la partida); tras el primero,
+   reloj corto `DOMINO_RELOJ_CORTO_MS` (15 s). El aviso dice "se le paso el turno · 1 de 3" y
+   al tercero "dejo correr el reloj 3 veces: pierde la partida". Perillas por variable de
+   entorno hasta que el domino tenga su Config con botones (piso 8).
+4. **La mesa muere con su partida.** `leaveRoom` cierra la sala cuando no queda ninguna
+   persona, tenga o no bots (antes las mesas contra la casa vivian para siempre). El invitado
+   que sale de la partida vuelve a la antesala.
+
+Probado corriendo (`shots/piso2.mjs`, `cartel.mjs`): "estas?" con tres conectados reparte en
+1,8 s; con Juana sin red se le suelta la silla a los 3,5 s, la mesa sigue con silla libre en el
+tablon y Juana ve el aviso al volver; el candado devuelve al que ya esta jugando a su mesa;
+el tercer strike termina la partida ("Gano capturas171"); el cartel sale al segundo de
+quedarse sin red con 69 y baja de a uno, y se va al volver la red. Backend 87/87.
+
+Ojo de Tailwind: `bg-[#09160f]/97` no existe (la opacidad tiene que ser de las del tema, o
+`/[0.97]`) y dejaba el cartel transparente; quedo `/95`.

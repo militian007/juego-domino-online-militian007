@@ -66,6 +66,11 @@ export function setupGameSocket(io, roomManager) {
         return callback?.({ ok: false, error: 'Necesitas registrarte para jugar en línea' });
       }
       try {
+        // El candado (seccion 191): una persona, un asiento.
+        if (armada) {
+          const traba = roomManager.candado(socket.userId);
+          if (traba) return callback?.({ ok: false, error: traba.error, code: traba.code });
+        }
         const room = roomManager.createRoom({
           mode,
           modalidad,
@@ -97,6 +102,13 @@ export function setupGameSocket(io, roomManager) {
           return callback?.({ ok: false, error: 'Necesitas registrarte para unirte a una partida' });
         }
       }
+      // El candado (seccion 191) solo cuenta para las mesas armadas: si ya
+      // estas jugando en otra, te devuelve esa.
+      const destino = roomManager.rooms.get(code);
+      if (destino?.armada && !destino.players.some((p) => p.id === socket.userId)) {
+        const traba = roomManager.candado(socket.userId, code);
+        if (traba) return callback?.({ ok: false, error: traba.error, code: traba.code });
+      }
       const result = roomManager.joinRoom(code, {
         userId: socket.userId,
         username: socket.username,
@@ -119,14 +131,13 @@ export function setupGameSocket(io, roomManager) {
       torneos.intentarArrancar(room);
 
       // Una mesa armada arranca sola cuando se sienta el ultimo pana que
-      // faltaba (seccion 188): el que la abrio no tiene que estar pendiente.
+      // faltaba (seccion 188), pero antes pregunta "estas?" (seccion 191): no
+      // se reparte a una silla vacia. El que acaba de sentarse ya contesto.
       if (room.armada && !room.started && !result.reconnected && roomManager.sillasLibres(room) === 0) {
-        const arranque = roomManager.startGame(code);
-        if (!arranque.error) {
-          roomManager.broadcastLobby(room);
-          roomManager.broadcastState(room);
-          roomManager.playBotTurns(room);
-        }
+        roomManager.llamarALaMesa(code, socket.userId);
+      } else if (room.armada && room.llamada && !room.started) {
+        // Volvio en plena llamada: recibe la pregunta al entrar.
+        socket.emit('mesa:estas', { code, ms: Math.max(0, room.llamada.hasta - Date.now()) });
       }
 
       // Si la partida ya comenzó, enviarle el estado actual del juego de inmediato
@@ -159,6 +170,12 @@ export function setupGameSocket(io, roomManager) {
       callback?.({ ok: true, sillas: roomManager.sillas(result.room) });
     });
 
+    // "Estoy": la app contesta sola a la llamada (seccion 191).
+    socket.on('mesa:estoy', ({ code }, callback) => {
+      const r = roomManager.estoy(String(code || '').toUpperCase(), socket.userId);
+      callback?.(r.error ? { ok: false, error: r.error } : { ok: true, started: Boolean(r.started) });
+    });
+
     // El tablon: las mesas armadas, publicas, que todavia tienen silla.
     socket.on('mesas:listar', (callback) => {
       callback?.({ ok: true, mesas: roomManager.mesasAbiertas() });
@@ -177,7 +194,10 @@ export function setupGameSocket(io, roomManager) {
       roomManager.abandonarPartida(code, socket.userId);
 
       socket.leave(code);
-      roomManager.leaveRoom(code, socket.userId);
+      // Levantarse de una mesa armada antes del reparto no cuesta nada (regla 3).
+      const sala = roomManager.rooms.get(code);
+      if (sala?.armada && !sala.started) roomManager.soltarDeLaMesa(sala, socket.userId, 'se-levanto');
+      else roomManager.leaveRoom(code, socket.userId);
     });
 
     socket.on('matchmaking:join', ({ mode }, callback) => {
@@ -198,6 +218,14 @@ export function setupGameSocket(io, roomManager) {
     });
 
     socket.on('room:start', async ({ code }, callback) => {
+      // Una mesa armada con mas de una persona pasa por la llamada de "estas?".
+      const armada = roomManager.rooms.get(code);
+      if (armada?.armada && !armada.started) {
+        if (armada.players[0]?.id !== socket.userId) return callback?.({ ok: false, error: 'Solo quien abrio la mesa la arranca' });
+        const r = roomManager.llamarALaMesa(code, socket.userId);
+        if (r.error) return callback?.({ ok: false, error: r.error });
+        return callback?.({ ok: true, llamando: Boolean(r.llamando), started: Boolean(r.started) });
+      }
       const result = roomManager.startGame(code);
       if (result.error) return callback?.({ ok: false, error: result.error });
       const room = result.room;
@@ -307,14 +335,9 @@ export function setupGameSocket(io, roomManager) {
         // demas vuelven a la antesala. Sin esto el tablon se llenaba de mesas
         // fantasma de gente que cerro el telefono.
         if (room.armada && !room.started) {
-          const eraElDueno = room.players[0]?.id === socket.userId;
-          if (eraElDueno) {
-            room.players.forEach((p) => { if (!p.isBot && p.socketId && p.id !== socket.userId) io.to(p.socketId).emit('lobby:cerrada', { code }); });
-            roomManager.rooms.delete(code);
-          } else {
-            roomManager.leaveRoom(code, socket.userId);
-            if (roomManager.rooms.has(code)) roomManager.broadcastLobby(room);
-          }
+          // En plena llamada el que se cae no se levanta: la llamada decide.
+          if (room.llamada) { jugador.socketId = null; continue; }
+          roomManager.soltarDeLaMesa(room, socket.userId, 'se-fue');
           continue;
         }
         roomManager.marcarDesconectado(code, socket.userId);
