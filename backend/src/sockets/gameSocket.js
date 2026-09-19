@@ -301,9 +301,23 @@ export function setupGameSocket(io, roomManager) {
       // este que muere es el viejo y no hay que marcar a nadie como ausente.
       for (const [code, room] of roomManager.rooms) {
         const jugador = room.players.find((p) => p.id === socket.userId);
-        if (jugador?.socketId === socket.id) {
-          roomManager.marcarDesconectado(code, socket.userId);
+        if (jugador?.socketId !== socket.id) continue;
+        // Una mesa armada que todavia no arranco (seccion 188): el que se va
+        // se levanta de su silla, y si era el dueno la mesa se cierra y los
+        // demas vuelven a la antesala. Sin esto el tablon se llenaba de mesas
+        // fantasma de gente que cerro el telefono.
+        if (room.armada && !room.started) {
+          const eraElDueno = room.players[0]?.id === socket.userId;
+          if (eraElDueno) {
+            room.players.forEach((p) => { if (!p.isBot && p.socketId && p.id !== socket.userId) io.to(p.socketId).emit('lobby:cerrada', { code }); });
+            roomManager.rooms.delete(code);
+          } else {
+            roomManager.leaveRoom(code, socket.userId);
+            if (roomManager.rooms.has(code)) roomManager.broadcastLobby(room);
+          }
+          continue;
         }
+        roomManager.marcarDesconectado(code, socket.userId);
       }
     });
   });

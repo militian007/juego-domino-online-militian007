@@ -8177,3 +8177,18 @@ Raul arma 2v2 con una silla de la casa, Chela entra escribiendo el codigo, Nano 
 link, la mesa arranca sola y los tres caen en la partida en sus sillas (Chela de companera, el
 bot El Tigre en la silla de la casa). Y `antesala-casa.mjs`: sentarse con todo de la casa
 arranca de una en 1v1 y 2v2. Sin errores de consola. Motor 85/85, backend 87/87.
+
+## 189. Sentarse juega contra la casa; la mesa fantasma se cierra (2026-09-19)
+
+Raul, probando la antesala recien armada: "le doy juega ya pero no me deja jugar contra
+bots". Tenia razon: las sillas vacias se trataban como "para un pana" y "Sentarse" mandaba a
+la sala de espera con codigo. Ahora es al reves: sin tocar nada, todas las sillas son de la
+casa y "Sentarse" arranca de una contra los bots. Solo la silla que uno marca "Un pana"
+(queda con su etiqueta) abre la sala con codigo. La pista de abajo lo dice en cada caso.
+
+De paso, la mesa fantasma: si el dueno cierra el telefono con la mesa abierta, la mesa se
+borra (`disconnect` en `gameSocket`), los panas sentados reciben `lobby:cerrada` y vuelven a
+la antesala con el aviso "El dueno cerro la mesa"; un pana que se va se levanta de su silla.
+Antes el tablon acumulaba mesas de gente que ya no estaba. Probado con tres navegadores
+(`shots/antesala-fantasma.mjs`): el pana esperaba, el dueno cerro, el pana volvio, el tablon
+quedo vacio.

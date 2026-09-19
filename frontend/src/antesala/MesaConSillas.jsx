@@ -90,19 +90,26 @@ export default function MesaConSillas({ modo, ocupantes, onTocar, sillaAbierta, 
             </button>
           );
         }
+        // Vacia. Antes de abrir la sala, "libre" es de la casa salvo que se
+        // marque para un pana ('pana-esperado', con su etiqueta). Ya con la
+        // sala abierta, "libre" es la silla que espera al pana.
+        const esperaPana = silla.tipo === 'pana-esperado';
         return (
-          <button
-            key={asiento}
-            type="button"
-            style={{ ...estilo, width: 56, height: 56 }}
-            onClick={() => tocable && onTocar(asiento)}
-            className="flex items-center justify-center rounded-full border-2 border-dashed border-domino-accent/80 bg-black/35 text-[30px] font-medium leading-none text-domino-accent"
-            data-silla={asiento}
-            data-tipo="libre"
-            aria-label="Silla vacía"
-          >
-            +
-          </button>
+          <div key={asiento} style={estilo} className="flex flex-col items-center" data-silla={asiento} data-tipo={esperaPana ? 'pana-esperado' : 'libre'}>
+            <button
+              type="button"
+              onClick={() => tocable && onTocar(asiento)}
+              className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-domino-accent/80 bg-black/35 text-[30px] font-medium leading-none text-domino-accent"
+              aria-label={esperaPana ? 'Silla para un pana' : 'Silla vacía'}
+            >
+              +
+            </button>
+            {esperaPana && (
+              <span className="-mt-1 whitespace-nowrap rounded-full border border-domino-accent/60 bg-[#09160f]/95 px-2.5 py-0.5 text-[11px] font-bold text-domino-accent">
+                Un pana
+              </span>
+            )}
+          </div>
         );
       })}
 

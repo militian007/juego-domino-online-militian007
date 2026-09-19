@@ -21,9 +21,12 @@ import Tablon from './Tablon.jsx';
  *
  * Dos estados, una sola pantalla:
  *
- * 1. **Armando.** Todavia no hay sala en el servidor: las sillas marcadas como
- *    de la casa viven en `casaEn`. "Sentarse" crea la sala; si no queda silla
- *    para nadie mas, arranca de una contra la casa.
+ * 1. **Armando.** Todavia no hay sala en el servidor. Sin tocar nada, todas
+ *    las sillas son de la casa: "Sentarse" arranca de una contra los bots
+ *    (Raul, 19-sep: "le doy juega ya pero no me deja jugar contra bots"; la
+ *    primera version mandaba a la sala de espera). Las sillas que uno marca
+ *    para un pana viven en `panaEn`; con una sola de esas, "Sentarse" abre la
+ *    sala con codigo.
  * 2. **Esperando.** La sala existe (`sala`, lo que manda `lobby:update`). El
  *    codigo esta en la chapa, los panas van apareciendo en sus sillas, y el
  *    que abrio la mesa puede arrancar ya (las sillas vacias las ocupa la casa)
@@ -43,7 +46,7 @@ export default function Antesala() {
   const [yo, setYo] = useState(() => identidad());
   const [pidiendoIdentidad, setPidiendoIdentidad] = useState(false);
   const [modo, setModo] = useState('2v2');
-  const [casaEn, setCasaEn] = useState(() => new Set());
+  const [panaEn, setPanaEn] = useState(() => new Set());
   const [sillaAbierta, setSillaAbierta] = useState(null);
   const [sala, setSala] = useState(null);
   const [error, setError] = useState('');
@@ -75,8 +78,10 @@ export default function Antesala() {
       setSala(estado);
       if (estado.started) navigate(`/game?join=${estado.code}`, { replace: true });
     };
+    const alCerrar = () => { setSala(null); setError('El dueño cerró la mesa.'); };
     socket.on('lobby:update', alLobby);
-    return () => { socket.off('lobby:update', alLobby); };
+    socket.on('lobby:cerrada', alCerrar);
+    return () => { socket.off('lobby:update', alLobby); socket.off('lobby:cerrada', alCerrar); };
   }, [nombre, navigate]);
 
   // El tablon se refresca solo mientras uno esta armando.
@@ -130,9 +135,9 @@ export default function Antesala() {
     }
     return sillas.map((asiento) => {
       if (asiento === 0) return { asiento, tipo: 'pana', username: nombre, avatar: retrato, mio: true };
-      return { asiento, tipo: casaEn.has(asiento) ? 'casa' : 'libre' };
+      return { asiento, tipo: panaEn.has(asiento) ? 'pana-esperado' : 'libre' };
     });
-  }, [sala, sillas, casaEn, nombre, retrato, miId]);
+  }, [sala, sillas, panaEn, nombre, retrato, miId]);
 
   const soyElDueno = !sala || (miId != null && String(sala.hostId) === String(miId));
 
@@ -151,9 +156,9 @@ export default function Antesala() {
       });
       return;
     }
-    setCasaEn((antes) => {
+    setPanaEn((antes) => {
       const ahora = new Set(antes);
-      if (casa) ahora.add(asiento); else ahora.delete(asiento);
+      if (casa) ahora.delete(asiento); else ahora.add(asiento);
       return ahora;
     });
   };
@@ -163,8 +168,9 @@ export default function Antesala() {
     if (!socket) return;
     setOcupado(true);
     setError('');
-    const paraPanas = sillas.filter((a) => a !== 0 && !casaEn.has(a)).length;
-    socket.emit('room:create', { mode: modo, armada: { casaEn: [...casaEn], publica: paraPanas > 0 } }, (r) => {
+    const paraPanas = panaEn.size;
+    const casaEn = sillas.filter((a) => a !== 0 && !panaEn.has(a));
+    socket.emit('room:create', { mode: modo, armada: { casaEn, publica: paraPanas > 0 } }, (r) => {
       if (!r?.ok) { setOcupado(false); setError(r?.error || 'No se pudo abrir la mesa'); return; }
       if (paraPanas === 0) {
         socket.emit('room:start', { code: r.code }, (s) => {
@@ -229,7 +235,7 @@ export default function Antesala() {
               <button
                 key={m}
                 type="button"
-                onClick={() => { setModo(m); setCasaEn(new Set()); }}
+                onClick={() => { setModo(m); setPanaEn(new Set()); }}
                 className={`px-5 py-2 text-[12px] font-extrabold tracking-[0.2em] ${modo === m ? 'bg-domino-accent text-domino-dark' : 'text-domino-accent'}`}
               >
                 {m === '1v1' ? '1 VS 1' : '2 VS 2'}
@@ -277,7 +283,11 @@ export default function Antesala() {
         ) : (
           <>
             <p className="text-center text-[13px] font-semibold text-domino-cream/85">
-              {modo === '1v1' ? 'Tú y la silla de enfrente. Tócala: la casa o un pana.' : 'Toca una silla vacía: la casa o un pana.'}
+              {panaEn.size > 0
+                ? 'Al sentarte sale el código para tus panas.'
+                : modo === '1v1'
+                  ? 'Así juegas contra la casa. Toca la silla de enfrente para invitar a un pana.'
+                  : 'Así juegas contra la casa. Toca una silla para invitar a un pana.'}
             </p>
             <button type="button" onClick={sentarse} disabled={ocupado || !nombre} className="btn-primary mt-3 w-full py-4 text-base tracking-[0.22em] disabled:opacity-60">
               SENTARSE
