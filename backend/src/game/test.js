@@ -472,6 +472,107 @@ console.log('\nTEST 2v2 con bots: la mesa se arma sola y en el orden correcto');
   assert(JSON.stringify(vista).indexOf(manoRival) === -1, 'la vista NO expone la mano del rival');
 }
 
+console.log('TEST: La mesa armada y las cuatro reglas del piso 2 (secciones 188 y 191)');
+{
+  // Un io de mentira: guarda lo que se le emite a cada socket.
+  const emitidos = [];
+  const io = { to: (sid) => ({ emit: (ev, data) => emitidos.push({ sid, ev, data }) }), sockets: { sockets: new Map([['s-raul', {}], ['s-chela', {}], ['s-nano', {}]]) } };
+  const rm = new RoomManager();
+  rm.setIO(io);
+
+  // La mesa armada: silla 1 de la casa, 2 y 3 para panas
+  const sala = rm.createRoom({ mode: '2v2', hostId: 'raul', hostUsername: 'Raul', avatar: 'catire', armada: { casaEn: [1], publica: true } });
+  sala.players[0].socketId = 's-raul';
+  assert(/^[A-HJ-NP-Z]{4}$/.test(sala.code), 'el codigo es de cuatro letras sin I, O ni Q');
+  assert(rm.sillas(sala).map((x) => x.tipo).join(',') === 'pana,casa,libre,libre', 'sillas: tu, la casa, dos libres');
+  assert(rm.mesasAbiertas().some((m) => m.code === sala.code), 'la mesa sale en el tablon');
+
+  const j1 = rm.joinRoom(sala.code, { userId: 'chela', username: 'Chela', socketId: 's-chela', avatar: 'chela' });
+  assert(!j1.error && j1.room.players.find((p) => p.id === 'chela').asiento === 2, 'el pana se sienta en la primera silla libre que no es de la casa');
+  assert(rm.marcarSilla(sala.code, 'chela', 3, true).error, 'solo el dueno marca sillas');
+  assert(rm.marcarSilla(sala.code, 'raul', 2, true).error, 'una silla ocupada no se marca');
+
+  // REGLA 2: "estas?" con todos conectados: nadie contesta todavia -> llamando
+  const llamada = rm.llamarALaMesa(sala.code, 'raul');
+  assert(llamada.llamando === true && sala.llamada, 'con dos personas se pregunta "estas?" antes de repartir');
+  assert(emitidos.some((e) => e.sid === 's-chela' && e.ev === 'mesa:estas'), 'la pregunta le llega al pana');
+  assert(!sala.started, 'no se reparte hasta que contesten');
+  const r = rm.estoy(sala.code, 'chela');
+  assert(r.started === true && sala.started, 'cuando contesta el ultimo, se reparte');
+  assert(sala.players.length === 4 && sala.players.filter((p) => p.isBot).length === 2, 'las dos sillas vacias las ocupo la casa');
+  assert(sala.players.map((p) => p.asiento).join(',') === '0,1,2,3', 'cada quien en su silla');
+  assert(sala.game.players[0].team === sala.game.players[2].team, 'el pana de enfrente es tu companero');
+  clearTimeout(sala._reloj);
+
+  // REGLA 1: el candado. Raul esta jugando: no puede abrir otra mesa.
+  const traba = rm.candado('raul');
+  assert(traba?.error === 'YA_TIENES_MESA' && traba.code === sala.code, 'el candado devuelve la mesa donde ya estas jugando');
+  // Nano espera en una mesa y abre otra: se le suelta el puesto de la primera.
+  const esperaA = rm.createRoom({ mode: '1v1', hostId: 'nano', hostUsername: 'Nano', armada: { casaEn: [], publica: true } });
+  assert(rm.candado('nano') === null, 'esperando en otra mesa no traba');
+  assert(!rm.rooms.has(esperaA.code), 'pero esa mesa de espera se cerro (era el dueno)');
+
+  // REGLA 2, el que no contesta: se le suelta la silla y la mesa sigue
+  const mesaB = rm.createRoom({ mode: '2v2', hostId: 'dueno', hostUsername: 'Dueno', armada: { casaEn: [1], publica: true } });
+  mesaB.players[0].socketId = 's-raul';
+  rm.joinRoom(mesaB.code, { userId: 'juana', username: 'Juana', socketId: 's-nano' });
+  rm.llamarALaMesa(mesaB.code, 'dueno');
+  rm.cerrarLlamada(mesaB);
+  assert(rm.rooms.has(mesaB.code) && !mesaB.started, 'la mesa sigue sin arrancar');
+  assert(!mesaB.players.some((p) => p.id === 'juana'), 'a la que no contesto se le solto la silla');
+  assert(emitidos.some((e) => e.ev === 'mesa:soltado'), 'y se le aviso');
+  assert(rm.sillasLibres(mesaB) === 2, 'la silla vuelve a quedar libre');
+
+  // REGLA 3 antes del reparto: levantarse es gratis; si se levanta el dueno, la mesa se cierra
+  rm.joinRoom(mesaB.code, { userId: 'juana', username: 'Juana', socketId: 's-nano' });
+  rm.soltarDeLaMesa(mesaB, 'juana', 'se-levanto');
+  assert(rm.rooms.has(mesaB.code) && rm.sillasLibres(mesaB) === 2, 'el pana se levanta y la mesa sigue');
+  rm.soltarDeLaMesa(mesaB, 'dueno', 'se-fue');
+  assert(!rm.rooms.has(mesaB.code), 'si se va el dueno, la mesa se cierra');
+
+  // REGLA 4: la mesa muere con su partida
+  rm.leaveRoom(sala.code, 'raul');
+  assert(rm.rooms.has(sala.code), 'con Chela todavia sentada la mesa sigue');
+  rm.leaveRoom(sala.code, 'chela');
+  assert(!rm.rooms.has(sala.code), 'sin personas la mesa se cierra aunque queden bots');
+}
+
+console.log('TEST: Strikes y reloj corto (seccion 191)');
+{
+  const rm = new RoomManager();
+  rm.setIO({ to: () => ({ emit: () => {} }), sockets: { sockets: new Map() } });
+  const sala = rm.createRoom({ mode: '1v1', hostId: 'a', hostUsername: 'A' });
+  rm.joinRoom(sala.code, { userId: 'b', username: 'B', socketId: 'sb' });
+  const res = rm.startGame(sala.code);
+  assert(!res.error, 'arranca la 1v1 entre personas');
+  clearTimeout(sala._reloj);
+  const juego = sala.game;
+  assert(juego.getStateForPlayer('a').graciaMs >= 5000, 'la gracia viaja en el estado');
+  const primero = sala.players[juego.state.turn];
+  const otro = sala.players.find((p) => p.id !== primero.id);
+  rm._seLeAcaboElTiempo(sala, primero.id);
+  assert(primero.strikes === 1 && juego.saltadoPorTiempo?.strikes === 1 && juego.saltadoPorTiempo.tope === 3, 'primer vencimiento: strike 1 de 3');
+  assert(juego.status === 'playing', 'la partida sigue');
+  // el reloj corto: al volverle el turno, su plazo es menor que el del otro
+  clearTimeout(sala._reloj);
+  sala._relojDe = null;
+  juego.state.turn = sala.players.indexOf(primero);
+  rm._ajustarReloj(sala);
+  const plazoCorto = juego.turnDeadline - Date.now();
+  clearTimeout(sala._reloj); sala._relojDe = null;
+  juego.state.turn = sala.players.indexOf(otro);
+  rm._ajustarReloj(sala);
+  const plazoNormal = juego.turnDeadline - Date.now();
+  clearTimeout(sala._reloj);
+  assert(plazoCorto < plazoNormal && plazoCorto <= 15000, `tras un strike el reloj es corto (${Math.round(plazoCorto / 1000)} s contra ${Math.round(plazoNormal / 1000)} s)`);
+  juego.state.turn = sala.players.indexOf(primero);
+  rm._seLeAcaboElTiempo(sala, primero.id);
+  juego.state.turn = sala.players.indexOf(primero);
+  rm._seLeAcaboElTiempo(sala, primero.id);
+  assert(primero.strikes === 3 && juego.saltadoPorTiempo?.perdio === true, 'al tercer strike pierde');
+  assert(juego.status === 'game-over', 'y la partida termina');
+}
+
 console.log(`\n${'='.repeat(40)}`);
 console.log(`Pasados: ${passed} | Fallados: ${failed}`);
 if (failed > 0) process.exit(1);

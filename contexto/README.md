@@ -8265,7 +8265,9 @@ Probado corriendo (`shots/piso2.mjs`, `cartel.mjs`): "estas?" con tres conectado
 1,8 s; con Juana sin red se le suelta la silla a los 3,5 s, la mesa sigue con silla libre en el
 tablon y Juana ve el aviso al volver; el candado devuelve al que ya esta jugando a su mesa;
 el tercer strike termina la partida ("Gano capturas171"); el cartel sale al segundo de
-quedarse sin red con 69 y baja de a uno, y se va al volver la red. Backend 87/87.
+quedarse sin red con 69 y baja de a uno, y se va al volver la red. Y en `backend/src/game/test.js` quedaron
+las pruebas de las cuatro reglas y de los strikes con reloj corto (el contrato, como pide
+la plantilla): backend 118/118.
 
 Ojo de Tailwind: `bg-[#09160f]/97` no existe (la opacidad tiene que ser de las del tema, o
 `/[0.97]`) y dejaba el cartel transparente; quedo `/95`.
