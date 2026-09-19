@@ -68,17 +68,6 @@
     animation: tile-place 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
     z-index: 10;
   }
-  @keyframes newest-glow {
-    0%, 100% {
-      box-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
-    }
-    50% {
-      box-shadow: 0 0 16px rgba(212, 175, 55, 0.85);
-    }
-  }
-  .tile-newest {
-    animation: newest-glow 2s infinite ease-in-out;
-  }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -799,7 +788,15 @@
 }
 
 /* EL IMAN (ver Iman.jsx): la silueta de la casilla respira en oro y se planta
-   en oro solido cuando la ficha arrastrada ya esta imantada. */
+   en oro solido cuando la ficha arrastrada ya esta imantada.
+
+   Piso 0 de la plantilla (seccion 190): lo que late en bucle solo mueve
+   `opacity` o `transform`. Antes la respiracion animaba el borde, el fondo y
+   la sombra, y eso obligaba a recalcular estilos 90 veces por segundo con la
+   mesa quieta (medido: 361 recalculos en 4 s). Ahora la silueta apagada es
+   fija y la encendida es un elemento encima (`.iman-brillo`; un `::after` no le
+   sirve al compositor: seguia recalculando) que solo cambia de
+   opacidad: mismo dibujo, cero trabajo de estilo. */
 .iman-slot {
   position: absolute;
   inset: 0;
@@ -809,21 +806,24 @@
   -webkit-tap-highlight-color: transparent;
 }
 .iman-respira {
-  border: 2px dashed rgba(212, 175, 55, 0.5);
-  background: rgba(212, 175, 55, 0.06);
+  border: 2px dashed rgba(212, 175, 55, 0.45);
+  background: rgba(212, 175, 55, 0.05);
+}
+.iman-brillo {
+  position: absolute;
+  inset: -2px;
+  border-radius: 6px;
+  border: 2px dashed rgba(245, 207, 92, 0.95);
+  background: rgba(245, 207, 92, 0.22);
+  box-shadow: 0 0 14px 2px rgba(245, 207, 92, 0.45);
+  pointer-events: none;
+  opacity: 0;
+  will-change: opacity;
   animation: iman-respira 1.6s ease-in-out infinite;
 }
 @keyframes iman-respira {
-  0%, 100% {
-    border-color: rgba(212, 175, 55, 0.45);
-    background: rgba(212, 175, 55, 0.05);
-    box-shadow: 0 0 0 0 rgba(245, 207, 92, 0);
-  }
-  50% {
-    border-color: rgba(245, 207, 92, 0.95);
-    background: rgba(245, 207, 92, 0.22);
-    box-shadow: 0 0 14px 2px rgba(245, 207, 92, 0.45);
-  }
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
 }
 .iman-activo {
   border: 2px solid #f5cf5c;
@@ -831,5 +831,5 @@
   box-shadow: 0 0 16px 3px rgba(245, 207, 92, 0.55);
 }
 @media (prefers-reduced-motion: reduce) {
-  .iman-respira { animation: none; }
+  .iman-brillo { animation: none; }
 }

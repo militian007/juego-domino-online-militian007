@@ -20,6 +20,8 @@ export default function Iman({ activo = false, onClick }) {
       onClick={onClick}
       role="button"
       aria-label="Poner la ficha aqui"
-    />
+    >
+      {!activo && <span className="iman-brillo" aria-hidden="true" />}
+    </div>
   );
 }

@@ -8192,3 +8192,39 @@ la antesala con el aviso "El dueno cerro la mesa"; un pana que se va se levanta 
 Antes el tablon acumulaba mesas de gente que ya no estaba. Probado con tres navegadores
 (`shots/antesala-fantasma.mjs`): el pana esperaba, el dueno cerro, el pana volvio, el tablon
 quedo vacio.
+
+## 190. Piso 0 de la plantilla: el telefono barato, medido (2026-09-19)
+
+Raul: "revisa la plantilla del truco y el ludo y empieza a construir lo que falte". La
+plantilla (`truco-venezolano/PLANTILLA-DE-LA-CASA.md`) arranca por el piso 0: medir cuanto
+dibuja cada pantalla con la mesa quieta, antes de seguir montando cosas. Los scripts del ludo
+se adaptaron al domino en `frontend/scripts/perf/` (`cuentas.mjs`, `traza.mjs`, LEEME).
+
+Medido a 360x740 (invitado, 1 contra la casa):
+
+| pantalla | recalculos / 4 s | layouts | pintura + raster con CPU 4x |
+|---|---|---|---|
+| umbral | 0 | 0 | 0 % |
+| antesala | 0 | 0 | 0 % |
+| mesa quieta, mi turno | 1 | 1 | 0 % |
+| mesa con ficha elegida (el iman respirando) | 577 (20 ms) | 1 | 2 % |
+| el reparto | - | - | 1 % |
+| jugada y respuesta del bot | 150 | 7 | 1 % |
+
+Dibujar cuesta entre 0 y 2 % del tiempo con la CPU frenada cuatro veces (el umbral de la
+plantilla es 30 %): la mesa esta hecha en capas y nada repinta el paño. Lo unico que latia
+en bucle sobre propiedades caras era el iman: animaba borde, fondo y sombra. Ahora la
+silueta apagada es fija y el brillo es un elemento encima (`.iman-brillo`) que solo cambia
+de opacidad (regla 1 de la ficha 0.1). Chrome sigue contando un recalculo por cuadro
+mientras respira, pero cuesta 20 ms cada 4 s.
+
+Dos relojes tocaban el estado sesenta veces por segundo (regla 5): `RelojDeTurno` y
+`AvisoDeAusente` hacian `setState` en cada cuadro. Ahora solo cuando cambia el segundo que
+se ve, y el anillo del reloj se desliza entre segundos con una transicion de CSS de 1 s
+sobre su propia capa. Verificado entre dos cuentas: 8 -> 6 en dos segundos, el anillo
+avanzando. Y se fue el CSS muerto de `.tile-newest` (el brillo de la ultima ficha, retirado
+en la 172).
+
+Lo que la plantilla pide y aqui no aplica todavia: sonido sintetizado (los seis avisos son
+grabaciones chicas, decision de la 176) y el peso del JS (se mide cuando haya build de
+produccion de esta rama).

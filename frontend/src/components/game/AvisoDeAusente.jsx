@@ -26,10 +26,14 @@ export default function AvisoDeAusente({ ausentes }) {
     ancla.current = performance.now() + restanteMs;
     setQuedan(restanteMs);
 
+    // Una vez por segundo, no sesenta (piso 0, seccion 190): solo cambia el numero.
     let vivo = true;
+    let ultimoSegundo = null;
     const tic = () => {
       if (!vivo || ancla.current == null) return;
-      setQuedan(Math.max(0, ancla.current - performance.now()));
+      const ms = Math.max(0, ancla.current - performance.now());
+      const segundo = Math.ceil(ms / 1000);
+      if (segundo !== ultimoSegundo) { ultimoSegundo = segundo; setQuedan(ms); }
       id = requestAnimationFrame(tic);
     };
     let id = requestAnimationFrame(tic);

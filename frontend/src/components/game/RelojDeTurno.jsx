@@ -39,10 +39,20 @@ export default function RelojDeTurno({ restanteMs, turnoId, total, esMiTurno, no
     ancla.current = performance.now() + restanteMs;
     setQuedan(restanteMs);
 
+    // Piso 0 de la plantilla (seccion 190): nada toca el estado 60 veces por
+    // segundo. El reloj se pone al dia una vez por segundo, cuando cambia el
+    // numero que se ve; el anillo se desliza entre segundo y segundo con una
+    // transicion de CSS, sin JavaScript de por medio.
     let vivo = true;
+    let ultimoSegundo = null;
     const tic = () => {
       if (!vivo || ancla.current == null) return;
-      setQuedan(Math.max(0, ancla.current - performance.now()));
+      const ms = Math.max(0, ancla.current - performance.now());
+      const segundo = Math.ceil(ms / 1000);
+      if (segundo !== ultimoSegundo) {
+        ultimoSegundo = segundo;
+        setQuedan(ms);
+      }
       id = requestAnimationFrame(tic);
     };
     let id = requestAnimationFrame(tic);
@@ -59,7 +69,8 @@ export default function RelojDeTurno({ restanteMs, turnoId, total, esMiTurno, no
 
   // El anillo se vacia sobre los diez segundos del aviso, no sobre los 25:
   // asi el primer segundo que se ve ya empieza lleno.
-  const fraccion = Math.max(0, Math.min(1, quedan / (AVISO_DESDE_S * 1000)));
+  // Se dibuja el segundo ENTERO y la transicion lo lleva al siguiente.
+  const fraccion = Math.max(0, Math.min(1, (segundos - 1) / AVISO_DESDE_S));
   const RADIO = 26;
   const vuelta = 2 * Math.PI * RADIO;
 
@@ -71,13 +82,14 @@ export default function RelojDeTurno({ restanteMs, turnoId, total, esMiTurno, no
   return (
     <div className="pointer-events-none absolute left-1/2 top-1/2 z-40 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center">
       <div className={`relative ${urgente && esMiTurno ? 'animate-pulse' : ''}`}>
-        <svg width="64" height="64" viewBox="0 0 64 64" className="-rotate-90">
+        <svg width="64" height="64" viewBox="0 0 64 64" className="-rotate-90" style={{ willChange: 'transform' }}>
           <circle cx="32" cy="32" r={RADIO} fill="rgba(0,0,0,0.55)" stroke="rgba(255,255,255,0.12)" strokeWidth="4" />
           <circle
             cx="32" cy="32" r={RADIO}
             fill="none" stroke={color} strokeWidth="4" strokeLinecap="round"
             strokeDasharray={vuelta}
             strokeDashoffset={vuelta * (1 - fraccion)}
+            style={{ transition: 'stroke-dashoffset 1s linear' }}
           />
         </svg>
         <span
