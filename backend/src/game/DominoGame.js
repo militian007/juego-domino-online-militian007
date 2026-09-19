@@ -475,6 +475,8 @@ export class DominoGame {
       // Cuanto espera la mesa al que se le cae la conexion (seccion 191): el
       // cartel "se te cayo la conexion" cuenta desde aqui.
       graciaMs: this.config.turnMs ? this.graciaMs ?? null : null,
+      // Mesa armada en la antesala (seccion 188): al terminar hay revancha.
+      armada: Boolean(this.armada),
       turnRestanteMs: this.turnDeadline ? Math.max(0, this.turnDeadline - Date.now()) : null,
       // Cambia con cada turno. Es lo que le dice a la pantalla "esto es un
       // turno nuevo, vuelve a poner el reloj en hora".

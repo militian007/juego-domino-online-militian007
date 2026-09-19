@@ -136,8 +136,8 @@ export function setupGameSocket(io, roomManager) {
       if (room.armada && !room.started && !result.reconnected && roomManager.sillasLibres(room) === 0) {
         roomManager.llamarALaMesa(code, socket.userId);
       } else if (room.armada && room.llamada && !room.started) {
-        // Volvio en plena llamada: recibe la pregunta al entrar.
-        socket.emit('mesa:estas', { code, ms: Math.max(0, room.llamada.hasta - Date.now()) });
+        // Llego en plena llamada (o a la revancha): sentarse es contestar.
+        roomManager.estoy(code, socket.userId);
       }
 
       // Si la partida ya comenzó, enviarle el estado actual del juego de inmediato
@@ -168,6 +168,12 @@ export function setupGameSocket(io, roomManager) {
       if (result.error) return callback?.({ ok: false, error: result.error });
       roomManager.broadcastLobby(result.room);
       callback?.({ ok: true, sillas: roomManager.sillas(result.room) });
+    });
+
+    // La revancha (seccion 192): una mesa nueva con las mismas sillas.
+    socket.on('mesa:revancha', ({ code }, callback) => {
+      const r = roomManager.revancha(String(code || '').toUpperCase(), socket.userId);
+      callback?.(r.error ? { ok: false, error: r.error } : { ok: true, code: r.code });
     });
 
     // "Estoy": la app contesta sola a la llamada (seccion 191).

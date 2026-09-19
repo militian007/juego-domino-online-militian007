@@ -28,6 +28,22 @@ router.post('/montada', (req, res) => {
  * Provoca un destranque en una sala, para VERLO (seccion 179): vuelve a trazar
  * la cadena con la forma pedida y la manda a todos. Solo fuera de produccion.
  */
+/**
+ * Terminar una partida a la fuerza (solo en desarrollo, seccion 192): el
+ * jugador dado abandona y la mesa pasa a fin de partida. Sirve para probar la
+ * revancha sin jugar diez minutos.
+ */
+router.post('/terminar', (req, res) => {
+  if (process.env.NODE_ENV === 'production') return res.status(404).end();
+  const { code, userId } = req.body || {};
+  const room = roomManager.rooms.get(String(code || '').toUpperCase());
+  if (!room?.game) return res.status(404).json({ ok: false, error: 'Sala no encontrada' });
+  const quien = room.players.find((p) => String(p.id) === String(userId) && !p.isBot);
+  if (!quien) return res.status(400).json({ ok: false, error: 'Jugador no encontrado' });
+  const ok = roomManager.abandonarPartida(room.code, quien.id);
+  return res.json({ ok, status: room.game.status });
+});
+
 router.post('/destrancar', (req, res) => {
   if (process.env.NODE_ENV === 'production') return res.status(404).end();
   const { code, forma = 'recta' } = req.body || {};

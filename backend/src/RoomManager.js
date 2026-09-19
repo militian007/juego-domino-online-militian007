@@ -286,6 +286,46 @@ export class RoomManager {
     return { ok: true, started: true };
   }
 
+  /**
+   * LA REVANCHA (seccion 192, ficha 2.4 y regla 4): la mesa murio con su
+   * partida, asi que la revancha es una mesa NUEVA con las mismas sillas: las
+   * personas en las suyas, las de la casa como de la casa. A todos se les
+   * manda `mesa:revancha` con el codigo; cada app va a la antesala, se sienta
+   * (ya tiene su silla) y contesta "estoy"; cuando contestan todos se reparte.
+   * Al que no llega en 40 s se le suelta la silla, y el dueno arranca con la
+   * casa si quiere. Cualquiera de la mesa puede pedirla.
+   */
+  revancha(code, userId) {
+    const vieja = this.rooms.get(code);
+    if (!vieja?.armada || !vieja.game || vieja.game.status !== 'game-over') return { error: 'La partida no ha terminado' };
+    if (!vieja.players.some((p) => p.id === userId && !p.isBot)) return { error: 'No estas en esa mesa' };
+    if (vieja.revanchaEn && this.rooms.has(vieja.revanchaEn)) return { ok: true, code: vieja.revanchaEn };
+
+    const personas = vieja.players.filter((p) => !p.isBot).sort((a, b) => a.asiento - b.asiento);
+    const dueno = personas[0];
+    const nueva = this.createRoom({
+      mode: vieja.mode,
+      modalidad: vieja.modalidad,
+      hostId: dueno.id,
+      hostUsername: dueno.username,
+      avatar: dueno.avatar,
+      armada: { casaEn: vieja.players.filter((p) => p.isBot).map((p) => p.asiento), publica: false }
+    });
+    nueva.players[0].asiento = dueno.asiento;
+    personas.slice(1).forEach((p) => nueva.players.push({ id: p.id, username: p.username, isBot: false, socketId: null, avatar: p.avatar, asiento: p.asiento }));
+    nueva.players.sort((a, b) => a.asiento - b.asiento);
+    // El dueno de la nueva es el de la silla 0; si esa era de la casa, el primero que haya.
+    vieja.revanchaEn = nueva.code;
+    personas.forEach((p) => {
+      if (p.socketId) this.io?.to(p.socketId).emit('mesa:revancha', { code: nueva.code, de: vieja.code, pidio: userId });
+    });
+    // La llamada larga: cada uno tiene que llegar a la antesala y sentarse.
+    nueva.llamada = { hasta: Date.now() + LLAMADA_LARGA_MS, contestaron: new Set(), timer: null };
+    nueva.llamada.timer = setTimeout(() => this.cerrarLlamada(nueva), LLAMADA_LARGA_MS);
+    nueva.llamada.timer.unref?.();
+    return { ok: true, code: nueva.code };
+  }
+
   /** Cuantas sillas quedan para panas (ni ocupadas ni de la casa). */
   sillasLibres(room) {
     return this.sillas(room).filter((s) => s.tipo === 'libre').length;
@@ -577,6 +617,7 @@ export class RoomManager {
       seed: room.seed
     });
     room.game.graciaMs = room.config.reconnectMs ? GRACIA_MS : null;
+    room.game.armada = Boolean(room.armada);
     room.started = true;
 
     // El reloj arranca aqui y no en quien llame despues. Si dependiera de que

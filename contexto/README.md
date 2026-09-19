@@ -8271,3 +8271,20 @@ la plantilla): backend 118/118.
 
 Ojo de Tailwind: `bg-[#09160f]/97` no existe (la opacidad tiene que ser de las del tema, o
 `/[0.97]`) y dejaba el cartel transparente; quedo `/95`.
+
+## 192. La revancha: mesa nueva con las mismas sillas (2026-09-19)
+
+Ficha 2.4 de la plantilla y la regla 4 de la 191: la mesa murio con su partida, asi que la
+revancha no es "seguir": es una mesa NUEVA con las mismas sillas, y vuelve a preguntar
+"estan?". Al terminar una partida armada en la antesala, el cartel del fin trae REVANCHA y
+OTRA MESA (en vez de "Volver al inicio" y la clasificacion). Cualquiera de la mesa la pide:
+`mesa:revancha` crea la sala nueva (las personas en sus sillas, las de la casa como de la
+casa), les manda a todos `mesa:revancha` con el codigo, y cada app va a la antesala
+(`/mesa?codigo=X`), se sienta sola y con eso contesta "estoy"; cuando llegan todos se
+reparte. Al que no llega en 40 s se le suelta la silla y el dueno arranca con la casa si
+quiere. Para probarla sin jugar diez minutos hay una ruta solo de desarrollo,
+`POST /api/diag/terminar {code, userId}`, que hace abandonar a ese jugador.
+
+Probado (`shots/revancha.mjs`): Raul y Chela en 1v1 armado, la partida se termina a la
+fuerza, Raul toca Revancha, los dos caen en la mesa nueva (SWXY) jugando otra vez. Sin
+errores de consola. El que sale de la partida como invitado vuelve a la antesala.

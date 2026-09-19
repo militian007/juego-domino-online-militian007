@@ -540,6 +540,9 @@ export default function Game() {
     // Se me cayo: si hay mesa activa, el cartel con la cuenta.
     const onDisconnect = () => { if (salaActivaRef.current) setSinConexionDesde((d) => d ?? Date.now()); };
     s.on('disconnect', onDisconnect);
+    // La revancha (seccion 192): mesa nueva con las mismas sillas; todos a la antesala.
+    const onRevancha = ({ code }) => { olvidarPartida(); navigate(`/mesa?codigo=${code}`, { replace: true }); };
+    s.on('mesa:revancha', onRevancha);
     // El telefono avisa "sin red" mucho antes de que el socket se de cuenta
     // (el socket tarda hasta 20 s en darse por caido): el cartel sale de una.
     window.addEventListener('offline', onDisconnect);
@@ -549,6 +552,7 @@ export default function Game() {
     window.addEventListener('online', onOnline);
 
     return () => {
+      s.off('mesa:revancha', onRevancha);
       s.off('disconnect', onDisconnect);
       window.removeEventListener('offline', onDisconnect);
       window.removeEventListener('online', onOnline);
@@ -1923,6 +1927,8 @@ export default function Game() {
             teamScores={gameState.teamScores}
             targetPoints={gameState.targetPoints ?? 100}
             cambioDeRanking={cambioDeRanking}
+            onRevancha={gameState.armada ? () => socket?.emit('mesa:revancha', { code: actualRoomCode }, (r) => { if (!r?.ok) setError(r?.error || 'No se pudo pedir la revancha'); }) : null}
+            inicio={user ? '/dashboard' : '/mesa'}
           />
         )}
       </div>

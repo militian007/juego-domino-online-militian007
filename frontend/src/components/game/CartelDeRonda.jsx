@@ -201,7 +201,9 @@ export default function CartelDeRonda({
   round,
   cambioDeRanking,
   onNext,
-  onExit
+  onExit,
+  onRevancha = null,
+  inicio = '/dashboard'
 }) {
   const { titulo, quien, porque, gane, enParejas, rivales } = palabrasDelCierre({
     players, revealedHands, miEquipo, winningTeam, endReason, forfeitedSeat
@@ -438,8 +440,17 @@ export default function CartelDeRonda({
             </>
           ) : (
             <>
-              <BotonDeOro to="/dashboard">Volver al inicio</BotonDeOro>
-              <BotonSobrio to="/ranking">Ver la clasificación</BotonSobrio>
+              {onRevancha ? (
+                <>
+                  <BotonDeOro onClick={onRevancha}>Revancha</BotonDeOro>
+                  <BotonSobrio to={inicio}>Otra mesa</BotonSobrio>
+                </>
+              ) : (
+                <>
+                  <BotonDeOro to={inicio}>Volver al inicio</BotonDeOro>
+                  <BotonSobrio to="/ranking">Ver la clasificación</BotonSobrio>
+                </>
+              )}
             </>
           )}
         </div>
