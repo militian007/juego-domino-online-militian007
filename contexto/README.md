@@ -8139,3 +8139,41 @@ implementar el chat tambien".
 Verificado con fotos: 1v1 y 2v2 contra la casa (tachuelas, panel de color, apagadas) y una
 mesa entre dos cuentas (`capturas170` y `capturas171` por emparejamiento rapido): el boton
 del chat, el "1" sin leer, la burbuja y el panel. Sin errores de consola.
+
+## 188. La antesala: arma tu mesa (2026-09-19)
+
+Tanda 2 de "el domino por fuera" (§176). Raul escogio, entre tres direcciones dibujadas en
+telefono, la mesa con sillas —"como la antesala 2v2 del truco que me encanto"— con dos ajustes:
+"las cabezas de la gente deben ir en las sillas" y "quitar el fondo blanco de las sillas".
+
+**Que es.** `/mesa` (`frontend/src/antesala/`): la mesa ilustrada con sus cuatro sillas de
+cuero (`public/antesala/mesa.webp`, nano banana recortada), tu retrato sentado en la tuya
+(abajo a la izquierda), las demas con un "+". Tocas una silla vacia y escoges quien la ocupa:
+la casa (un bot) o un pana. 1 vs 1 usa la tuya y la de enfrente; 2 vs 2 las cuatro (la de
+enfrente es el companero). "Sentarse": si no queda silla para nadie mas, arranca de una contra
+la casa; si hay silla para un pana, la mesa recibe un codigo de CUATRO letras (sin I, O ni Q,
+para dictarlo por telefono) en una chapa de bronce, un boton para mandarlo por WhatsApp
+(`/mesa?codigo=KMZA` entra solo), y aqui mismo ves llegar a la gente en sus sillas. El dueno
+puede "Arrancar ya" (las sillas vacias las ocupa la casa) o seguir marcando sillas; la mesa
+arranca sola cuando se sienta el ultimo. Abajo, el tablon: las mesas de otros que tienen
+silla, con los retratos de los que ya estan, y "Tengo un codigo" para entrar a mano. El umbral
+("Juega ya") ahora lleva aqui y no directo a un 1v1 contra el bot.
+
+**Servidor** (`RoomManager`, `gameSocket`): `room:create` acepta `armada: { casaEn, publica }`;
+la sala guarda `asiento` por jugador y `casaEn`; `joinRoom` sienta al pana en la primera
+silla libre que no sea de la casa; `startGame` de una mesa armada rellena con `elegirBots`
+las sillas vacias respetando los asientos (en 2v2 los equipos son por asiento: 0 y 2 contra 1 y
+3); `mesa:silla` (solo el dueno, solo sillas vacias), `mesas:listar` (publicas, sin arrancar,
+con silla), arranque solo al llenarse. `lobby:update` lleva `armada`, `sillas` y `hostId`.
+
+**Identidad ligera en linea.** Los invitados (nombre y retrato del umbral) juegan con sus
+panas: `DOMINO_INVITADOS_EN_LINEA` (por defecto encendida; `=0` devuelve la regla de Jonathan
+de "necesitas registrarte"). El retrato viaja en el handshake (`guestRetrato`) y se ve en la
+antesala, en el tablon y en la mesa (`player.avatar`). `Game.jsx` deja pasar a un invitado que
+llega con `?join=`. El emparejamiento rapido y la sala privada de Jonathan siguen como estaban.
+
+Verificado de punta a punta con tres invitados en tres navegadores (`shots/antesala.mjs`):
+Raul arma 2v2 con una silla de la casa, Chela entra escribiendo el codigo, Nano entra por el
+link, la mesa arranca sola y los tres caen en la partida en sus sillas (Chela de companera, el
+bot El Tigre en la silla de la casa). Y `antesala-casa.mjs`: sentarse con todo de la casa
+arranca de una en 1v1 y 2v2. Sin errores de consola. Motor 85/85, backend 87/87.

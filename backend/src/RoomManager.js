@@ -69,10 +69,23 @@ export class RoomManager {
     return code;
   }
 
-  createRoom({ mode, hostId, hostUsername, modalidad }) {
-    const code = this.generateCode();
+  /**
+   * El codigo de una mesa armada (seccion 188): cuatro letras, sin las que se
+   * confunden al dictarlas por telefono (I, O, Q). Se dicta "KMZA" y ya.
+   */
+  generarCodigoCorto() {
+    const letras = 'ABCDEFGHJKLMNPRSTUVWXYZ';
+    let code;
+    do {
+      code = Array.from({ length: 4 }, () => letras[Math.floor(Math.random() * letras.length)]).join('');
+    } while (this.rooms.has(code));
+    return code;
+  }
+
+  createRoom({ mode, hostId, hostUsername, modalidad, avatar, armada }) {
     const config = MODES[mode];
     if (!config) throw new Error('Modo inválido');
+    const code = armada ? this.generarCodigoCorto() : this.generateCode();
 
     const room = {
       code,
@@ -83,16 +96,73 @@ export class RoomManager {
       modalidad: esModalidad(modalidad) ? modalidad : MODALIDAD_POR_DEFECTO[mode],
       config,
       players: [
-        { id: hostId, username: hostUsername, isBot: false, socketId: null }
+        { id: hostId, username: hostUsername, isBot: false, socketId: null, avatar, asiento: 0 }
       ],
       game: null,
       started: false
     };
+    // LA MESA ARMADA (seccion 188). El que la abre decide silla por silla si
+    // la ocupa la casa o un pana; los panas entran por el codigo o desde el
+    // tablon y se sientan en la primera silla libre que no sea de la casa. Al
+    // arrancar, toda silla vacia la ocupa la casa: nadie se queda esperando.
+    if (armada) {
+      room.armada = true;
+      room.publica = armada.publica !== false;
+      room.casaEn = new Set((armada.casaEn || []).filter((i) => Number.isInteger(i) && i > 0 && i < config.totalPlayers));
+      room.creadaEn = Date.now();
+    }
     this.rooms.set(code, room);
     return room;
   }
 
-  joinRoom(code, { userId, username, socketId }) {
+  /** Las sillas de una mesa armada, de la 0 (quien la abrio) a la ultima. */
+  sillas(room) {
+    const total = room.config.totalPlayers;
+    return Array.from({ length: total }, (_, i) => {
+      const ocupante = room.players.find((p) => p.asiento === i);
+      if (ocupante) {
+        return { asiento: i, tipo: ocupante.isBot ? 'casa' : 'pana', id: ocupante.id, username: ocupante.username, avatar: ocupante.avatar || ocupante.username };
+      }
+      return { asiento: i, tipo: room.casaEn?.has(i) ? 'casa' : 'libre' };
+    });
+  }
+
+  /** El que abrio la mesa cambia una silla: la casa o un pana. Solo sillas vacias. */
+  marcarSilla(code, userId, asiento, casa) {
+    const room = this.rooms.get(code);
+    if (!room || !room.armada) return { error: 'Sala no encontrada' };
+    if (room.players[0]?.id !== userId) return { error: 'Solo quien abrio la mesa la arma' };
+    if (room.started) return { error: 'La partida ya comenzó' };
+    if (!Number.isInteger(asiento) || asiento <= 0 || asiento >= room.config.totalPlayers) return { error: 'Silla inválida' };
+    if (room.players.some((p) => p.asiento === asiento)) return { error: 'Esa silla ya está ocupada' };
+    if (casa) room.casaEn.add(asiento); else room.casaEn.delete(asiento);
+    return { room };
+  }
+
+  /** Cuantas sillas quedan para panas (ni ocupadas ni de la casa). */
+  sillasLibres(room) {
+    return this.sillas(room).filter((s) => s.tipo === 'libre').length;
+  }
+
+  /** Las mesas armadas, publicas y sin arrancar: el tablon (seccion 188). */
+  mesasAbiertas() {
+    const lista = [];
+    for (const room of this.rooms.values()) {
+      if (!room.armada || !room.publica || room.started) continue;
+      if (this.sillasLibres(room) === 0) continue;
+      lista.push({
+        code: room.code,
+        mode: room.mode,
+        modeLabel: room.config.label,
+        sillas: this.sillas(room),
+        libres: this.sillasLibres(room),
+        creadaEn: room.creadaEn
+      });
+    }
+    return lista.sort((a, b) => b.creadaEn - a.creadaEn);
+  }
+
+  joinRoom(code, { userId, username, socketId, avatar }) {
     const room = this.rooms.get(code);
     if (!room) return { error: 'Sala no encontrada' };
 
@@ -106,11 +176,23 @@ export class RoomManager {
     if (room.players.length >= room.config.totalPlayers)
       return { error: 'Sala llena' };
 
+    // En una mesa armada el pana se sienta en la primera silla libre que no
+    // sea de la casa; si no queda ninguna, la mesa esta llena aunque falten
+    // bots por sentar.
+    let asiento = room.players.length;
+    if (room.armada) {
+      const libre = this.sillas(room).find((s) => s.tipo === 'libre');
+      if (!libre) return { error: 'Sala llena' };
+      asiento = libre.asiento;
+    }
+
     room.players.push({
       id: userId,
       username,
       isBot: false,
-      socketId
+      socketId,
+      avatar,
+      asiento
     });
     return { room };
   }
@@ -271,9 +353,41 @@ export class RoomManager {
     if (!room) return { error: 'Sala no encontrada' };
     if (room.started) return { error: 'Ya comenzó' };
 
+    // Una mesa armada (seccion 188) arranca con los panas que llegaron: toda
+    // silla vacia la ocupa la casa, y cada quien se queda en la silla que
+    // escogio (en 2v2 la de enfrente es el companero).
+    if (room.armada) {
+      const total = room.config.totalPlayers;
+      const faltan = total - room.players.length;
+      if (faltan > 0) {
+        const elegidos = elegirBots(faltan, room.botPreferido);
+        room.bot = elegidos[0];
+        room.botDifficulty = elegidos[0].difficulty;
+        const ocupadas = new Set(room.players.map((p) => p.asiento));
+        let k = 0;
+        for (let i = 0; i < total; i += 1) {
+          if (ocupadas.has(i)) continue;
+          const bot = elegidos[k];
+          k += 1;
+          room.players.push({
+            id: `bot-${room.code}-${k}`,
+            username: bot.nombre,
+            isBot: true,
+            socketId: null,
+            avatar: bot.avatar,
+            difficulty: bot.difficulty,
+            frase: bot.frase,
+            estrellas: bot.estrellas,
+            asiento: i
+          });
+        }
+      }
+      room.players.sort((a, b) => a.asiento - b.asiento);
+    }
+
     // Los modos con bots se completan solos. El humano siempre es el asiento 0,
     // asi que en 2v2 el companero le toca al asiento 2: es el de enfrente.
-    const botsFaltantes = room.config.bots || 0;
+    const botsFaltantes = room.armada ? 0 : (room.config.bots || 0);
     if (botsFaltantes > 0) {
       if (room.players.length !== room.config.humans) {
         return { error: `Este modo es para ${room.config.humans} jugador(es), hay ${room.players.length}` };
@@ -685,9 +799,14 @@ export class RoomManager {
         id: p.id,
         username: p.username,
         isBot: p.isBot,
+        avatar: p.avatar || p.username,
         isHost: p.id === room.players[0]?.id
       })),
-      maxPlayers: room.config.totalPlayers
+      maxPlayers: room.config.totalPlayers,
+      // La mesa armada (seccion 188): silla por silla, para dibujar la antesala.
+      armada: Boolean(room.armada),
+      sillas: room.armada ? this.sillas(room) : undefined,
+      hostId: room.players[0]?.id
     };
     room.players.forEach((p) => {
       if (!p.isBot && p.socketId) {

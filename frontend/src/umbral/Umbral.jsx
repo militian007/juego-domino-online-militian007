@@ -44,7 +44,7 @@ export default function Umbral() {
   const portada = portadaElegida();
 
   const jugar = () => {
-    if (identidad()) navigate('/game?mode=1v1bot');
+    if (identidad()) navigate('/mesa');
     else setPidiendo(true);
   };
 
@@ -102,7 +102,7 @@ export default function Umbral() {
       <IdentidadLigera
         abierta={pidiendo}
         onCerrar={() => setPidiendo(false)}
-        onListo={(id) => { setPidiendo(false); if (id) navigate('/game?mode=1v1bot'); }}
+        onListo={(id) => { setPidiendo(false); if (id) navigate('/mesa'); }}
       />
     </div>
   );

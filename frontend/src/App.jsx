@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import Landing from './pages/Landing.jsx';
 import Umbral from './umbral/Umbral.jsx';
+import Antesala from './antesala/Antesala.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import Dashboard from './pages/Dashboard.jsx';
@@ -28,6 +29,7 @@ function App() {
     <>
     <Routes>
       <Route path="/" element={<Umbral />} />
+      <Route path="/mesa" element={<Antesala />} />
       <Route path="/viejo" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />

@@ -21,6 +21,16 @@ function nombreDeInvitado() {
   }
 }
 
+/** El retrato de la identidad ligera: viaja con el nombre, para que los panas lo vean en la antesala y en la mesa (seccion 188). */
+function retratoDeInvitado() {
+  try {
+    const id = JSON.parse(localStorage.getItem('domino-identidad') || 'null');
+    return id && typeof id.retrato === 'string' ? id.retrato : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function idDeInvitado() {
   try {
     let id = localStorage.getItem(CLAVE_INVITADO);
@@ -63,7 +73,7 @@ export const connectSocket = (tokenOverride) => {
     opts.auth = { token };
   } else {
     const invitado = idDeInvitado();
-    if (invitado) opts.auth = { guestId: invitado, guestName: nombreDeInvitado() };
+    if (invitado) opts.auth = { guestId: invitado, guestName: nombreDeInvitado(), guestRetrato: retratoDeInvitado() };
   }
   socket = io(SOCKET_URL, opts);
 

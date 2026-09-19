@@ -28,7 +28,7 @@ const CACHE_ASSETS = 'domino-assets-v1';
 const CACHES_VIVAS = [CACHE, CACHE_ASSETS];
 
 // Que rutas se guardan como inmutables. Solo las de este mismo origen.
-const ES_ASSET = /^\/(tiles[^/]*|dorsos|carteles|sonidos|avatares|iconos)\//;
+const ES_ASSET = /^\/(tiles[^/]*|dorsos|antesala|carteles|sonidos|avatares|iconos)\//;
 
 self.addEventListener('install', (evento) => {
   // Se activa de una, sin esperar a que se cierren las pestañas viejas.

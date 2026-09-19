@@ -5,6 +5,16 @@ import * as Sticker from '../models/Sticker.js';
 
 const MODOS_INVITADO = ['1v1bot', '2v2bots'];
 
+/**
+ * Identidad ligera (secciones 177 y 188): el invitado juega en linea con sus
+ * panas, con el nombre y el retrato que eligio en el umbral. Es la regla de la
+ * casa (como en el Ludo): las cuentas las pone la plataforma despues. Lo de
+ * Jonathan —"necesitas registrarte para jugar en linea"— sigue ahi con
+ * `DOMINO_INVITADOS_EN_LINEA=0`.
+ */
+const INVITADOS_EN_LINEA = process.env.DOMINO_INVITADOS_EN_LINEA !== '0';
+const RETRATOS = ['catire', 'chela', 'chuo', 'comadre', 'juana', 'musiu', 'nano', 'pancho', 'paula', 'tigre', 'yubi', 'zurda'];
+
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
 const GUEST_NAME = 'Invitado';
@@ -23,6 +33,8 @@ export function setupGameSocket(io, roomManager) {
       // el umbral. Se limpia aqui: letras, numeros y espacios, de 2 a 14.
       const nombre = String(socket.handshake.auth?.guestName || '').replace(/[^\p{L}\p{N} ]/gu, '').trim().slice(0, 14);
       socket.username = nombre.length >= 2 ? nombre : GUEST_NAME;
+      const retrato = String(socket.handshake.auth?.guestRetrato || '');
+      socket.retrato = RETRATOS.includes(retrato) ? retrato : undefined;
       socket.isGuest = true;
       return next();
     }
@@ -46,10 +58,11 @@ export function setupGameSocket(io, roomManager) {
     const tag = socket.isGuest ? 'invitado' : 'usuario';
     console.log(`🎮 ${socket.username} (${tag}) conectado (${socket.id})`);
 
-    socket.on('room:create', ({ mode, bot, modalidad }, callback) => {
+    socket.on('room:create', ({ mode, bot, modalidad, armada }, callback) => {
       // Los modos contra bots no exponen a nadie a otro usuario, asi que un
-      // invitado puede crearlos. Los que llevan humanos siguen pidiendo cuenta.
-      if (socket.isGuest && !MODOS_INVITADO.includes(mode)) {
+      // invitado puede crearlos. Los que llevan humanos piden cuenta salvo con
+      // la identidad ligera encendida (seccion 188).
+      if (socket.isGuest && !INVITADOS_EN_LINEA && !MODOS_INVITADO.includes(mode)) {
         return callback?.({ ok: false, error: 'Necesitas registrarte para jugar en línea' });
       }
       try {
@@ -57,7 +70,9 @@ export function setupGameSocket(io, roomManager) {
           mode,
           modalidad,
           hostId: socket.userId,
-          hostUsername: socket.username
+          hostUsername: socket.username,
+          avatar: socket.retrato,
+          armada: armada && typeof armada === 'object' ? armada : undefined
         });
         if (bot) room.botPreferido = bot;
         const player = room.players.find((p) => p.id === socket.userId);
@@ -71,9 +86,11 @@ export function setupGameSocket(io, roomManager) {
     });
 
     socket.on('room:join', ({ code }, callback) => {
-      // Un invitado no puede entrar a una sala ajena, pero SI puede volver a la
-      // suya: es como vuelve despues de refrescar o de salir a otra app.
-      if (socket.isGuest) {
+      // Un invitado no puede entrar a una sala ajena (salvo con la identidad
+      // ligera encendida), pero SI puede volver a la suya: es como vuelve
+      // despues de refrescar o de salir a otra app.
+      code = String(code || '').trim().toUpperCase();
+      if (socket.isGuest && !INVITADOS_EN_LINEA) {
         const sala = roomManager.rooms.get(code);
         const yaEstaba = sala?.players.some((p) => p.id === socket.userId);
         if (!yaEstaba) {
@@ -83,7 +100,8 @@ export function setupGameSocket(io, roomManager) {
       const result = roomManager.joinRoom(code, {
         userId: socket.userId,
         username: socket.username,
-        socketId: socket.id
+        socketId: socket.id,
+        avatar: socket.retrato
       });
       if (result.error) return callback?.({ ok: false, error: result.error });
       socket.join(code);
@@ -99,6 +117,17 @@ export function setupGameSocket(io, roomManager) {
       // nadie tiene por que apretar "empezar", y si alguien se distrae se traba
       // el cuadro entero.
       torneos.intentarArrancar(room);
+
+      // Una mesa armada arranca sola cuando se sienta el ultimo pana que
+      // faltaba (seccion 188): el que la abrio no tiene que estar pendiente.
+      if (room.armada && !room.started && !result.reconnected && roomManager.sillasLibres(room) === 0) {
+        const arranque = roomManager.startGame(code);
+        if (!arranque.error) {
+          roomManager.broadcastLobby(room);
+          roomManager.broadcastState(room);
+          roomManager.playBotTurns(room);
+        }
+      }
 
       // Si la partida ya comenzó, enviarle el estado actual del juego de inmediato
       if (room.started && room.game) {
@@ -119,6 +148,20 @@ export function setupGameSocket(io, roomManager) {
           maxPlayers: room.config.totalPlayers
         }
       });
+    });
+
+    // LA ANTESALA (seccion 188): el que abrio la mesa marca una silla como de
+    // la casa o la deja para un pana.
+    socket.on('mesa:silla', ({ code, asiento, casa }, callback) => {
+      const result = roomManager.marcarSilla(String(code || '').toUpperCase(), socket.userId, Number(asiento), Boolean(casa));
+      if (result.error) return callback?.({ ok: false, error: result.error });
+      roomManager.broadcastLobby(result.room);
+      callback?.({ ok: true, sillas: roomManager.sillas(result.room) });
+    });
+
+    // El tablon: las mesas armadas, publicas, que todavia tienen silla.
+    socket.on('mesas:listar', (callback) => {
+      callback?.({ ok: true, mesas: roomManager.mesasAbiertas() });
     });
 
     socket.on('room:leave', ({ code }) => {

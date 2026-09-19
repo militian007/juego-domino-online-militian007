@@ -413,9 +413,14 @@ export default function Game() {
     anotarArrastre({ ...previo, isSnapped, activePlacement });
   };
 
+  // Con la identidad ligera (seccion 188) un invitado entra a la mesa que armo
+  // o a la que lo invitaron: llega con `?join=CODIGO` desde la antesala y el
+  // servidor es quien decide si puede sentarse.
+  const invitadoPuede = GUEST_ALLOWED_MODES.includes(mode) || Boolean(joinParam);
+
   useEffect(() => {
     if (loading) return;
-    if (!user && !GUEST_ALLOWED_MODES.includes(mode)) {
+    if (!user && !invitadoPuede) {
       navigate('/login', { replace: true, state: { from: `/game?mode=${mode}` } });
       return;
     }
@@ -426,14 +431,14 @@ export default function Game() {
         navigate('/login', { replace: true, state: { from: `/game/${urlRoomCode}` } });
       }
     }
-  }, [user, loading, mode, urlRoomCode, navigate]);
+  }, [user, loading, mode, urlRoomCode, navigate, invitadoPuede]);
 
   const roomInitRef = useRef(false);
 
   // 1. Conexión de socket y registro de listeners de eventos del juego
   useEffect(() => {
     if (loading) return;
-    if (!user && !GUEST_ALLOWED_MODES.includes(mode)) return;
+    if (!user && !invitadoPuede) return;
     if (urlRoomCode && !user) return;
 
     const s = connectSocket();
