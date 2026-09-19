@@ -14,7 +14,10 @@
     "dorsos": "python scripts/generar-dorsos.py",
     "stickers": "node scripts/generar-stickers.mjs",
     "carteles": "node scripts/generar-carteles.mjs",
-    "panos": "node scripts/generar-panos.mjs"
+    "panos": "node scripts/generar-panos.mjs",
+    "bateria:antesala": "node scripts/bateria/antesala.mjs && node scripts/bateria/antesala-casa.mjs && node scripts/bateria/antesala-fantasma.mjs",
+    "bateria:mesa": "node scripts/bateria/reglas-de-la-mesa.mjs && node scripts/bateria/revancha.mjs",
+    "perf": "node scripts/perf/cuentas.mjs && node scripts/perf/traza.mjs 4"
   },
   "dependencies": {
     "@iconify-json/flat-color-icons": "^1.2.3",
