@@ -8288,3 +8288,19 @@ quiere. Para probarla sin jugar diez minutos hay una ruta solo de desarrollo,
 Probado (`shots/revancha.mjs`): Raul y Chela en 1v1 armado, la partida se termina a la
 fuerza, Raul toca Revancha, los dos caen en la mesa nueva (SWXY) jugando otra vez. Sin
 errores de consola. El que sale de la partida como invitado vuelve a la antesala.
+
+## 193. El Cuadro de Honor vestido de club (2026-09-19)
+
+Raul, sobre tres direcciones dibujadas (el podio de bronce, la placa del club, las ligas):
+"el primero, el del podio". Ficha 4.1 de la plantilla. `Ranking.jsx` conserva los datos y
+las tres vistas (semana, siempre, torneos; ahora arranca en "esta semana") y cambia la piel:
+paño de fondo, Cinzel en el titulo, los puestos y los numeros, retratos en aro de bronce
+(el de la identidad ligera si lo hay, la foto de la cuenta si la subio, el SVG del nombre
+si no), el primero mas alto y con filo bronce, y la lista debajo sin el panel claro. Al pie,
+"la semana cierra el lunes a medianoche · faltan N dias", calculado en hora de Caracas
+(UTC-4, sin horario de verano) para que todos vean el mismo cierre. El umbral lleva al
+cuadro con un boton nuevo debajo de El Relampago. Verificado corriendo en las tres vistas,
+con cuenta y de invitado.
+
+Lo que queda para despues: las ligas con escudo (Pollo -> Maestro) y que el invitado sume
+puntos, que dependen de la identidad de la PAM.

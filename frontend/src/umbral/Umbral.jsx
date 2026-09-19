@@ -84,6 +84,9 @@ export default function Umbral() {
           <Link to="/torneos" className="btn-secondary mt-3 block w-full py-3 text-center text-base tracking-[0.2em]">
             EL RELÁMPAGO
           </Link>
+          <Link to="/ranking" className="btn-secondary mt-3 block w-full py-3 text-center text-base tracking-[0.2em]">
+            EL CUADRO DE HONOR
+          </Link>
           <button
             type="button"
             onClick={() => setReglas((v) => !v)}

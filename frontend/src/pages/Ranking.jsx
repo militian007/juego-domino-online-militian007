@@ -1,62 +1,76 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Crown } from 'lucide-react';
-import { rankingApi } from '../services/api.js';
+import { Link, useNavigate } from 'react-router-dom';
+import { rankingApi, haySesion } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import Avatar from '../components/game/Avatar.jsx';
+import MesaConSillas from '../antesala/MesaConSillas.jsx';
+import { identidad } from '../umbral/identidad.js';
 
 /**
- * La clasificacion, hecha igual a la de PrivoyTruco.
+ * EL CUADRO DE HONOR, vestido de club (seccion 193, ficha 4.1 de la plantilla).
  *
- * Tres vistas, podio de tres arriba con el primero en el centro y mas alto, y
- * debajo la lista corrida sobre un panel claro. Es la plataforma donde va a
- * vivir el motor, asi que el domino se ve como ella y no al reves.
+ * Raul escogio, entre tres, "el podio de bronce": la estructura que ya habia
+ * (podio de tres y lista, tres vistas) con la piel de Paño y Madera. Paño de
+ * fondo, Cinzel en el titulo y los numeros, retratos en aro de bronce, y al
+ * pie el cierre de la semana: los puntos semanales arrancan de cero cada
+ * lunes a medianoche, hora de Caracas.
  *
  * Se puede ver SIN cuenta: el que entra de visita tiene que poder ver quienes
- * son los mejores.
- *
- * Solo cuentan las partidas entre personas. Contra la maquina no suma nada.
+ * son los mejores. Solo cuentan las partidas entre personas.
  */
+const SERIF = "'Cinzel', 'Cormorant Garamond', Georgia, serif";
 
 const VISTAS = [
-  { id: 'general', etiqueta: 'General' },
-  { id: 'semana', etiqueta: 'Esta semana' },
-  { id: 'torneos', etiqueta: 'Torneos' }
+  { id: 'semana', etiqueta: 'ESTA SEMANA' },
+  { id: 'general', etiqueta: 'SIEMPRE' },
+  { id: 'torneos', etiqueta: 'TORNEOS' }
 ];
 
-const BAJADA = {
-  general: (n) => `${n} ${n === 1 ? 'jugador clasificado' : 'jugadores clasificados'}`,
-  semana: () => 'Arranca de cero cada lunes — cualquiera puede ganarla',
-  torneos: () => 'Los campeones y sus copas'
-};
-
-/** El numero grande de cada uno, que cambia segun la vista. */
 const marcador = (f, vista) => {
   if (vista === 'semana') return `${f.puntos > 0 ? '+' : ''}${f.puntos}`;
   if (vista === 'torneos') return `${f.copas}`;
   return `${f.puntos}`;
 };
 
-/** La unidad que va al lado del numero. */
 const unidad = (vista, f) => {
-  if (vista === 'semana') return '';
-  if (vista === 'torneos') return f?.copas === 1 ? 'copa' : 'copas';
-  return 'pts';
+  if (vista === 'semana') return 'PTS';
+  if (vista === 'torneos') return f?.copas === 1 ? 'COPA' : 'COPAS';
+  return 'PTS';
 };
 
-/** El renglon chico de abajo, tambien distinto en cada vista. */
 const detalle = (f, vista) => {
-  if (vista === 'semana') {
-    return `${f.victorias} ${f.victorias === 1 ? 'victoria' : 'victorias'} esta semana`;
-  }
-  if (vista === 'torneos') {
-    return `${f.ganadas} ${f.ganadas === 1 ? 'victoria' : 'victorias'} de vida`;
-  }
+  if (vista === 'semana') return `${f.victorias} ${f.victorias === 1 ? 'victoria' : 'victorias'} esta semana`;
+  if (vista === 'torneos') return `${f.ganadas} ${f.ganadas === 1 ? 'victoria' : 'victorias'} de vida`;
   return `${f.ganadas} ${f.ganadas === 1 ? 'victoria' : 'victorias'} · ${f.partidas} ${f.partidas === 1 ? 'jugada' : 'jugadas'} · ${f.porcentaje}%`;
 };
 
+/**
+ * Cuanto falta para el lunes a medianoche de Caracas (UTC-4, sin horario de
+ * verano). Se calcula en Caracas y no en el reloj del telefono para que un
+ * jugador en Madrid vea el mismo cierre que uno en Maracay.
+ */
+function faltaParaElLunes(ahora = new Date()) {
+  const caracas = new Date(ahora.getTime() - 4 * 3600 * 1000);
+  const dia = caracas.getUTCDay(); // 0 domingo ... 1 lunes
+  const hastaLunes = (8 - dia) % 7 || 7;
+  const cierre = Date.UTC(caracas.getUTCFullYear(), caracas.getUTCMonth(), caracas.getUTCDate() + hastaLunes);
+  const ms = cierre - caracas.getTime();
+  const dias = Math.floor(ms / 86400000);
+  const horas = Math.floor((ms % 86400000) / 3600000);
+  if (dias >= 1) return `FALTAN ${dias} ${dias === 1 ? 'DÍA' : 'DÍAS'}`;
+  return `FALTAN ${Math.max(1, horas)} ${horas === 1 ? 'HORA' : 'HORAS'}`;
+}
+
+function Retrato({ jugador, tamano }) {
+  if (jugador.foto) return <Avatar semilla={jugador.username} foto={jugador.foto} tamano={tamano} />;
+  return <MesaConSillas.Retrato avatar={jugador.avatar || jugador.username} tamano={tamano} />;
+}
+
 export default function Ranking() {
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const [vista, setVista] = useState('general');
+  const yo = identidad();
+  const [vista, setVista] = useState('semana');
   const [datos, setDatos] = useState(null);
   const [error, setError] = useState(null);
 
@@ -64,66 +78,67 @@ export default function Ranking() {
     let vivo = true;
     setDatos(null);
     setError(null);
-
     rankingApi
       .tabla(vista)
       .then((d) => { if (vivo) setDatos(d); })
-      .catch(() => { if (vivo) setError('No se pudo cargar la clasificación'); });
-
+      .catch(() => { if (vivo) setError('No se pudo cargar el cuadro'); });
     return () => { vivo = false; };
   }, [vista]);
 
   const tabla = datos?.tabla ?? [];
   const podio = tabla.slice(0, 3);
   const resto = tabla.slice(3);
-
-  // El del medio es el primero: asi lo pone PrivoyTruco, y asi se lee de una
-  // quien gano sin tener que buscar el numero.
   const ordenDelPodio = [podio[1], podio[0], podio[2]];
+  const soyYo = (f) => user && Number(f.userId) === Number(user.id);
+  const conCuenta = haySesion() && user;
+
+  const pie = vista === 'semana'
+    ? `LA SEMANA CIERRA EL LUNES A MEDIANOCHE · ${faltaParaElLunes()}`
+    : vista === 'torneos'
+      ? 'LOS CAMPEONES Y SUS COPAS'
+      : `${datos?.clasificados ?? 0} ${datos?.clasificados === 1 ? 'JUGADOR CLASIFICADO' : 'JUGADORES CLASIFICADOS'}`;
 
   return (
-    <div className="min-h-[100svh] bg-domino-dark text-domino-cream">
-      <header className="flex items-center justify-between border-b border-domino-accent/20 px-5 py-4 sm:px-8">
-        <Link to="/" className="text-sm text-domino-cream/70 hover:text-domino-cream">
-          ←
-        </Link>
-        <span className="text-[11px] font-semibold tracking-[0.3em] text-domino-cream/50">
-          EL CUADRO DE HONOR
-        </span>
-        <span className="w-4" />
-      </header>
+    <div className="relative min-h-[100dvh] overflow-hidden bg-[#08120c] text-domino-cream">
+      <div className="felt-tela absolute inset-0 opacity-80" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-[#08120c]/65 to-[#08120c]" />
 
-      <div className="mx-auto max-w-2xl px-4 pb-10 sm:px-8">
-        <h1 className="mt-5 text-3xl font-black tracking-tight text-domino-accent sm:text-4xl">
-          CLASIFICACIÓN
+      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 pb-6 pt-5">
+        <header className="flex items-center justify-between">
+          <button type="button" onClick={() => navigate(-1)} aria-label="Volver" className="text-3xl leading-none text-domino-accent">‹</button>
+          <span className="whitespace-nowrap text-[10px] font-bold tracking-[0.3em] text-domino-accent/90">EL CUADRO DE HONOR</span>
+          {conCuenta || yo ? (
+            <span className="flex items-center gap-2 rounded-full border border-domino-accent/40 bg-black/40 py-1 pl-1 pr-3 text-sm font-bold">
+              <MesaConSillas.Retrato avatar={conCuenta ? user.username : yo.retrato} tamano={26} />
+              <span className="max-w-[88px] truncate">{conCuenta ? user.username : yo.nombre}</span>
+            </span>
+          ) : <span className="w-6" />}
+        </header>
+
+        <h1 className="mt-3 text-[32px] font-bold leading-none text-domino-accent drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" style={{ fontFamily: SERIF }}>
+          Cuadro de Honor
         </h1>
-        <p className="mt-1 text-sm text-domino-cream/55">
-          {BAJADA[vista](datos?.clasificados ?? 0)}
-        </p>
 
-        <div className="mt-4 flex gap-2">
+        <div className="mt-3 flex w-max overflow-hidden rounded-full border border-domino-accent/60">
           {VISTAS.map((v) => (
             <button
               key={v.id}
+              type="button"
               onClick={() => setVista(v.id)}
-              className={`rounded-full border px-4 py-1.5 text-xs font-semibold transition ${
-                vista === v.id
-                  ? 'border-domino-accent bg-domino-accent text-black'
-                  : 'border-domino-accent/25 bg-black/30 text-domino-cream/70 hover:border-domino-accent/60'
-              }`}
+              className={`px-3.5 py-2 text-[11px] font-extrabold tracking-[0.18em] ${vista === v.id ? 'bg-domino-accent text-domino-dark' : 'text-domino-accent'}`}
             >
               {v.etiqueta}
             </button>
           ))}
         </div>
 
-        {error && <p className="mt-6 text-sm text-red-400">{error}</p>}
-        {!datos && !error && <p className="mt-6 text-sm text-domino-cream/50">Cargando...</p>}
+        {error && <p className="mt-6 text-sm font-semibold text-red-300">{error}</p>}
+        {!datos && !error && <p className="mt-6 text-sm font-semibold text-domino-cream/60">Cargando...</p>}
 
         {datos && tabla.length === 0 && (
-          <p className="mt-6 rounded-xl border border-domino-accent/15 bg-black/30 p-4 text-sm leading-relaxed text-domino-cream/60">
+          <p className="mt-6 rounded-xl border border-domino-accent/30 bg-black/35 p-4 text-sm font-semibold leading-relaxed text-domino-cream/80">
             {vista === 'semana'
-              ? 'Esta semana todavía no jugó nadie. El primero que gane una partida encabeza la tabla.'
+              ? 'Esta semana todavía no ha jugado nadie. El primero que gane una partida encabeza el cuadro.'
               : vista === 'torneos'
                 ? 'Todavía no hay campeones. El primero que gane un torneo queda aquí.'
                 : 'Todavía no hay nadie clasificado. Se entra jugando una partida contra otra persona.'}
@@ -132,110 +147,67 @@ export default function Ranking() {
 
         {datos && tabla.length > 0 && (
           <>
-            <div className="mt-6 grid grid-cols-3 items-end gap-2 sm:gap-3">
-              {ordenDelPodio.map((f, i) =>
-                f ? (
-                  <Plaqueta
-                    key={f.userId}
-                    jugador={f}
-                    vista={vista}
-                    primero={i === 1}
-                    soyYo={Number(f.userId) === Number(user?.id)}
-                  />
-                ) : (
-                  <span key={`hueco-${i}`} />
-                )
-              )}
+            <div className="mt-4 flex items-end justify-center gap-2">
+              {ordenDelPodio.map((f, i) => (f ? (
+                <Plaqueta key={f.userId} jugador={f} vista={vista} primero={i === 1} soyYo={soyYo(f)} />
+              ) : (
+                <span key={`hueco-${i}`} className="w-[27%]" />
+              )))}
             </div>
 
             {resto.length > 0 && (
-              <ul className="mt-5 divide-y divide-black/10 rounded-2xl bg-domino-cream/95 px-1 py-1 text-domino-dark shadow-2xl">
-                {resto.map((f) => {
-                  const soyYo = Number(f.userId) === Number(user?.id);
-                  return (
-                    <li
-                      key={f.userId}
-                      className={`flex items-center gap-3 rounded-xl px-3 py-3 ${
-                        soyYo ? 'bg-domino-accent/25' : ''
-                      }`}
-                    >
-                      <span className="w-6 shrink-0 text-center text-sm font-bold tabular-nums text-domino-dark/45">
-                        {f.puesto}
+              <ul className="mt-3">
+                {resto.map((f) => (
+                  <li
+                    key={f.userId}
+                    className={`flex items-center gap-2.5 border-b border-domino-accent/15 px-1 py-2 ${soyYo(f) ? 'rounded-lg bg-domino-accent/10' : ''}`}
+                  >
+                    <b className="w-6 text-[15px] text-domino-accent" style={{ fontFamily: SERIF }}>{f.puesto}</b>
+                    <Retrato jugador={f} tamano={34} />
+                    <span className="min-w-0 flex-1">
+                      <span className={`block truncate text-[13px] font-bold ${soyYo(f) ? 'text-domino-accent' : ''}`}>
+                        {f.username}{soyYo(f) && <span className="ml-1.5 text-[10px] font-semibold opacity-70">tú</span>}
                       </span>
-
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold">
-                          {f.username}
-                          {soyYo && <span className="ml-1.5 text-[10px] font-semibold opacity-60">tú</span>}
-                        </p>
-                        <p className="mt-0.5 truncate text-[11px] text-domino-dark/55">
-                          {detalle(f, vista)}
-                        </p>
-                      </div>
-
-                      <span className="shrink-0 text-sm font-bold tabular-nums">
-                        {marcador(f, vista)}
-                        <span className="ml-1 text-[11px] font-semibold text-domino-dark/50">
-                          {unidad(vista, f)}
-                        </span>
-                      </span>
-                    </li>
-                  );
-                })}
+                      <span className="block truncate text-[10px] font-semibold text-domino-cream/60">{detalle(f, vista)}</span>
+                    </span>
+                    <span className="flex flex-col items-end leading-none">
+                      <span className="text-[17px] text-domino-cream tabular-nums" style={{ fontFamily: SERIF }}>{marcador(f, vista)}</span>
+                      <span className="text-[8px] font-bold tracking-[0.2em] text-domino-cream/60">{unidad(vista, f)}</span>
+                    </span>
+                  </li>
+                ))}
               </ul>
             )}
           </>
+        )}
+
+        <p className="mt-auto border-t border-domino-accent/40 pt-3 text-center text-[10px] font-extrabold tracking-[0.22em] text-domino-accent/85">
+          {pie}
+        </p>
+        {!conCuenta && (
+          <Link to="/mesa" className="mt-3 text-center text-[11px] font-bold tracking-[0.2em] text-domino-cream/60">
+            ARMA TU MESA
+          </Link>
         )}
       </div>
     </div>
   );
 }
 
-/** Una de las tres placas del podio. */
+/** Una de las tres placas del podio: retrato en aro de bronce, puesto y numero en Cinzel. */
 function Plaqueta({ jugador, vista, primero, soyYo }) {
   return (
     <div
-      className={`rounded-2xl border bg-gradient-to-b from-domino-accent/25 to-black/40 px-2 pb-3 text-center shadow-xl ${
-        primero
-          ? 'border-domino-accent/70 pt-4'
-          : 'border-domino-accent/30 pt-3'
-      } ${soyYo ? 'ring-2 ring-domino-accent' : ''}`}
+      className={`flex flex-col items-center gap-0.5 rounded-t-xl rounded-b border px-2 pb-2 text-center ${
+        primero ? 'w-[34%] border-domino-accent pt-4 shadow-[0_0_0_1px_rgba(216,180,92,.25),0_10px_30px_rgba(0,0,0,.6)]' : 'w-[28%] border-domino-accent/35 pt-3'
+      } ${soyYo ? 'ring-2 ring-domino-accent/70' : ''}`}
+      style={{ background: 'linear-gradient(180deg, #0f2a1d, #08160f)' }}
     >
-      <div className="flex items-center justify-center gap-1">
-        {primero && <Crown size={14} className="text-domino-accent" aria-hidden="true" />}
-        <span
-          className={`font-bold tabular-nums ${
-            primero ? 'text-base text-domino-accent' : 'text-sm text-domino-cream/70'
-          }`}
-        >
-          {jugador.puesto}
-        </span>
-      </div>
-
-      <p
-        className={`mt-1.5 truncate font-bold ${
-          primero ? 'text-sm text-domino-cream' : 'text-xs text-domino-cream/90'
-        }`}
-      >
-        {jugador.username}
-      </p>
-
-      <p
-        className={`mt-1 font-black tabular-nums text-domino-accent ${
-          primero ? 'text-2xl' : 'text-xl'
-        }`}
-      >
-        {marcador(jugador, vista)}
-      </p>
-      {unidad(vista, jugador) && (
-        <p className="text-[9px] font-bold uppercase tracking-widest text-domino-accent/70">
-          {unidad(vista, jugador)}
-        </p>
-      )}
-
-      <p className="mt-1.5 text-[9px] leading-tight text-domino-cream/50">
-        {detalle(jugador, vista)}
-      </p>
+      <Retrato jugador={jugador} tamano={primero ? 64 : 50} />
+      <b className={`${primero ? 'text-[26px]' : 'text-[18px]'} leading-none text-domino-accent`} style={{ fontFamily: SERIF }}>{jugador.puesto}</b>
+      <span className="max-w-full truncate text-[11px] font-bold">{jugador.username}</span>
+      <span className={`${primero ? 'text-[20px]' : 'text-[16px]'} leading-none tabular-nums text-domino-cream`} style={{ fontFamily: SERIF }}>{marcador(jugador, vista)}</span>
+      <span className="text-[8px] font-bold tracking-[0.2em] text-domino-cream/60">{unidad(vista, jugador)}</span>
     </div>
   );
 }
