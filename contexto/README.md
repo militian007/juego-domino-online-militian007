@@ -8304,3 +8304,22 @@ con cuenta y de invitado.
 
 Lo que queda para despues: las ligas con escudo (Pollo -> Maestro) y que el invitado sume
 puntos, que dependen de la identidad de la PAM.
+
+## 194. La mesa pegada tras el vencimiento, y sin reloj contra la casa (2026-09-20)
+
+Raul probando: "no jugue, se acabo el tiempo y se quedo pegado". Era una 1v1 armada en la
+antesala contra la casa. Dos cosas juntas:
+
+1. Una mesa armada usa el modo entre personas (`1v1`/`2v2`, con reloj) aunque la otra silla
+   sea de la casa, asi que a Raul le corria el reloj jugando solo contra el bot. La regla de
+   Jonathan es "contra la maquina no hay reloj": ahora `_ajustarReloj` solo corre si hay al
+   menos dos personas en la mesa.
+2. Cuando el reloj saltaba el turno y el siguiente era un bot, nadie despertaba al bot
+   (`playBotTurns` solo se llamaba tras una jugada humana): la partida se quedaba en
+   "esperando" para siempre. Ahora `_seLeAcaboElTiempo` llama a `playBotTurns` despues de
+   emitir el estado.
+
+Probado: 1v1 armada contra la casa, 30 s sin jugar, sigue siendo mi turno y no hay reloj;
+2v2 con dos personas y dos bots sin que nadie juegue: cada 25 s salta el turno de la persona
+("1 de 3", "2 de 3") y los bots juegan (7 -> 5 fichas, cuatro en la mesa). Dos pruebas nuevas
+en `test.js` (123 en verde).

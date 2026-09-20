@@ -698,7 +698,11 @@ export class RoomManager {
     const enJuego = room.game.status === 'playing';
     const seat = room.game.state.turn;
     const jugador = enJuego ? room.players[seat] : null;
-    const leCorre = Boolean(jugador) && !jugador.isBot;
+    // Contra la maquina no hay reloj (decision de Jonathan, seccion 194): una
+    // mesa armada con una sola persona y el resto la casa es una partida
+    // contra la casa aunque el modo sea el de entre personas.
+    const entrePersonas = room.players.filter((p) => !p.isBot).length >= 2;
+    const leCorre = Boolean(jugador) && !jugador.isBot && entrePersonas;
     // Reloj corto tras un vencimiento (ficha 2.3): el que ya se durmio una vez
     // juega con menos tiempo el resto de la partida.
     const turnMs = leCorre && (jugador.strikes ?? 0) > 0 ? Math.min(turnoMs, RELOJ_CORTO_MS) : turnoMs;
@@ -779,6 +783,10 @@ export class RoomManager {
     };
 
     this.broadcastState(room);
+    // Si el turno cayo en la casa, la casa tiene que jugar (seccion 194): en
+    // una mesa armada con bots, el vencimiento dejaba la partida pegada
+    // porque nadie despertaba al bot.
+    this.playBotTurns(room);
   }
 
   /**

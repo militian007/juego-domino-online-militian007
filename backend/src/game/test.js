@@ -573,6 +573,36 @@ console.log('TEST: Strikes y reloj corto (seccion 191)');
   assert(juego.status === 'game-over', 'y la partida termina');
 }
 
+console.log('TEST: Contra la casa no hay reloj, y tras un vencimiento la casa juega (seccion 194)');
+{
+  const rm = new RoomManager();
+  rm.setIO({ to: () => ({ emit: () => {} }), sockets: { sockets: new Map() } });
+  // Mesa armada 1v1 con una sola persona: la otra silla es de la casa.
+  const sola = rm.createRoom({ mode: '1v1', hostId: 'raul', hostUsername: 'Raul', armada: { casaEn: [1], publica: false } });
+  assert(!rm.startGame(sola.code).error, 'arranca la 1v1 armada contra la casa');
+  assert(sola.game.turnDeadline == null, 'sin otra persona en la mesa no corre el reloj');
+  clearTimeout(sola._reloj);
+
+  // Mesa armada 2v2 con dos personas y dos bots: el reloj corre para las personas.
+  const mixta = rm.createRoom({ mode: '2v2', hostId: 'a', hostUsername: 'A', armada: { casaEn: [1, 3], publica: false } });
+  rm.joinRoom(mixta.code, { userId: 'b', username: 'B', socketId: 'sb' });
+  assert(!rm.startGame(mixta.code).error, 'arranca la 2v2 mixta');
+  const juego = mixta.game;
+  const persona = mixta.players.find((p) => !p.isBot && mixta.players.indexOf(p) === juego.state.turn) || null;
+  // Forzar el turno a una persona cuyo siguiente es un bot (asientos 0->1, 2->3).
+  clearTimeout(mixta._reloj); mixta._relojDe = null;
+  juego.state.turn = 0;
+  rm._ajustarReloj(mixta);
+  assert(juego.turnDeadline != null, 'con dos personas si corre el reloj');
+  clearTimeout(mixta._reloj);
+  let despertado = 0;
+  const original = rm.playBotTurns.bind(rm);
+  rm.playBotTurns = async (room) => { despertado += 1; return original(room); };
+  rm._seLeAcaboElTiempo(mixta, mixta.players[0].id);
+  assert(despertado === 1, 'tras el vencimiento se despierta a la casa para que juegue');
+  void persona;
+}
+
 console.log(`\n${'='.repeat(40)}`);
 console.log(`Pasados: ${passed} | Fallados: ${failed}`);
 if (failed > 0) process.exit(1);
