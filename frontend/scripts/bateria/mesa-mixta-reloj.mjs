@@ -27,7 +27,7 @@ const avisos = new Set(); let saltos = 0; let ultimo = '';
 for (let i = 0; i < 40; i += 1) {
   await sleep(2000);
   const t = await texto(d);
-  const m = t.match(/[^\n]*(se le pasó el turno|dejó correr el reloj)[^\n]*/);
+  const m = t.match(/[^\n]*(se le pasó el turno|dejó correr el reloj|la mesa jugó por)[^\n]*/);
   if (m && m[0] !== ultimo) { saltos += 1; ultimo = m[0]; avisos.add(m[0]); }
 }
 const despues = { mias: (await texto(d)).match(/TU MANO · (\d+)/)?.[1], rivales: await cuentas(), fichasEnMesa: await d.evaluate(() => document.querySelectorAll('[data-ficha-mesa]').length) };

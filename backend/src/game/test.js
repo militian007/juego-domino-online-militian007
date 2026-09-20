@@ -1,7 +1,7 @@
 import { DominoGame, MODE_CONFIG } from './DominoGame.js';
 import { Bot } from './Bot.js';
 import { generateAllTiles, isDouble, tilePips } from './Tile.js';
-import { RoomManager } from '../RoomManager.js';
+import { RoomManager, RELOJ } from '../RoomManager.js';
 import { elegirBots } from './bots.js';
 
 let passed = 0;
@@ -539,6 +539,7 @@ console.log('TEST: La mesa armada y las cuatro reglas del piso 2 (secciones 188 
 
 console.log('TEST: Strikes y reloj corto (seccion 191)');
 {
+  RELOJ.strikes = 3; // con plata en la mesa
   const rm = new RoomManager();
   rm.setIO({ to: () => ({ emit: () => {} }), sockets: { sockets: new Map() } });
   const sala = rm.createRoom({ mode: '1v1', hostId: 'a', hostUsername: 'A' });
@@ -571,6 +572,7 @@ console.log('TEST: Strikes y reloj corto (seccion 191)');
   rm._seLeAcaboElTiempo(sala, primero.id);
   assert(primero.strikes === 3 && juego.saltadoPorTiempo?.perdio === true, 'al tercer strike pierde');
   assert(juego.status === 'game-over', 'y la partida termina');
+  RELOJ.strikes = 0;
 }
 
 console.log('TEST: Contra la casa no hay reloj, y tras un vencimiento la casa juega (seccion 194)');
@@ -601,6 +603,27 @@ console.log('TEST: Contra la casa no hay reloj, y tras un vencimiento la casa ju
   rm._seLeAcaboElTiempo(mixta, mixta.players[0].id);
   assert(despertado === 1, 'tras el vencimiento se despierta a la casa para que juegue');
   void persona;
+}
+
+console.log('TEST: Se acabo el tiempo y la mesa juega por ti (seccion 195)');
+{
+  const rm = new RoomManager();
+  rm.setIO({ to: () => ({ emit: () => {} }), sockets: { sockets: new Map() } });
+  const sala = rm.createRoom({ mode: '1v1', hostId: 'a', hostUsername: 'A' });
+  rm.joinRoom(sala.code, { userId: 'b', username: 'B', socketId: 'sb' });
+  rm.startGame(sala.code);
+  clearTimeout(sala._reloj);
+  const juego = sala.game;
+  const quien = sala.players[juego.state.turn];
+  const fichasAntes = juego.hands[quien.id].length;
+  const pozoAntes = juego.pool.length;
+  rm._seLeAcaboElTiempo(sala, quien.id);
+  clearTimeout(sala._reloj);
+  const jugo = juego.hands[quien.id].length === fichasAntes - 1 || juego.pool.length < pozoAntes || juego.board.length > 0;
+  assert(jugo, 'al vencer el reloj la mesa jugo por el (ficha puesta o pozo levantado)');
+  assert(sala.players[juego.state.turn].id !== quien.id || juego.status !== 'playing', 'y el turno paso al otro');
+  assert(juego.saltadoPorTiempo?.jugoLaMesa === true && juego.saltadoPorTiempo.perdio !== true, 'el aviso dice que la mesa jugo por el, sin perder la partida');
+  assert(juego.status === 'playing', 'la partida sigue');
 }
 
 console.log(`\n${'='.repeat(40)}`);

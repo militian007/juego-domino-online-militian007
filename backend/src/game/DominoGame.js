@@ -86,10 +86,12 @@ export class DominoGame {
       seed,
       players: players.map((p) => ({ id: p.id, name: p.username, isBot: Boolean(p.isBot) })),
       // Si el modo lleva reloj, el motor tiene que saber que hacer cuando se
-      // acaba: perder la ronda. El motor no cuenta el tiempo (no tiene relojes
-      // por dentro), solo aplica la regla cuando el servidor le avisa.
+      // acaba. Raul (seccion 195): la mesa juega por ti, una ficha que valga
+      // (`auto-play`); antes solo se saltaba el turno. El motor no cuenta el
+      // tiempo (no tiene relojes por dentro), solo aplica la regla cuando el
+      // servidor le avisa.
       config: config.turnMs
-        ? { ...deLaModalidad, turnMs: config.turnMs, timeoutRule: 'skip-turn' }
+        ? { ...deLaModalidad, turnMs: config.turnMs, timeoutRule: 'auto-play' }
         : deLaModalidad
     });
 

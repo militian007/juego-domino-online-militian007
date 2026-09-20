@@ -8323,3 +8323,24 @@ Probado: 1v1 armada contra la casa, 30 s sin jugar, sigue siendo mi turno y no h
 2v2 con dos personas y dos bots sin que nadie juegue: cada 25 s salta el turno de la persona
 ("1 de 3", "2 de 3") y los bots juegan (7 -> 5 fichas, cuatro en la mesa). Dos pruebas nuevas
 en `test.js` (123 en verde).
+
+## 195. Se acabo el tiempo: la mesa juega por ti (2026-09-20)
+
+Raul: "si se acabo el reloj, cual es la penalizacion? deberia ser que se juegue cualquier
+ficha". Tenia razon: saltar el turno (la regla de la 128) deja al que se durmio con la
+ficha en la mano y a la mesa esperando. Ahora el motor va con `timeoutRule: 'auto-play'`,
+que ya existia: pone una ficha que valga, o levanta del pozo, o pasa. Como cada TIMEOUT del
+motor hace UNA sola cosa y en 1 contra 1 levantar del pozo no cede el turno,
+`_seLeAcaboElTiempo` lo repite hasta que el turno pase (tope 30, el pozo no tiene mas de
+14). El aviso dice "Se le acabo el tiempo a Fulano: la mesa jugo por el".
+
+Los strikes (191) quedan APAGADOS mientras no haya plata en la mesa (`DOMINO_STRIKES` en 0):
+sin apuesta, la mesa juega por el ausente y la partida sigue, que es lo que dice la ficha
+2.3 de la plantilla para los juegos gratis. Con plata se prenden (3) y al tercero se
+pierde. Las perillas del reloj viven ahora en un objeto `RELOJ` (strikes, cortoMs,
+graciaMs) para que las pruebas y manana la Config las muevan. El reloj corto tras el primer
+vencimiento sigue.
+
+Probado: prueba unitaria (al vencer, ficha puesta o pozo levantado, el turno pasa, la
+partida sigue; 127 en verde) y la mesa mixta de la 194 durante 80 s sin que nadie toque:
+la mano de la persona baja de 7 a 5, ocho fichas en la mesa, nadie pierde.

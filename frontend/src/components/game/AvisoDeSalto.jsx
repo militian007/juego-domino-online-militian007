@@ -36,6 +36,11 @@ export default function AvisoDeSalto({ salto }) {
             <>
               <span className="text-domino-accent">{salto.username}</span> dejó correr el reloj {salto.tope} veces: pierde la partida
             </>
+          ) : salto.jugoLaMesa ? (
+            <>
+              Se le acabó el tiempo a <span className="text-domino-accent">{salto.username}</span>: la mesa jugó por él
+              {salto.tope ? <span className="text-domino-cream/60"> · {salto.strikes} de {salto.tope}</span> : null}
+            </>
           ) : (
             <>
               A <span className="text-domino-accent">{salto.username}</span> se le pasó el turno

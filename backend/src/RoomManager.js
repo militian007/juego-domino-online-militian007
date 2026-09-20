@@ -56,7 +56,12 @@ export const HUMAN_DELAY_MS = Number(process.env.HUMAN_DELAY_MS ?? 0);
  * Son perillas de la casa, iguales en todos los juegos; aqui van por variable
  * de entorno hasta que el domino tenga su Config con botones (piso 8).
  *
- * - `DOMINO_STRIKES`: vencimientos del reloj que cuestan la partida. Tres.
+ * - Cuando se acaba el tiempo, LA MESA JUEGA POR TI (seccion 195): el motor
+ *   pone una ficha que valga, o levanta del pozo hasta poder, o pasa. Es la
+ *   penalizacion que pidio Raul: la partida sigue y tu turno se fue.
+ * - `DOMINO_STRIKES`: vencimientos seguidos que cuestan la partida. Apagado
+ *   (0) mientras no haya plata en la mesa: sin apuesta, que la mesa juegue por
+ *   el ausente y la partida siga (ficha 2.3 de la plantilla). Con plata, tres.
  * - `DOMINO_RELOJ_CORTO_MS`: tras un vencimiento, el reloj de ese jugador se
  *   acorta (15 s, minimo 3). El que se durmio una vez no vuelve a tener 25.
  * - `DOMINO_GRACIA_MS`: cuanto se espera al que se le cayo la conexion antes
@@ -66,9 +71,14 @@ const entero = (llave, porDefecto, minimo = 0) => {
   const n = Number(process.env[llave]);
   return Number.isFinite(n) && n >= minimo ? n : porDefecto;
 };
-export const STRIKES = entero('DOMINO_STRIKES', 3, 1);
-export const RELOJ_CORTO_MS = entero('DOMINO_RELOJ_CORTO_MS', 15000, 3000);
-export const GRACIA_MS = entero('DOMINO_GRACIA_MS', 70000, 5000);
+/** Las perillas del reloj, en un objeto para que las pruebas (y manana la Config) las muevan. */
+export const RELOJ = {
+  strikes: entero('DOMINO_STRIKES', 0, 0),
+  cortoMs: entero('DOMINO_RELOJ_CORTO_MS', 15000, 3000),
+  graciaMs: entero('DOMINO_GRACIA_MS', 70000, 5000)
+};
+export const RELOJ_CORTO_MS = RELOJ.cortoMs;
+export const GRACIA_MS = RELOJ.graciaMs;
 
 /** La llamada de "estas?" antes de repartir (ficha 2.1, regla 2): 3 s con todos conectados, 40 s si a alguno le falta el socket. */
 export const LLAMADA_CORTA_MS = entero('DOMINO_LLAMADA_CORTA_MS', 3000, 500);
@@ -705,7 +715,7 @@ export class RoomManager {
     const leCorre = Boolean(jugador) && !jugador.isBot && entrePersonas;
     // Reloj corto tras un vencimiento (ficha 2.3): el que ya se durmio una vez
     // juega con menos tiempo el resto de la partida.
-    const turnMs = leCorre && (jugador.strikes ?? 0) > 0 ? Math.min(turnoMs, RELOJ_CORTO_MS) : turnoMs;
+    const turnMs = leCorre && (jugador.strikes ?? 0) > 0 ? Math.min(turnoMs, RELOJ.cortoMs) : turnoMs;
 
     // El turno se identifica por ronda y asiento. Mientras sea el mismo, el
     // reloj NO se reinicia: si no, cada vez que se vuelve a emitir el estado
@@ -749,37 +759,46 @@ export class RoomManager {
     const jugador = room.players.find((p) => p.id === playerId);
     const seat = room.game.state.turn;
 
-    // Los strikes (ficha 2.3): al tercer vencimiento se pierde la partida. La
-    // regla de Raul es la del truco: "aceptaste, te quedas"; quien deja correr
-    // el reloj tres veces no esta jugando.
+    // Los strikes (ficha 2.3): con plata en la mesa, al tercer vencimiento se
+    // pierde la partida ("aceptaste, te quedas"). Sin plata (RELOJ.strikes en
+    // 0) la mesa juega por el ausente y la partida sigue.
     jugador.strikes = (jugador.strikes ?? 0) + 1;
-    if (jugador.strikes >= STRIKES) {
+    if (RELOJ.strikes > 0 && jugador.strikes >= RELOJ.strikes) {
       room.game.saltadoPorTiempo = {
         seat,
         username: jugador?.username ?? 'Un jugador',
         n: (room.game.saltadoPorTiempo?.n ?? 0) + 1,
         strikes: jugador.strikes,
-        tope: STRIKES,
+        tope: RELOJ.strikes,
         perdio: true
       };
       this.abandonarPartida(room.code, playerId);
       return;
     }
 
-    const r = room.game.timeout(playerId);
-    if (r?.ok === false) {
-      console.error('No se pudo aplicar el tiempo agotado:', r.error);
-      return;
+    // LA MESA JUEGA POR TI (seccion 195). Cada TIMEOUT del motor hace UNA cosa
+    // (una ficha, una del pozo, o pasar); en 1 contra 1 levantar del pozo no
+    // cede el turno, asi que se repite hasta que el turno pase o la partida
+    // termine. El tope es por si acaso: el pozo no tiene mas de 14.
+    let cuantas = 0;
+    while (room.game.status === 'playing' && room.players[room.game.state.turn]?.id === playerId && cuantas < 30) {
+      const r = room.game.timeout(playerId);
+      cuantas += 1;
+      if (r?.ok === false) {
+        console.error('No se pudo aplicar el tiempo agotado:', r.error);
+        break;
+      }
     }
 
-    // Para que en la pantalla se entienda POR QUE salto el turno. Sin esto el
-    // turno cambia solo y parece un error del juego.
+    // Para que en la pantalla se entienda POR QUE se jugo solo. Sin esto la
+    // ficha aparece y parece un error del juego.
     room.game.saltadoPorTiempo = {
       seat,
       username: jugador?.username ?? 'Un jugador',
       n: (room.game.saltadoPorTiempo?.n ?? 0) + 1,
       strikes: jugador.strikes,
-      tope: STRIKES
+      tope: RELOJ.strikes || null,
+      jugoLaMesa: true
     };
 
     this.broadcastState(room);
