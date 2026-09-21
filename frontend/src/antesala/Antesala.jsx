@@ -8,6 +8,7 @@ import { identidad } from '../umbral/identidad.js';
 import PuertaDelSalon from '../salon/PuertaDelSalon.jsx';
 import Salon from '../salon/Salon.jsx';
 import RetoEntrante from '../components/notificaciones/RetoEntrante.jsx';
+import PuertasDeLaCasa from '../casa/PuertasDeLaCasa.jsx';
 import IdentidadLigera from '../umbral/IdentidadLigera.jsx';
 import MesaConSillas, { SILLAS_1V1, SILLAS_2V2 } from './MesaConSillas.jsx';
 import Tablon from './Tablon.jsx';
@@ -220,11 +221,11 @@ export default function Antesala() {
     : '#';
 
   return (
-    <div className="relative min-h-[100dvh] overflow-hidden bg-[#08120c] text-domino-cream">
+    <div className="relative flex min-h-[100dvh] flex-col bg-[#08120c] text-domino-cream">
       <div className="felt-tela absolute inset-0 opacity-80" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-[#08120c]/60 to-[#08120c]" />
 
-      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 pb-6 pt-5">
+      <div className="relative mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-6 pt-5">
         <header className="flex items-center justify-between">
           <button type="button" onClick={() => navigate('/')} aria-label="Volver" className="text-3xl leading-none text-domino-accent">‹</button>
           <span className="text-[11px] font-bold tracking-[0.35em] text-domino-accent/90">CLUB DE DOMINÓ</span>
@@ -348,6 +349,8 @@ export default function Antesala() {
         onCerrar={() => { setPidiendoIdentidad(false); if (!identidad() && !conCuenta) navigate('/'); }}
         onListo={(id) => { setPidiendoIdentidad(false); if (id) setYo(id); }}
       />
+      {/* El dock de la casa (seccion 197); mientras la mesa espera, tambien. */}
+      <PuertasDeLaCasa activa="jugar" />
       <Salon abierto={salonAbierto} onCerrar={() => setSalonAbierto(false)} />
       <RetoEntrante />
     </div>

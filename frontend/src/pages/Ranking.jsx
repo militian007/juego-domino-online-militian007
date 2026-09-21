@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import Avatar from '../components/game/Avatar.jsx';
 import MesaConSillas from '../antesala/MesaConSillas.jsx';
 import { identidad } from '../umbral/identidad.js';
+import PuertasDeLaCasa from '../casa/PuertasDeLaCasa.jsx';
 
 /**
  * EL CUADRO DE HONOR, vestido de club (seccion 193, ficha 4.1 de la plantilla).
@@ -99,11 +100,11 @@ export default function Ranking() {
       : `${datos?.clasificados ?? 0} ${datos?.clasificados === 1 ? 'JUGADOR CLASIFICADO' : 'JUGADORES CLASIFICADOS'}`;
 
   return (
-    <div className="relative min-h-[100dvh] overflow-hidden bg-[#08120c] text-domino-cream">
+    <div className="relative flex min-h-[100dvh] flex-col bg-[#08120c] text-domino-cream">
       <div className="felt-tela absolute inset-0 opacity-80" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-[#08120c]/65 to-[#08120c]" />
 
-      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 pb-6 pt-5">
+      <div className="relative mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-6 pt-5">
         <header className="flex items-center justify-between">
           <button type="button" onClick={() => navigate(-1)} aria-label="Volver" className="text-3xl leading-none text-domino-accent">‹</button>
           <span className="whitespace-nowrap text-[10px] font-bold tracking-[0.3em] text-domino-accent/90">EL CUADRO DE HONOR</span>
@@ -190,6 +191,7 @@ export default function Ranking() {
           </Link>
         )}
       </div>
+      <PuertasDeLaCasa activa="" />
     </div>
   );
 }

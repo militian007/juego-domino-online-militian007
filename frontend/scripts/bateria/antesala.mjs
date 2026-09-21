@@ -31,7 +31,7 @@ const texto = (page) => page.evaluate(() => document.body.innerText);
 const raul = await invitado('Raúl', 'catire');
 await raul.goto('http://localhost:5173/', { waitUntil: 'networkidle2' });
 await sleep(600);
-await clic(raul, 'button.btn-primary');          // JUEGA YA -> /mesa
+await clic(raul, '[data-juega-ya]');              // la pancarta JUEGA YA -> /mesa
 await raul.waitForSelector('[data-silla="0"]', { timeout: 15000 });
 await sleep(800);
 await foto(raul, '01-arma-2v2');

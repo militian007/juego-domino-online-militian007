@@ -8388,3 +8388,43 @@ mensaje en 10 s silenciado, lista de en linea con retrato del invitado, suplanta
 imposible, socio baja/suspende/levanta y el suspendido lee el mensaje al momento). Fotos
 a 375 px: puerta en el umbral, hoja de invitado, hoja de cuenta, En linea, hoja de retar,
 reto entrante en el otro telefono.
+
+## 197. El umbral con la receta de la casa, y el dock (2026-09-20)
+
+Raul: "por que no vamos haciendo la landing del domino para que se asemeje a la del ludo y
+del truco". Se miraron las tres puertas juntas a 375 px: las otras dos comparten el nombre
+en hueso ("LA CASA DE PRIVO PRESENTA · LA MESA DE ..."), botones que son OBJETOS (pancarta,
+losas, pizarra), la capsula del salon y el dock de abajo. De tres mockups (A pancarta y
+losas como el ludo, B pizarra como el truco, C pancarta con pizarrita) Raul escogio la A con
+dos pedidos: "las fichas de domino ponle los puntitos que no se repitan y que se muevan como
+el ludo, y la de MESA ONLINE ponle la mesita que hiciste".
+
+- `umbral/Umbral.jsx` rehecho: la portada D de escena; el nombre en hueso; la PANCARTA
+  JUEGA YA (la misma pieza del truco y del ludo, `public/umbral/pancarta-juega-ya.webp`)
+  bajando de sus cuerdas, meciendose, con la manito (`Pointer` de lucide); dos LOSAS
+  colgadas a la derecha: MESA ONLINE, que es la mesita de la antesala pintada sobre la
+  placa del ludo (nano banana con las dos referencias, croma recortado por TONO magenta:
+  la sombra purpura que el modelo pinta sobre el croma quedaba opaca si se recortaba por
+  distancia), y late con un resplandor cuando hay mas de uno en linea; y el "?" (COMO SE
+  JUEGA), que abre las reglas en una hoja con JUEGA YA al pie. Abajo a la izquierda, cuatro
+  fichas de hueso DISTINTAS (6-6, 3-5, 1-4, 0-2, de `tiles-hueso`, giradas para pararlas)
+  brincando por turnos como los peones. El lema: "se tranca, se pega y se cuentan los
+  puntos". En pantallas de 640 de alto las losas suben y se achican para no montarse.
+- `casa/DockDeLaCasa.jsx`: el dock de las cinco puertas, el mismo del truco y del ludo
+  (medallas de bronce troquelado, la encendida oro vivo con su destello; TORNEO es la losa
+  roja del rayo; JUGAR es una ficha 6-6 de hueso de verdad, que a 30 px se lee sola). Las
+  piezas de PANAS/CAJA/PERFIL son las del ludo (`public/umbral/ico-*.webp`).
+- `casa/PuertasDeLaCasa.jsx`: el dock ya cableado para las otras pantallas de la casa:
+  JUGAR → antesala; TORNEO → /torneos; PANAS → el salon abierto en "En linea"
+  (`Salon` acepta `pestanaInicial`); CAJA → /tienda con cuenta, /register sin; PERFIL →
+  /perfil con cuenta, la identidad ligera sin. Montado en la antesala (JUGAR encendida),
+  el Cuadro de Honor (ninguna) y Torneos (TORNEO).
+- La capsula "N en linea · CHAT" vive entre la escena y el dock, como en el ludo.
+
+Pendiente de piel: la pantalla de Torneos sigue siendo la de Jonathan (tarjetas beige); le
+toca el vestido de club cuando se arme el Relampago del domino (ficha 3.x de la plantilla).
+
+Probado: fotos a 375 y 360x640 (la losa late con dos en linea, las cuatro fichas distintas,
+"?" abre las reglas, PANAS abre el salon en "En linea", JUGAR lleva a /mesa, cero errores
+de consola); dock en antesala/cuadro/torneos con la puerta correcta encendida; bateria de
+la antesala (antesala, casa, fantasma) verde; `antesala.mjs` ahora toca `[data-juega-ya]`.

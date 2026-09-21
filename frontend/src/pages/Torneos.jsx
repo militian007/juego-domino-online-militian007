@@ -4,6 +4,7 @@ import { Trophy, Zap } from 'lucide-react';
 import { torneosApi } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { connectSocket } from '../services/socket.js';
+import PuertasDeLaCasa from '../casa/PuertasDeLaCasa.jsx';
 
 /**
  * La vitrina de torneos, con la forma de la de PrivoyTruco.
@@ -100,7 +101,7 @@ export default function Torneos() {
   };
 
   return (
-    <div className="min-h-[100svh] bg-domino-dark text-domino-cream">
+    <div className="flex min-h-[100svh] flex-col bg-domino-dark text-domino-cream">
       <header className="flex items-center justify-between border-b border-domino-accent/20 px-5 py-4 sm:px-8">
         <Link to="/" className="text-sm text-domino-cream/70 hover:text-domino-cream">←</Link>
         <span className="text-[11px] font-semibold tracking-[0.3em] text-domino-cream/50">
@@ -241,6 +242,8 @@ export default function Torneos() {
           </>
         )}
       </div>
+      <div className="mt-auto" />
+      <PuertasDeLaCasa activa="torneo" />
     </div>
   );
 }

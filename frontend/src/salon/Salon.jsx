@@ -33,7 +33,7 @@ const hora = (iso) => {
   return Number.isNaN(d.getTime()) ? '' : `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-export default function Salon({ abierto, onCerrar }) {
+export default function Salon({ abierto, onCerrar, pestanaInicial = 'chat' }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const conCuenta = haySesion() && user;
@@ -89,6 +89,11 @@ export default function Salon({ abierto, onCerrar }) {
   const cargarGente = useCallback(() => {
     connectSocket()?.emit('salon:gente', (r) => { if (r?.ok) setGente(r.gente ?? []); });
   }, []);
+
+  // La puerta PANAS del dock abre directo en «En linea».
+  useEffect(() => {
+    if (abierto) setPestana(pestanaInicial);
+  }, [abierto, pestanaInicial]);
 
   useEffect(() => {
     if (!abierto) return undefined;
