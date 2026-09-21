@@ -58,7 +58,7 @@ export function setupGameSocket(io, roomManager) {
     const tag = socket.isGuest ? 'invitado' : 'usuario';
     console.log(`🎮 ${socket.username} (${tag}) conectado (${socket.id})`);
 
-    socket.on('room:create', ({ mode, bot, modalidad, armada }, callback) => {
+    socket.on('room:create', ({ mode, bot, modalidad, armada, puntos }, callback) => {
       // Los modos contra bots no exponen a nadie a otro usuario, asi que un
       // invitado puede crearlos. Los que llevan humanos piden cuenta salvo con
       // la identidad ligera encendida (seccion 188).
@@ -74,6 +74,7 @@ export function setupGameSocket(io, roomManager) {
         const room = roomManager.createRoom({
           mode,
           modalidad,
+          puntos,
           hostId: socket.userId,
           hostUsername: socket.username,
           avatar: socket.retrato,
@@ -184,7 +185,7 @@ export function setupGameSocket(io, roomManager) {
 
     // El tablon: las mesas armadas, publicas, que todavia tienen silla.
     socket.on('mesas:listar', (callback) => {
-      callback?.({ ok: true, mesas: roomManager.mesasAbiertas() });
+      callback?.({ ok: true, mesas: roomManager.mesasAbiertas(), enJuego: roomManager.mesasEnJuego() });
     });
 
     socket.on('room:leave', ({ code }) => {

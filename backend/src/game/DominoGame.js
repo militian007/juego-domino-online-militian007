@@ -57,7 +57,7 @@ const STATUS_TO_PHASE = {
 };
 
 export class DominoGame {
-  constructor({ roomCode, mode, players, seed, modalidad }) {
+  constructor({ roomCode, mode, players, seed, modalidad, puntos }) {
     const config = MODE_CONFIG[mode];
     if (!config) throw new Error('Modo inválido');
 
@@ -73,6 +73,8 @@ export class DominoGame {
     // modalidad lo pida. Se apaga a mano para que la mesa no muestre un monton
     // vacio, que confunde mas de lo que informa.
     if (config.totalPlayers === 4) deLaModalidad.hasPool = false;
+    // A cuantos puntos (seccion 198): lo que escogio quien armo la mesa.
+    if (Number.isInteger(puntos) && puntos > 0) deLaModalidad.targetPoints = puntos;
     // Mockup del camino fijo (§175): solo si el servidor arranca con
     // DOMINO_CAMINO=telefono. La mesa y el bot lo leen del estado.
     // La culebra de la mesa (seccion 178): por defecto la regla intermedia

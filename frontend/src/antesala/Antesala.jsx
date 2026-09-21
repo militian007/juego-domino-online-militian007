@@ -51,6 +51,14 @@ export default function Antesala() {
   const [pidiendoIdentidad, setPidiendoIdentidad] = useState(false);
   const [salonAbierto, setSalonAbierto] = useState(false);
   const [modo, setModo] = useState('2v2');
+  // Las reglas de la mesa (seccion 198, Raul: «alli deben estar las opciones
+  // para armar la mesa, los modos de juego y eso»): modalidad y a cuantos
+  // puntos. Por defecto las de siempre: 1v1 con pozo, 2v2 a la tranca, a 100.
+  const [modalidad, setModalidad] = useState(null);
+  const [puntos, setPuntos] = useState(null);
+  const laModalidad = modalidad ?? (modo === '1v1' ? 'pozo' : 'tranca');
+  const losPuntos = puntos ?? (laModalidad === 'cinco' ? 200 : 100);
+  const [enJuego, setEnJuego] = useState([]);
   const [panaEn, setPanaEn] = useState(() => new Set());
   const [sillaAbierta, setSillaAbierta] = useState(null);
   const [sala, setSala] = useState(null);
@@ -102,7 +110,7 @@ export default function Antesala() {
     const pedir = () => {
       const socket = socketRef.current;
       if (!socket) return;
-      socket.emit('mesas:listar', (r) => { if (vivo && r?.ok) setMesas(r.mesas || []); });
+      socket.emit('mesas:listar', (r) => { if (vivo && r?.ok) { setMesas(r.mesas || []); setEnJuego(r.enJuego || []); } });
     };
     pedir();
     const reloj = setInterval(pedir, MS_TABLON);
@@ -183,7 +191,7 @@ export default function Antesala() {
     setError('');
     const paraPanas = panaEn.size;
     const casaEn = sillas.filter((a) => a !== 0 && !panaEn.has(a));
-    socket.emit('room:create', { mode: modo, armada: { casaEn, publica: paraPanas > 0 } }, (r) => {
+    socket.emit('room:create', { mode: modo, modalidad: laModalidad, puntos: losPuntos, armada: { casaEn, publica: paraPanas > 0 } }, (r) => {
       if (!r?.ok && r?.error === 'YA_TIENES_MESA' && r.code) { navigate(`/game?join=${r.code}`, { replace: true }); return; }
       if (!r?.ok) { setOcupado(false); setError(r?.error || 'No se pudo abrir la mesa'); return; }
       if (paraPanas === 0) {
@@ -244,18 +252,33 @@ export default function Antesala() {
         </h1>
 
         {!sala && (
-          <div className="mt-3 flex w-max overflow-hidden rounded-full border border-domino-accent/60">
-            {['1v1', '2v2'].map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => { setModo(m); setPanaEn(new Set()); }}
-                className={`px-5 py-2 text-[12px] font-extrabold tracking-[0.2em] ${modo === m ? 'bg-domino-accent text-domino-dark' : 'text-domino-accent'}`}
-              >
-                {m === '1v1' ? '1 VS 1' : '2 VS 2'}
-              </button>
-            ))}
-          </div>
+          <>
+            <div className="mt-3 flex w-max overflow-hidden rounded-full border border-domino-accent/60">
+              {['1v1', '2v2'].map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => { setModo(m); setPanaEn(new Set()); setModalidad(null); setPuntos(null); }}
+                  className={`px-5 py-2 text-[12px] font-extrabold tracking-[0.2em] ${modo === m ? 'bg-domino-accent text-domino-dark' : 'text-domino-accent'}`}
+                >
+                  {m === '1v1' ? '1 VS 1' : '2 VS 2'}
+                </button>
+              ))}
+            </div>
+            {/* Las reglas de la mesa: modalidad y puntos, en fichas. */}
+            <div className="mt-2.5 flex flex-col gap-1.5" data-reglas>
+              <div className="flex items-center gap-1.5">
+                {MODALIDADES.map((m) => (
+                  <Fichita key={m.id} on={laModalidad === m.id} onClick={() => { setModalidad(m.id); setPuntos(null); }} data-modalidad={m.id}>{m.nombre}</Fichita>
+                ))}
+              </div>
+              <div className="flex items-center gap-1.5">
+                {PUNTOS.map((n) => (
+                  <Fichita key={n} on={losPuntos === n} onClick={() => setPuntos(n)} data-puntos={n}>a {n}</Fichita>
+                ))}
+              </div>
+            </div>
+          </>
         )}
 
         <MesaConSillas
@@ -329,7 +352,7 @@ export default function Antesala() {
                 TENGO UN CÓDIGO
               </button>
             )}
-            <Tablon mesas={mesas} onEntrar={entrar} ocupado={ocupado} />
+            <Tablon mesas={mesas} enJuego={enJuego} onEntrar={entrar} ocupado={ocupado} />
             {/* La puerta del salon (seccion 196): el chat y quien esta, como en el truco. */}
             <div className="mt-4 flex justify-center">
               <PuertaDelSalon onAbrir={() => setSalonAbierto(true)} />
@@ -354,5 +377,28 @@ export default function Antesala() {
       <Salon abierto={salonAbierto} onCerrar={() => setSalonAbierto(false)} />
       <RetoEntrante />
     </div>
+  );
+}
+
+/** Las modalidades de la casa y a cuantos puntos se puede jugar (las mismas del servidor). */
+const MODALIDADES = [
+  { id: 'pozo', nombre: 'Con pozo' },
+  { id: 'tranca', nombre: 'Tranca' },
+  { id: 'cinco', nombre: 'Cinco' }
+];
+const PUNTOS = [50, 100, 150, 200];
+
+/** Una ficha de escoger: bronce lleno si esta puesta, contorno si no. */
+function Fichita({ on, onClick, children, ...resto }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      className={`rounded-full border px-3 py-1.5 text-[11px] font-extrabold tracking-[0.08em] ${on ? 'border-domino-accent bg-domino-accent text-domino-dark' : 'border-domino-accent/50 bg-black/30 text-domino-accent'}`}
+      {...resto}
+    >
+      {children}
+    </button>
   );
 }

@@ -1,4 +1,4 @@
-import { randomSeed } from '@privoytruco/domino-engine';
+import { randomSeed, MODALIDADES, overridesDeModalidad } from '@privoytruco/domino-engine';
 import { elegirBots } from './game/bots.js';
 import { DominoGame } from './game/DominoGame.js';
 import { Bot } from './game/Bot.js';
@@ -72,6 +72,11 @@ const entero = (llave, porDefecto, minimo = 0) => {
   return Number.isFinite(n) && n >= minimo ? n : porDefecto;
 };
 /** Las perillas del reloj, en un objeto para que las pruebas (y manana la Config) las muevan. */
+/** A cuantos puntos se puede armar una mesa (seccion 198). */
+export const PUNTOS_DE_LA_CASA = [50, 100, 150, 200];
+export const puntosValidos = (n) => PUNTOS_DE_LA_CASA.includes(Number(n));
+export const puntosPorDefecto = (modalidad) => overridesDeModalidad(modalidad).targetPoints ?? 100;
+
 export const RELOJ = {
   strikes: entero('DOMINO_STRIKES', 0, 0),
   cortoMs: entero('DOMINO_RELOJ_CORTO_MS', 15000, 3000),
@@ -116,10 +121,11 @@ export class RoomManager {
     return code;
   }
 
-  createRoom({ mode, hostId, hostUsername, modalidad, avatar, armada }) {
+  createRoom({ mode, hostId, hostUsername, modalidad, avatar, armada, puntos }) {
     const config = MODES[mode];
     if (!config) throw new Error('Modo inválido');
     const code = armada ? this.generarCodigoCorto() : this.generateCode();
+    const laModalidad = esModalidad(modalidad) ? modalidad : MODALIDAD_POR_DEFECTO[mode];
 
     const room = {
       code,
@@ -127,7 +133,10 @@ export class RoomManager {
       // Con que reglas se juega esta mesa (§128). Se guarda en la sala y no en
       // la partida porque hay que saberlo ANTES de repartir: quien entra por el
       // codigo tiene que ver a que lo estan invitando.
-      modalidad: esModalidad(modalidad) ? modalidad : MODALIDAD_POR_DEFECTO[mode],
+      modalidad: laModalidad,
+      // A cuantos puntos (seccion 198): el que arma la mesa escoge entre los de
+      // la casa; si no toca nada, los de la modalidad (100; el Cinco a 200).
+      puntos: puntosValidos(puntos) ? Number(puntos) : puntosPorDefecto(laModalidad),
       config,
       players: [
         { id: hostId, username: hostUsername, isBot: false, socketId: null, avatar, asiento: 0 }
@@ -316,6 +325,7 @@ export class RoomManager {
     const nueva = this.createRoom({
       mode: vieja.mode,
       modalidad: vieja.modalidad,
+      puntos: vieja.puntos,
       hostId: dueno.id,
       hostUsername: dueno.username,
       avatar: dueno.avatar,
@@ -351,12 +361,39 @@ export class RoomManager {
         code: room.code,
         mode: room.mode,
         modeLabel: room.config.label,
+        modalidad: room.modalidad,
+        modalidadLabel: MODALIDADES[room.modalidad]?.label ?? room.modalidad,
+        puntos: room.puntos,
         sillas: this.sillas(room),
         libres: this.sillasLibres(room),
         creadaEn: room.creadaEn
       });
     }
     return lista.sort((a, b) => b.creadaEn - a.creadaEn);
+  }
+
+  /**
+   * LO QUE SE ESTA JUGANDO AHORA (seccion 198, copiado del truco: «que se
+   * vean en la lista para que no parezca eso vacio cuando hay gente
+   * jugando»). Solo mesas con al menos una persona y partida sin terminar.
+   * A una mesa que ya arranco no se entra: estos renglones no llevan boton.
+   */
+  mesasEnJuego() {
+    const lista = [];
+    for (const room of this.rooms.values()) {
+      if (!room.started || !room.game || room.game.status === 'game-over') continue;
+      if (!room.players.some((p) => !p.isBot)) continue;
+      lista.push({
+        code: room.code,
+        mode: room.mode,
+        modalidadLabel: MODALIDADES[room.game.modalidad]?.label ?? room.game.modalidad,
+        puntos: room.game.state?.config?.targetPoints ?? room.puntos ?? null,
+        jugadores: room.players.map((p) => ({ username: p.username, avatar: p.avatar || p.username, casa: Boolean(p.isBot), asiento: p.asiento ?? room.players.indexOf(p) })),
+        marcador: room.game.teamScores ?? null,
+        empezoEn: room.game.empezoEn ?? null
+      });
+    }
+    return lista.sort((a, b) => (b.empezoEn ?? 0) - (a.empezoEn ?? 0));
   }
 
   joinRoom(code, { userId, username, socketId, avatar }) {
@@ -623,9 +660,11 @@ export class RoomManager {
       roomCode: room.code,
       mode: room.mode,
       modalidad: room.modalidad,
+      puntos: room.puntos,
       players: room.players,
       seed: room.seed
     });
+    room.game.empezoEn = Date.now();
     room.game.graciaMs = room.config.reconnectMs ? GRACIA_MS : null;
     room.game.armada = Boolean(room.armada);
     room.started = true;

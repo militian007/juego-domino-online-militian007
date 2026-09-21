@@ -8428,3 +8428,31 @@ Probado: fotos a 375 y 360x640 (la losa late con dos en linea, las cuatro fichas
 "?" abre las reglas, PANAS abre el salon en "En linea", JUGAR lleva a /mesa, cero errores
 de consola); dock en antesala/cuadro/torneos con la puerta correcta encendida; bateria de
 la antesala (antesala, casa, fantasma) verde; `antesala.mjs` ahora toca `[data-juega-ya]`.
+
+## 198. Arma tu mesa con sus reglas, y el tablon con lo que se juega (2026-09-21)
+
+Raul, viendo tres mockups del salon como el del truco: "me encanta demasiado el B pero alli
+deben estar las opciones para armar la mesa, los modos de juego y eso, y cuando salgan las
+disponibles tambien que salga que modo es, para cuantos puntos". La B es la mesita con las
+sillas primero (la pantalla de siempre) y las listas debajo.
+
+- **Las reglas de la mesa**, en fichas bajo 1 VS 1 / 2 VS 2: la modalidad (Con pozo, Tranca,
+  Cinco) y a cuantos puntos (50, 100, 150, 200). Sin tocar nada, lo de siempre: 1v1 con
+  pozo, 2v2 a la tranca, a 100; el Cinco arranca a 200 (§128). Viajan en `room:create`
+  (`modalidad`, `puntos`); la sala los guarda (`room.puntos`, validado contra
+  `PUNTOS_DE_LA_CASA`, si no cae al de la modalidad) y `DominoGame` los pone en
+  `targetPoints`. La revancha hereda modalidad y puntos.
+- **El tablon** (`Tablon.jsx` rehecho como el salon del truco): MESAS ESPERANDO GENTE
+  (retratos de los sentados, un "+" punteado por silla libre, "Mesa de Chuo · 2 vs 2 ·
+  Tranca · a 150 · faltan 2 · XVND" y ENTRAR) y debajo JUGANDOSE AHORA ("Nano vs La Negra
+  Paula · 1 vs 1 · Cinco · a 200 · van 0 a 10 · hace 1 min"), sin boton: a una mesa que ya
+  arranco no se entra (cuando haya espectador, ahi va MIRAR). `mesasEnJuego()` en el
+  RoomManager: salas arrancadas con al menos una persona y partida sin terminar, con
+  jugadores por silla, marcador por equipos y `empezoEn`; `mesas:listar` devuelve
+  `{ mesas, enJuego }`.
+
+Probado: 11 pruebas nuevas en `test.js` (147 en verde: defaults por modalidad, 150 si lo
+pide, 999 cae a 100, el tablon dice modalidad y puntos, la partida se juega a 150, la mesa
+arrancada sale en "jugandose ahora" con sus 4 sillas y ya no en el tablon); escena con
+puppeteer (Chuo arma 2v2 tranca a 150 con dos sillas de pana; Nano juega 1v1 al Cinco y la
+placa dice A 200; Raul ve las dos listas con sus reglas); bateria de la antesala verde.

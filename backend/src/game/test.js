@@ -627,6 +627,29 @@ console.log('TEST: Se acabo el tiempo y la mesa juega por ti (seccion 195)');
   assert(juego.status === 'playing', 'la partida sigue');
 }
 
+console.log('TEST: Modalidad y puntos en la mesa armada, y lo que se juega ahora (seccion 198)');
+{
+  const rm = new RoomManager();
+  const a = rm.createRoom({ mode: '1v1', hostId: 'a', hostUsername: 'A', armada: { casaEn: [], publica: true } });
+  assert(a.modalidad === 'pozo' && a.puntos === 100, 'sin tocar nada: 1v1 con pozo a 100');
+  const c = rm.createRoom({ mode: '1v1', hostId: 'c', hostUsername: 'C', modalidad: 'cinco', armada: { casaEn: [], publica: true } });
+  assert(c.puntos === 200, 'el Cinco arranca a 200');
+  const t = rm.createRoom({ mode: '2v2', hostId: 't', hostUsername: 'T', modalidad: 'tranca', puntos: 150, armada: { casaEn: [1], publica: true } });
+  assert(t.puntos === 150, 'a 150 si lo pide');
+  const x = rm.createRoom({ mode: '2v2', hostId: 'x', hostUsername: 'X', puntos: 999, armada: { casaEn: [1, 2, 3], publica: true } });
+  assert(x.puntos === 100, 'un numero que no es de la casa cae al de la modalidad');
+  const fila = rm.mesasAbiertas().find((m) => m.code === t.code);
+  assert(fila.modalidadLabel === 'Tranca' && fila.puntos === 150, 'el tablon dice modalidad y puntos');
+  assert(rm.mesasEnJuego().length === 0, 'nada se juega todavia');
+  rm.startGame(t.code);
+  assert(t.game.state.config.targetPoints === 150, 'la partida se juega a 150');
+  const enJuego = rm.mesasEnJuego();
+  assert(enJuego.length === 1 && enJuego[0].code === t.code, 'la mesa arrancada sale en "jugandose ahora"');
+  assert(enJuego[0].jugadores.length === 4 && enJuego[0].jugadores.filter((j) => j.casa).length === 3, 'con sus cuatro sillas, tres de la casa');
+  assert(enJuego[0].modalidadLabel === 'Tranca' && enJuego[0].puntos === 150 && enJuego[0].marcador[1] === 0 && enJuego[0].marcador[2] === 0, 'con modalidad, puntos y marcador');
+  assert(rm.mesasAbiertas().every((m) => m.code !== t.code), 'y ya no esta en el tablon');
+}
+
 console.log('TEST: La moderacion del salon (seccion 196)');
 {
   const a = moderar('escribeme al 0414-1234567 o a www.fichas.com');
