@@ -135,11 +135,14 @@ export default function Umbral() {
         <p className="umbral-sube umbral-lema absolute inset-x-0 z-[3] m-0 px-4 text-center text-[12px] font-bold" style={{ animationDelay: '500ms', textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}>
           El dominó venezolano de verdad: <b className="text-[#F0DCA6]">se tranca, se pega y se cuentan los puntos.</b>
         </p>
+
+        {/* LA CAPSULA DEL SALON flota sobre la escena, pegada al dock (Raul, 21-sep:
+            la franja aparte «no tiene continuidad»). */}
+        <div className="umbral-sube absolute inset-x-0 z-[5] flex justify-center" style={{ bottom: 8, animationDelay: '550ms' }}>
+          <PuertaDelSalon onAbrir={() => setSalon('chat')} />
+        </div>
       </div>
 
-      <div className="flex flex-none justify-center bg-[#143024] pb-1 pt-1.5">
-        <PuertaDelSalon onAbrir={() => setSalon('chat')} />
-      </div>
       <DockDeLaCasa activa="jugar" onIr={irA} />
 
       {reglas && (

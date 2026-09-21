@@ -889,11 +889,11 @@
 .umbral-losas { top: 48%; }
 .umbral-losas button { width: 84px; }
 .umbral-losas img { width: 84px; }
-.umbral-fichas { bottom: 10.5%; }
-.umbral-lema { bottom: 3.5%; }
+.umbral-fichas { bottom: 118px; }
+.umbral-lema { bottom: 62px; }
 @media (max-height: 700px) {
   .umbral-losas { top: 44%; right: 8px; }
   .umbral-losas button, .umbral-losas img { width: 68px; }
-  .umbral-fichas { bottom: 12%; transform: scale(0.8); transform-origin: 0 100%; }
-  .umbral-lema { bottom: 2.5%; font-size: 11px; padding-right: 92px; text-align: left; padding-left: 20px; }
+  .umbral-fichas { bottom: 108px; transform: scale(0.8); transform-origin: 0 100%; }
+  .umbral-lema { bottom: 58px; font-size: 11px; padding-right: 92px; text-align: left; padding-left: 20px; }
 }
