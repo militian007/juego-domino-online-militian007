@@ -833,3 +833,11 @@
 @media (prefers-reduced-motion: reduce) {
   .iman-brillo { animation: none; }
 }
+
+/* La puerta del salon (seccion 196): el punto verde que respira. */
+.salon-late { animation: salon-late 1.9s ease-in-out infinite; }
+@keyframes salon-late {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.78); }
+}
+@media (prefers-reduced-motion: reduce) { .salon-late { animation: none; } }

@@ -5,6 +5,9 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { connectSocket, idDeInvitado } from '../services/socket.js';
 import { haySesion } from '../services/api.js';
 import { identidad } from '../umbral/identidad.js';
+import PuertaDelSalon from '../salon/PuertaDelSalon.jsx';
+import Salon from '../salon/Salon.jsx';
+import RetoEntrante from '../components/notificaciones/RetoEntrante.jsx';
 import IdentidadLigera from '../umbral/IdentidadLigera.jsx';
 import MesaConSillas, { SILLAS_1V1, SILLAS_2V2 } from './MesaConSillas.jsx';
 import Tablon from './Tablon.jsx';
@@ -45,6 +48,7 @@ export default function Antesala() {
   const { user } = useAuth();
   const [yo, setYo] = useState(() => identidad());
   const [pidiendoIdentidad, setPidiendoIdentidad] = useState(false);
+  const [salonAbierto, setSalonAbierto] = useState(false);
   const [modo, setModo] = useState('2v2');
   const [panaEn, setPanaEn] = useState(() => new Set());
   const [sillaAbierta, setSillaAbierta] = useState(null);
@@ -325,6 +329,10 @@ export default function Antesala() {
               </button>
             )}
             <Tablon mesas={mesas} onEntrar={entrar} ocupado={ocupado} />
+            {/* La puerta del salon (seccion 196): el chat y quien esta, como en el truco. */}
+            <div className="mt-4 flex justify-center">
+              <PuertaDelSalon onAbrir={() => setSalonAbierto(true)} />
+            </div>
           </>
         )}
 
@@ -340,6 +348,8 @@ export default function Antesala() {
         onCerrar={() => { setPidiendoIdentidad(false); if (!identidad() && !conCuenta) navigate('/'); }}
         onListo={(id) => { setPidiendoIdentidad(false); if (id) setYo(id); }}
       />
+      <Salon abierto={salonAbierto} onCerrar={() => setSalonAbierto(false)} />
+      <RetoEntrante />
     </div>
   );
 }

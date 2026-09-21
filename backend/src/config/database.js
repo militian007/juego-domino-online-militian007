@@ -108,6 +108,25 @@ export async function initDatabase() {
 
     CREATE INDEX IF NOT EXISTS idx_chat_global_creado ON chat_global(id);
 
+    -- EL SALON (seccion 196, copiado del truco). Los mensajes que el socio
+    -- bajo: no se borran, se esconden. Va en tabla aparte porque chat_global ya
+    -- existe en produccion y CREATE TABLE IF NOT EXISTS no agrega columnas.
+    CREATE TABLE IF NOT EXISTS chat_ocultos (
+      mensaje_id INTEGER PRIMARY KEY
+    );
+
+    -- Los silencios: uno por persona, con hasta cuando, cuantas veces (para
+    -- que el castigo escale) y el motivo. Si el motivo es una frase larga, es
+    -- el mensaje que el socio le escribio al suspenderlo y el jugador lo lee.
+    CREATE TABLE IF NOT EXISTS chat_silencios (
+      user_id INTEGER PRIMARY KEY,
+      hasta TIMESTAMP NOT NULL,
+      veces INTEGER NOT NULL DEFAULT 1,
+      motivo VARCHAR(300),
+      por_user_id INTEGER,
+      actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     -- El buzon de cada uno: retos que le hacen, torneos, y lo que venga.
     -- La columna datos lleva un JSON con lo que necesite cada tipo (el id del
     -- reto, el codigo de la sala...). Va como texto a proposito: los tipos

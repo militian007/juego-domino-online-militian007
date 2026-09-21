@@ -2,116 +2,109 @@ import * as ChatGlobal from '../models/ChatGlobal.js';
 import * as Preferencia from '../models/Preferencia.js';
 import { nombreDe } from '../models/Titulo.js';
 import * as pase from '../services/pase.js';
+import { limpiar as moderar, esSpam, duracionSilencio, faltaEnPalabras } from '../services/moderacionDelChat.js';
 
 /**
- * El chat del menu principal.
+ * EL SALON (seccion 196): el chat del club fuera de la mesa, copiado del
+ * truco (Raul, 20-sep: «copiate del privoytruco»). Dos pestanas: la
+ * conversacion y quien esta en linea, para conseguir con quien jugar.
  *
- * Decision de Jonathan (4 de septiembre de 2026): **escribe el que tiene
- * cuenta, el invitado lee**. El motivo es de moderacion: si cualquiera escribe
- * sin cuenta, cuando alguien se porta mal no hay a quien callar, porque se va y
- * vuelve siendo otro. Y de paso es un motivo para registrarse.
+ * Escribe el que tiene cuenta, el invitado lee (regla del truco y de Jonathan,
+ * por lo mismo: sin cuenta no hay a quien callar, porque se va y vuelve
+ * siendo otro; y de paso es un motivo para registrarse).
  *
- * ## Los frenos
+ * ## Los frenos, todos en el servidor
  *
- * Un chat abierto a internet sin frenos se llena de basura el primer dia. Van
- * tres, y ninguno de los tres se puede saltear desde el navegador porque todos
- * se aplican en el servidor:
+ * 1. Largo maximo (240): un parrafo no es conversacion, es un panfleto.
+ * 2. La moderacion del truco (`services/moderacionDelChat.js`): se quitan
+ *    enlaces, correos y telefonos; las groserias se tapan con asteriscos; los
+ *    gritos se bajan a minusculas. Nunca se rechaza por contenido.
+ * 3. Spam (cinco en diez segundos, o el mismo mensaje tres veces): silencio
+ *    de 2 min que se duplica al reincidir, con techo de un dia. Se guarda en
+ *    la base para que no se esquive cerrando la pestana.
+ * 4. Cada mensaje vive dos horas (`DOMINO_CHAT_VIDA_MIN`) y despues se borra.
  *
- * 1. Largo maximo, para que nadie pegue una pared de texto.
- * 2. Un mensaje cada segundo y medio, para que nadie inunde la lista.
- * 3. Quince mensajes por minuto, para el que respeta el segundo y medio pero
- *    igual escribe sin parar.
+ * ## Los socios
+ *
+ * Pueden bajar un mensaje, callar diez minutos, o suspender por dias con un
+ * mensaje que el jugador lee. Hasta que la plataforma traiga los roles, socio
+ * es quien este en `DOMINO_SOCIOS` (nombres de cuenta separados por coma).
  */
 
-const ESPERA_ENTRE_MENSAJES_MS = 1500;
-const MAXIMO_POR_MINUTO = 15;
+const SOCIOS = new Set(
+  String(process.env.DOMINO_SOCIOS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+);
 
 /**
- * Cuando le toca hablar a cada uno.
- *
- * Va por id de cuenta y NO se borra al desconectarse. Si se borrara, el freno
- * no serviria para nada: al que lo frenan cierra la pestaña, vuelve a entrar y
- * sigue inundando el chat. Se limpia sola por tiempo, mas abajo.
- */
-const ultimoMensaje = new Map();
-const mensajesDelMinuto = new Map();
-
-// Barrido cada cinco minutos para que estos mapas no crezcan para siempre. Se
-// tira lo de quien no escribe hace rato, que ya no tiene freno que aplicar.
-const barrido = setInterval(() => {
-  const ahora = Date.now();
-  for (const [id, cuando] of ultimoMensaje) {
-    if (ahora - cuando > 5 * 60_000) {
-      ultimoMensaje.delete(id);
-      mensajesDelMinuto.delete(id);
-    }
-  }
-}, 5 * 60_000);
-
-// Sin esto el proceso no termina nunca al apagar el servidor.
-barrido.unref?.();
-
-const puedeEscribir = (userId) => {
-  const ahora = Date.now();
-
-  const anterior = ultimoMensaje.get(userId) ?? 0;
-  if (ahora - anterior < ESPERA_ENTRE_MENSAJES_MS) {
-    return 'Espera un segundo antes de escribir otra vez';
-  }
-
-  const recientes = (mensajesDelMinuto.get(userId) ?? []).filter((t) => ahora - t < 60_000);
-  if (recientes.length >= MAXIMO_POR_MINUTO) {
-    return 'Estás escribiendo demasiado rápido, espera un minuto';
-  }
-
-  ultimoMensaje.set(userId, ahora);
-  mensajesDelMinuto.set(userId, [...recientes, ahora]);
-  return null;
-};
-
-/**
- * Quien es el que habla.
- *
- * Se lee de lo que ya dejo puesto el middleware del socket al conectarse, que
- * es quien verifica el token firmado. NO se vuelve a verificar aca a proposito:
- *
- * El primer intento tenia su propia copia del secreto, y la copia decia
- * `dev-secret-change-me` mientras el resto del proyecto usa `dev-secret`. En
- * local, donde la variable de entorno no esta puesta, el resultado era que
- * NINGUNA cuenta podia escribir: el token valia para el juego y no valia para
- * el chat. Un secreto repetido en dos archivos es un secreto que en algun
- * momento va a estar distinto en los dos.
- *
- * El nombre tampoco se toma de lo que manda el navegador: viene del token que
- * ya verifico el middleware. Si se confiara en lo que llega, cualquiera
- * escribiria haciendose pasar por otro con solo cambiar un campo.
- */
-/**
- * Le pega a cada mensaje el titulo que eligio mostrar quien lo escribio.
- *
- * Va en una sola consulta para toda la tanda: preguntar uno por uno seria una
- * consulta por mensaje cada vez que alguien abre el chat.
+ * Le pega a cada mensaje el titulo que eligio mostrar quien lo escribio, en una
+ * sola consulta para toda la tanda.
  */
 const conTitulos = async (mensajes) => {
   const claves = await Preferencia.titulosDe(mensajes.map((m) => m.userId));
   return mensajes.map((m) => ({ ...m, titulo: nombreDe(claves[Number(m.userId)]) }));
 };
 
+/**
+ * Quien es el que habla: lo que dejo puesto el middleware del socket, que es
+ * quien verifico el token. Ni se vuelve a verificar ni se le cree al navegador.
+ */
 const identificar = (socket) => {
   if (socket.isGuest) return null;
   if (!socket.userId || !socket.username) return null;
   return { userId: socket.userId, username: socket.username };
 };
 
-export function registrarChat(io, socket) {
+const esSocio = (socket) => Boolean(identificar(socket)) && SOCIOS.has(String(socket.username).toLowerCase());
+
+/** ¿Esta persona esta en una partida que no ha terminado? */
+const estaJugando = (roomManager, userId) => {
+  for (const room of roomManager?.rooms?.values?.() ?? []) {
+    if (!room.started || !room.game || room.game.status === 'game-over') continue;
+    if (room.players.some((p) => p.id === userId && !p.isBot)) return true;
+  }
+  return false;
+};
+
+/**
+ * Quien esta en linea ahora: una fila por persona (no por pestana), con si
+ * esta jugando. Los invitados salen con su retrato; solo las cuentas se pueden
+ * retar (el reto necesita a quien reclamarle).
+ */
+const gente = (io, roomManager) => {
+  const porId = new Map();
+  for (const s of io.sockets.sockets.values()) {
+    if (!s.userId || porId.has(s.userId)) continue;
+    porId.set(s.userId, {
+      id: s.userId,
+      username: s.username,
+      esInvitado: Boolean(s.isGuest),
+      retrato: s.retrato ?? null,
+      jugando: estaJugando(roomManager, s.userId)
+    });
+  }
+  return [...porId.values()].sort((a, b) => Number(a.jugando) - Number(b.jugando) || a.username.localeCompare(b.username));
+};
+
+const silencioParaElCliente = (s) => (s ? { hasta: s.hasta, mensaje: s.mensaje } : null);
+
+export function registrarChat(io, socket, roomManager) {
   // El historial lo recibe cualquiera, tenga cuenta o no: el invitado lee.
   socket.on('chat:entrar', async () => {
     try {
       socket.join('chat-global');
-      const mensajes = await ChatGlobal.ultimos();
+      const yo = identificar(socket);
+      const [mensajes, silencio] = await Promise.all([
+        ChatGlobal.ultimos(),
+        yo ? ChatGlobal.silencioVigente(yo.userId) : null
+      ]);
+      // Lo vencido se barre de vez en cuando, no en cada lectura.
+      if (Math.random() < 0.1) ChatGlobal.podar().catch(() => {});
       socket.emit('chat:historial', {
         mensajes: await conTitulos(mensajes),
-        puedoEscribir: Boolean(identificar(socket))
+        puedoEscribir: Boolean(yo),
+        miSilencio: silencioParaElCliente(silencio),
+        soySocio: esSocio(socket),
+        vidaMinutos: Math.round(ChatGlobal.vidaMs() / 60_000)
       });
     } catch (err) {
       console.error('Error cargando el chat:', err.message);
@@ -119,46 +112,126 @@ export function registrarChat(io, socket) {
     }
   });
 
-  socket.on('chat:enviar', async ({ texto } = {}) => {
+  socket.on('chat:enviar', async ({ texto } = {}, callback) => {
+    const fallo = (mensaje, extra = {}) => {
+      socket.emit('chat:error', { mensaje, ...extra });
+      callback?.({ ok: false, error: mensaje, ...extra });
+    };
+
     const quien = identificar(socket);
-    if (!quien) {
-      return socket.emit('chat:error', { mensaje: 'Inicia sesión para escribir' });
-    }
+    if (!quien) return fallo('Crea tu cuenta para escribir en el chat.', { code: 'invitado' });
 
     const limpio = ChatGlobal.limpiar(texto);
-    if (!limpio) {
-      return socket.emit('chat:error', { mensaje: 'El mensaje está vacío' });
-    }
-
-    const freno = puedeEscribir(quien.userId);
-    if (freno) {
-      return socket.emit('chat:error', { mensaje: freno });
-    }
+    if (!limpio) return fallo('El mensaje está vacío');
 
     try {
-      const mensaje = await ChatGlobal.guardar({
-        userId: quien.userId,
-        username: quien.username,
-        texto: limpio
-      });
+      const silencio = await ChatGlobal.silencioVigente(quien.userId);
+      if (silencio) {
+        const falta = new Date(silencio.hasta).getTime() - Date.now();
+        return fallo(
+          silencio.mensaje
+            ? `Tu chat está suspendido. ${silencio.mensaje} Vuelves a escribir en ${faltaEnPalabras(falta)}.`
+            : `Estás en silencio. Puedes volver a escribir en ${faltaEnPalabras(falta)}.`,
+          { code: 'silenciado', hasta: silencio.hasta }
+        );
+      }
 
-      io.to('chat-global').emit('chat:mensaje', {
-        ...mensaje,
-        titulo: nombreDe(await Preferencia.leer(quien.userId, Preferencia.TITULO))
-      });
+      const recientes = await ChatGlobal.recientesDe(quien.userId);
+      const spam = esSpam(limpio, { tiempos: recientes.map((r) => r.cuando), textos: recientes.map((r) => r.texto) });
+      if (spam) {
+        const veces = (await ChatGlobal.vecesSilenciado(quien.userId)) + 1;
+        const hasta = new Date(Date.now() + duracionSilencio(veces));
+        await ChatGlobal.silenciar({ userId: quien.userId, hasta, veces, motivo: spam, porUserId: null });
+        const falta = hasta.getTime() - Date.now();
+        return fallo(
+          spam === 'repetido'
+            ? `Ya dijiste eso. Descansa ${faltaEnPalabras(falta)}.`
+            : `Vas muy rápido. Descansa ${faltaEnPalabras(falta)}.`,
+          { code: 'silenciado', hasta: hasta.toISOString() }
+        );
+      }
+
+      const { visible, quitoContacto } = moderar(limpio);
+      if (!visible) return fallo('Ese mensaje quedó vacío.');
+
+      const mensaje = await ChatGlobal.guardar({ userId: quien.userId, username: quien.username, texto: visible });
+      const completo = { ...mensaje, titulo: nombreDe(await Preferencia.leer(quien.userId, Preferencia.TITULO)) };
+      io.to('chat-global').emit('chat:mensaje', completo);
+      // Para poder avisarle por que su mensaje salio distinto de lo que escribio.
+      callback?.({ ok: true, mensaje: completo, seQuitoContacto: quitoContacto });
 
       // Saludar en el chat es una de las misiones diarias del pase.
       pase.alEscribirEnElChat(quien.userId).catch(() => {});
-
-      // De vez en cuando se tira lo viejo. No en cada mensaje: seria una
-      // escritura de mas por cada cosa que alguien dice.
-      if (mensaje.id && mensaje.id % 50 === 0) {
-        ChatGlobal.podar().catch(() => {});
-      }
     } catch (err) {
       console.error('Error guardando mensaje del chat:', err.message);
-      socket.emit('chat:error', { mensaje: 'No se pudo enviar, prueba de nuevo' });
+      fallo('No se pudo enviar, prueba de nuevo');
     }
   });
 
+  // ------------------------------------------------------------ en linea
+  socket.on('salon:gente', (...args) => {
+    const callback = args.find((a) => typeof a === 'function');
+    callback?.({ ok: true, gente: gente(io, roomManager) });
+  });
+
+  // ------------------------------------------------------------ los socios
+  socket.on('salon:ocultar', async ({ mensajeId } = {}, callback) => {
+    if (!esSocio(socket)) return callback?.({ ok: false, error: 'Solo un socio' });
+    try {
+      await ChatGlobal.ocultar(mensajeId);
+      io.to('chat-global').emit('chat:oculto', { id: Number(mensajeId) });
+      callback?.({ ok: true });
+    } catch (err) {
+      console.error('No se pudo ocultar el mensaje:', err.message);
+      callback?.({ ok: false, error: 'No se pudo ocultar' });
+    }
+  });
+
+  /** Silencio corto (minutos) o suspension de dias con el mensaje que el jugador va a leer. */
+  socket.on('salon:silenciar', async ({ userId, minutos, dias, mensaje } = {}, callback) => {
+    if (!esSocio(socket)) return callback?.({ ok: false, error: 'Solo un socio' });
+    const destino = Number(userId);
+    const d = Number(dias);
+    const m = Number(minutos);
+    if (!Number.isInteger(destino) || destino <= 0) return callback?.({ ok: false, error: 'No sé a quién' });
+    if (!(Number.isInteger(d) && d >= 1 && d <= 365) && !(Number.isInteger(m) && m >= 1 && m <= 10080)) {
+      return callback?.({ ok: false, error: 'Minutos o días' });
+    }
+    const texto = typeof mensaje === 'string' ? mensaje.trim().slice(0, 300) : '';
+    try {
+      const veces = (await ChatGlobal.vecesSilenciado(destino)) + 1;
+      const ms = d >= 1 ? d * 86_400_000 : m * 60_000;
+      const hasta = new Date(Date.now() + ms);
+      await ChatGlobal.silenciar({
+        userId: destino,
+        hasta,
+        veces,
+        motivo: texto.length >= 5 ? texto : 'admin',
+        porUserId: socket.userId
+      });
+      // El suspendido se entera al momento, en la barra del chat.
+      for (const s of io.sockets.sockets.values()) {
+        if (!s.isGuest && Number(s.userId) === destino) s.emit('chat:silenciado', { hasta: hasta.toISOString(), mensaje: texto.length >= 5 ? texto : null });
+      }
+      callback?.({ ok: true, hasta: hasta.toISOString() });
+    } catch (err) {
+      console.error('No se pudo silenciar:', err.message);
+      callback?.({ ok: false, error: 'No se pudo silenciar' });
+    }
+  });
+
+  socket.on('salon:levantar', async ({ userId } = {}, callback) => {
+    if (!esSocio(socket)) return callback?.({ ok: false, error: 'Solo un socio' });
+    try {
+      await ChatGlobal.levantar(Number(userId));
+      for (const s of io.sockets.sockets.values()) {
+        if (!s.isGuest && Number(s.userId) === Number(userId)) s.emit('chat:silenciado', null);
+      }
+      callback?.({ ok: true });
+    } catch (err) {
+      callback?.({ ok: false, error: 'No se pudo levantar' });
+    }
+  });
 }
+
+export const _soloParaPruebas = { gente, estaJugando };

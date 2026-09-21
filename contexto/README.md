@@ -8344,3 +8344,47 @@ vencimiento sigue.
 Probado: prueba unitaria (al vencer, ficha puesta o pozo levantado, el turno pasa, la
 partida sigue; 127 en verde) y la mesa mixta de la 194 durante 80 s sin que nadie toque:
 la mano de la persona baja de 7 a 5, ocho fichas en la mesa, nadie pierde.
+
+## 196. El Salon: el chat del club, copiado del truco (2026-09-20)
+
+Raul, ante las tres opciones de La Barra: "copiate del privoytruco". Asi que el Salon es el
+del truco, pieza por pieza:
+
+- **La puerta**: la capsula "N en linea · CHAT" (punto verde que respira, borde bronce,
+  CHAT en ficha dorada), en el umbral y en la antesala (`salon/PuertaDelSalon.jsx`). El
+  numero sale del `presence:count` que el servidor ya emitia.
+- **La hoja** (`salon/Salon.jsx`): sube desde abajo, 72 % de alto, dos pestanas: Chat y
+  En linea (N). En el chat, EL NOMBRE ES LA PUERTA DEL RETO: se toca y sale "Retar a
+  Fulano · Mano a mano 1 vs 1 · Gratis"; el reto es el de siempre (`reto:enviar`, un minuto,
+  `RetoEntrante` ahora tambien en el umbral y la antesala). En linea: una fila por persona
+  con punto verde/ambar (jugando), retrato, "tu", "de visita" para el invitado, y Retar.
+- **Escribe el que tiene cuenta, el invitado lee** (regla del truco y de Jonathan): abajo
+  le sale "Estas de invitado: puedes leer. Para escribir, crea tu cuenta" con el boton.
+  Solo las cuentas retan y solo a cuentas.
+- **La moderacion del truco**, en el servidor (`services/moderacionDelChat.js`, pura, con
+  pruebas): enlaces, correos y telefonos se quitan ("[enlace quitado]", y se le avisa al
+  que lo escribio); las groserias se tapan con asteriscos (palabra entera: "diputado" no
+  se toca); los gritos se bajan a minusculas. Nunca se rechaza por contenido.
+- **Spam = silencio**: cinco mensajes en diez segundos, o el mismo tres veces, dan 2 min de
+  silencio que se duplican al reincidir (techo un dia). Va a la base (`chat_silencios`),
+  asi que cerrar la pestana no lo esquiva.
+- **Cada mensaje vive 2 horas** (`DOMINO_CHAT_VIDA_MIN`, 1..1440) y lo viejo se borra.
+  Cuando la Config tenga perillas, esta es una.
+- **Los socios**: bajan un mensaje (se esconde en `chat_ocultos`, todos lo ven irse),
+  callan 10 min, o suspenden por dias con un mensaje que el jugador lee en la barra del
+  chat ("Tu chat esta suspendido hasta el 23 de septiembre. Aca no se insulta a nadie.
+  Puedes leer, pero no escribir"), y le levantan la suspension. Hasta que la plataforma
+  traiga roles, socio es quien este en `DOMINO_SOCIOS` (nombres de cuenta, por coma).
+
+Los eventos viejos (`chat:entrar`, `chat:historial`, `chat:mensaje`, `chat:error`) siguen
+iguales, asi que la landing de /viejo no se entera. `chat:enviar` ahora ademas contesta por
+callback. Nuevos: `salon:gente`, `salon:ocultar`, `salon:silenciar`, `salon:levantar`,
+`chat:oculto`, `chat:silenciado`.
+
+Probado: `test.js` (moderacion pura, 136 en verde) y `test-chat.js` rehecho contra el
+servidor con `DOMINO_SOCIOS=SocioDePrueba` (23 en verde: invitado lee y no escribe,
+telefono y enlace fuera, "pendejo" tapado y "diputado" intacto, grito bajado, sexto
+mensaje en 10 s silenciado, lista de en linea con retrato del invitado, suplantacion
+imposible, socio baja/suspende/levanta y el suspendido lee el mensaje al momento). Fotos
+a 375 px: puerta en el umbral, hoja de invitado, hoja de cuenta, En linea, hoja de retar,
+reto entrante en el otro telefono.

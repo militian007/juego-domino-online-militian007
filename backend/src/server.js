@@ -86,7 +86,7 @@ const broadcastPresence = () => {
 io.on('connection', (socket) => {
   // El chat del menu principal. Va aparte del juego: se escucha desde el menu,
   // sin estar en ninguna sala.
-  registrarChat(io, socket);
+  registrarChat(io, socket, roomManager);
 
   // Retos entre jugadores y el buzon de avisos.
   registrarRetos(io, socket, roomManager);

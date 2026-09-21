@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import IdentidadLigera from './IdentidadLigera.jsx';
 import { identidad, retratoUrl } from './identidad.js';
+import PuertaDelSalon from '../salon/PuertaDelSalon.jsx';
+import Salon from '../salon/Salon.jsx';
+import RetoEntrante from '../components/notificaciones/RetoEntrante.jsx';
 
 /**
  * EL UMBRAL (seccion 177): la puerta del juego, como la del Ludo.
@@ -40,6 +43,7 @@ export default function Umbral() {
   const navigate = useNavigate();
   const [pidiendo, setPidiendo] = useState(false);
   const [reglas, setReglas] = useState(false);
+  const [salonAbierto, setSalonAbierto] = useState(false);
   const yo = identidad();
   const portada = portadaElegida();
 
@@ -73,6 +77,10 @@ export default function Umbral() {
         </header>
 
         <div className="mt-auto">
+          {/* La puerta del salon (seccion 196): quien esta y el chat, como en el truco. */}
+          <div className="mb-4 flex justify-center">
+            <PuertaDelSalon onAbrir={() => setSalonAbierto(true)} />
+          </div>
           <h1 className="font-serif text-[52px] font-bold leading-none tracking-wide text-domino-accent drop-shadow-[0_2px_12px_rgba(0,0,0,0.8)]">
             Dominó
           </h1>
@@ -107,6 +115,8 @@ export default function Umbral() {
         onCerrar={() => setPidiendo(false)}
         onListo={(id) => { setPidiendo(false); if (id) navigate('/mesa'); }}
       />
+      <Salon abierto={salonAbierto} onCerrar={() => setSalonAbierto(false)} />
+      <RetoEntrante />
     </div>
   );
 }

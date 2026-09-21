@@ -3,6 +3,7 @@ import { Bot } from './Bot.js';
 import { generateAllTiles, isDouble, tilePips } from './Tile.js';
 import { RoomManager, RELOJ } from '../RoomManager.js';
 import { elegirBots } from './bots.js';
+import { limpiar as moderar, esSpam, duracionSilencio, faltaEnPalabras } from '../services/moderacionDelChat.js';
 
 let passed = 0;
 let failed = 0;
@@ -624,6 +625,22 @@ console.log('TEST: Se acabo el tiempo y la mesa juega por ti (seccion 195)');
   assert(sala.players[juego.state.turn].id !== quien.id || juego.status !== 'playing', 'y el turno paso al otro');
   assert(juego.saltadoPorTiempo?.jugoLaMesa === true && juego.saltadoPorTiempo.perdio !== true, 'el aviso dice que la mesa jugo por el, sin perder la partida');
   assert(juego.status === 'playing', 'la partida sigue');
+}
+
+console.log('TEST: La moderacion del salon (seccion 196)');
+{
+  const a = moderar('escribeme al 0414-1234567 o a www.fichas.com');
+  assert(a.quitoContacto && !/0414|fichas\.com/.test(a.visible), 'telefono y enlace se quitan');
+  const b = moderar('eres un pendejo pero el diputado no');
+  assert(b.visible === 'eres un ******* pero el diputado no' && b.tapoGroserias, 'groseria tapada solo como palabra entera');
+  assert(moderar('QUIEN JUEGA UNA PARTIDA AHORA').visible === 'quien juega una partida ahora', 'el grito se baja');
+  assert(moderar('OK').visible === 'OK', 'un "OK" corto no es grito');
+  const ahora = 1_000_000;
+  assert(esSpam('x', { tiempos: [ahora - 1000, ahora - 2000, ahora - 3000, ahora - 4000, ahora - 5000], textos: [] }, ahora) === 'muy_seguido', 'cinco en diez segundos es spam');
+  assert(esSpam('hola', { tiempos: [], textos: ['HOLA', ' hola '] }, ahora) === 'repetido', 'la tercera vez igual es repetido');
+  assert(esSpam('hola', { tiempos: [], textos: ['hola', 'otra'] }, ahora) === null, 'repetir una vez es humano');
+  assert(duracionSilencio(1) === 120_000 && duracionSilencio(2) === 240_000 && duracionSilencio(20) === 86_400_000, 'el silencio duplica con techo de un dia');
+  assert(faltaEnPalabras(90_000) === '2 minutos' && faltaEnPalabras(3 * 86_400_000) === '3 días', 'cuanto falta, en palabras');
 }
 
 console.log(`\n${'='.repeat(40)}`);
