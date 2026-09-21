@@ -873,7 +873,7 @@
 @keyframes umbral-mecer { 0%, 100% { transform: rotate(-0.7deg); } 50% { transform: rotate(0.7deg); } }
 @keyframes umbral-latir { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
 @keyframes umbral-brinco { 0%, 100% { transform: translateY(0); } 22% { transform: translateY(-16px) scaleY(1.05); } 38% { transform: translateY(0) scaleY(0.94); } 46% { transform: translateY(0) scaleY(1); } }
-@keyframes umbral-dedo { 0%, 100% { transform: rotate(-20deg); } 50% { transform: translate(-3px, 5px) rotate(-20deg); } }
+@keyframes umbral-dedo { 0%, 100% { transform: scale(1.9) rotate(-14deg); } 50% { transform: scale(1.9) translate(-3px, 5px) rotate(-14deg); } }
 .umbral-baja { animation: umbral-baja 600ms ease-out both; }
 .umbral-sube { animation: umbral-sube 700ms ease-out both; }
 .umbral-mecer { animation: umbral-mecer 5.5s ease-in-out infinite; transform-origin: 50% 0; }

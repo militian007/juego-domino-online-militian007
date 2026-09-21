@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pointer, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import IdentidadLigera from './IdentidadLigera.jsx';
 import { identidad, retratoUrl } from './identidad.js';
 import PuertaDelSalon from '../salon/PuertaDelSalon.jsx';
@@ -112,8 +112,8 @@ export default function Umbral() {
           style={{ top: '19%', animationDelay: '150ms' }}
         >
           <img src="/umbral/pancarta-juega-ya.webp" alt="" draggable={false} className="umbral-mecer block h-auto w-full" style={{ filter: 'drop-shadow(0 12px 22px rgba(0,0,0,0.65))' }} />
-          <span aria-hidden className="umbral-dedo absolute bottom-2 right-10 text-[#F5E6B8]" style={{ filter: 'drop-shadow(0 3px 4px rgba(0,0,0,0.7))' }}>
-            <Pointer size={40} strokeWidth={2.2} fill="#E9C86A" />
+          <span aria-hidden className="umbral-dedo absolute bottom-2.5 right-11" style={{ transform: 'scale(1.9)', transformOrigin: '100% 0', filter: 'drop-shadow(0 3px 4px rgba(0,0,0,0.7))' }}>
+            <Manito />
           </span>
         </button>
 
@@ -167,6 +167,26 @@ export default function Umbral() {
       <Salon abierto={salon !== null} pestanaInicial={salon || 'chat'} onCerrar={() => setSalon(null)} />
       <RetoEntrante />
     </div>
+  );
+}
+
+/**
+ * LA MANITO de la pancarta: la misma del ludo (Raul la aprobo alli; la de
+ * lucide «se ve como galla»). Es la unica pieza dibujada, y viene copiada
+ * tal cual de `IconosLudo.tsx`, no inventada.
+ */
+function Manito() {
+  return (
+    <svg width="22" height="24" viewBox="0 0 24 26" aria-hidden="true">
+      <path
+        d="M9 2.5a2 2 0 0 1 4 0v9.2l1.4-.7a2 2 0 0 1 2.9 1.3l.2 1 1.2-.4a2 2 0 0 1 2.6 1.7l.4 4.3c.3 3.4-2.4 6.3-5.8 6.3H12c-2 0-3.8-.9-5-2.5l-4.2-5.6a1.9 1.9 0 0 1 2.9-2.5L9 17.6z"
+        fill="#F4D66C"
+        stroke="#7A5210"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
+      <path d="M9 2.5v10" stroke="#B8862B" strokeWidth="1" opacity="0.7" />
+    </svg>
   );
 }
 
