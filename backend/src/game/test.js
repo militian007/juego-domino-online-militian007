@@ -650,6 +650,19 @@ console.log('TEST: Modalidad y puntos en la mesa armada, y lo que se juega ahora
   assert(rm.mesasAbiertas().every((m) => m.code !== t.code), 'y ya no esta en el tablon');
 }
 
+console.log('TEST: La casa torpe sutil (seccion 199)');
+{
+  const rm = new RoomManager();
+  const t = rm.createRoom({ mode: '2v2', hostId: 'h', hostUsername: 'H', armada: { casaEn: [1, 2, 3], publica: false } });
+  rm.startGame(t.code);
+  const porSilla = Object.fromEntries(t.players.map((p) => [p.asiento, p.difficulty || 'persona']));
+  assert(porSilla[2] === 'normal', 'el companero de la persona (silla 2) juega normal');
+  assert(porSilla[1] === 'casa' && porSilla[3] === 'casa', 'los rivales de la casa juegan con el nivel casa');
+  const u = rm.createRoom({ mode: '1v1', hostId: 'h2', hostUsername: 'H2', armada: { casaEn: [], publica: false } });
+  rm.startGame(u.code);
+  assert(u.players.find((p) => p.isBot)?.difficulty === 'casa', 'en 1v1 el rival es la casa');
+}
+
 console.log('TEST: La moderacion del salon (seccion 196)');
 {
   const a = moderar('escribeme al 0414-1234567 o a www.fichas.com');

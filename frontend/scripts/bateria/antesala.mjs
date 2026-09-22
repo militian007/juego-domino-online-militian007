@@ -4,6 +4,8 @@
 import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
 import path from 'node:path';
+const FRONT = process.env.BATERIA_FRONT || 'http://localhost:5173';
+const API = process.env.BATERIA_API || 'http://localhost:4000';
 
 const OUT = path.resolve(process.env.DOMINO_OUT || 'out');
 fs.mkdirSync(OUT, { recursive: true });
@@ -16,7 +18,7 @@ async function invitado(nombre, retrato) {
   await page.setViewport({ width: 375, height: 812, deviceScaleFactor: 2, isMobile: true, hasTouch: false });
   page.on('console', (m) => { if (['error', 'warning'].includes(m.type())) consola.push(`${nombre} ${m.type()}: ${m.text()}`); });
   page.on('pageerror', (e) => consola.push(`${nombre} pageerror: ${e.message}`));
-  await page.goto('http://localhost:5173/', { waitUntil: 'networkidle2' });
+  await page.goto(`${FRONT}/`, { waitUntil: 'networkidle2' });
   await page.evaluate((n, r) => {
     localStorage.removeItem('token'); localStorage.removeItem('user');
     localStorage.setItem('domino-identidad', JSON.stringify({ nombre: n, retrato: r }));
@@ -29,7 +31,7 @@ const texto = (page) => page.evaluate(() => document.body.innerText);
 
 // 1. Raul arma la mesa
 const raul = await invitado('Raúl', 'catire');
-await raul.goto('http://localhost:5173/', { waitUntil: 'networkidle2' });
+await raul.goto(`${FRONT}/`, { waitUntil: 'networkidle2' });
 await sleep(600);
 await clic(raul, '[data-juega-ya]');              // la pancarta JUEGA YA -> /mesa
 await raul.waitForSelector('[data-silla="0"]', { timeout: 15000 });
@@ -57,7 +59,7 @@ console.log('codigo', codigo);
 
 // 2. Chela ve el tablon y entra por el codigo (escribiendolo)
 const chela = await invitado('Chela', 'chela');
-await chela.goto('http://localhost:5173/mesa', { waitUntil: 'networkidle2' });
+await chela.goto(`${FRONT}/mesa`, { waitUntil: 'networkidle2' });
 await chela.waitForSelector('[data-tablon]', { timeout: 15000 });
 await sleep(4500); // el tablon se refresca cada 4 s
 await foto(chela, '06-tablon-chela');
@@ -72,7 +74,7 @@ await foto(raul, '09-raul-ve-llegar');
 
 // 3. Nano entra por el link de WhatsApp: la mesa se llena y arranca sola
 const nano = await invitado('Nano', 'nano');
-await nano.goto(`http://localhost:5173/mesa?codigo=${codigo}`, { waitUntil: 'networkidle2' });
+await nano.goto(`${FRONT}/mesa?codigo=${codigo}`, { waitUntil: 'networkidle2' });
 await sleep(2500);
 await foto(nano, '10-nano-por-link');
 for (const [p, n] of [[raul, 'raul'], [chela, 'chela'], [nano, 'nano']]) {
@@ -82,3 +84,4 @@ await sleep(5000);
 await foto(raul, '11-partida-raul'); await foto(chela, '12-partida-chela'); await foto(nano, '13-partida-nano');
 console.log(JSON.stringify({ codigo, consola }));
 await browser.close();
+process.exit(codigo && consola.length === 0 ? 0 : 1);

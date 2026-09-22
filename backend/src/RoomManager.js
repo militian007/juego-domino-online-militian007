@@ -603,18 +603,24 @@ export class RoomManager {
         room.bot = elegidos[0];
         room.botDifficulty = elegidos[0].difficulty;
         const ocupadas = new Set(room.players.map((p) => p.asiento));
+        // LA CASA TORPE SUTIL (seccion 199): en la mesa armada los rivales de
+        // la casa juegan con el nivel `casa` (una persona normal gana ~70 %,
+        // medido); el companero de una persona en 2v2 juega `normal`, para no
+        // hundirla. La cara y la frase siguen siendo las del bot elegido.
+        const paridadDePersona = new Set(room.players.filter((p) => !p.isBot).map((p) => p.asiento % 2));
         let k = 0;
         for (let i = 0; i < total; i += 1) {
           if (ocupadas.has(i)) continue;
           const bot = elegidos[k];
           k += 1;
+          const esCompanero = total === 4 && paridadDePersona.has(i % 2);
           room.players.push({
             id: `bot-${room.code}-${k}`,
             username: bot.nombre,
             isBot: true,
             socketId: null,
             avatar: bot.avatar,
-            difficulty: bot.difficulty,
+            difficulty: esCompanero ? 'normal' : 'casa',
             frase: bot.frase,
             estrellas: bot.estrellas,
             asiento: i
@@ -691,7 +697,7 @@ export class RoomManager {
 
       const validMoves = room.game.getValidMoves(current.id);
       if (validMoves.length > 0) {
-        const bot = new Bot(room.game, current.id, room.botDifficulty || 'normal');
+        const bot = new Bot(room.game, current.id, current.difficulty || room.botDifficulty || 'normal');
         const move = bot.chooseMove();
         if (move) {
           const c = move.placement || {};

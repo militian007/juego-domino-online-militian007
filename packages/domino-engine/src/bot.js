@@ -9,6 +9,11 @@ export const DIFFICULTY = {
   NORMAL: 'normal',
   DIFICIL: 'dificil',
   MAESTRO: 'maestro',
+  // LA CASA TORPE SUTIL (seccion 199): juega como `normal`, pero una parte de
+  // las veces escoge la ficha PEOR de las que valen. Se ve como un despiste
+  // humano, no como un bot tirando al azar. La tasa esta medida para que una
+  // persona normal gane cerca del 70 % (`backend/src/medir-casa.js`).
+  CASA: 'casa',
   // alias en ingles, por compatibilidad con quien ya use estos nombres
   EASY: 'facil',
   HARD: 'maestro'
@@ -16,8 +21,16 @@ export const DIFFICULTY = {
 
 // NOISE  = cuanto ruido se le suma al puntaje de cada ficha (juega peor)
 // RANDOM = con que probabilidad tira una ficha al azar, ignorando la estrategia
-const NOISE = { novato: 22, facil: 14, normal: 6, dificil: 2, maestro: 0 };
-const RANDOM_RATE = { novato: 0.45, facil: 0.28, normal: 0.10, dificil: 0.03, maestro: 0 };
+const NOISE = { novato: 22, facil: 14, normal: 6, dificil: 2, maestro: 0, casa: 6 };
+const RANDOM_RATE = { novato: 0.45, facil: 0.28, normal: 0.10, dificil: 0.03, maestro: 0, casa: 0.10 };
+// WORST = con que probabilidad escoge la peor ficha en vez de la mejor (solo la casa).
+// 0.65 esta MEDIDO (backend/src/medir-casa.js): una persona normal gana 70-75 % en
+// 1v1 y ~70 % en 2v2. El motor no lee el entorno (corre tambien en el navegador);
+// quien quiera medir otra tasa la cambia con `setCasaTorpeza`.
+const WORST_RATE = { casa: 0.65 };
+export function setCasaTorpeza(tasa) {
+  WORST_RATE.casa = Math.max(0, Math.min(1, Number(tasa)));
+}
 
 // alias viejos
 NOISE.easy = NOISE.facil;
@@ -164,6 +177,17 @@ export function chooseAction(view, opts = {}) {
     if (grupo.score > mejorScore) {
       mejorScore = grupo.score;
       mejor = grupo;
+    }
+  }
+  // La casa se despista: a veces se queda con la peor.
+  const worstRate = WORST_RATE[difficulty] ?? 0;
+  if (worstRate > 0 && porFicha.size > 1 && rng() < worstRate) {
+    let peorScore = Infinity;
+    for (const grupo of porFicha.values()) {
+      if (grupo.score < peorScore) {
+        peorScore = grupo.score;
+        mejor = grupo;
+      }
     }
   }
 

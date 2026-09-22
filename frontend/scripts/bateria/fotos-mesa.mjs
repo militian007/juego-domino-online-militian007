@@ -3,6 +3,8 @@
 import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
 import path from 'node:path';
+const FRONT = process.env.BATERIA_FRONT || 'http://localhost:5173';
+const API = process.env.BATERIA_API || 'http://localhost:4000';
 
 const OUT = path.resolve(process.env.DOMINO_OUT || 'out');
 fs.mkdirSync(OUT, { recursive: true });
@@ -15,7 +17,7 @@ async function pagina(conCuenta, token = process.env.DOMINO_TOKEN, user = proces
   await page.setViewport({ width: 375, height: 812, deviceScaleFactor: 2, isMobile: true, hasTouch: false });
   page.on('console', (m) => { if (['error', 'warning'].includes(m.type())) consola.push(`${m.type()}: ${m.text()}`); });
   page.on('pageerror', (e) => consola.push(`pageerror: ${e.message}`));
-  await page.goto('http://localhost:5173/', { waitUntil: 'networkidle2' });
+  await page.goto(`${FRONT}/`, { waitUntil: 'networkidle2' });
   if (conCuenta) await page.evaluate((t, u) => { localStorage.setItem('token', t); localStorage.setItem('user', u); }, token, user);
   return page;
 }
@@ -24,7 +26,7 @@ async function pagina(conCuenta, token = process.env.DOMINO_TOKEN, user = proces
 for (const modo of ['1v1bot', '2v2bots']) {
   if (fs.existsSync(path.join(OUT, `${modo}-apagadas.png`))) continue;
   const page = await pagina(true);
-  await page.goto(`http://localhost:5173/game?mode=${modo}`, { waitUntil: 'networkidle2' });
+  await page.goto(`${FRONT}/game?mode=${modo}`, { waitUntil: 'networkidle2' });
   await page.waitForSelector('[data-ficha-mano]', { timeout: 30000 });
   await sleep(4500);
   await page.screenshot({ path: path.join(OUT, `${modo}.png`) });
@@ -44,10 +46,10 @@ for (const modo of ['1v1bot', '2v2bots']) {
 // Dos personas: la cuenta crea, el invitado entra por codigo
 const rapido = (page) => page.evaluate(() => { const b = [...document.querySelectorAll('button, [role=button], a')].find((x) => /Emparejamiento r/i.test(x.innerText)); b && b.click(); });
 const a = await pagina(true);
-await a.goto('http://localhost:5173/game?mode=1v1', { waitUntil: 'networkidle2' });
+await a.goto(`${FRONT}/game?mode=1v1`, { waitUntil: 'networkidle2' });
 await sleep(1500); await rapido(a);
 const b = await pagina(true, process.env.DOMINO_TOKEN2, process.env.DOMINO_USER2);
-await b.goto('http://localhost:5173/game?mode=1v1', { waitUntil: 'networkidle2' });
+await b.goto(`${FRONT}/game?mode=1v1`, { waitUntil: 'networkidle2' });
 await sleep(1500); await rapido(b);
 await sleep(2500);
 await a.screenshot({ path: path.join(OUT, 'dbg-a.png') }); await b.screenshot({ path: path.join(OUT, 'dbg-b.png') });

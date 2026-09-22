@@ -10,7 +10,7 @@ import 'dotenv/config';
 import jwt from 'jsonwebtoken';
 import { io as ioClient } from 'socket.io-client';
 
-const URL = 'http://localhost:4000';
+const URL = process.env.BATERIA_API || 'http://localhost:4000';
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
 let pasados = 0;

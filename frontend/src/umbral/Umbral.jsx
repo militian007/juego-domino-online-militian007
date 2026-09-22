@@ -66,8 +66,7 @@ export default function Umbral() {
     if (puerta === 'jugar') return jugar();
     if (puerta === 'torneo') return navigate('/torneos');
     if (puerta === 'panas') return setSalon('gente');
-    if (puerta === 'caja') return navigate(conCuenta ? '/tienda' : '/register');
-    if (puerta === 'perfil') return conCuenta ? navigate('/perfil') : setPidiendo(true);
+    if (puerta === 'perfil') return setPidiendo(true);
     return undefined;
   };
 
@@ -93,7 +92,7 @@ export default function Umbral() {
         {(conCuenta || yo) && (
           <button
             type="button"
-            onClick={() => (conCuenta ? navigate('/perfil') : setPidiendo(true))}
+            onClick={() => setPidiendo(true)}
             className="absolute right-3 z-[4] flex items-center gap-2 rounded-full border border-domino-accent/40 bg-black/45 py-1 pl-1 pr-3 text-[13px] font-bold"
             style={{ top: 'calc(10px + env(safe-area-inset-top))' }}
           >

@@ -3,7 +3,7 @@ import 'dotenv/config';
 import jwt from 'jsonwebtoken';
 import { io as ioClient } from 'socket.io-client';
 
-const URL = 'http://localhost:4000';
+const URL = process.env.BATERIA_API || 'http://localhost:4000';
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
 let pasados = 0, fallados = 0;
@@ -37,11 +37,18 @@ const pedir = (socket, evento, datos) =>
 async function main() {
   const A = await conectar(cuenta(810001, 'RetadorA'));
   const B = await conectar(cuenta(810002, 'RetadoB'));
-  const invitado = await conectar({ guestId: 'guest-pruebaretos' });
+  const invitado = await conectar({ guestId: 'guest-pruebaretos', guestName: 'Visita' });
+  const sinIdentidad = await conectar({});
 
-  // ---- 1. Un invitado no puede retar ----------------------------------
-  const r0 = await pedir(invitado, 'reto:enviar', { paraId: 810002, paraNombre: 'RetadoB' });
-  check(r0?.ok === false, 'Un invitado no puede retar a nadie');
+  // ---- 1. Sin identidad estable no se reta; con nombre (seccion 199) si ----
+  const r0 = await pedir(sinIdentidad, 'reto:enviar', { paraId: 810002, paraNombre: 'RetadoB' });
+  check(r0?.ok === false, 'El que llega sin identidad estable no puede retar');
+  const llegaDeVisita = new Promise((res) => B.once('reto:recibido', res));
+  const r0b = await pedir(invitado, 'reto:enviar', { paraId: 810002, paraNombre: 'RetadoB' });
+  const recibidoDeVisita = await Promise.race([llegaDeVisita, new Promise((res) => setTimeout(() => res(null), 3000))]);
+  check(r0b?.ok === true && recibidoDeVisita?.deNombre === 'Visita', 'El invitado con nombre reta, y el reto llega con su nombre (seccion 199)');
+  await pedir(B, 'reto:responder', { id: r0b?.id, acepto: false });
+  sinIdentidad.close();
 
   // ---- 2. No se puede uno retar a si mismo -----------------------------
   const r1 = await pedir(A, 'reto:enviar', { paraId: 810001, paraNombre: 'RetadorA' });

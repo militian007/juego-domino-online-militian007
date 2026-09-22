@@ -23,13 +23,13 @@ export default function RetoEntrante() {
   const ancla = useRef(null);
 
   useEffect(() => {
-    if (!user) return;
+    // Sin cuentas (seccion 199): el reto le llega a cualquiera con identidad.
     const socket = connectSocket();
     if (!socket) return;
 
     const alRecibir = (r) => { setError(null); setReto(r); };
     const alCerrar = ({ id }) => setReto((r) => (r?.id === id ? null : r));
-    const alAceptar = ({ code }) => { setReto(null); if (code) navegar(`/game/${code}`); };
+    const alAceptar = ({ code }) => { setReto(null); if (code) navegar(user ? `/game/${code}` : `/game?join=${code}`); };
 
     socket.on('reto:recibido', alRecibir);
     socket.on('reto:cerrado', alCerrar);

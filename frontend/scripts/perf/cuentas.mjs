@@ -26,11 +26,11 @@ const medir = async (nombre, ms = 4000) => {
   if (anims.length) console.log('   anima:', [...new Set(anims)].join(' | '));
 };
 
-await page.goto('http://localhost:5173/', { waitUntil: 'networkidle2' });
+await page.goto(`${FRONT}/`, { waitUntil: 'networkidle2' });
 await page.evaluate(() => { localStorage.removeItem('token'); localStorage.setItem('domino-identidad', JSON.stringify({ nombre: 'Medidor', retrato: 'nano' })); });
-await page.goto('http://localhost:5173/', { waitUntil: 'networkidle2' }); await sleep(800);
+await page.goto(`${FRONT}/`, { waitUntil: 'networkidle2' }); await sleep(800);
 await medir('umbral');
-await page.goto('http://localhost:5173/mesa', { waitUntil: 'networkidle2' }); await sleep(1200);
+await page.goto(`${FRONT}/mesa`, { waitUntil: 'networkidle2' }); await sleep(1200);
 await medir('antesala');
 await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.innerText.trim() === 'SENTARSE')?.click());
 await page.waitForSelector('[data-ficha-mano]', { timeout: 20000 });
@@ -45,5 +45,7 @@ await page.evaluate(() => { const im = document.querySelector('.iman-slot'); im 
 await sleep(2500);
 await medir('mesa · turno del bot', 2500);
 import fs from 'node:fs';
+const FRONT = process.env.BATERIA_FRONT || 'http://localhost:5173';
+const API = process.env.BATERIA_API || 'http://localhost:4000';
 fs.writeFileSync('cuentas-domino.json', JSON.stringify(salida, null, 1));
 await browser.close();

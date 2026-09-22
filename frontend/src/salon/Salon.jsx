@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Ban, EyeOff, Send, VolumeX, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { haySesion } from '../services/api.js';
-import { connectSocket } from '../services/socket.js';
+import { connectSocket, idDeInvitado } from '../services/socket.js';
+import { identidad } from '../umbral/identidad.js';
 import MesaConSillas from '../antesala/MesaConSillas.jsx';
 import SuspenderDelChat from './SuspenderDelChat.jsx';
 
@@ -20,9 +21,11 @@ import SuspenderDelChat from './SuspenderDelChat.jsx';
  * renglon llenaba el chat de botones; tocar el nombre deja la conversacion
  * limpia y el reto a un toque.
  *
- * La moderacion de verdad esta en el servidor (groserias tapadas, enlaces
- * quitados, spam silenciado). Aca solo se muestra lo que llega y se le explica
- * al jugador cuando algo suyo salio distinto.
+ * SIN CUENTAS (seccion 199): escribe y reta cualquiera con su identidad
+ * ligera; el que no se ha puesto nombre en el umbral, lee. La moderacion de
+ * verdad esta en el servidor (groserias tapadas, enlaces quitados, spam
+ * silenciado). Aca solo se muestra lo que llega y se le explica al jugador
+ * cuando algo suyo salio distinto.
  */
 const LARGO_MAX = 240;
 /** Cada cuanto se relee quien esta en linea mientras la hoja esta abierta. */
@@ -52,7 +55,8 @@ export default function Salon({ abierto, onCerrar, pestanaInicial = 'chat' }) {
   const [suspendiendo, setSuspendiendo] = useState(null);
   const finRef = useRef(null);
 
-  const miId = conCuenta ? Number(user.id) : null;
+  const miId = conCuenta ? String(user.id) : idDeInvitado();
+  const conNombre = Boolean(conCuenta || identidad());
 
   // Se escucha el chat SIEMPRE que la hoja exista (aunque este cerrada), para
   // que al abrirla ya este cargada y para contar lo nuevo.
@@ -142,9 +146,8 @@ export default function Salon({ abierto, onCerrar, pestanaInicial = 'chat' }) {
     setAviso(r?.ok ? `${m.username} en silencio por 10 minutos` : (r?.error || 'No se pudo silenciar'));
   });
 
-  /** Un invitado no reta: su identidad es gratis de fabricar. Y a un invitado no se le puede retar. */
-  const puedoRetar = Boolean(conCuenta);
-  const retable = (id, esInvitado) => puedoRetar && !esInvitado && Number(id) !== miId;
+  const puedoRetar = conNombre;
+  const retable = (id) => puedoRetar && String(id) !== miId;
 
   if (!abierto) return null;
 
@@ -179,7 +182,7 @@ export default function Salon({ abierto, onCerrar, pestanaInicial = 'chat' }) {
               {mensajes.length === 0 ? (
                 <p className="py-6 text-center text-[13px] font-medium text-domino-cream/40">Todavía no hay nada. Saluda tú primero.</p>
               ) : mensajes.map((m) => {
-                const mio = Number(m.userId) === miId;
+                const mio = String(m.userId) === miId;
                 const puede = !mio && puedoRetar;
                 return (
                   <div key={m.id} className="flex items-start gap-2" data-mensaje={m.id}>
@@ -214,11 +217,11 @@ export default function Salon({ abierto, onCerrar, pestanaInicial = 'chat' }) {
                   Tu chat está suspendido hasta el {new Date(miSilencio.hasta).toLocaleDateString('es-VE', { day: 'numeric', month: 'long' })}.
                   {miSilencio.mensaje ? ` ${miSilencio.mensaje}` : ''} Puedes leer, pero no escribir.
                 </p>
-              ) : !conCuenta ? (
+              ) : !conNombre ? (
                 <div className="flex items-center justify-between gap-2.5">
-                  <p className="text-[12px] font-medium text-domino-cream/60" data-invitado>Estás de invitado: puedes leer. Para escribir, crea tu cuenta.</p>
-                  <button type="button" onClick={() => { onCerrar(); navigate('/register'); }} className="whitespace-nowrap rounded-full bg-domino-accent px-3 py-2 text-xs font-bold text-domino-dark">
-                    Crear mi cuenta
+                  <p className="text-[12px] font-medium text-domino-cream/60" data-invitado>Ponte un nombre en el umbral para escribir.</p>
+                  <button type="button" onClick={() => { onCerrar(); navigate('/'); }} className="whitespace-nowrap rounded-full bg-domino-accent px-3 py-2 text-xs font-bold text-domino-dark">
+                    Ir al umbral
                   </button>
                 </div>
               ) : (
@@ -252,18 +255,17 @@ export default function Salon({ abierto, onCerrar, pestanaInicial = 'chat' }) {
             {gente.length === 0 ? (
               <p className="py-6 text-center text-[13px] font-medium text-domino-cream/40">No hay nadie más conectado ahora.</p>
             ) : gente.map((j) => {
-              const yo = Number(j.id) === miId;
+              const yo = String(j.id) === miId;
               return (
                 <div key={j.id} className="flex items-center gap-2 rounded-lg border border-domino-accent/15 bg-white/[0.04] px-2.5 py-1.5" data-en-linea={j.username}>
                   <span className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: j.jugando ? '#D9A441' : '#3ddc84' }} aria-hidden />
                   <MesaConSillas.Retrato avatar={j.retrato || j.username} tamano={26} />
                   <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">
                     {j.username}{yo && <span className="ml-1.5 text-[10px] font-semibold opacity-60">tú</span>}
-                    {j.esInvitado && !yo && <span className="ml-1.5 text-[10px] font-semibold opacity-50">de visita</span>}
                   </span>
                   {j.jugando ? (
                     <span className="text-[11px] font-semibold text-[#D9A441]">jugando</span>
-                  ) : retable(j.id, j.esInvitado) ? (
+                  ) : retable(j.id) ? (
                     <button type="button" onClick={() => setRetando({ id: j.id, username: j.username })} className="rounded-full border border-domino-accent/40 bg-domino-accent/10 px-3 py-1 text-xs font-bold text-domino-accent">
                       Retar
                     </button>

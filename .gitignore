@@ -37,3 +37,7 @@ out/
 captures/
 scratch/
 
+
+# La bateria (piso 9): banco y reportes propios
+backend/data-bateria.db*
+scripts/reportes/

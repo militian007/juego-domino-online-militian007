@@ -19,10 +19,14 @@ const ESPERA_ENTRE_RETOS_MS = 5_000;
  *
  * ## Quien puede retar
  *
- * Solo cuentas, igual que en el chat, y por el mismo motivo: sin cuenta no hay
- * a quien reclamarle nada. Y solo a alguien que este en linea: un reto a quien
- * no esta no lo va a contestar nadie.
+ * Cualquiera con identidad estable (seccion 199: sin cuentas, el asiento es por
+ * token como en el ludo). Y solo a alguien que este en linea: un reto a quien
+ * no esta no lo va a contestar nadie. El aviso en el buzon solo se guarda para
+ * las cuentas (la tabla de avisos lleva id numerico); al invitado le llega en
+ * vivo, que es lo que importa en un reto de un minuto.
  */
+const ID_ESTABLE = /^guest-[a-z0-9]{6,40}$/i;
+const esCuenta = (id) => /^\d+$/.test(String(id));
 
 /** Los retos vivos, por id. */
 const retos = new Map();
@@ -42,6 +46,7 @@ const estaEnLinea = (io, userId) => {
 
 /** Le manda un aviso a alguien: se guarda y, si esta, le llega al momento. */
 const avisar = async (io, userId, aviso) => {
+  if (!esCuenta(userId)) return null;
   const guardado = await Notificacion.crear({ userId, ...aviso });
   io.to(salaDe(userId)).emit('notif:nueva', guardado);
   Notificacion.podar(userId).catch(() => {});
@@ -59,13 +64,12 @@ const cerrarReto = (id) => {
 export function registrarRetos(io, socket, roomManager) {
   // Cada cuenta tiene su propia sala. Es lo que permite mandarle algo a una
   // PERSONA sin saber en que pestaña esta ni cuantas tiene abiertas.
-  if (!socket.isGuest && socket.userId) {
+  const identidadEstable = Boolean(socket.userId) && (!socket.isGuest || (ID_ESTABLE.test(socket.userId) && socket.userId !== `guest-${socket.id}`));
+  if (identidadEstable) {
     socket.join(salaDe(socket.userId));
   }
 
-  const quienSoy = () => (socket.isGuest || !socket.userId
-    ? null
-    : { id: socket.userId, nombre: socket.username });
+  const quienSoy = () => (identidadEstable ? { id: socket.userId, nombre: socket.username } : null);
 
   // ------------------------------------------------------------ el buzon
   socket.on('notif:listar', async (callback) => {
@@ -130,11 +134,11 @@ export function registrarRetos(io, socket, roomManager) {
     const yo = quienSoy();
     if (!yo) return callback?.({ ok: false, error: 'Inicia sesión para retar a alguien' });
 
-    const destino = Number(paraId);
-    if (!Number.isInteger(destino) || destino <= 0) {
+    const destino = esCuenta(paraId) ? Number(paraId) : String(paraId || '');
+    if (!destino || (typeof destino === 'string' && !ID_ESTABLE.test(destino))) {
       return callback?.({ ok: false, error: 'No sé a quién quieres retar' });
     }
-    if (destino === Number(yo.id)) {
+    if (String(destino) === String(yo.id)) {
       return callback?.({ ok: false, error: 'No puedes retarte a ti mismo' });
     }
     if (!estaEnLinea(io, destino)) {
@@ -148,7 +152,7 @@ export function registrarRetos(io, socket, roomManager) {
 
     // Un solo reto vivo por pareja: si no, se puede llenar el buzon del otro.
     for (const r of retos.values()) {
-      if (r.deId === yo.id && r.paraId === destino) {
+      if (String(r.deId) === String(yo.id) && String(r.paraId) === String(destino)) {
         return callback?.({ ok: false, error: 'Ya lo retaste, espera que conteste' });
       }
     }
@@ -201,7 +205,7 @@ export function registrarRetos(io, socket, roomManager) {
 
     const reto = retos.get(id);
     if (!reto) return callback?.({ ok: false, error: 'Ese reto ya no está disponible' });
-    if (Number(reto.paraId) !== Number(yo.id)) {
+    if (String(reto.paraId) !== String(yo.id)) {
       return callback?.({ ok: false, error: 'Ese reto no es tuyo' });
     }
 

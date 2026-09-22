@@ -24,8 +24,7 @@ export default function PuertasDeLaCasa({ activa }) {
     if (puerta === 'jugar') return identidad() || conCuenta ? navigate('/mesa') : setPidiendo(true);
     if (puerta === 'torneo') return navigate('/torneos');
     if (puerta === 'panas') return setSalon(true);
-    if (puerta === 'caja') return navigate(conCuenta ? '/tienda' : '/register');
-    if (puerta === 'perfil') return conCuenta ? navigate('/perfil') : setPidiendo(true);
+    if (puerta === 'perfil') return setPidiendo(true);
     return undefined;
   };
 
@@ -35,7 +34,7 @@ export default function PuertasDeLaCasa({ activa }) {
         <DockDeLaCasa activa={activa} onIr={irA} />
       </div>
       <Salon abierto={salon} pestanaInicial="gente" onCerrar={() => setSalon(false)} />
-      <IdentidadLigera abierta={pidiendo} onCerrar={() => setPidiendo(false)} onListo={(id) => { setPidiendo(false); if (id) navigate('/mesa'); }} />
+      <IdentidadLigera abierta={pidiendo} onCerrar={() => setPidiendo(false)} onListo={() => setPidiendo(false)} />
     </>
   );
 }

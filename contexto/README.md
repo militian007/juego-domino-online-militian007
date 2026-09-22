@@ -8456,3 +8456,50 @@ pide, 999 cae a 100, el tablon dice modalidad y puntos, la partida se juega a 15
 arrancada sale en "jugandose ahora" con sus 4 sillas y ya no en el tablon); escena con
 puppeteer (Chuo arma 2v2 tranca a 150 con dos sillas de pana; Nano juega 1v1 al Cinco y la
 placa dice A 200; Raul ve las dos listas con sus reglas); bateria de la antesala verde.
+
+## 199. Jugable de punta a punta sin plata: la casa torpe, el salon sin cuentas, la bateria de un comando (2026-09-22)
+
+El encargo de Raul para esta tanda: "que una persona pueda abrir el domino en un telefono
+barato, jugar contra la casa y contra otra persona por codigo, y que la partida se sienta
+terminada, con bateria verde y fotos. Regla de oro: nada de registro, login, saldo, KYC ni
+apuestas". La plata y las cuentas llegan copiadas del ludo cuando cierre su tanda con la
+ventanilla (pisos 1 y 3).
+
+- **La casa torpe sutil** (ficha propia, como el ludo): nivel `casa` en el motor
+  (`bot.js`): juega como `normal` pero el 65 % de las veces escoge la PEOR ficha de las
+  que valen; se ve como un despiste, no como un bot tirando al azar. MEDIDO con
+  `backend/src/medir-casa.js` (200 partidas por nivel): una persona `normal` gana 71 % en
+  1v1 con pozo y 73 % en 2v2 a la tranca (contra `normal` gana 51 %; contra `maestro` 44 %;
+  los niveles viejos casi no se distinguen: el domino es mucha suerte). En la mesa armada
+  los rivales juegan `casa` y el companero de la persona en 2v2 juega `normal` (antes los
+  tres bots jugaban con la fuerza del primero elegido, que era al azar). La cara y la
+  frase siguen siendo las del bot. El motor no lee el entorno (corre en el navegador: un
+  `process.env` ahi tumbo la pantalla en la bateria); la tasa se mueve con
+  `setCasaTorpeza` para medir.
+- **Sin cuentas, de verdad**: el salon lo escribe cualquiera con su identidad ligera (el
+  id estable del navegador, `guest-...`, es a quien se calla; el que llega sin id solo
+  lee); tabla nueva `salon_mensajes` con id de texto y retrato (`chat_global` de Jonathan
+  lleva entero y ya existe en produccion); `chat_silencios` con id de texto. Los retos
+  tambien entre invitados (el aviso del buzon solo se guarda para cuentas; al invitado le
+  llega en vivo). El dock pierde CAJA hasta el piso 3 y PERFIL abre la identidad ligera;
+  no queda ninguna puerta a /register ni /login desde el juego.
+- **El cartel sin conexion en cero** (ficha 2.3): REINTENTAR AHORA (reconecta y recarga) y
+  SALIR AL SALON (a /mesa). Antes se quedaba mudo.
+- **Vibracion** (como el ludo): un toque al tocarte, dos al ganar la ronda, uno seco al
+  perderla, tres al tranque; solo Android, solo tras el primer toque en la pantalla
+  (Chrome bloquea antes) y nunca con el sonido apagado.
+- **La bateria de un comando** (piso 9): `scripts/bateria.ps1`, copiada del truco y
+  adaptada: banco propio (servidor 4100 con `data-bateria.db`, pantalla 5174 en
+  127.0.0.1, dos cuentas de prueba creadas por API), etapas motor, servidor, chat, retos,
+  calentar, antesala, casa, fantasma, reglas, sinconexion, revancha, fotos, partida;
+  logs y fotos en `scripts/reportes/`. Cada script de Chrome termina con codigo de
+  salida y lee `BATERIA_FRONT`/`BATERIA_API`. Lecciones de PowerShell 5.1: `$args` es
+  automatica (no sirve de parametro), las variables NO distinguen mayusculas (`$api` piso
+  `$API`), y `localhost` resuelve a ::1 (Invoke-WebRequest se quedaba colgado; todo en
+  127.0.0.1 y Vite con `--host 127.0.0.1`). `reglas-de-la-mesa` prueba lo de hoy (la mesa
+  juega por ti) en vez de los tres strikes, y mira el cartel sin importar mayusculas
+  (innerText devuelve el `uppercase` del CSS: eso dio un rojo falso).
+- `puppeteer-core` queda como devDependency del frontend.
+
+Probado: motor 85, servidor 150 (con la casa torpe y modalidad/puntos), chat 24, retos 17,
+y la bateria entera en verde (ver la corrida en `scripts/reportes/_corrida.txt`).

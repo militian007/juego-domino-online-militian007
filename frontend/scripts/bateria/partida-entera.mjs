@@ -3,6 +3,8 @@
 import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
 import path from 'node:path';
+const FRONT = process.env.BATERIA_FRONT || 'http://localhost:5173';
+const API = process.env.BATERIA_API || 'http://localhost:4000';
 
 const OUT = path.resolve(process.env.DOMINO_OUT || 'out');
 fs.mkdirSync(OUT, { recursive: true });
@@ -10,16 +12,16 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const browser = await puppeteer.launch({ executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true, args: ['--mute-audio'] });
 const page = await browser.newPage();
 await page.setViewport({ width: 375, height: 812, deviceScaleFactor: 2, isMobile: true, hasTouch: false });
-await page.goto('http://localhost:5173/', { waitUntil: 'networkidle2' });
+await page.goto(`${FRONT}/`, { waitUntil: 'networkidle2' });
 await sleep(1500);
 await page.screenshot({ path: path.join(OUT, 'portada.png') });
 await page.evaluate((t, u) => { localStorage.setItem('token', t); localStorage.setItem('user', u); }, process.env.DOMINO_TOKEN, process.env.DOMINO_USER);
-await page.goto('http://localhost:5173/', { waitUntil: 'networkidle2' });
+await page.goto(`${FRONT}/`, { waitUntil: 'networkidle2' });
 await sleep(1500);
 await page.screenshot({ path: path.join(OUT, 'menu.png') });
 
 for (const modo of ['2v2bots', '1v1bot']) {
-  await page.goto(`http://localhost:5173/game?mode=${modo}`, { waitUntil: 'networkidle2' });
+  await page.goto(`${FRONT}/game?mode=${modo}`, { waitUntil: 'networkidle2' });
   await page.waitForSelector('[data-ficha-mano]', { timeout: 30000 });
   await sleep(4500);
   await page.screenshot({ path: path.join(OUT, `${modo}-arranque.png`) });

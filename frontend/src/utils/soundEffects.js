@@ -303,7 +303,28 @@ export function prepararAvisos() {
   for (const aviso of Object.keys(ARCHIVOS)) cargarAviso(ctx, aviso);
 }
 
+/**
+ * LA VIBRACION (seccion 199, como el ludo): un toquecito cuando te toca, dos
+ * al ganar la ronda, uno seco al perderla. Solo Android (en iPhone
+ * `navigator.vibrate` no existe y no pasa nada). Va con el silencio: si el
+ * jugador apago el sonido, tampoco vibra.
+ */
+const VIBRA = { teToca: 15, rondaGanada: [70, 50, 70], rondaPerdida: 40, tranque: [30, 40, 30] };
+// Chrome bloquea (y grita en la consola) si se vibra antes de que la persona
+// haya tocado la pantalla: se espera el primer toque.
+let tocoLaPantalla = false;
+if (typeof window !== 'undefined') window.addEventListener('pointerdown', () => { tocoLaPantalla = true; }, { once: true, passive: true });
+export function vibrar(aviso) {
+  try {
+    if (!tocoLaPantalla || estaSilenciado() || !VIBRA[aviso] || typeof navigator === 'undefined' || !navigator.vibrate) return;
+    navigator.vibrate(VIBRA[aviso]);
+  } catch {
+    // sin vibracion antes que con un error
+  }
+}
+
 export function sonar(aviso) {
+  vibrar(aviso);
   try {
     if (!ARCHIVOS[aviso]) return;
     const ctx = getAudioContext();

@@ -58,4 +58,4 @@ export {
   commitSeed
 } from './rng.js';
 
-export { chooseAction, createBot, DIFFICULTY } from './bot.js';
+export { chooseAction, createBot, DIFFICULTY, setCasaTorpeza } from './bot.js';

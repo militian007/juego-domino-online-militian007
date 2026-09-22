@@ -15,7 +15,8 @@ const PUERTAS = [
   { id: 'jugar', texto: 'JUGAR', pieza: '/tiles-hueso/tile_6_6.webp', ficha: true },
   { id: 'torneo', texto: 'TORNEO', pieza: '/umbral/losa-relampago.webp', losa: true },
   { id: 'panas', texto: 'PANAS', pieza: '/umbral/ico-panas.webp' },
-  { id: 'caja', texto: 'CAJA', pieza: '/umbral/ico-caja.webp' },
+  // CAJA vuelve con el Piso 3 (la plata llega por la ventanilla, copiada del
+  // ludo); hasta entonces no se muestra una puerta que no abre nada.
   { id: 'perfil', texto: 'PERFIL', pieza: '/umbral/ico-perfil.webp' }
 ];
 

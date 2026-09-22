@@ -1446,7 +1446,12 @@ export default function Game() {
           dentro de la mesa porque la camara de la mesa es su propio mundo y
           ahi los carteles de la mesa le pasaban por encima. */}
       {gameState?.status === 'playing' && gameState.graciaMs && (
-        <CartelSinConexion desde={sinConexionDesde} graciaMs={gameState.graciaMs} />
+        <CartelSinConexion
+          desde={sinConexionDesde}
+          graciaMs={gameState.graciaMs}
+          onReintentar={() => { try { socket?.connect(); } catch { /* sin socket */ } window.location.reload(); }}
+          onSalir={() => { olvidarPartida(); navigate('/mesa'); }}
+        />
       )}
 
       <div className="relative min-h-0 w-full flex-1" data-mesa-centro>

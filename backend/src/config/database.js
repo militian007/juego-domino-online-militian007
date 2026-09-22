@@ -115,15 +115,29 @@ export async function initDatabase() {
       mensaje_id INTEGER PRIMARY KEY
     );
 
+    -- EL SALON SIN CUENTAS (seccion 199): escribe cualquiera con su identidad
+    -- ligera, asi que el id es texto ("guest-..." o el numero de la cuenta
+    -- cuando la plataforma la traiga). Tabla nueva: chat_global (de Jonathan)
+    -- lleva user_id entero y ya existe en produccion.
+    CREATE TABLE IF NOT EXISTS salon_mensajes (
+      id SERIAL PRIMARY KEY,
+      user_id VARCHAR(80) NOT NULL,
+      username VARCHAR(255) NOT NULL,
+      retrato VARCHAR(40),
+      texto VARCHAR(300) NOT NULL,
+      creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_salon_mensajes_user ON salon_mensajes(user_id, id);
+
     -- Los silencios: uno por persona, con hasta cuando, cuantas veces (para
     -- que el castigo escale) y el motivo. Si el motivo es una frase larga, es
     -- el mensaje que el socio le escribio al suspenderlo y el jugador lo lee.
     CREATE TABLE IF NOT EXISTS chat_silencios (
-      user_id INTEGER PRIMARY KEY,
+      user_id VARCHAR(80) PRIMARY KEY,
       hasta TIMESTAMP NOT NULL,
       veces INTEGER NOT NULL DEFAULT 1,
       motivo VARCHAR(300),
-      por_user_id INTEGER,
+      por_user_id VARCHAR(80),
       actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 

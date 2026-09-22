@@ -1,6 +1,7 @@
 // EL SALON (seccion 196), contra el servidor levantado en localhost:4000.
 //
-// Lo que se comprueba: escribe el que tiene cuenta, el invitado lee; la
+// Lo que se comprueba: escribe cualquiera con identidad estable (seccion 199);
+// el que llega sin id de navegador solo lee; la
 // moderacion del truco (enlace quitado, groseria tapada, grito bajado); el
 // spam se paga con silencio; la lista de quien esta en linea; y, si el
 // servidor arranco con DOMINO_SOCIOS=SocioDePrueba, que el socio baja mensajes
@@ -10,7 +11,7 @@ import 'dotenv/config';
 import jwt from 'jsonwebtoken';
 import { io as ioClient } from 'socket.io-client';
 
-const URL = 'http://localhost:4000';
+const URL = process.env.BATERIA_API || 'http://localhost:4000';
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
 let pasados = 0;
@@ -46,21 +47,25 @@ async function main() {
   const tokenSocio = jwt.sign({ id: base + 1, username: 'SocioDePrueba' }, JWT_SECRET, { expiresIn: '1h' });
 
   const invitado = await conectar({ guestId: 'guest-pruebachat1', guestName: 'Visita', guestRetrato: 'tigre' });
+  const sinIdentidad = await conectar({});
   const cuenta = await conectar({ token });
   const socio = await conectar({ token: tokenSocio });
 
-  // ---- 1. El invitado lee ----------------------------------------------
+  // ---- 1. El que llega sin identidad, lee ------------------------------
+  sinIdentidad.emit('chat:entrar');
+  const histSin = await proximo(sinIdentidad, 'chat:historial');
+  check(Boolean(histSin), 'El que llega sin identidad recibe el historial');
+  check(histSin?.puedoEscribir === false, 'Y se le dice que NO puede escribir');
+  check(histSin?.vidaMinutos >= 1, `Cada mensaje vive ${histSin?.vidaMinutos} minutos`);
+
+  // ---- 2. ...y no escribe; el invitado con nombre SI ---------------------
+  const rebote = await pedir(sinIdentidad, 'chat:enviar', { texto: 'deberia rebotar' });
+  check(rebote?.ok === false && rebote?.code === 'sin-identidad', 'Sin identidad estable no se escribe');
   invitado.emit('chat:entrar');
   const histInvitado = await proximo(invitado, 'chat:historial');
-  check(Boolean(histInvitado), 'El invitado recibe el historial');
-  check(histInvitado?.puedoEscribir === false, 'Al invitado se le dice que NO puede escribir');
-  check(histInvitado?.vidaMinutos >= 1, `Cada mensaje vive ${histInvitado?.vidaMinutos} minutos`);
-
-  // ---- 2. El invitado no escribe ----------------------------------------
-  const rebote = await pedir(invitado, 'chat:enviar', { texto: 'deberia rebotar' });
-  check(rebote?.ok === false && rebote?.code === 'invitado', 'El invitado que intenta escribir recibe "crea tu cuenta"');
-  const filtrado = await proximo(invitado, 'chat:mensaje', 600);
-  check(filtrado === null, 'Y su mensaje NO llega a nadie');
+  check(histInvitado?.puedoEscribir === true, 'El invitado con nombre y retrato SI puede escribir (seccion 199)');
+  const dijoVisita = await pedir(invitado, 'chat:enviar', { texto: 'hola, soy de visita' });
+  check(dijoVisita?.ok === true && dijoVisita.mensaje.username === 'Visita' && dijoVisita.mensaje.retrato === 'tigre', 'Y su mensaje sale con su nombre y su retrato');
 
   // ---- 3. La cuenta escribe y le llega a todos --------------------------
   cuenta.emit('chat:entrar');
@@ -126,6 +131,7 @@ async function main() {
   }
 
   invitado.close();
+  sinIdentidad.close();
   cuenta.close();
   socio.close();
 

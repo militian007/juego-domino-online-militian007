@@ -9,9 +9,11 @@ import { limpiar as moderar, esSpam, duracionSilencio, faltaEnPalabras } from '.
  * truco (Raul, 20-sep: «copiate del privoytruco»). Dos pestanas: la
  * conversacion y quien esta en linea, para conseguir con quien jugar.
  *
- * Escribe el que tiene cuenta, el invitado lee (regla del truco y de Jonathan,
- * por lo mismo: sin cuenta no hay a quien callar, porque se va y vuelve
- * siendo otro; y de paso es un motivo para registrarse).
+ * SIN CUENTAS (seccion 199, la regla de esta tanda: nada de registro ni
+ * login; el asiento es por token, como el ludo online): escribe cualquiera
+ * con su identidad ligera. A quien callar es al id estable del navegador
+ * (`guest-...`); el que llega sin id estable (uno por pestana) solo lee.
+ * Cuando la plataforma traiga cuentas, el id pasa a ser el de la cuenta.
  *
  * ## Los frenos, todos en el servidor
  *
@@ -40,21 +42,22 @@ const SOCIOS = new Set(
  * sola consulta para toda la tanda.
  */
 const conTitulos = async (mensajes) => {
-  const claves = await Preferencia.titulosDe(mensajes.map((m) => m.userId));
-  return mensajes.map((m) => ({ ...m, titulo: nombreDe(claves[Number(m.userId)]) }));
+  const claves = await Preferencia.titulosDe(mensajes.map((m) => m.userId).filter((id) => /^\d+$/.test(String(id))));
+  return mensajes.map((m) => ({ ...m, titulo: nombreDe(claves[Number(m.userId)]) || null }));
 };
 
 /**
  * Quien es el que habla: lo que dejo puesto el middleware del socket, que es
  * quien verifico el token. Ni se vuelve a verificar ni se le cree al navegador.
  */
+const ID_ESTABLE = /^guest-[a-z0-9]{6,40}$/i;
 const identificar = (socket) => {
-  if (socket.isGuest) return null;
   if (!socket.userId || !socket.username) return null;
-  return { userId: socket.userId, username: socket.username };
+  if (socket.isGuest && (!ID_ESTABLE.test(socket.userId) || socket.userId === `guest-${socket.id}`)) return null;
+  return { userId: String(socket.userId), username: socket.username, retrato: socket.retrato ?? null };
 };
 
-const esSocio = (socket) => Boolean(identificar(socket)) && SOCIOS.has(String(socket.username).toLowerCase());
+const esSocio = (socket) => !socket.isGuest && Boolean(identificar(socket)) && SOCIOS.has(String(socket.username).toLowerCase());
 
 /** ¿Esta persona esta en una partida que no ha terminado? */
 const estaJugando = (roomManager, userId) => {
@@ -119,7 +122,7 @@ export function registrarChat(io, socket, roomManager) {
     };
 
     const quien = identificar(socket);
-    if (!quien) return fallo('Crea tu cuenta para escribir en el chat.', { code: 'invitado' });
+    if (!quien) return fallo('Ponte un nombre en el umbral para escribir.', { code: 'sin-identidad' });
 
     const limpio = ChatGlobal.limpiar(texto);
     if (!limpio) return fallo('El mensaje está vacío');
@@ -154,14 +157,14 @@ export function registrarChat(io, socket, roomManager) {
       const { visible, quitoContacto } = moderar(limpio);
       if (!visible) return fallo('Ese mensaje quedó vacío.');
 
-      const mensaje = await ChatGlobal.guardar({ userId: quien.userId, username: quien.username, texto: visible });
-      const completo = { ...mensaje, titulo: nombreDe(await Preferencia.leer(quien.userId, Preferencia.TITULO)) };
+      const mensaje = await ChatGlobal.guardar({ userId: quien.userId, username: quien.username, retrato: quien.retrato, texto: visible });
+      const completo = { ...mensaje, titulo: /^\d+$/.test(quien.userId) ? nombreDe(await Preferencia.leer(quien.userId, Preferencia.TITULO)) : null };
       io.to('chat-global').emit('chat:mensaje', completo);
       // Para poder avisarle por que su mensaje salio distinto de lo que escribio.
       callback?.({ ok: true, mensaje: completo, seQuitoContacto: quitoContacto });
 
       // Saludar en el chat es una de las misiones diarias del pase.
-      pase.alEscribirEnElChat(quien.userId).catch(() => {});
+      if (/^\d+$/.test(quien.userId)) pase.alEscribirEnElChat(quien.userId).catch(() => {});
     } catch (err) {
       console.error('Error guardando mensaje del chat:', err.message);
       fallo('No se pudo enviar, prueba de nuevo');
@@ -190,10 +193,10 @@ export function registrarChat(io, socket, roomManager) {
   /** Silencio corto (minutos) o suspension de dias con el mensaje que el jugador va a leer. */
   socket.on('salon:silenciar', async ({ userId, minutos, dias, mensaje } = {}, callback) => {
     if (!esSocio(socket)) return callback?.({ ok: false, error: 'Solo un socio' });
-    const destino = Number(userId);
+    const destino = String(userId || '');
     const d = Number(dias);
     const m = Number(minutos);
-    if (!Number.isInteger(destino) || destino <= 0) return callback?.({ ok: false, error: 'No sé a quién' });
+    if (!destino) return callback?.({ ok: false, error: 'No sé a quién' });
     if (!(Number.isInteger(d) && d >= 1 && d <= 365) && !(Number.isInteger(m) && m >= 1 && m <= 10080)) {
       return callback?.({ ok: false, error: 'Minutos o días' });
     }
@@ -211,7 +214,7 @@ export function registrarChat(io, socket, roomManager) {
       });
       // El suspendido se entera al momento, en la barra del chat.
       for (const s of io.sockets.sockets.values()) {
-        if (!s.isGuest && Number(s.userId) === destino) s.emit('chat:silenciado', { hasta: hasta.toISOString(), mensaje: texto.length >= 5 ? texto : null });
+        if (String(s.userId) === destino) s.emit('chat:silenciado', { hasta: hasta.toISOString(), mensaje: texto.length >= 5 ? texto : null });
       }
       callback?.({ ok: true, hasta: hasta.toISOString() });
     } catch (err) {
@@ -223,9 +226,9 @@ export function registrarChat(io, socket, roomManager) {
   socket.on('salon:levantar', async ({ userId } = {}, callback) => {
     if (!esSocio(socket)) return callback?.({ ok: false, error: 'Solo un socio' });
     try {
-      await ChatGlobal.levantar(Number(userId));
+      await ChatGlobal.levantar(String(userId));
       for (const s of io.sockets.sockets.values()) {
-        if (!s.isGuest && Number(s.userId) === Number(userId)) s.emit('chat:silenciado', null);
+        if (String(s.userId) === String(userId)) s.emit('chat:silenciado', null);
       }
       callback?.({ ok: true });
     } catch (err) {
