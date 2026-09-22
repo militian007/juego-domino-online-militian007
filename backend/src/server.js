@@ -4,6 +4,7 @@ import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
 import authRoutes from './routes/auth.js';
+import buzonRoutes from './routes/buzon.js';
 import perfilRoutes from './routes/perfil.js';
 import rankingRoutes from './routes/ranking.js';
 import torneosRoutes from './routes/torneos.js';
@@ -38,6 +39,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/buzon', buzonRoutes);
 app.use('/api/perfil', perfilRoutes);
 app.use('/api/ranking', rankingRoutes);
 app.use('/api/torneos', torneosRoutes);

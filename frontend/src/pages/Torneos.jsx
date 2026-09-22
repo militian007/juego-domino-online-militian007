@@ -5,6 +5,7 @@ import { torneosApi } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { connectSocket } from '../services/socket.js';
 import PuertasDeLaCasa from '../casa/PuertasDeLaCasa.jsx';
+import { BombilloDelBuzon } from '../buzon/Buzon.jsx';
 
 /**
  * La vitrina de torneos, con la forma de la de PrivoyTruco.
@@ -107,7 +108,7 @@ export default function Torneos() {
         <span className="text-[11px] font-semibold tracking-[0.3em] text-domino-cream/50">
           LA VITRINA
         </span>
-        <span className="w-4" />
+        <BombilloDelBuzon />
       </header>
 
       <div className="mx-auto max-w-2xl px-4 pb-10 sm:px-8">

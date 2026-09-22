@@ -129,6 +129,22 @@ export async function initDatabase() {
     );
     CREATE INDEX IF NOT EXISTS idx_salon_mensajes_user ON salon_mensajes(user_id, id);
 
+    -- EL BUZON DE IDEAS Y FALLAS (seccion 200): una nota por renglon. Nadie
+    -- contesta; el socio copia lo nuevo y lo pega en el chat de Claude.
+    CREATE TABLE IF NOT EXISTS buzon (
+      id SERIAL PRIMARY KEY,
+      tipo VARCHAR(10) NOT NULL,
+      user_id VARCHAR(80) NOT NULL,
+      username VARCHAR(255) NOT NULL,
+      pantalla VARCHAR(60),
+      texto VARCHAR(600) NOT NULL,
+      creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS buzon_marcas (
+      clave VARCHAR(40) PRIMARY KEY,
+      valor VARCHAR(60)
+    );
+
     -- Los silencios: uno por persona, con hasta cuando, cuantas veces (para
     -- que el castigo escale) y el motivo. Si el motivo es una frase larga, es
     -- el mensaje que el socio le escribio al suspenderlo y el jugador lo lee.

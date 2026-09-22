@@ -8503,3 +8503,26 @@ ventanilla (pisos 1 y 3).
 
 Probado: motor 85, servidor 150 (con la casa torpe y modalidad/puntos), chat 24, retos 17,
 y la bateria entera en verde (ver la corrida en `scripts/reportes/_corrida.txt`).
+
+## 200. El buzon de ideas y fallas (2026-09-22)
+
+Raul: "buzon de una, todas deben tenerlo". Copiado del truco (14-sep): un bombillo en la
+cabecera de cada pantalla de la casa (umbral, antesala, cuadro de honor, torneos) abre una
+hoja: «Una idea» o «Algo fallo», el texto, Enviar al buzon, un gracias corto y se cierra. No
+es un ticket: nadie contesta. Lo firma la identidad ligera (id estable del navegador) o la
+cuenta; el que no se ha puesto nombre no puede dejar nota. Tope: 10 notas por hora por
+persona. Se guarda la pantalla donde estaba.
+
+Del lado del socio, `/buzon?llave=...` (la llave es `DOMINO_BUZON_LLAVE` del servidor; sin
+cuentas, es la unica puerta, y queda guardada en el telefono): las notas, COPIAR LO NUEVO
+(lo posterior a la ultima copia, que la recuerda el servidor en `buzon_marcas`), COPIAR
+TODO y VACIAR. El texto copiado se pega en el chat de Claude. Si el portapapeles no deja,
+el texto sale en un cuadro para copiarlo a mano.
+
+Tablas `buzon` y `buzon_marcas`; rutas `POST /api/buzon`, `GET /api/buzon?llave`,
+`POST /api/buzon/copiar`, `POST /api/buzon/vaciar`. La hoja se pinta con un portal al
+cuerpo de la pagina: el bombillo vive dentro de cabeceras animadas (contexto de apilado
+propio) y la capsula del salon le pasaba por encima.
+
+Probado: `bateria/buzon.mjs` (nota desde el umbral con acentos, gracias, el socio la ve
+con su nombre, copia lo nuevo y queda «0 sin copiar», sin llave 403) en la bateria.

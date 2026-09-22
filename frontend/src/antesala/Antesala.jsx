@@ -9,6 +9,7 @@ import PuertaDelSalon from '../salon/PuertaDelSalon.jsx';
 import Salon from '../salon/Salon.jsx';
 import RetoEntrante from '../components/notificaciones/RetoEntrante.jsx';
 import PuertasDeLaCasa from '../casa/PuertasDeLaCasa.jsx';
+import { BombilloDelBuzon } from '../buzon/Buzon.jsx';
 import IdentidadLigera from '../umbral/IdentidadLigera.jsx';
 import MesaConSillas, { SILLAS_1V1, SILLAS_2V2 } from './MesaConSillas.jsx';
 import Tablon from './Tablon.jsx';
@@ -237,14 +238,17 @@ export default function Antesala() {
         <header className="flex items-center justify-between">
           <button type="button" onClick={() => navigate('/')} aria-label="Volver" className="text-3xl leading-none text-domino-accent">‹</button>
           <span className="text-[11px] font-bold tracking-[0.35em] text-domino-accent/90">CLUB DE DOMINÓ</span>
-          <button
-            type="button"
-            onClick={() => { if (!conCuenta) setPidiendoIdentidad(true); }}
-            className="flex items-center gap-2 rounded-full border border-domino-accent/40 bg-black/40 py-1 pl-1 pr-3 text-sm font-bold"
-          >
-            <MesaConSillas.Retrato avatar={retrato} tamano={26} />
-            {nombre || '...'}
-          </button>
+          <span className="flex items-center gap-2">
+            <BombilloDelBuzon />
+            <button
+              type="button"
+              onClick={() => { if (!conCuenta) setPidiendoIdentidad(true); }}
+              className="flex items-center gap-2 rounded-full border border-domino-accent/40 bg-black/40 py-1 pl-1 pr-3 text-sm font-bold"
+            >
+              <MesaConSillas.Retrato avatar={retrato} tamano={26} />
+              {nombre || '...'}
+            </button>
+          </span>
         </header>
 
         <h1 className="mt-3 text-[32px] font-bold leading-none text-domino-accent drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" style={{ fontFamily: SERIF }}>

@@ -7,6 +7,7 @@ import PuertaDelSalon from '../salon/PuertaDelSalon.jsx';
 import Salon from '../salon/Salon.jsx';
 import RetoEntrante from '../components/notificaciones/RetoEntrante.jsx';
 import DockDeLaCasa from '../casa/DockDeLaCasa.jsx';
+import { BombilloDelBuzon } from '../buzon/Buzon.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { haySesion } from '../services/api.js';
 import { connectSocket } from '../services/socket.js';
@@ -89,17 +90,20 @@ export default function Umbral() {
           </div>
         </div>
 
-        {(conCuenta || yo) && (
-          <button
-            type="button"
-            onClick={() => setPidiendo(true)}
-            className="absolute right-3 z-[4] flex items-center gap-2 rounded-full border border-domino-accent/40 bg-black/45 py-1 pl-1 pr-3 text-[13px] font-bold"
-            style={{ top: 'calc(10px + env(safe-area-inset-top))' }}
-          >
-            {yo && !conCuenta ? <img src={retratoUrl(yo.retrato)} alt="" className="h-6 w-6 rounded-full" /> : null}
-            {conCuenta ? user.username : yo.nombre}
-          </button>
-        )}
+        {/* El bombillo del buzon (seccion 200) y el nombre, arriba a la derecha. */}
+        <div className="absolute right-3 z-[4] flex items-center gap-2" style={{ top: 'calc(10px + env(safe-area-inset-top))' }}>
+          <BombilloDelBuzon />
+          {(conCuenta || yo) && (
+            <button
+              type="button"
+              onClick={() => setPidiendo(true)}
+              className="flex items-center gap-2 rounded-full border border-domino-accent/40 bg-black/45 py-1 pl-1 pr-3 text-[13px] font-bold"
+            >
+              {yo && !conCuenta ? <img src={retratoUrl(yo.retrato)} alt="" className="h-6 w-6 rounded-full" /> : null}
+              {conCuenta ? user.username : yo.nombre}
+            </button>
+          )}
+        </div>
 
         {/* LA PANCARTA: JUEGA YA, la misma del truco y del ludo, con su manito. */}
         <button

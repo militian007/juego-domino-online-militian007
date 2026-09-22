@@ -14,7 +14,7 @@
 #   -SinNavegador  se salta Chrome (antesala, mesa, sin conexion, revancha...)
 #   -Reusar        no borra la base de la bateria
 #   -Solo <etapa>  corre una sola: motor servidor chat retos calentar antesala casa fantasma
-#                  reglas sinconexion revancha fotos partida
+#                  reglas sinconexion revancha fotos partida buzon
 #
 # NOTA: mantener este archivo ASCII-only (PowerShell 5.1 lee ps1 sin BOM como ANSI).
 param(
@@ -93,7 +93,7 @@ Matar $API_PORT
 Matar $FRONT_PORT
 if (-not $Reusar) { Remove-Item -Force -ErrorAction SilentlyContinue $BASE, "$BASE-wal", "$BASE-shm" }
 
-$envApi = @{ PORT = "$API_PORT"; DATABASE_PATH = $BASE; CLIENT_URL = $FRONT; DOMINO_SOCIOS = "SocioDePrueba"; NODE_ENV = "development" }
+$envApi = @{ PORT = "$API_PORT"; DATABASE_PATH = $BASE; CLIENT_URL = $FRONT; DOMINO_SOCIOS = "SocioDePrueba"; DOMINO_BUZON_LLAVE = "llave-de-prueba"; NODE_ENV = "development" }
 foreach ($k in $envApi.Keys) { Set-Item -Path "Env:$k" -Value $envApi[$k] }
 $procApi = Start-Process -FilePath "node" -ArgumentList @("src/server.js") -WorkingDirectory $backend -NoNewWindow -PassThru -RedirectStandardOutput (Join-Path $reportes "api.log") -RedirectStandardError (Join-Path $reportes "api.err.log")
 if (-not (Esperar "$API/api/health" 30)) { Write-Host "El servidor de la bateria no levanto (ver reportes/api.err.log)" -ForegroundColor Red; Stop-Process -Id $procApi.Id -Force; exit 1 }
@@ -136,6 +136,7 @@ if (-not $SinNavegador) {
   Etapa "revancha" { Correr $frontend "node" @("scripts/bateria/revancha.mjs") (Join-Path $reportes "revancha.log") }
   Etapa "fotos" { Correr $frontend "node" @("scripts/bateria/fotos-mesa.mjs") (Join-Path $reportes "fotos.log") }
   Etapa "partida" { Correr $frontend "node" @("scripts/bateria/partida-entera.mjs") (Join-Path $reportes "partida.log") }
+  Etapa "buzon" { Correr $frontend "node" @("scripts/bateria/buzon.mjs") (Join-Path $reportes "buzon.log") }
 }
 
 # ---------------------------------------------------------------- cierre

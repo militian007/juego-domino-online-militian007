@@ -8,6 +8,7 @@ import Register from './pages/Register.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Perfil from './pages/Perfil.jsx';
 import Ranking from './pages/Ranking.jsx';
+import BuzonDelSocio from './buzon/BuzonDelSocio.jsx';
 import Torneos from './pages/Torneos.jsx';
 import Pase from './pages/Pase.jsx';
 import Tienda from './pages/Tienda.jsx';
@@ -37,6 +38,7 @@ function App() {
       {/* El ranking se ve sin cuenta: el que entra de visita tiene que poder
           ver quienes son los mejores. */}
       <Route path="/ranking" element={<Ranking />} />
+      <Route path="/buzon" element={<BuzonDelSocio />} />
       <Route path="/torneos" element={<Torneos />} />
       {/* El pase pide cuenta: sin cuenta no hay donde guardarle el progreso. */}
       <Route path="/pase" element={<PrivateRoute><Pase /></PrivateRoute>} />

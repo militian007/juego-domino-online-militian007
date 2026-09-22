@@ -6,6 +6,7 @@ import Avatar from '../components/game/Avatar.jsx';
 import MesaConSillas from '../antesala/MesaConSillas.jsx';
 import { identidad } from '../umbral/identidad.js';
 import PuertasDeLaCasa from '../casa/PuertasDeLaCasa.jsx';
+import { BombilloDelBuzon } from '../buzon/Buzon.jsx';
 
 /**
  * EL CUADRO DE HONOR, vestido de club (seccion 193, ficha 4.1 de la plantilla).
@@ -108,12 +109,15 @@ export default function Ranking() {
         <header className="flex items-center justify-between">
           <button type="button" onClick={() => navigate(-1)} aria-label="Volver" className="text-3xl leading-none text-domino-accent">‹</button>
           <span className="whitespace-nowrap text-[10px] font-bold tracking-[0.3em] text-domino-accent/90">EL CUADRO DE HONOR</span>
-          {conCuenta || yo ? (
-            <span className="flex items-center gap-2 rounded-full border border-domino-accent/40 bg-black/40 py-1 pl-1 pr-3 text-sm font-bold">
-              <MesaConSillas.Retrato avatar={conCuenta ? user.username : yo.retrato} tamano={26} />
-              <span className="max-w-[88px] truncate">{conCuenta ? user.username : yo.nombre}</span>
-            </span>
-          ) : <span className="w-6" />}
+          <span className="flex items-center gap-2">
+            <BombilloDelBuzon />
+            {(conCuenta || yo) && (
+              <span className="flex items-center gap-2 rounded-full border border-domino-accent/40 bg-black/40 py-1 pl-1 pr-3 text-sm font-bold">
+                <MesaConSillas.Retrato avatar={conCuenta ? user.username : yo.retrato} tamano={26} />
+                <span className="max-w-[88px] truncate">{conCuenta ? user.username : yo.nombre}</span>
+              </span>
+            )}
+          </span>
         </header>
 
         <h1 className="mt-3 text-[32px] font-bold leading-none text-domino-accent drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" style={{ fontFamily: SERIF }}>
