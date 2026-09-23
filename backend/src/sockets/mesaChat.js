@@ -9,7 +9,7 @@
  * | --- | --- | --- |
  * | quien lo ve | todo el que entra al menu | los de esa mesa |
  * | donde se guarda | en la base de datos | en memoria, y muere con la mesa |
- * | quien escribe | el que tiene cuenta | los que estan sentados |
+ * | quien escribe | cualquiera con nombre | los que estan sentados |
  *
  * **No se guarda en la base.** Lo que se dice en una mesa muere con la mesa: es
  * conversacion de partida, no historial. Guardar cada "juega rapido pana"
@@ -30,6 +30,11 @@
  * SERVIDOR, asi que no se pueden saltar desde el navegador.
  */
 
+import * as Config from '../models/Config.js';
+import * as ChatGlobal from '../models/ChatGlobal.js';
+import * as guardianes from '../services/guardianes.js';
+import { limpiar as moderar } from '../services/moderacionDelChat.js';
+
 /** Lo mas largo que puede ser un mensaje. En una mesa se habla corto. */
 const LARGO_MAXIMO = 160;
 
@@ -41,6 +46,9 @@ const MAXIMO_POR_MINUTO = 12;
 
 /** Cuantos mensajes se recuerdan por mesa, para el que se reconecta. */
 const RECUERDO = 25;
+
+/** Cuantos trae la TIRA que sale al abrir el chat (seccion 201, ficha 5.2). */
+export const EN_LA_TIRA = 5;
 
 /**
  * Lo que se dijo en cada mesa. Clave: el codigo de la sala.
@@ -90,6 +98,41 @@ const puedeEscribir = (userId) => {
 const limpiar = (texto) =>
   typeof texto === 'string' ? texto.replace(/\s+/g, ' ').trim().slice(0, LARGO_MAXIMO) : '';
 
+/** Como en el salon: el que llega sin id de navegador solo lee. */
+const ID_ESTABLE = /^guest-[a-z0-9]{6,40}$/i;
+const esCuenta = (id) => /^\d+$/.test(String(id));
+const identidadEstable = (socket) =>
+  Boolean(socket.userId) && (!socket.isGuest || (ID_ESTABLE.test(socket.userId) && socket.userId !== `guest-${socket.id}`));
+
+/**
+ * Quien puede escribir en la mesa (ficha 5.2, la llave «abrirlo a todos»): con
+ * la llave, cualquiera sentado con nombre; sin ella, solo los que tienen
+ * cuenta. El que no tiene identidad estable nunca.
+ */
+const puedeHablar = (socket) => {
+  if (!identidadEstable(socket)) return 'Ponte un nombre en el umbral para escribir.';
+  if (!Config.valor('chatMesa.paraTodos') && !esCuenta(socket.userId)) {
+    return 'Por ahora escriben los que tienen cuenta.';
+  }
+  return null;
+};
+
+/** Los que estan callados en el salon: ni escriben ni salen en la tira. */
+const callados = new Set();
+const estaCallado = async (userId) => {
+  try {
+    const s = await ChatGlobal.silencioVigente(userId);
+    if (s) callados.add(String(userId)); else callados.delete(String(userId));
+    return Boolean(s);
+  } catch {
+    return callados.has(String(userId));
+  }
+};
+
+/** La tira: lo ultimo de ESTA partida, sin lo del que esta callado. */
+const tiraDe = (code) =>
+  (historial.get(code) ?? []).filter((m) => !callados.has(String(m.userId))).slice(-EN_LA_TIRA);
+
 /**
  * ¿Este socket esta sentado en esa mesa?
  *
@@ -110,16 +153,33 @@ const esEntrePersonas = (room) => (room.config?.bots ?? 0) === 0;
 export function registrarChatDeMesa(io, socket, roomManager) {
   socket.on('mesa:chat:entrar', ({ code } = {}, callback) => {
     const room = estaSentado(roomManager, code, socket.userId);
-    if (!room || !esEntrePersonas(room)) {
-      return callback?.({ ok: false, mensajes: [], puedoEscribir: false });
+    if (!room || !esEntrePersonas(room) || !Config.valor('chatMesa.activo')) {
+      return callback?.({ ok: false, mensajes: [], tira: [], puedoEscribir: false });
     }
-    callback?.({ ok: true, mensajes: historial.get(code) ?? [], puedoEscribir: true });
+    callback?.({
+      ok: true,
+      mensajes: (historial.get(code) ?? []).filter((m) => !callados.has(String(m.userId))),
+      tira: tiraDe(code),
+      puedoEscribir: puedeHablar(socket) === null,
+      burbujaMs: Config.valor('chatMesa.burbujaMs')
+    });
   });
 
-  socket.on('mesa:chat:enviar', ({ code, texto } = {}, callback) => {
-    if (socket.isGuest || !socket.userId) {
-      return callback?.({ ok: false, error: 'Inicia sesión para escribir' });
+  // LA TIRA (ficha 5.2): al abrir el chat sale lo ultimo de esta partida con
+  // quien lo dijo. Se pide aparte para que salga al dia aunque el panel lleve
+  // rato cerrado.
+  socket.on('mesa:chat:tira', ({ code } = {}, callback) => {
+    const room = estaSentado(roomManager, code, socket.userId);
+    if (!room) return callback?.({ ok: false, tira: [] });
+    callback?.({ ok: true, tira: tiraDe(code) });
+  });
+
+  socket.on('mesa:chat:enviar', async ({ code, texto } = {}, callback) => {
+    if (!Config.valor('chatMesa.activo')) {
+      return callback?.({ ok: false, error: 'El chat de la mesa está apagado' });
     }
+    const puerta = puedeHablar(socket);
+    if (puerta) return callback?.({ ok: false, error: puerta });
 
     const room = estaSentado(roomManager, code, socket.userId);
     if (!room) return callback?.({ ok: false, error: 'No estás en esa mesa' });
@@ -130,16 +190,28 @@ export function registrarChatDeMesa(io, socket, roomManager) {
     const limpio = limpiar(texto);
     if (!limpio) return callback?.({ ok: false, error: 'El mensaje está vacío' });
 
+    if (await estaCallado(socket.userId)) {
+      return callback?.({ ok: false, error: 'Estás suspendido del chat. Puedes leer, pero no escribir.' });
+    }
+
     const freno = puedeEscribir(socket.userId);
     if (freno) return callback?.({ ok: false, error: freno });
+
+    // La misma moderacion del salon: enlaces fuera, groserias tapadas, gritos
+    // en minusculas. Y los guardianes miran (ficha 3.3).
+    const { visible, quitoContacto, tapoGroserias } = moderar(limpio);
+    guardianes.alModerar({ userId: socket.userId, username: socket.username, texto: visible, tapoGroserias, quitoContacto });
+    if (!visible) return callback?.({ ok: false, error: 'Ese mensaje quedó vacío' });
 
     const mensaje = {
       id: `${Date.now()}-${socket.userId}`,
       userId: socket.userId,
-      // El nombre sale del token que ya verifico el middleware, NO de lo que
-      // manda el navegador: si no, cualquiera escribe haciendose pasar por otro.
+      // El nombre sale del token (o de la identidad que verifico el middleware),
+      // NO de lo que manda el navegador: si no, cualquiera se hace pasar por otro.
       username: socket.username,
-      texto: limpio,
+      retrato: socket.retrato ?? null,
+      asiento: room.players.find((p) => String(p.id) === String(socket.userId))?.asiento ?? null,
+      texto: visible,
       creadoEn: new Date().toISOString()
     };
 
@@ -147,6 +219,6 @@ export function registrarChatDeMesa(io, socket, roomManager) {
     historial.set(code, [...previos, mensaje].slice(-RECUERDO));
 
     io.to(code).emit('mesa:chat:mensaje', mensaje);
-    callback?.({ ok: true });
+    callback?.({ ok: true, seQuitoContacto: quitoContacto });
   });
 }

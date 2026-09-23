@@ -32,6 +32,8 @@ bateria en su banco (`bateria170` / `bateria171`); si corres uno suelto, pon
 | `fotos-mesa.mjs` | fotos de la mesa: 1v1, 2v2, controles, y el chat entre dos cuentas | 187 |
 | `partida-entera.mjs` | juega contra la casa hasta el fin de la ronda, con fotos | 185 |
 | `buzon.mjs` | Raul deja una falla desde el umbral; el socio la ve en /buzon con su llave y copia lo nuevo | 200 |
+| `chat-mesa.mjs` | dos personas en la mesa: burbuja de 6 s, la tira de las ultimas 5 con quien las dijo, se cierra sola | 201 |
+| `socio.mjs` | las perillas se guardan con su boton, los guardianes encienden con una queja, la libreta saca su reporte | 201 |
 
 Las herramientas del telefono barato (piso 0) estan en `../perf/`. Las medidas
 del motor (la culebra, las montadas, el destranque) en

@@ -14,7 +14,7 @@
 #   -SinNavegador  se salta Chrome (antesala, mesa, sin conexion, revancha...)
 #   -Reusar        no borra la base de la bateria
 #   -Solo <etapa>  corre una sola: motor servidor chat retos calentar antesala casa fantasma
-#                  reglas sinconexion revancha fotos partida buzon
+#                  reglas sinconexion revancha fotos partida buzon chatmesa socio
 #
 # NOTA: mantener este archivo ASCII-only (PowerShell 5.1 lee ps1 sin BOM como ANSI).
 param(
@@ -137,6 +137,8 @@ if (-not $SinNavegador) {
   Etapa "fotos" { Correr $frontend "node" @("scripts/bateria/fotos-mesa.mjs") (Join-Path $reportes "fotos.log") }
   Etapa "partida" { Correr $frontend "node" @("scripts/bateria/partida-entera.mjs") (Join-Path $reportes "partida.log") }
   Etapa "buzon" { Correr $frontend "node" @("scripts/bateria/buzon.mjs") (Join-Path $reportes "buzon.log") }
+  Etapa "chatmesa" { Correr $frontend "node" @("scripts/bateria/chat-mesa.mjs") (Join-Path $reportes "chatmesa.log") }
+  Etapa "socio" { Correr $frontend "node" @("scripts/bateria/socio.mjs") (Join-Path $reportes "socio.log") }
 }
 
 # ---------------------------------------------------------------- cierre

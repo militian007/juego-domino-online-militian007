@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard.jsx';
 import Perfil from './pages/Perfil.jsx';
 import Ranking from './pages/Ranking.jsx';
 import BuzonDelSocio from './buzon/BuzonDelSocio.jsx';
+import Config, { Guardianes, Disputas } from './socio/CuartoDelSocio.jsx';
 import Torneos from './pages/Torneos.jsx';
 import Pase from './pages/Pase.jsx';
 import Tienda from './pages/Tienda.jsx';
@@ -39,6 +40,10 @@ function App() {
           ver quienes son los mejores. */}
       <Route path="/ranking" element={<Ranking />} />
       <Route path="/buzon" element={<BuzonDelSocio />} />
+      {/* El cuarto del socio (seccion 201), todo con la misma llave. */}
+      <Route path="/config" element={<Config />} />
+      <Route path="/guardianes" element={<Guardianes />} />
+      <Route path="/disputas" element={<Disputas />} />
       <Route path="/torneos" element={<Torneos />} />
       {/* El pase pide cuenta: sin cuenta no hay donde guardarle el progreso. */}
       <Route path="/pase" element={<PrivateRoute><Pase /></PrivateRoute>} />

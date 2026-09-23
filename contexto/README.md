@@ -8526,3 +8526,64 @@ propio) y la capsula del salon le pasaba por encima.
 
 Probado: `bateria/buzon.mjs` (nota desde el umbral con acentos, gracias, el socio la ve
 con su nombre, copia lo nuevo y queda «0 sin copiar», sin llave 403) en la bateria.
+
+## 201. El chat de la mesa del 23-sep, los guardianes, las perillas y la libreta (2026-09-23)
+
+Tanda de noche, con la plantilla del truco al dia (fichas 🆕 5.2, 3.3, 8.1 y 7.2). Nada de
+plata, nada de cuentas, nada de reglas del juego nuevas: eso espera.
+
+**Antes que nada, el inventario.** `contexto/INVENTARIO-PLANTILLA.md`: el domino ficha por
+ficha contra la plantilla, con lo hecho, lo a medias y lo que falta.
+
+### El chat de la mesa como quedo en el truco (ficha 5.2)
+Raul ya escogio ese diseno alla, asi que aqui se copia sin preguntar:
+- La burbuja dura **6 s** (antes 5,2: cuarenta letras en cinco segundos no se leen) y a lo
+  sumo hay **3** en pantalla. La duracion es perilla (`chatMesa.burbujaMs`).
+- El 💬 abre **la tira**: lo ultimo de ESTA partida con quien lo dijo, encima de la mano,
+  y se cierra sola a los **5 s**; si uno toca o escribe, deja de contar. Mientras esta
+  abierta **no hay burbujas** (seria lo mismo dos veces). El panel gordo que tapaba la mesa
+  se retiro.
+- **El silenciado del salon no aparece ni en la tira** y no puede escribir en la mesa.
+- La misma moderacion del salon en la mesa: enlaces y telefonos fuera, groserias tapadas.
+- Quien escribe: la llave `chatMesa.paraTodos` («abrirlo a todos»). Con ella, cualquiera
+  sentado con nombre; sin ella, solo cuentas. El que llega sin identidad estable, nunca.
+  ⚠️ En el truco la llave separa «el que recargo» del resto; aqui no hay plata, asi que
+  separa cuenta de invitado. **Pregunta 1 para Raul** al final.
+- ⚠️ **Bug gordo que salio en el camino**: sin cuenta, `myPlayerId` era «la primera persona
+  de la mesa», o sea el OTRO en una mesa de dos. Sus mensajes salian como mios y la burbuja
+  aparecia del lado equivocado. Ahora es el id de la identidad ligera.
+
+### Los guardianes de la tanda (ficha 3.3)
+`services/guardianes.js`, en memoria como en el truco: 3 groserias tapadas del mismo en
+10 min · 2 enlaces del mismo · 3 jugadores distintos callados por spam en 10 min · ola de
+150 mensajes en 10 min · una nota del buzon que **mencione lo que se acaba de tocar**
+(`PALABRAS_DE_LA_TANDA`: chat, burbuja, reloj, buzon, mesa juega) suena en el acto con un
+pedazo del texto y los numeros largos tapados · 3 notas en 30 min. Cada alarma descansa
+30 min. Enganchados en el salon, en el chat de la mesa y en el buzon.
+Aqui NO hay Telegram ni staff conectado: la alarma se guarda y el socio la ve en
+`/guardianes` con su llave. Cuando haya por donde avisar, se engancha en `encender()`.
+
+### Las perillas (ficha 8.1)
+`models/Config.js` + tabla `config` + `/config` con la llave. Patron del truco: catalogo con
+nombre y ayuda en criollo, lectura cacheada 30 s (la mesa nunca espera a la base), siembra
+al arrancar, y **toda perilla con su boton Guardar** (el boton solo aparece cuando cambiaste
+algo). Diez: reloj del turno, reloj corto, gracia, strikes, vida del chat del salon, chat de
+mesa (prendido, abrirlo a todos, burbuja) y torpeza de la casa. `RELOJ` del RoomManager lee
+las perillas; el valor de fabrica sigue viniendo del entorno para las pruebas.
+
+### La libreta y las disputas (ficha 7.2, solo el lado del socio)
+`services/libreta.js`: por cada mesa que arranca se abre una libreta y se va llenando sola
+con los eventos del motor traducidos a criollo (quien puso que ficha y por que punta, quien
+paso, quien robo, a quien se le acabo el tiempo), mas las caidas y vueltas de conexion. Las
+ultimas 30 partidas viven en memoria. En `/disputas` el socio ve la lista, abre una y copia
+el **reporte copiable** (cuatro partes: la mesa, quienes, lo que paso, la plata). El boton
+del JUGADOR no se armo: es pantalla nueva y va con lamina A/B/C (abajo).
+
+### El cuarto del socio
+`/buzon`, `/config`, `/guardianes` y `/disputas`, los cuatro con la misma llave
+(`DOMINO_BUZON_LLAVE`) y una barra para saltar entre ellos.
+
+Probado: 167 unitarias (perillas, guardianes con sus topes y su descanso, libreta y su
+reporte), y dos escenas nuevas de la bateria: `chat-mesa.mjs` (dos personas, burbuja, tira,
+se cierra sola) y `socio.mjs` (perilla guardada de verdad en el servidor, guardian encendido
+por una nota del buzon, libreta con su reporte, sin llave 403).

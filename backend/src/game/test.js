@@ -4,6 +4,9 @@ import { generateAllTiles, isDouble, tilePips } from './Tile.js';
 import { RoomManager, RELOJ } from '../RoomManager.js';
 import { elegirBots } from './bots.js';
 import { limpiar as moderar, esSpam, duracionSilencio, faltaEnPalabras } from '../services/moderacionDelChat.js';
+import * as Config from '../models/Config.js';
+import * as guardianes from '../services/guardianes.js';
+import * as libreta from '../services/libreta.js';
 
 let passed = 0;
 let failed = 0;
@@ -677,6 +680,64 @@ console.log('TEST: La moderacion del salon (seccion 196)');
   assert(esSpam('hola', { tiempos: [], textos: ['hola', 'otra'] }, ahora) === null, 'repetir una vez es humano');
   assert(duracionSilencio(1) === 120_000 && duracionSilencio(2) === 240_000 && duracionSilencio(20) === 86_400_000, 'el silencio duplica con techo de un dia');
   assert(faltaEnPalabras(90_000) === '2 minutos' && faltaEnPalabras(3 * 86_400_000) === '3 días', 'cuanto falta, en palabras');
+}
+
+console.log('TEST: Las perillas de la casa (seccion 201, ficha 8.1)');
+{
+  const reloj = Config.todas().find((p) => p.clave === 'reloj.turnoMs');
+  assert(reloj.valor === 25000, 'de fabrica, el turno es de 25 s');
+  Config.__ponerParaPruebas('reloj.cortoMs', 9000);
+  assert(RELOJ.cortoMs === 9000, 'el reloj corto sale de la perilla');
+  Config.__ponerParaPruebas('reloj.graciaMs', 40000);
+  assert(RELOJ.graciaMs === 40000, 'la gracia tambien');
+  Config.__ponerParaPruebas('reloj.cortoMs', 15000);
+  Config.__ponerParaPruebas('reloj.graciaMs', 70000);
+  assert(Config.todas().every((p) => p.nombre && p.ayuda), 'toda perilla tiene nombre y ayuda en criollo');
+}
+
+console.log('TEST: Los guardianes de la tanda (seccion 201, ficha 3.3)');
+{
+  guardianes.__limpiarParaPruebas();
+  Config.__ponerParaPruebas('guardianes.activo', true);
+  for (let i = 0; i < 2; i += 1) guardianes.alModerar({ userId: 'g1', username: 'Fulano', texto: '*******', tapoGroserias: true });
+  assert(guardianes.listar().length === 0, 'dos groserias todavia no encienden nada');
+  guardianes.alModerar({ userId: 'g1', username: 'Fulano', texto: '*******', tapoGroserias: true });
+  const a = guardianes.listar()[0];
+  assert(a && /se está pasando/.test(a.titulo), `la tercera enciende la alarma: ${a?.titulo}`);
+  guardianes.alModerar({ userId: 'g1', username: 'Fulano', texto: '*******', tapoGroserias: true });
+  assert(guardianes.listar().length === 1, 'y descansa media hora: no suena dos veces');
+
+  guardianes.__limpiarParaPruebas();
+  guardianes.alLlegarQueja({ tipo: 'falla', username: 'Raul', texto: 'el reloj se me quedo pegado, llamen al 04141234567' });
+  const q = guardianes.listar()[0];
+  assert(q && /reloj/.test(q.titulo), 'una queja que menciona lo de la tanda suena en el acto');
+  assert(!/04141234567/.test(q.detalle) && /…/.test(q.detalle), `los numeros largos van tapados: ${q.detalle}`);
+
+  guardianes.__limpiarParaPruebas();
+  Config.__ponerParaPruebas('guardianes.activo', false);
+  guardianes.alLlegarQueja({ tipo: 'falla', username: 'Raul', texto: 'el reloj otra vez' });
+  assert(guardianes.listar().length === 0, 'apagados, no encienden nada');
+  Config.__ponerParaPruebas('guardianes.activo', true);
+}
+
+console.log('TEST: La libreta de la partida (seccion 201, ficha 7.2)');
+{
+  libreta.__limpiarParaPruebas();
+  const rm = new RoomManager();
+  const sala = rm.createRoom({ mode: '1v1', hostId: 'yo', hostUsername: 'Yo', armada: { casaEn: [], publica: false } });
+  rm.startGame(sala.code);
+  libreta.anotarDelMotor(sala.code, sala);
+  const l = libreta.de(sala.code);
+  assert(l && l.jugadores.length === 2, 'la libreta se abre con los que se sentaron');
+  assert(l.sucesos.some((s) => /Se reparte la ronda/.test(s.texto)), 'y anota el reparto');
+  libreta.anotar(sala.code, 'Se le cayó la conexión a Yo: la mesa lo espera 70 s.', 'Yo');
+  libreta.cerrar(sala.code, { 1: 100, 2: 40 });
+  const r = libreta.reporte(sala.code);
+  assert(/LIBRETA DE LA PARTIDA/.test(r) && /EN LA MESA/.test(r) && /LO QUE PASÓ/.test(r) && /LA PLATA/.test(r), 'el reporte copiable trae sus cuatro partes');
+  assert(/marcador final: 100 a 40/.test(r), 'con el marcador final');
+  assert(/Se le cayó la conexión/.test(r), 'y las caidas de conexion');
+  assert(libreta.listar()[0].code === sala.code, 'la partida sale en la lista del socio');
+  assert(libreta.de('NOEXISTE') === null, 'una que no existe devuelve nada');
 }
 
 console.log(`\n${'='.repeat(40)}`);

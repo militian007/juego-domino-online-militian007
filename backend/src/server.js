@@ -5,6 +5,8 @@ import http from 'http';
 import { Server } from 'socket.io';
 import authRoutes from './routes/auth.js';
 import buzonRoutes from './routes/buzon.js';
+import configRoutes from './routes/config.js';
+import * as Config from './models/Config.js';
 import perfilRoutes from './routes/perfil.js';
 import rankingRoutes from './routes/ranking.js';
 import torneosRoutes from './routes/torneos.js';
@@ -40,6 +42,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/buzon', buzonRoutes);
+app.use('/api/config', configRoutes);
 app.use('/api/perfil', perfilRoutes);
 app.use('/api/ranking', rankingRoutes);
 app.use('/api/torneos', torneosRoutes);
@@ -111,6 +114,8 @@ io.on('connection', (socket) => {
 import { initDatabase } from './config/database.js';
 
 await initDatabase();
+// Las perillas: se siembran las que falten y se deja la cache lista (seccion 201).
+await Config.sembrar().catch((err) => console.warn('Config: no se pudo sembrar:', err.message));
 
 server.listen(PORT, HOST, () => {
   const address = server.address();

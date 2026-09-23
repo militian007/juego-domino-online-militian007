@@ -1,5 +1,7 @@
 import { randomSeed, MODALIDADES, overridesDeModalidad } from '@privoytruco/domino-engine';
 import { elegirBots } from './game/bots.js';
+import * as Config from './models/Config.js';
+import * as libreta from './services/libreta.js';
 import { DominoGame } from './game/DominoGame.js';
 import { Bot } from './game/Bot.js';
 import { MODE_CONFIG } from './game/DominoGame.js';
@@ -77,13 +79,29 @@ export const PUNTOS_DE_LA_CASA = [50, 100, 150, 200];
 export const puntosValidos = (n) => PUNTOS_DE_LA_CASA.includes(Number(n));
 export const puntosPorDefecto = (modalidad) => overridesDeModalidad(modalidad).targetPoints ?? 100;
 
-export const RELOJ = {
+/**
+ * Las perillas del reloj. Los valores de fabrica siguen viniendo del entorno
+ * (asi las pruebas los mueven sin base), pero LO QUE MANDA es la Config de la
+ * casa (seccion 201): `RELOJ.strikes` y compania leen la perilla si la hay.
+ */
+const RELOJ_BASE = {
   strikes: entero('DOMINO_STRIKES', 0, 0),
   cortoMs: entero('DOMINO_RELOJ_CORTO_MS', 15000, 3000),
   graciaMs: entero('DOMINO_GRACIA_MS', 70000, 5000)
 };
+const dePerilla = (clave, base) => {
+  const v = Config.valor(clave);
+  return typeof v === 'number' && Number.isFinite(v) ? v : base;
+};
+export const RELOJ = {
+  get strikes() { return dePerilla('reloj.strikes', RELOJ_BASE.strikes); },
+  get cortoMs() { return dePerilla('reloj.cortoMs', RELOJ_BASE.cortoMs); },
+  get graciaMs() { return dePerilla('reloj.graciaMs', RELOJ_BASE.graciaMs); },
+  /** Solo para las pruebas: fija el valor como si la perilla lo dijera. */
+  set strikes(v) { RELOJ_BASE.strikes = v; Config.__ponerParaPruebas('reloj.strikes', v); }
+};
 export const RELOJ_CORTO_MS = RELOJ.cortoMs;
-export const GRACIA_MS = RELOJ.graciaMs;
+export const GRACIA_MS = RELOJ_BASE.graciaMs;
 
 /** La llamada de "estas?" antes de repartir (ficha 2.1, regla 2): 3 s con todos conectados, 40 s si a alguno le falta el socket. */
 export const LLAMADA_CORTA_MS = entero('DOMINO_LLAMADA_CORTA_MS', 3000, 500);
@@ -671,7 +689,10 @@ export class RoomManager {
       seed: room.seed
     });
     room.game.empezoEn = Date.now();
-    room.game.graciaMs = room.config.reconnectMs ? GRACIA_MS : null;
+    // La libreta de la partida (ficha 7.2): se abre al repartir y se va
+    // llenando sola con los eventos del motor.
+    libreta.abrir(room);
+    room.game.graciaMs = room.config.reconnectMs ? RELOJ.graciaMs : null;
     room.game.armada = Boolean(room.armada);
     room.started = true;
 
@@ -870,7 +891,7 @@ export class RoomManager {
     // La gracia es una perilla de la casa (GRACIA_MS); `reconnectMs` en el modo
     // solo dice si en esta mesa hay gracia (entre personas) o no (contra la
     // casa, que ahi nadie pierde por un corte).
-    const ms = room.config?.reconnectMs ? GRACIA_MS : 0;
+    const ms = room.config?.reconnectMs ? RELOJ.graciaMs : 0;
     if (!ms) return;
 
     const jugador = room.players.find((p) => p.id === userId);
@@ -878,6 +899,7 @@ export class RoomManager {
 
     clearTimeout(jugador._vuelta);
     jugador.desconectadoHasta = Date.now() + ms;
+    libreta.anotar(room.code, `Se le cayó la conexión a ${jugador.username}: la mesa lo espera ${Math.round(ms / 1000)} s.`, jugador.username);
 
     jugador._vuelta = setTimeout(() => {
       jugador.desconectadoHasta = null;
@@ -901,11 +923,13 @@ export class RoomManager {
     clearTimeout(jugador._vuelta);
     jugador._vuelta = null;
     jugador.desconectadoHasta = null;
+    libreta.anotar(room.code, `${jugador.username} volvió antes de que se acabara la espera.`, jugador.username);
 
     this.broadcastState(room);
   }
 
   broadcastState(room) {
+    if (room.started && room.game) libreta.anotarDelMotor(room.code, room);
     if (!this.io || !room.game) return;
 
     // Antes de mostrar nada: si al que le toca le falta SITIO y no jugada, se

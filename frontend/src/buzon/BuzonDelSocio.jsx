@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { BarraDelSocio } from '../socio/CuartoDelSocio.jsx';
 
 /**
  * EL BUZON, DEL LADO DEL SOCIO (seccion 200, copiado de Operaciones → Buzon
@@ -82,6 +83,7 @@ export default function BuzonDelSocio() {
     <div className="min-h-[100dvh] bg-[#08120c] px-5 pb-8 pt-5 text-domino-cream">
       <div className="mx-auto max-w-md">
         <h1 className="text-[26px] font-bold text-domino-accent" style={{ fontFamily: SERIF }}>El buzón</h1>
+        <BarraDelSocio llave={llave} />
         {error && <p className="mt-3 text-sm font-semibold text-red-300">{error}{!llave && ' · falta la llave (?llave=...)'}</p>}
         {datos && (
           <>

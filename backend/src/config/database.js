@@ -145,6 +145,14 @@ export async function initDatabase() {
       valor VARCHAR(60)
     );
 
+    -- LAS PERILLAS DE LA CASA (seccion 201): cada numero que Raul mueve sin
+    -- programar. El catalogo vive en models/Config.js; aqui solo el valor.
+    CREATE TABLE IF NOT EXISTS config (
+      clave VARCHAR(60) PRIMARY KEY,
+      valor VARCHAR(60),
+      actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
     -- Los silencios: uno por persona, con hasta cuando, cuantas veces (para
     -- que el castigo escale) y el motivo. Si el motivo es una frase larga, es
     -- el mensaje que el socio le escribio al suspenderlo y el jugador lo lee.

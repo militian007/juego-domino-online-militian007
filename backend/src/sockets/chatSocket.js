@@ -3,6 +3,7 @@ import * as Preferencia from '../models/Preferencia.js';
 import { nombreDe } from '../models/Titulo.js';
 import * as pase from '../services/pase.js';
 import { limpiar as moderar, esSpam, duracionSilencio, faltaEnPalabras } from '../services/moderacionDelChat.js';
+import * as guardianes from '../services/guardianes.js';
 
 /**
  * EL SALON (seccion 196): el chat del club fuera de la mesa, copiado del
@@ -145,6 +146,7 @@ export function registrarChat(io, socket, roomManager) {
         const veces = (await ChatGlobal.vecesSilenciado(quien.userId)) + 1;
         const hasta = new Date(Date.now() + duracionSilencio(veces));
         await ChatGlobal.silenciar({ userId: quien.userId, hasta, veces, motivo: spam, porUserId: null });
+        guardianes.alSilenciar({ userId: quien.userId, username: quien.username, motivo: spam });
         const falta = hasta.getTime() - Date.now();
         return fallo(
           spam === 'repetido'
@@ -154,7 +156,8 @@ export function registrarChat(io, socket, roomManager) {
         );
       }
 
-      const { visible, quitoContacto } = moderar(limpio);
+      const { visible, quitoContacto, tapoGroserias } = moderar(limpio);
+      guardianes.alModerar({ userId: quien.userId, username: quien.username, texto: visible, tapoGroserias, quitoContacto });
       if (!visible) return fallo('Ese mensaje quedó vacío.');
 
       const mensaje = await ChatGlobal.guardar({ userId: quien.userId, username: quien.username, retrato: quien.retrato, texto: visible });

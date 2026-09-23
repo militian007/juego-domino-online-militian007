@@ -30,10 +30,10 @@ import Tablero from '../components/game/Tablero.jsx';
 import Scoreboard from '../components/game/Scoreboard.jsx';
 import SidePicker from '../components/game/SidePicker.jsx';
 import AdSidebar from '../components/AdSidebar.jsx';
-import { connectSocket } from '../services/socket.js';
+import { connectSocket, idDeInvitado } from '../services/socket.js';
 import { haySesion, paseApi, perfilApi } from '../services/api.js';
 import CargandoFichas from '../components/CargandoFichas.jsx';
-import PanelDeChat, { BurbujaDeChat, useChatDeMesa } from '../components/game/ChatDeMesa.jsx';
+import TiraDeChat, { BurbujaDeChat, useChatDeMesa } from '../components/game/ChatDeMesa.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
   playTileSound, playDrawSound, estaSilenciado, alternarSilencio, prepararSonidos, prepararAvisos, sonar
@@ -289,7 +289,6 @@ export default function Game() {
 
   const [reactions, setReactions] = useState({});
   const [showReactionMenu, setShowReactionMenu] = useState(false);
-  const [chatAbierto, setChatAbierto] = useState(false);
 
   // De donde sale la ficha que se juega, para que se vea volar (§122). Se anota
   // el sitio que ocupaba en la mano ANTES de jugarla, porque en cuanto se juega
@@ -695,6 +694,11 @@ export default function Game() {
 
   const myPlayerId = useMemo(() => {
     if (user?.id) return user.id;
+    // Sin cuenta, el id es el de la identidad ligera. Antes se tomaba «la
+    // primera persona de la mesa», y en una mesa de dos eso era el OTRO: sus
+    // mensajes salian como mios y la burbuja aparecia del lado equivocado.
+    const mio = idDeInvitado();
+    if (mio && gameState?.players?.some((p) => String(p.id) === String(mio))) return mio;
     const me = gameState?.players?.find((p) => !p.isBot);
     return me?.id;
   }, [user, gameState]);
@@ -1358,14 +1362,14 @@ export default function Game() {
               onClick={() => {
                 setAbierto(null);
                 setShowReactionMenu(false);
-                setChatAbierto((v) => !v);
-                chat.marcarLeidos();
+                if (chat.tiraAbierta) { chat.cerrarTira(); return; }
+                chat.abrirTira();
               }}
               title="Chat de la mesa"
               aria-label="Chat de la mesa"
-              aria-expanded={chatAbierto}
+              aria-expanded={chat.tiraAbierta}
               className={`flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
-                chatAbierto
+                chat.tiraAbierta
                   ? 'border-domino-accent bg-domino-accent/20 text-domino-accent'
                   : 'border-domino-accent/35 bg-black/50 text-domino-cream-dim hover:border-domino-accent hover:text-domino-cream'
               }`}
@@ -1374,7 +1378,7 @@ export default function Game() {
             </button>
             {/* El contador de sin leer: sin esto uno abre el chat a ver si le
                 hablaron, que es justo lo que no queremos en medio de una partida. */}
-            {!chatAbierto && chat.sinLeer > 0 && (
+            {!chat.tiraAbierta && chat.sinLeer > 0 && (
               <span className="pointer-events-none absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-domino-accent px-1 text-[9px] font-black text-domino-dark">
                 {chat.sinLeer > 9 ? '9+' : chat.sinLeer}
               </span>
@@ -1550,12 +1554,17 @@ export default function Game() {
                   );
                 })}
 
-                <PanelDeChat
-                  abierto={chatAbierto}
-                  onCerrar={() => setChatAbierto(false)}
-                  mensajes={chat.mensajes}
+                {/* La tira (ficha 5.2): va justo encima de la mano, para que se
+                    lea sin tapar la culebra. */}
+                <TiraDeChat
+                  abierta={chat.tiraAbierta}
+                  onCerrar={chat.cerrarTira}
+                  tira={chat.tira}
                   enviar={chat.enviar}
                   miId={myPlayerId}
+                  puedoEscribir={chat.puedoEscribir}
+                  alTocar={chat.contarParaCerrar}
+                  style={{ bottom: altoMano + 10 }}
                 />
                 {/* Cada uno en su lado de la mesa, como sentados (§157). Las placas se
                     apoyan en el borde y el rectangulo de juego (los margenes que
