@@ -126,8 +126,10 @@ export default function Umbral() {
         >
           <img src="/umbral/pancarta-juega-ya.webp" alt="" draggable={false} className="umbral-mecer block h-auto w-full" style={{ filter: 'drop-shadow(0 12px 22px rgba(0,0,0,0.65))' }} />
           {conCuentasDelClub && (
-            <span className="absolute inset-x-0 -bottom-6 text-center text-[11px] font-extrabold tracking-[0.12em] text-[#F0DCA6] drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]" data-club>
-              ENTRA CON TU CUENTA DE PRIVOYTRUCO.COM
+            <span className="absolute inset-x-0 -bottom-16 flex justify-center" data-club>
+              <span className="rounded-full border border-domino-accent/60 bg-[#060a07]/90 px-3.5 py-1.5 text-[11px] font-extrabold tracking-[0.1em] text-[#F0DCA6] shadow-[0_4px_12px_rgba(0,0,0,0.6)]">
+                ENTRA CON TU CUENTA DE PRIVOYTRUCO.COM
+              </span>
             </span>
           )}
           {/* LA MANITO (Raul, 21-sep): la amarilla «emoji», pintada; mas abajo, tocando el YA. */}
