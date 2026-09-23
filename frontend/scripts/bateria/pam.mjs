@@ -20,15 +20,26 @@ page.on('pageerror', (e) => consola.push(`pageerror: ${e.message}`));
 // La PAM de mentira, para el navegador: solo las dos rutas de la puerta.
 await page.setRequestInterception(true);
 let pidioEntrar = null;
+// En la bateria la pantalla y el servidor viven en puertos distintos: las
+// respuestas de mentira llevan sus cabeceras de CORS, como las de verdad.
+const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'GET,POST,OPTIONS' };
 page.on('request', (req) => {
   const u = req.url();
+  // El club no se visita de verdad: basta saber que el boton lleva alla.
+  if (u.startsWith('https://privoytruco.com')) {
+    return req.respond({ status: 200, contentType: 'text/html', body: '<p>el club</p>' });
+  }
+  if (req.method() === 'OPTIONS' && /\/api\/(pam|auth\/me)/.test(u)) {
+    return req.respond({ status: 204, headers: CORS, body: '' });
+  }
   if (u.endsWith('/api/pam')) {
-    return req.respond({ status: 200, contentType: 'application/json', body: JSON.stringify({ modo: 'pam', club: 'https://privoytruco.com', operador: 'domino' }) });
+    return req.respond({ status: 200, headers: CORS, contentType: 'application/json', body: JSON.stringify({ modo: 'pam', club: 'https://privoytruco.com', operador: 'domino' }) });
   }
   if (u.endsWith('/api/pam/entrar')) {
     pidioEntrar = JSON.parse(req.postData() || '{}');
     return req.respond({
       status: 200,
+      headers: CORS,
       contentType: 'application/json',
       body: JSON.stringify({ token: 'llave-de-mentira', user: { id: 4242, username: 'RaulDelClub', email: 'r@pam.local' }, saldo: '1250000', moneda: 'VES' })
     });
@@ -36,7 +47,7 @@ page.on('request', (req) => {
   // La llave de mentira no la puede firmar el navegador: se le contesta el
   // «quien soy» para poder seguir el camino del jugador hasta la mesa.
   if (u.endsWith('/api/auth/me')) {
-    return req.respond({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: { id: 4242, username: 'RaulDelClub', email: 'r@pam.local' } }) });
+    return req.respond({ status: 200, headers: CORS, contentType: 'application/json', body: JSON.stringify({ user: { id: 4242, username: 'RaulDelClub', email: 'r@pam.local' } }) });
   }
   return req.continue();
 });
@@ -48,9 +59,11 @@ await page.goto(`${FRONT}/`, { waitUntil: 'networkidle2' });
 await sleep(1500);
 const diceElClub = await page.evaluate(() => Boolean(document.querySelector('[data-club]')));
 await page.screenshot({ path: path.join(OUT, 'pam-1-umbral.png') });
-await page.evaluate(() => document.querySelector('[data-juega-ya]')?.click());
-await sleep(1200);
-const llevaAlClub = page.url().includes('privoytruco.com');
+await Promise.all([
+  page.waitForNavigation({ timeout: 8000 }).catch(() => {}),
+  page.evaluate(() => document.querySelector('[data-juega-ya]')?.click())
+]);
+const llevaAlClub = page.url().includes('privoytruco.com') && page.url().includes('juego=domino');
 
 // ---- 2. Con ficha: entra como cuenta y la ficha se borra de la barra ----
 await page.goto(`${FRONT}/?ficha=ficha-de-raul-12345678`, { waitUntil: 'networkidle2' });
