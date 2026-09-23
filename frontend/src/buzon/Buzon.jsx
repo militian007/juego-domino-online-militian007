@@ -36,10 +36,10 @@ export function BombilloDelBuzon({ className = '' }) {
   );
 }
 
-export function HojaDelBuzon({ abierta, onCerrar }) {
+export function HojaDelBuzon({ abierta, onCerrar, mesa = null, tipoInicial = 'idea' }) {
   const { user } = useAuth();
   const { pathname } = useLocation();
-  const [tipo, setTipo] = useState('idea');
+  const [tipo, setTipo] = useState(tipoInicial);
   const [texto, setTexto] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState(null);
@@ -47,9 +47,9 @@ export function HojaDelBuzon({ abierta, onCerrar }) {
 
   useEffect(() => {
     if (!abierta) return undefined;
-    setGracias(false); setError(null);
+    setGracias(false); setError(null); setTipo(tipoInicial);
     return undefined;
-  }, [abierta]);
+  }, [abierta, tipoInicial]);
 
   useEffect(() => {
     if (!gracias) return undefined;
@@ -74,7 +74,7 @@ export function HojaDelBuzon({ abierta, onCerrar }) {
       const r = await fetch(`${API}/buzon`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ tipo, ...quien, pantalla: pathname, texto: texto.trim() })
+        body: JSON.stringify({ tipo, ...quien, pantalla: pathname, mesa, texto: texto.trim() })
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) { setError(j.error || 'No se pudo enviar'); return; }
@@ -100,7 +100,11 @@ export function HojaDelBuzon({ abierta, onCerrar }) {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[17px] font-extrabold" style={{ fontFamily: SERIF }}>El buzón del club</p>
-              <p className="mt-0.5 text-[12.5px] font-semibold text-[#5C5142]">Cuéntanos qué mejorar o qué te falló. Lo leemos todos los días.</p>
+              <p className="mt-0.5 text-[12.5px] font-semibold text-[#5C5142]">
+                {mesa
+                  ? `Cuéntanos qué pasó en la mesa ${mesa}. Mandamos la libreta de la partida con tu nota.`
+                  : 'Cuéntanos qué mejorar o qué te falló. Lo leemos todos los días.'}
+              </p>
             </div>
             <button type="button" onClick={onCerrar} aria-label="Cerrar" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#C9B58A] text-[#7A5A16]"><X size={15} /></button>
           </div>
@@ -113,7 +117,7 @@ export function HojaDelBuzon({ abierta, onCerrar }) {
             onChange={(e) => setTexto(e.target.value.slice(0, 600))}
             rows={4}
             data-buzon-texto
-            placeholder={tipo === 'falla' ? '¿Qué estabas haciendo y qué pasó?' : 'Escribe aquí tu idea…'}
+            placeholder={mesa ? '¿Qué pasó en esa partida?' : tipo === 'falla' ? '¿Qué estabas haciendo y qué pasó?' : 'Escribe aquí tu idea…'}
             className="mt-3 w-full resize-none rounded-xl border border-[#C9B58A] bg-white px-3 py-2 text-[14px] font-medium outline-none placeholder:text-[#8a7a5a]"
           />
           {error && <p className="mt-2 text-[12px] font-bold text-red-700" data-buzon-error>{error}</p>}

@@ -137,6 +137,9 @@ export async function initDatabase() {
       user_id VARCHAR(80) NOT NULL,
       username VARCHAR(255) NOT NULL,
       pantalla VARCHAR(60),
+      -- La mesa de la que se queja, cuando la nota sale del cartel del final
+      -- (seccion 202): con eso el socio salta derecho a la libreta.
+      mesa VARCHAR(10),
       texto VARCHAR(600) NOT NULL,
       creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -405,6 +408,34 @@ export async function initDatabase() {
     }
   } else {
     runSqliteSchema(schema);
+  }
+
+  await asegurarColumnas();
+}
+
+/**
+ * Las columnas que se le agregan a una tabla QUE YA EXISTE.
+ *
+ * `CREATE TABLE IF NOT EXISTS` no toca una tabla que ya esta, asi que una
+ * columna nueva hay que pedirla aparte. Se hace de a una y sin ruido: si ya
+ * existe, la base se queja y se sigue. (Regla de la casa: el esquema se crea
+ * ANTES de publicar, y agregar una columna vacia con el codigo viejo corriendo
+ * no le hace nada a nadie.)
+ */
+async function asegurarColumnas() {
+  const columnas = [
+    ['buzon', 'mesa', 'VARCHAR(10)'],
+    // El espejo de la cuenta del club (seccion 203): el uuid del jugador en la
+    // PAM. Nada de claves: a esa cuenta se entra por privoytruco.com.
+    ['users', 'pam_uuid', 'VARCHAR(80)']
+  ];
+  for (const [tabla, columna, tipo] of columnas) {
+    try {
+      await query(`ALTER TABLE ${tabla} ADD COLUMN ${columna} ${isPostgres ? tipo : 'TEXT'}`);
+      console.log(`Base: columna ${tabla}.${columna} agregada`);
+    } catch {
+      // Ya estaba: es lo normal en cada arranque.
+    }
   }
 }
 

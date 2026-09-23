@@ -20,7 +20,7 @@ export function textoDelBuzon(notas, titulo) {
   const hoy = new Date().toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const lineas = [`BUZÓN dominó · ${hoy} · ${notas.length} ${notas.length === 1 ? 'nota' : 'notas'} (${titulo})`, ''];
   for (const n of notas) {
-    lineas.push(`[${n.tipo === 'idea' ? 'IDEA' : 'FALLA'}] ${n.username} · ${fecha(n.creadoEn)}${n.pantalla ? ` · en ${n.pantalla}` : ''}`);
+    lineas.push(`[${n.tipo === 'idea' ? 'IDEA' : 'FALLA'}] ${n.username} · ${fecha(n.creadoEn)}${n.pantalla ? ` · en ${n.pantalla}` : ''}${n.mesa ? ` · mesa ${n.mesa}` : ''}`);
     lineas.push(n.texto);
     lineas.push('');
   }
@@ -105,6 +105,13 @@ export default function BuzonDelSocio() {
                 <li key={n.id} className={`border-b border-domino-accent/15 py-2.5 ${!datos.ultimaCopia || n.creadoEn > datos.ultimaCopia ? '' : 'opacity-60'}`}>
                   <div className="text-[10px] font-extrabold tracking-[0.15em] text-domino-accent">{n.tipo === 'idea' ? 'IDEA' : 'FALLA'} · {n.username} · {fecha(n.creadoEn)}{n.pantalla ? ` · ${n.pantalla}` : ''}</div>
                   <p className="mt-0.5 whitespace-pre-wrap text-[13.5px] font-medium">{n.texto}</p>
+                  {/* Si la nota salio del cartel del final, la libreta de esa
+                      mesa esta a un toque (seccion 202). */}
+                  {n.mesa && (
+                    <a href={`/disputas?llave=${encodeURIComponent(llave)}&mesa=${n.mesa}`} className="mt-1 inline-block rounded-full border border-domino-accent/45 px-2.5 py-1 text-[10.5px] font-extrabold tracking-[0.12em] text-domino-accent">
+                      VER LA LIBRETA · {n.mesa}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>

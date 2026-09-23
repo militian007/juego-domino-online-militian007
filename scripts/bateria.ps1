@@ -14,7 +14,7 @@
 #   -SinNavegador  se salta Chrome (antesala, mesa, sin conexion, revancha...)
 #   -Reusar        no borra la base de la bateria
 #   -Solo <etapa>  corre una sola: motor servidor chat retos calentar antesala casa fantasma
-#                  reglas sinconexion revancha fotos partida buzon chatmesa socio
+#                  reglas sinconexion revancha fotos partida buzon chatmesa socio reportar pam cuentas
 #
 # NOTA: mantener este archivo ASCII-only (PowerShell 5.1 lee ps1 sin BOM como ANSI).
 param(
@@ -122,6 +122,7 @@ if (-not $SinNavegador) {
 
 # ---------------------------------------------------------------- contra el servidor
 Etapa "chat" { Correr $backend "node" @("src/test-chat.js") (Join-Path $reportes "chat.log") }
+Etapa "cuentas" { Correr $backend "node" @("src/test-pam.js") (Join-Path $reportes "cuentas.log") }
 Etapa "retos" { Correr $backend "node" @("src/test-retos.js") (Join-Path $reportes "retos.log") }
 
 # ---------------------------------------------------------------- navegador
@@ -139,6 +140,8 @@ if (-not $SinNavegador) {
   Etapa "buzon" { Correr $frontend "node" @("scripts/bateria/buzon.mjs") (Join-Path $reportes "buzon.log") }
   Etapa "chatmesa" { Correr $frontend "node" @("scripts/bateria/chat-mesa.mjs") (Join-Path $reportes "chatmesa.log") }
   Etapa "socio" { Correr $frontend "node" @("scripts/bateria/socio.mjs") (Join-Path $reportes "socio.log") }
+  Etapa "reportar" { Correr $frontend "node" @("scripts/bateria/reportar.mjs") (Join-Path $reportes "reportar.log") }
+  Etapa "pam" { Correr $frontend "node" @("scripts/bateria/pam.mjs") (Join-Path $reportes "pam.log") }
 }
 
 # ---------------------------------------------------------------- cierre

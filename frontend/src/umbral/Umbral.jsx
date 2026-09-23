@@ -11,6 +11,7 @@ import { BombilloDelBuzon } from '../buzon/Buzon.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { haySesion } from '../services/api.js';
 import { connectSocket } from '../services/socket.js';
+import { comoSeEntra } from '../services/pam.js';
 
 /**
  * EL UMBRAL (seccion 197): la puerta del domino con la receta de la casa, la
@@ -42,13 +43,17 @@ const REGLAS = [
 
 export default function Umbral() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, avisoDelClub } = useAuth();
   const conCuenta = haySesion() && user;
   const [pidiendo, setPidiendo] = useState(false);
   const [reglas, setReglas] = useState(false);
   const [salon, setSalon] = useState(null); // null | 'chat' | 'gente'
   const [enLinea, setEnLinea] = useState(0);
+  /** Con que cuentas corre el domino: las del club (pam) o las de siempre. */
+  const [club, setClub] = useState(null);
   const yo = identidad();
+
+  useEffect(() => { comoSeEntra().then(setClub); }, []);
 
   useEffect(() => {
     const socket = connectSocket();
@@ -58,7 +63,12 @@ export default function Umbral() {
     return () => { socket.off('presence:count', alContar); };
   }, []);
 
+  // Con las cuentas del club, la puerta es el club: aqui no se registra nadie
+  // (seccion 203). Sin club configurado, la identidad ligera de siempre.
+  const conCuentasDelClub = club?.modo === 'pam' && !conCuenta;
+
   const jugar = () => {
+    if (conCuentasDelClub) { window.location.href = `${club.club}/?juego=domino`; return; }
     if (identidad() || conCuenta) navigate('/mesa');
     else setPidiendo(true);
   };
@@ -115,6 +125,11 @@ export default function Umbral() {
           style={{ top: '19%', animationDelay: '150ms' }}
         >
           <img src="/umbral/pancarta-juega-ya.webp" alt="" draggable={false} className="umbral-mecer block h-auto w-full" style={{ filter: 'drop-shadow(0 12px 22px rgba(0,0,0,0.65))' }} />
+          {conCuentasDelClub && (
+            <span className="absolute inset-x-0 -bottom-6 text-center text-[11px] font-extrabold tracking-[0.12em] text-[#F0DCA6] drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]" data-club>
+              ENTRA CON TU CUENTA DE PRIVOYTRUCO.COM
+            </span>
+          )}
           {/* LA MANITO (Raul, 21-sep): la amarilla «emoji», pintada; mas abajo, tocando el YA. */}
           <img src="/umbral/manito.webp" alt="" aria-hidden draggable={false} className="umbral-dedo absolute -bottom-5 right-8 h-[46px] w-auto" style={{ filter: 'drop-shadow(0 3px 4px rgba(0,0,0,0.7))' }} />
         </button>
@@ -134,6 +149,12 @@ export default function Umbral() {
             </span>
           ))}
         </div>
+
+        {avisoDelClub && (
+          <p className="absolute inset-x-4 top-[14%] z-[6] rounded-xl border border-red-400/50 bg-black/80 px-3 py-2 text-center text-[12.5px] font-bold text-red-200" data-aviso-club>
+            {avisoDelClub}
+          </p>
+        )}
 
         <p className="umbral-sube umbral-lema absolute inset-x-0 z-[3] m-0 px-4 text-center text-[12px] font-bold" style={{ animationDelay: '500ms', textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}>
           El dominó venezolano de verdad: <b className="text-[#F0DCA6]">se tranca, se pega y se cuentan los puntos.</b>

@@ -3,14 +3,28 @@ import { authApi } from '../services/api.js';
 
 const AuthContext = createContext(null);
 
+import { canjearLaFicha } from '../services/pam.js';
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  /** Si la ficha del club reboto, el umbral lo dice. */
+  const [avisoDelClub, setAvisoDelClub] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
 
     const init = async () => {
+      // LA FICHA DEL CLUB (seccion 203): si el jugador llega de
+      // privoytruco.com, se canjea ANTES de mirar si hay sesion guardada.
+      const delClub = await canjearLaFicha();
+      if (delClub?.ok && !cancelled) {
+        setUser(delClub.user);
+        setLoading(false);
+        return;
+      }
+      if (delClub?.error && !cancelled) setAvisoDelClub(delClub.error);
+
       const token = localStorage.getItem('token');
       const savedUser = localStorage.getItem('user');
       if (!token || !savedUser) {
@@ -72,7 +86,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, avisoDelClub }}>
       {children}
     </AuthContext.Provider>
   );

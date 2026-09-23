@@ -33,6 +33,7 @@ import AdSidebar from '../components/AdSidebar.jsx';
 import { connectSocket, idDeInvitado } from '../services/socket.js';
 import { haySesion, paseApi, perfilApi } from '../services/api.js';
 import CargandoFichas from '../components/CargandoFichas.jsx';
+import { HojaDelBuzon } from '../buzon/Buzon.jsx';
 import TiraDeChat, { BurbujaDeChat, useChatDeMesa } from '../components/game/ChatDeMesa.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
@@ -274,6 +275,8 @@ export default function Game() {
   const [cambioDeRanking, setCambioDeRanking] = useState(null);
   // Cuando se me cayo la conexion (seccion 191): el cartel cuenta desde aqui.
   const [sinConexionDesde, setSinConexionDesde] = useState(null);
+  /** Reportar la partida desde el cartel del final (seccion 202). */
+  const [reportando, setReportando] = useState(false);
   const [lobby, setLobby] = useState(null);
   const [selectedTile, setSelectedTile] = useState(null);
   const [draggedTile, setDraggedTile] = useState(null); // { index, tile, currentX, currentY, isSnapped, activePlacement }
@@ -1449,6 +1452,10 @@ export default function Game() {
       {/* "Se te cayo la conexion" (seccion 191), encima de todo: va aqui y no
           dentro de la mesa porque la camara de la mesa es su propio mundo y
           ahi los carteles de la mesa le pasaban por encima. */}
+      {/* La hoja del buzon, pegada a esta mesa: el reporte del jugador
+          (seccion 202) llega con la libreta de la partida. */}
+      <HojaDelBuzon abierta={reportando} onCerrar={() => setReportando(false)} mesa={actualRoomCode} tipoInicial="falla" />
+
       {gameState?.status === 'playing' && gameState.graciaMs && (
         <CartelSinConexion
           desde={sinConexionDesde}
@@ -1942,6 +1949,7 @@ export default function Game() {
             targetPoints={gameState.targetPoints ?? 100}
             cambioDeRanking={cambioDeRanking}
             onRevancha={gameState.armada ? () => socket?.emit('mesa:revancha', { code: actualRoomCode }, (r) => { if (!r?.ok) setError(r?.error || 'No se pudo pedir la revancha'); }) : null}
+            onReportar={mesaEntrePersonas ? () => setReportando(true) : null}
             inicio={user ? '/dashboard' : '/mesa'}
           />
         )}

@@ -9,21 +9,21 @@ import { query } from '../config/database.js';
  */
 export const LARGO_MAXIMO = 600;
 
-export const guardar = async ({ tipo, userId, username, pantalla, texto }) => {
+export const guardar = async ({ tipo, userId, username, pantalla, texto, mesa }) => {
   const cuando = new Date().toISOString();
   const { rows } = await query(
-    'INSERT INTO buzon (tipo, user_id, username, pantalla, texto, creado_en) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
-    [tipo === 'falla' ? 'falla' : 'idea', String(userId), username, pantalla ?? null, texto, cuando]
+    'INSERT INTO buzon (tipo, user_id, username, pantalla, texto, mesa, creado_en) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id',
+    [tipo === 'falla' ? 'falla' : 'idea', String(userId), username, pantalla ?? null, texto, mesa ?? null, cuando]
   );
-  return { id: rows[0]?.id, tipo, userId: String(userId), username, pantalla, texto, creadoEn: cuando };
+  return { id: rows[0]?.id, tipo, userId: String(userId), username, pantalla, mesa: mesa ?? null, texto, creadoEn: cuando };
 };
 
 /** Todas las notas, de la mas vieja a la mas nueva; `desde` deja solo lo posterior a esa fecha. */
 export const listar = async (desde = null) => {
   const { rows } = desde
-    ? await query('SELECT id, tipo, user_id, username, pantalla, texto, creado_en FROM buzon WHERE creado_en > ? ORDER BY id', [desde])
-    : await query('SELECT id, tipo, user_id, username, pantalla, texto, creado_en FROM buzon ORDER BY id', []);
-  return rows.map((r) => ({ id: r.id, tipo: r.tipo, userId: String(r.user_id), username: r.username, pantalla: r.pantalla, texto: r.texto, creadoEn: r.creado_en }));
+    ? await query('SELECT id, tipo, user_id, username, pantalla, mesa, texto, creado_en FROM buzon WHERE creado_en > ? ORDER BY id', [desde])
+    : await query('SELECT id, tipo, user_id, username, pantalla, mesa, texto, creado_en FROM buzon ORDER BY id', []);
+  return rows.map((r) => ({ id: r.id, tipo: r.tipo, userId: String(r.user_id), username: r.username, pantalla: r.pantalla, mesa: r.mesa ?? null, texto: r.texto, creadoEn: r.creado_en }));
 };
 
 /** Cuantas dejo esta persona en la ultima hora (freno contra el que machaca). */

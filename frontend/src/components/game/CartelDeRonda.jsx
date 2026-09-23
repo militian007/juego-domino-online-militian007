@@ -203,6 +203,7 @@ export default function CartelDeRonda({
   onNext,
   onExit,
   onRevancha = null,
+  onReportar = null,
   inicio = '/dashboard'
 }) {
   const { titulo, quien, porque, gane, enParejas, rivales } = palabrasDelCierre({
@@ -444,6 +445,19 @@ export default function CartelDeRonda({
                 <>
                   <BotonDeOro onClick={onRevancha}>Revancha</BotonDeOro>
                   <BotonSobrio to={inicio}>Otra mesa</BotonSobrio>
+                  {/* REPORTAR LA PARTIDA (seccion 202, Raul escogio la 1): un
+                      renglon, no un boton gordo. El que gano ni lo mira; al que
+                      le pasó algo raro lo encuentra donde todavia duele. */}
+                  {onReportar && (
+                    <button
+                      type="button"
+                      onClick={onReportar}
+                      data-reportar
+                      className="mx-auto mt-1 block text-[13px] font-extrabold text-[#F0A090] underline underline-offset-4"
+                    >
+                      ¿Pasó algo raro? Repórtalo
+                    </button>
+                  )}
                 </>
               ) : (
                 <>

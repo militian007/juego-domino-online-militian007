@@ -8587,3 +8587,67 @@ Probado: 167 unitarias (perillas, guardianes con sus topes y su descanso, libret
 reporte), y dos escenas nuevas de la bateria: `chat-mesa.mjs` (dos personas, burbuja, tira,
 se cierra sola) y `socio.mjs` (perilla guardada de verdad en el servidor, guardian encendido
 por una nota del buzon, libreta con su reporte, sin llave 403).
+
+## 202. Reportar la partida: el renglón del cartel del final (2026-09-23)
+
+De la lámina A/B/C, Raúl escogió la **1**: el renglón, no un botón gordo ni una tachuela más
+en la mesa. «¿Pasó algo raro? Repórtalo» va debajo de Revancha y Otra mesa, donde todavía
+duele; el que ganó ni lo mira.
+
+- Toca el renglón y sube LA MISMA hoja del buzón, ya en «Algo falló» y pegada a esa mesa:
+  «Cuéntanos qué pasó en la mesa ANJP. Mandamos la libreta de la partida con tu nota».
+  Nada de una pantalla nueva ni de un formulario aparte.
+- La nota viaja con `mesa` (columna nueva en `buzon`); en el buzón del socio sale el botón
+  **VER LA LIBRETA · ANJP**, que abre `/disputas` derecho en esa partida.
+- Solo en mesas entre personas: contra la casa no hay a quién reclamarle.
+- **Columnas de tablas que ya existen**: `CREATE TABLE IF NOT EXISTS` no le agrega nada a una
+  tabla que ya está, así que ahora hay `asegurarColumnas()` en `config/database.js` (un
+  `ALTER TABLE` por columna, que se queja si ya estaba y se sigue). Regla de la casa: el
+  esquema se crea ANTES de publicar.
+
+Probado: `bateria/reportar.mjs` (mesa entre dos personas, se termina, sale el renglón, la
+hoja nombra la mesa, la nota llega con su código, el socio ve VER LA LIBRETA y la libreta
+abre en esa partida), y la batería entera en verde.
+
+## 203. La puerta del club: las cuentas por la PAM (2026-09-23)
+
+Raúl: «podemos ir conectándonos a la PAM, solo que nadie va a tener el link, pero así
+dejamos funcionando los usuarios y hacemos las pruebas». Eso es esta sección y NADA MÁS:
+el Piso 1 de la plantilla. **Plata no hay** (Piso 3, espera al ludo).
+
+Cómo entra el jugador, igual que en el ludo:
+1. El club lo manda al dominó con una **ficha** de un solo uso en la URL (`?ficha=...`, el
+   `launchToken` del contrato de la ventanilla).
+2. El dominó la canjea con `authenticate`, firmando como operador.
+3. Queda el **espejo**: una fila de `users` con el uuid de la PAM (`pam_uuid`) y SIN clave
+   (`password_hash` = `pam:…`): a esa cuenta se entra por privoytruco.com, no por aquí.
+4. Se le da la llave de siempre del dominó (el JWT), así que todo lo que ya andaba «con
+   cuenta» empieza a andar sin tocar nada más.
+
+- `services/ventanilla.js`: el cliente del contrato, copiado del truco/ludo y pasado a JS
+  (este servidor no lleva TypeScript). La lógica no se tocó: firma por operador (cuerpo +
+  reloj + path en minúsculas), claves idempotentes, montos en unidad mínima. Los verbos de
+  plata están porque el contrato es uno solo, pero **nadie los llama todavía**.
+- `services/pam.js`: el modo (`pam` si hay `VENTANILLA_URL` + `VENTANILLA_OPERADOR` +
+  `VENTANILLA_SECRETO`; si no, `propio` y el dominó sigue con identidad ligera), el canje,
+  el espejo, y el saldo (sólo para enseñarlo). El `playerToken` vive en memoria, como en el
+  ludo: es una sesión, no un dato que se guarda.
+- `routes/pam.js`: `GET /api/pam` (modo y club), `POST /api/pam/entrar`, `GET /api/pam/saldo`.
+  Rebotes claros: FICHA_MALA · BLOQUEADO · SIN_PAM · PAM_CAIDA · SESION_VENCIDA.
+- En la pantalla (`services/pam.js` del frente): la ficha se canjea al arrancar, se borra de
+  la barra (una ficha en la URL se comparte por WhatsApp sin querer) y se guarda la sesión.
+  Con cuentas del club, el umbral dice **ENTRA CON TU CUENTA DE PRIVOYTRUCO.COM** y JUEGA YA
+  lleva al club; si la ficha rebotó, el umbral lo explica.
+- Nueva columna `users.pam_uuid` (por `asegurarColumnas`).
+
+**Lo que falta para probarlo de verdad** (es de Raúl, no se puede hacer desde aquí):
+1. Crear el operador `domino` en la PAM (panel «Operadores de la ventanilla») y darme
+   `VENTANILLA_URL`, `VENTANILLA_OPERADOR` y `VENTANILLA_SECRETO`.
+2. El lanzador `/api/pam/lanzar/domino` en el club, que es lo que fabrica la ficha.
+Mientras no estén, el dominó corre como hasta hoy: nadie se entera.
+
+Probado: `backend/src/test-pam.js` contra una **PAM de mentira** que habla el contrato
+(firma comprobada, canje, espejo, la segunda ficha no duplica la cuenta, saldo, FICHA_MALA,
+BLOQUEADO, nombre con símbolos, y sin ventanilla todo sigue igual): 15 verdes. Y
+`bateria/pam.mjs` en el navegador: el umbral manda al club, la ficha entra como cuenta y
+desaparece de la barra.

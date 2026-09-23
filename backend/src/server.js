@@ -6,6 +6,7 @@ import { Server } from 'socket.io';
 import authRoutes from './routes/auth.js';
 import buzonRoutes from './routes/buzon.js';
 import configRoutes from './routes/config.js';
+import pamRoutes from './routes/pam.js';
 import * as Config from './models/Config.js';
 import perfilRoutes from './routes/perfil.js';
 import rankingRoutes from './routes/ranking.js';
@@ -43,6 +44,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/buzon', buzonRoutes);
 app.use('/api/config', configRoutes);
+app.use('/api/pam', pamRoutes);
 app.use('/api/perfil', perfilRoutes);
 app.use('/api/ranking', rankingRoutes);
 app.use('/api/torneos', torneosRoutes);

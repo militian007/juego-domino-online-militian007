@@ -254,6 +254,13 @@ export function Disputas() {
     })();
   }, [llave]);
 
+  // El enlace del buzon trae la mesa: se abre sola.
+  useEffect(() => {
+    const pedida = new URLSearchParams(window.location.search).get('mesa');
+    if (pedida && !abierta) abrir(pedida);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const abrir = async (code) => {
     const r = await fetch(`${API}/config/libreta/${code}?llave=${encodeURIComponent(llave)}`);
     const j = await r.json();
