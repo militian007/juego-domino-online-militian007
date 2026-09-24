@@ -66,10 +66,10 @@ await Promise.all([
 const llevaAlClub = page.url().includes('privoytruco.com') && page.url().includes('juego=domino');
 
 // ---- 2. Con ficha: entra como cuenta y la ficha se borra de la barra ----
-await page.goto(`${FRONT}/?ficha=ficha-de-raul-12345678`, { waitUntil: 'networkidle2' });
+await page.goto(`${FRONT}/?launchToken=ficha-de-raul-12345678&moneda=VES`, { waitUntil: 'networkidle2' });
 await sleep(1800);
 const canjeo = pidioEntrar?.launchToken === 'ficha-de-raul-12345678';
-const sinFichaEnLaUrl = !page.url().includes('ficha=');
+const sinFichaEnLaUrl = !page.url().includes('launchToken=') && !page.url().includes('moneda=');
 const guardo = await page.evaluate(() => ({ token: localStorage.getItem('token'), user: localStorage.getItem('user') }));
 const entroComoCuenta = guardo.token === 'llave-de-mentira' && String(guardo.user).includes('RaulDelClub');
 const conNombreDelClub = (await page.evaluate(() => document.body.innerText)).includes('RaulDelClub');

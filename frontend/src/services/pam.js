@@ -1,8 +1,9 @@
 /**
  * LA PUERTA DEL CLUB, del lado del teléfono (seccion 203).
  *
- * El jugador llega de privoytruco.com con una FICHA de un solo uso en la URL
- * (`?ficha=...`). Se canjea UNA vez, se guarda la llave del domino como
+ * El jugador llega de privoytruco.com con una FICHA de un solo uso en la URL:
+ * el lanzador del club la manda como `?launchToken=...&moneda=VES`
+ * (`urlDeLanzamiento` en el truco). Se acepta tambien `?ficha=` a mano. Se canjea UNA vez, se guarda la llave del domino como
  * cualquier sesion, y se limpia la URL (una ficha en la barra se comparte por
  * WhatsApp sin querer).
  *
@@ -32,7 +33,8 @@ export async function comoSeEntra() {
   return cacheModo;
 }
 
-export const hayFichaEnLaUrl = () => Boolean(new URLSearchParams(window.location.search).get('ficha'));
+const fichaDe = (params) => params.get('launchToken') || params.get('ficha');
+export const hayFichaEnLaUrl = () => Boolean(fichaDe(new URLSearchParams(window.location.search)));
 
 /**
  * Canjea la ficha si la hay. Devuelve `{ ok }`, `{ error }` o null si no habia
@@ -40,10 +42,12 @@ export const hayFichaEnLaUrl = () => Boolean(new URLSearchParams(window.location
  */
 export async function canjearLaFicha() {
   const url = new URL(window.location.href);
-  const ficha = url.searchParams.get('ficha');
+  const ficha = fichaDe(url.searchParams);
   if (!ficha) return null;
   // Se limpia YA, pase lo que pase: la ficha es de un solo uso.
+  url.searchParams.delete('launchToken');
   url.searchParams.delete('ficha');
+  url.searchParams.delete('moneda');
   window.history.replaceState({}, '', url.toString());
   try {
     const r = await fetch(`${API}/pam/entrar`, {
