@@ -308,7 +308,7 @@ export class DominoGame {
   }
 
   getValidPlacementsForTile(tile, side) {
-    return placementsFor(this.state.board, tile, side, this.state.config.layout);
+    return placementsFor(this.state.board, tile, side, this.state.config.layout, null, { sinParedes: true });
   }
 
   /**
@@ -426,10 +426,18 @@ export class DominoGame {
    */
   destrancarSiHaceFalta() {
     if (this.state.phase !== PHASE.PLAYING) return null;
+    // Si en esta jugada ya se probo y NINGUNA forma cabia, no se vuelve a
+    // probar en cada transmision del estado (seria trabajo en balde). Un
+    // reacomodo que SI salio cambia la jugada (suma un evento), asi que ese
+    // nunca queda frenado.
+    if (this._sinFormaEnSeq === this.state.seq) return null;
     if (!necesitaDestrancar(this.state, this.state.turn)) return null;
 
     const r = applyAction(this.state, { type: ACTION.RELAYOUT, seat: this.state.turn });
-    if (!r.ok) return null;
+    if (!r.ok) {
+      this._sinFormaEnSeq = this.state.seq;
+      return null;
+    }
 
     this.state = r.state;
     const forma = r.events.find((e) => e.kind === 'RELAYOUT')?.forma ?? 'compacta';

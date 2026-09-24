@@ -38,16 +38,22 @@ function posicionTrancada() {
   return state;
 }
 
-test('la posicion de prueba: tiene ficha que pega y NO puede jugar nada', () => {
+test('la posicion de prueba: la ficha que pega no cabe DENTRO de la mesa, pero se puede jugar', () => {
   const state = posicionTrancada();
   const seat = currentSeat(state);
 
+  // Dentro de la pared de 16x16 no cabe: el destranque sigue intentando
+  // primero un reacomodo bonito.
   const atascadas = jugadasSinSitio(state.board, state.hands[seat], state.ends, DEFAULT_LAYOUT);
   assert.equal(atascadas.length, 1);
   assert.deepEqual(atascadas[0].tile, [0, 6]);
 
-  // Esto es lo injusto: la regla dice que tiene jugada y el dibujo dice que no.
-  assert.equal(playableMoves(state, seat).length, 0);
+  // Antes esto daba 0: la regla decia que tenia jugada y el dibujo decia que
+  // no. Con la ultima salida (seccion 206 del domino, Raul: «no puede pasar
+  // que no te deje jugar lo que quieras jugar») la jugada existe siempre.
+  const jugadas = playableMoves(state, seat);
+  assert.ok(jugadas.length > 0, 'la ficha que pega se puede jugar');
+  assert.ok(jugadas.every((j) => j.tile ? (j.tile[0] === 0 || j.tile[0] === 6 || j.tile[1] === 0 || j.tile[1] === 6) : true));
 });
 
 test('necesitaDestrancar la detecta', () => {

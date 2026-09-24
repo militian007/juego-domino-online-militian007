@@ -194,7 +194,9 @@ export function playableMoves(state, seat) {
     for (const side of ['left', 'right']) {
       const end = side === 'left' ? state.ends.left : state.ends.right;
       if (tile[0] !== end && tile[1] !== end) continue;
-      for (const placement of placementsFor(state.board, tile, side, cfg.layout)) {
+      // Lo que se puede jugar se mira SIN paredes (seccion 206): ninguna jugada
+      // legal se queda sin casilla.
+      for (const placement of placementsFor(state.board, tile, side, cfg.layout, null, { sinParedes: true })) {
         moves.push({ tileIndex, tile, side, placement });
       }
     }
@@ -519,10 +521,13 @@ export function necesitaDestrancar(state, seat) {
   const mano = state.hands[asiento] || [];
   if (mano.length === 0) return false;
 
-  // Si ya puede jugar, no hay nada que arreglar: el destranque es para cuando
-  // el dibujo le veta la unica jugada que tiene.
-  if (playableMoves(state, asiento).length > 0) return false;
-
+  // Antes: «si ya puede jugar, no hay nada que arreglar». Pero el dibujo le
+  // vetaba jugadas LEGALES aunque le quedara otra: Raul (23-sep) tenia el 3-5,
+  // valia por el 3 y por el 5, y solo le ofrecia el 5 porque del lado del 3 la
+  // culebra habia pegado contra el borde. En el domino uno escoge la punta; el
+  // dibujo no puede quitarle esa escogencia. Medido (800 partidas con bots): el
+  // caso sale en el 0,2 % de los turnos, y el reacomodo le hace sitio en 36 de
+  // 39; los otros 3 quedan como antes (ninguna forma cabe y no se toca nada).
   return jugadasSinSitio(state.board, mano, state.ends, state.config.layout).length > 0;
 }
 

@@ -127,7 +127,8 @@ const MS_VUELO = 300;
 // Cuanto puede correrse la camara, en celdas, respecto del centro de la rejilla.
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
-const getValidPlacementsForTile = (board, tile, side, layout) => placementsFor(board, tile, side, layout);
+// Sin paredes, igual que el motor (seccion 206): el iman sale para toda jugada legal.
+const getValidPlacementsForTile = (board, tile, side, layout) => placementsFor(board, tile, side, layout, null, { sinParedes: true });
 
 function getVisualCoords(pos, idx, boardOffsets) {
   const offset = boardOffsets[idx] || { x: 0, y: 0 };
@@ -345,16 +346,36 @@ export default function Board({
   //   1. Sin paño medido no se guarda ninguna vista.
   //   2. Si el paño cambio de tamaño, la vista guardada no vale.
   //   3. Una vista mas de una vez y media mas lejos que la ideal tampoco.
+  //   4. (seccion 205) Si la cadena se REACOMODO (el destranque la vuelve una
+  //      horquilla), la vista vieja no vale: las fichas ya no estan donde
+  //      estaban. Raul la vio en la ronda 4: la horquilla chiquitica, lejos,
+  //      porque la camara se habia quedado con el encuadre de la cadena larga.
+  //   5. (seccion 205) La tolerancia de «mas lejos que la ideal» baja de 1,5
+  //      a 1,15. Mientras la cadena crece, la ideal solo se aleja, asi que esto
+  //      no hace que la camara se mueva a cada jugada; solo impide que se quede
+  //      lejos cuando la cadena se achico.
   const vistaRef = useRef(null);
+  const sitiosRef = useRef(new Map());
+  const sitios = new Map();
+  (board || []).forEach((pos) => {
+    const t = pos.tile || [];
+    sitios.set(`${Math.min(t[0], t[1])}-${Math.max(t[0], t[1])}`, `${pos.x},${pos.y},${pos.orientation}`);
+  });
+  let seReacomodo = false;
+  for (const [ficha, sitio] of sitios) {
+    const antes = sitiosRef.current.get(ficha);
+    if (antes && antes !== sitio) { seReacomodo = true; break; }
+  }
+  sitiosRef.current = sitios;
   const panoMedido = pano.ancho > 0 && pano.alto > 0;
   let vista;
   if (!cajaCadena || !panoMedido) {
     vistaRef.current = null;
     vista = { escala: escalaIdeal, cx: centroCadenaX, cy: centroCadenaY };
   } else {
-    const previa = vistaRef.current;
+    const previa = seReacomodo ? null : vistaRef.current;
     let sirve = false;
-    if (previa && previa.ancho === pano.ancho && previa.alto === pano.alto && previa.escala * 1.5 >= escalaIdeal) {
+    if (previa && previa.ancho === pano.ancho && previa.alto === pano.alto && previa.escala * 1.15 >= escalaIdeal) {
       const visX = anchoUtil / (CELL_SIZE * previa.escala);
       const visY = altoUtil / (CELL_SIZE * previa.escala);
       sirve =

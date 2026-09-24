@@ -8676,3 +8676,65 @@ en **una sola máquina**, como el ludo:
 Probado en la PC en modo producción (servidor en 4300 sirviendo el `dist`): umbral y
 `/mesa` responden, la caché de `index.html` es `no-cache`, y dos teléfonos juegan y hablan
 por el chat de la mesa a través del mismo puerto (`chat-mesa.mjs`, verde).
+
+## 205. La cadena chiquitica y la punta que el dibujo tapaba (2026-09-23)
+
+Dos fotos de Raúl jugando en su iPhone contra la casa, en la misma partida.
+
+**1 · «¿No se puso demasiado pequeño?»** (ronda 4). La cadena, hecha horquilla, salía
+chiquitica y lejos en medio del paño. Causa: cuando la culebra pega contra el borde, el
+servidor la **reacomoda** (el destranque la vuelve horquilla o compacta), pero la cámara
+se quedaba con el encuadre de la cadena larga de antes: tenía permiso de quedarse hasta
+1,5 veces más lejos que la ideal «para no moverse a cada jugada». Arreglo en `Board.jsx`:
+- si las fichas que ya estaban cambiaron de sitio (reacomodo), la vista vieja no vale;
+- la tolerancia de «más lejos que la ideal» baja de 1,5 a 1,15 (mientras la cadena crece la
+  ideal solo se aleja, así que la cámara sigue quieta jugada a jugada).
+Probado con `camara-reacomodo.mjs` (se estira la cadena en recta, se reacomoda en compacta
+con la ruta de DEV, y se compara contra la cámara de alguien que entra de nuevo): sin el
+arreglo las fichas se ACHICABAN tras el reacomodo (55 → 49 px); con el arreglo la mesa queda
+igual que la fresca, 3 de 3 corridas. `mesa-chiquita.mjs` (7 rondas midiendo): nunca bajó
+de 31 px.
+
+**2 · «Él quiere jugar 3-5, no 5-3»** (ronda 6). Tenía el 3-5, valía por la punta del 3 y
+por la del 5, y el teléfono solo le ofrecía la del 5: del lado del 3 la culebra ya había
+pegado y la ficha no cabía DIBUJADA. El destranque solo saltaba cuando al jugador no le
+quedaba ninguna jugada. En el dominó uno escoge la punta; el dibujo no puede quitarle esa
+escogencia. Ahora `necesitaDestrancar` (motor) salta también cuando UNA jugada legal no
+cabe aunque haya otra. **Medido antes de tocar** (regla 10 del repo): 800 partidas con bots,
+el caso sale en el **0,2 % de los turnos** (una vez cada ~25 partidas) y el reacomodo le hace
+sitio en 36 de 39; en los otros 3 ninguna forma cabe y no se toca nada, igual que antes.
+Para que la mesa no se mueva sin parar cuando no se pudo del todo, `destrancarSiHaceFalta`
+prueba **una vez por jugada** (`_destrancadoEnSeq`). No es regla nueva: es la regla de
+siempre, que el dibujo estaba recortando. Prueba nueva en `test.js`: 7 de 7 casos con sitio
+tras el reacomodo, y ninguno se reacomoda dos veces en la misma jugada. Motor 85, servidor
+176, destranque 3: todo verde.
+
+## 206. Ninguna jugada legal sin casilla (2026-09-23)
+
+Raúl, después de la 205: «no puede pasar que no te deje jugar lo que quieras jugar, eso va a
+ser un problema». Con la 205 quedaban 3 de cada 39 casos sin arreglar. Ahora son **cero**.
+
+Qué pasaba en esos casos, visto por dentro (`medir-jugadas-sin-casilla.js`):
+1. **El reacomodo tapaba otra ficha.** `destrancarCadena` se quedaba con la primera forma
+   que liberaba las jugadas que ESTABAN tapadas, sin mirar si tapaba otra. Ahora la forma
+   tiene que dejar con sitio a TODAS las jugadas de la mano.
+2. **El candado frenaba de más.** `destrancarSiHaceFalta` (205) no volvía a probar en la
+   misma jugada aunque el reacomodo sí hubiera salido. Ahora solo se frena cuando NINGUNA
+   forma cabía (`_sinFormaEnSeq`); un reacomodo que sale cambia la jugada solo.
+3. **La última salida.** La rejilla de 16×16 es una pared de mentira: el paño es la pantalla
+   y la cámara sigue a la cadena a donde vaya. Si después de todos los rescates una ficha no
+   tiene casilla, `placementsFor(..., { sinParedes: true })` abre la pared y la busca por
+   fuera (solaparse y casilla ocupada siguen prohibidos). La piden solo los que deciden QUÉ
+   SE PUEDE JUGAR: la lista de jugadas del motor (`legalActions`/`playableMoves`), el
+   servidor (`getValidMoves`) y el imán del teléfono. El trazado y el destranque siguen con
+   la pared, así que primero se intenta lo bonito y esto solo entra cuando nada cabe. Si
+   aún así queda una jugada encerrada por la propia culebra, el destranque busca una forma
+   donde no quede ninguna así.
+
+Medido con tres tandas distintas de 1.000 partidas (1v1 y 2v2, bots normales): **134.742
+jugadas legales, 0 sin casilla**. En esas tandas la última salida ni hizo falta (el
+destranque arreglado cubrió todo), pero queda como garantía.
+
+La prueba del motor que comprobaba «tiene ficha que pega y NO puede jugar nada» (así se
+fijó en su día que el caso existía) ahora comprueba lo contrario: la ficha no cabe dentro
+de la mesa, pero se puede jugar. Motor 85, servidor 176, destranque 3.

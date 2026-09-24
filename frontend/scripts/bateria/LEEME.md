@@ -36,6 +36,8 @@ bateria en su banco (`bateria170` / `bateria171`); si corres uno suelto, pon
 | `socio.mjs` | las perillas se guardan con su boton, los guardianes encienden con una queja, la libreta saca su reporte | 201 |
 | `reportar.mjs` | el renglon del cartel del final manda la nota con su mesa, y el socio salta a la libreta | 202 |
 | `pam.mjs` | con cuentas del club: el umbral manda a privoytruco.com, y con ficha en la URL se entra como cuenta | 203 |
+| `camara-reacomodo.mjs` | tras reacomodar la cadena, la mesa se ve igual que si uno entrara de nuevo (no se queda lejos) | 205 |
+| `mesa-chiquita.mjs` | (a mano) varias rondas contra la casa midiendo el tamaño de las fichas de la mesa | 205 |
 
 Las herramientas del telefono barato (piso 0) estan en `../perf/`. Las medidas
 del motor (la culebra, las montadas, el destranque) en

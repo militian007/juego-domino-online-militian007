@@ -166,7 +166,7 @@ export function boardEnds(board) {
   return { left: board[0].tile[0], right: board[board.length - 1].tile[1] };
 }
 
-export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagnostico = null) {
+export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagnostico = null, { sinParedes = false } = {}) {
   const GRID = layout.grid;
   const cell = layout.cell;
   const out = [];
@@ -236,7 +236,7 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
     // el margen, pero desde que el tablero se escala y se ve entero (§29) ya no
     // protege de nada: medido, causaba el 37% de los bloqueos y sacarla bajo las
     // trancas de 49.2% a 37.8% sin que se saliera una sola ficha del grid.
-    if (pMinX < 0 || pMaxX >= GRID || pMinY < 0 || pMaxY >= GRID) return 'fuera-del-tablero';
+    if (!paredesAbiertas && (pMinX < 0 || pMaxX >= GRID || pMinY < 0 || pMaxY >= GRID)) return 'fuera-del-tablero';
 
     if (occupied.has(p.x + ',' + p.y) || occupied.has(p.x2 + ',' + p.y2)) return 'celda-ocupada';
 
@@ -267,6 +267,9 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
 
   // `permitirRozar` solo lo usa la pasada de rescate de los dobles (abajo).
   let permitirRozar = false;
+
+  // La ultima salida (seccion 206): la pared de la mesa se abre. Ver abajo.
+  let paredesAbiertas = false;
 
   // Solo se enciende en el rescate. Ver mas abajo: ofrecer el giro del doble
   // siempre hace que se elija en juego normal y deja el tablero mas apretado.
@@ -471,6 +474,28 @@ export function placementsFor(board, tile, side, layout = DEFAULT_LAYOUT, diagno
     if (diagnostico) diagnostico.push({ motivo: 'pasada-de-rescate' });
     generarCandidatos();
     permitirRozar = false;
+  }
+
+  // LA ULTIMA SALIDA (seccion 206). Raul, 23-sep: «no puede pasar que no te
+  // deje jugar lo que quieras jugar». La rejilla de 16x16 es una pared de
+  // mentira: el paño es la pantalla entera y la camara sigue a la cadena a
+  // donde vaya. Si despues de todos los rescates la ficha no tiene casilla,
+  // se abre la pared y se busca por fuera (solaparse y caer en casilla ocupada
+  // siguen prohibidos: nunca queda una ficha encima de otra).
+  //
+  // Solo la piden los que deciden QUE SE PUEDE JUGAR (`sinParedes`: la lista de
+  // jugadas del motor, el servidor y el iman del telefono). El trazado y el
+  // destranque siguen con la pared puesta, asi que primero se intenta lo
+  // bonito —reacomodar dentro de la mesa— y esto solo entra cuando nada cabe.
+  if (out.length === 0 && sinParedes) {
+    paredesAbiertas = true;
+    permitirRozar = true;
+    if (diagnostico) diagnostico.push({ motivo: 'la-ultima-salida' });
+    generarCandidatos();
+    if (out.length === 0 && endIsDouble) { salirPorElLargo = true; generarCandidatos(); }
+    if (out.length === 0 && esDoble) { dobleDobla = true; generarCandidatos(); }
+    permitirRozar = false;
+    paredesAbiertas = false;
   }
 
   const seen = new Set();
@@ -1000,15 +1025,31 @@ export function destrancarCadena(board, mano, ends, layout = DEFAULT_LAYOUT) {
   if (atascadas.length === 0) return null;
 
   const secuencia = board.map((t) => t.tile);
-
+  const trazados = [];
   for (const forma of FORMAS_DE_CADENA) {
     const nuevo = reconstruirCadena(secuencia, layout, forma);
-    if (!nuevo || nuevo.length !== board.length) continue;
+    if (nuevo && nuevo.length === board.length) trazados.push({ board: nuevo, forma });
+  }
 
-    const siguenAtascadas = atascadas.filter(
-      ({ tile, side }) => placementsFor(nuevo, tile, side, layout).length === 0
-    );
-    if (siguenAtascadas.length === 0) return { board: nuevo, forma };
+  // Primero, lo bonito: una forma donde TODAS las jugadas de la mano caben
+  // dentro de la mesa. Antes solo se miraba que se liberaran las que estaban
+  // tapadas, y a veces el reacomodo tapaba otra (seccion 206).
+  for (const t of trazados) {
+    if (jugadasSinSitio(t.board, mano, ends, layout).length === 0) return t;
+  }
+
+  // Si ninguna cabe entera, la ultima salida (fuera de la pared) ya deja jugar
+  // todo lo que no esta ENCERRADO por la propia culebra. Solo se reacomoda si
+  // en el trazado de ahora hay alguna jugada sin ninguna salida, y solo hacia
+  // una forma donde no quede ninguna asi.
+  const sinSalida = (b) => mano.some((tile) => ['left', 'right'].some((side) => {
+    const end = side === 'left' ? ends.left : ends.right;
+    if (tile[0] !== end && tile[1] !== end) return false;
+    return placementsFor(b, tile, side, layout, null, { sinParedes: true }).length === 0;
+  }));
+  if (!sinSalida(board)) return null;
+  for (const t of trazados) {
+    if (!sinSalida(t.board)) return t;
   }
 
   return null;

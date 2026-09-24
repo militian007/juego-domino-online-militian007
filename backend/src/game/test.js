@@ -2,6 +2,8 @@ import { DominoGame, MODE_CONFIG } from './DominoGame.js';
 import { Bot } from './Bot.js';
 import { generateAllTiles, isDouble, tilePips } from './Tile.js';
 import { RoomManager, RELOJ } from '../RoomManager.js';
+import { playableMoves, necesitaDestrancar } from '@privoytruco/domino-engine';
+import { jugadasSinSitio } from '@privoytruco/domino-engine/layout';
 import { elegirBots } from './bots.js';
 import { limpiar as moderar, esSpam, duracionSilencio, faltaEnPalabras } from '../services/moderacionDelChat.js';
 import * as Config from '../models/Config.js';
@@ -664,6 +666,41 @@ console.log('TEST: La casa torpe sutil (seccion 199)');
   const u = rm.createRoom({ mode: '1v1', hostId: 'h2', hostUsername: 'H2', armada: { casaEn: [], publica: false } });
   rm.startGame(u.code);
   assert(u.players.find((p) => p.isBot)?.difficulty === 'casa', 'en 1v1 el rival es la casa');
+}
+
+console.log('TEST: La punta que el dibujo tapaba (seccion 205)');
+{
+  // Se juegan partidas con bots hasta dar con el caso de Raul: al que le toca
+  // TIENE jugada, pero una de sus jugadas legales no cabe dibujada. Antes no se
+  // reacomodaba (y el telefono le escondia esa punta); ahora si.
+  let casos = 0;
+  let conSitio = 0;
+  let sinTocar = 0;
+  for (let semilla = 1; semilla <= 600 && casos < 5; semilla += 1) {
+    const players = [0, 1].map((i) => ({ id: `p${i}`, username: `P${i}`, isBot: true, difficulty: 'normal' }));
+    const juego = new DominoGame({ roomCode: 'PUNTA', mode: '1v1', players, seed: semilla });
+    let vueltas = 0;
+    while (juego.status === 'playing' && vueltas++ < 3000) {
+      const s = juego.state;
+      const seat = s.turn;
+      if (s.board.length > 0 && playableMoves(s, seat).length > 0 && jugadasSinSitio(s.board, s.hands[seat], s.ends, s.config.layout).length > 0) {
+        casos += 1;
+        const forma = juego.destrancarSiHaceFalta();
+        if (forma && jugadasSinSitio(juego.state.board, juego.state.hands[seat], juego.state.ends, juego.state.config.layout).length === 0) conSitio += 1;
+        if (!forma) sinTocar += 1;
+        assert(!necesitaDestrancar(juego.state, seat) || juego.destrancarSiHaceFalta() === null, 'despues del reacomodo, o ya cabe todo o no se insiste');
+      } else {
+        juego.destrancarSiHaceFalta();
+      }
+      const a = juego.getCurrentPlayer();
+      if (juego.getValidMoves(a.id).length) {
+        const m = new Bot(juego, a.id, 'normal').chooseMove();
+        if (m) { const c = m.placement || {}; juego.playTile(a.id, m.tileIndex, m.side, c.x, c.y, c.x2, c.y2, c.orientation); } else juego.pass(a.id);
+      } else if (juego.hasPool && juego.pool.length) { if (!juego.drawFromPool(a.id).ok) juego.pass(a.id); } else juego.pass(a.id);
+    }
+  }
+  assert(casos >= 1, `aparece el caso de la punta tapada (${casos} en las partidas probadas)`);
+  assert(conSitio >= Math.ceil(casos * 0.6), `el reacomodo le hace sitio a la punta tapada (${conSitio} de ${casos}; ${sinTocar} sin forma que quepa)`);
 }
 
 console.log('TEST: La moderacion del salon (seccion 196)');
