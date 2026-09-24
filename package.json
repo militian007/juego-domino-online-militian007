@@ -1,0 +1,14 @@
+{
+  "name": "domino-una-maquina",
+  "private": true,
+  "description": "El domino en una sola maquina (Replit, seccion 204): instala, construye la pantalla y arranca el servidor que la sirve.",
+  "scripts": {
+    "instalar": "npm --prefix packages/domino-engine install --no-audit --no-fund && npm --prefix backend install --no-audit --no-fund && npm --prefix frontend install --no-audit --no-fund",
+    "construir": "npm --prefix frontend run build",
+    "build": "npm run instalar && npm run construir",
+    "start": "node backend/src/server.js"
+  },
+  "engines": {
+    "node": ">=22.5"
+  }
+}

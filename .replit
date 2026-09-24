@@ -1,0 +1,17 @@
+# EL DOMINO EN REPLIT (seccion 204): una sola maquina. El servidor sirve la
+# pantalla ya construida; la base es la Postgres del Repl (DATABASE_URL).
+modules = ["nodejs-22"]
+run = "npm run start"
+
+[deployment]
+build = ["npm", "run", "build"]
+run = ["npm", "run", "start"]
+deploymentTarget = "vm"
+
+[[ports]]
+localPort = 4000
+externalPort = 80
+
+[env]
+PORT = "4000"
+NODE_ENV = "production"

@@ -2,6 +2,9 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Server } from 'socket.io';
 import authRoutes from './routes/auth.js';
 import buzonRoutes from './routes/buzon.js';
@@ -31,15 +34,27 @@ const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 const PORT = process.env.PORT || 4000;
 const HOST = process.env.HOST || '0.0.0.0';
 
+/**
+ * UNA SOLA MAQUINA (seccion 204): en Replit el servidor sirve tambien la
+ * pantalla ya construida (`frontend/dist`). Asi la pantalla y el servidor
+ * viven en la misma direccion: nada de CORS, el socket va por la misma puerta
+ * y el enlace es uno solo. Si no hay `dist` (en la PC, con Vite aparte), todo
+ * sigue como siempre.
+ */
+const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../frontend/dist');
+const HAY_PANTALLA = fs.existsSync(path.join(DIST, 'index.html'));
+
 app.use(cors({
-  origin: CLIENT_URL,
+  origin: HAY_PANTALLA ? true : CLIENT_URL,
   credentials: true
 }));
 app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.json({ status: 'ok', service: 'domino-backend' });
-});
+if (!HAY_PANTALLA) {
+  app.get('/', (req, res) => {
+    res.json({ status: 'ok', service: 'domino-backend' });
+  });
+}
 
 app.use('/api/auth', authRoutes);
 app.use('/api/buzon', buzonRoutes);
@@ -58,9 +73,28 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', game: 'dominó online', rooms: roomManager.rooms.size });
 });
 
+if (HAY_PANTALLA) {
+  // Los archivos con huella en el nombre (assets/…) se guardan un año; el
+  // index.html y el service worker, nunca: si no, el telefono se queda con la
+  // version vieja (la leccion de la PWA del truco).
+  app.use(express.static(DIST, {
+    index: false,
+    setHeaders: (res, archivo) => {
+      if (/[\\/]assets[\\/]/.test(archivo)) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      else if (/(index\.html|sw\.js|manifest\.webmanifest)$/.test(archivo)) res.setHeader('Cache-Control', 'no-cache');
+    }
+  }));
+  // Cualquier otra ruta que no sea del servidor es de la pantalla (React Router).
+  app.get(/^\/(?!api\/|socket\.io\/).*/, (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache');
+    res.sendFile(path.join(DIST, 'index.html'));
+  });
+}
+
 const io = new Server(server, {
   cors: {
-    origin: CLIENT_URL,
+    // En una sola maquina la pantalla llega por la misma puerta (seccion 204).
+    origin: HAY_PANTALLA ? true : CLIENT_URL,
     methods: ['GET', 'POST']
   }
 });

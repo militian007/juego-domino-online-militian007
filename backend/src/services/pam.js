@@ -85,7 +85,7 @@ async function espejo({ playerId, displayName }) {
   if (ya) {
     if (base && base !== ya.username) {
       // Se cambio el nombre en el club: se sigue. Si choca, se deja el viejo.
-      const { rows: chocan } = await query('SELECT id FROM users WHERE username = ? AND pam_uuid IS NOT ?', [base, playerId]);
+      const { rows: chocan } = await query('SELECT id FROM users WHERE username = ? AND (pam_uuid IS NULL OR pam_uuid <> ?)', [base, playerId]);
       if (chocan.length === 0) {
         await query('UPDATE users SET username = ? WHERE id = ?', [base, ya.id]);
         return { ...ya, username: base };

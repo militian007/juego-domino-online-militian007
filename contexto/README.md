@@ -8651,3 +8651,28 @@ Probado: `backend/src/test-pam.js` contra una **PAM de mentira** que habla el co
 BLOQUEADO, nombre con símbolos, y sin ventanilla todo sigue igual): 15 verdes. Y
 `bateria/pam.mjs` en el navegador: el umbral manda al club, la ficha entra como cuenta y
 desaparece de la barra.
+
+## 204. El dominó en una sola máquina (Replit) (2026-09-23)
+
+Raúl: «lo montamos en Replit de una vez, que estamos esperando». El dominó vivía en dos
+pedazos (pantalla con Vite, servidor aparte, pensado para Vercel + Render). Para Replit va
+en **una sola máquina**, como el ludo:
+
+- `backend/src/server.js` sirve la pantalla ya construida (`frontend/dist`) si existe. Todo
+  va por la misma puerta: nada de CORS, el socket por el mismo puerto, un solo enlace. Los
+  archivos con huella se guardan un año; `index.html`, `sw.js` y el manifiesto nunca (la
+  lección de la PWA del truco: si no, el teléfono se queda con la versión vieja). Cualquier
+  ruta que no sea `/api` ni `/socket.io` es de la pantalla. Sin `dist` (en la PC), todo
+  sigue igual que antes.
+- `package.json` en la raíz: `npm run build` instala motor, servidor y pantalla y construye;
+  `npm run start` arranca el servidor.
+- `.replit`: Node 22 (hace falta 22.5+ por `node:sqlite`), despliegue en VM (el juego vive
+  de sockets y memoria: no puede dormirse), puerto 4000.
+- La base en Replit va en **Postgres** (`DATABASE_URL`): el disco de un despliegue no dura.
+  El código ya hablaba las dos; se arregló la única consulta que solo servía en SQLite
+  (`pam_uuid IS NOT ?`).
+- `/api/diag/*` sigue apagado en producción (probado: 404).
+
+Probado en la PC en modo producción (servidor en 4300 sirviendo el `dist`): umbral y
+`/mesa` responden, la caché de `index.html` es `no-cache`, y dos teléfonos juegan y hablan
+por el chat de la mesa a través del mismo puerto (`chat-mesa.mjs`, verde).
