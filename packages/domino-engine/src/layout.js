@@ -631,6 +631,16 @@ export function distanciaAlCentro(board, placement, layout = DEFAULT_LAYOUT) {
  */
 export const VENTANA_TELEFONO = { ancho: 9, alto: 14 };
 
+/**
+ * La ventana de ESTA mesa (seccion 207). La pone quien arma la partida en
+ * `layout.ventana`, segun donde queda la cadena en la pantalla; sin ella se
+ * usa la del telefono de siempre.
+ */
+export const ventanaDe = (layout) => {
+  const v = layout && layout.ventana;
+  return v && v.ancho > 0 && v.alto > 0 ? v : VENTANA_TELEFONO;
+};
+
 /** La caja que ocupa la cadena (en celdas), sumandole `p` si se pasa. */
 export function cajaDeLaCadena(board, p = null) {
   let x1 = Infinity, x2 = -Infinity, y1 = Infinity, y2 = -Infinity;
@@ -773,10 +783,17 @@ export function straightestPlacement(board, placements, side, layout = DEFAULT_L
   // pantalla del telefono, que es alta y angosta (§170). La cadena sale por el
   // eje de una ficha suelta, pero por los COSTADOS de un doble: por eso una
   // suelta va parada y un doble va acostado. Casi siempre abre un doble.
+  //
+  // (seccion 207) La mesa de verdad no siempre es alta: en el 1 vs 1 del
+  // telefono, con la placa del rival arriba y la mano abajo, el paño libre es
+  // casi cuadrado y un pelo mas ancho que alto. Si la ventana de la mesa es
+  // ancha, la cadena sale a lo ancho.
   if (!board || board.length === 0) {
     const t = placements[0].tile;
     const esDoble = Array.isArray(t) && t[0] === t[1];
-    const buscada = esDoble ? 'horizontal' : 'vertical';
+    const ventana = ventanaDe(layout);
+    const aLoAncho = ventana.ancho >= ventana.alto;
+    const buscada = esDoble === aLoAncho ? 'vertical' : 'horizontal';
     return placements.find((p) => p.orientation === buscada) || placements[0];
   }
 
@@ -826,7 +843,7 @@ export function straightestPlacement(board, placements, side, layout = DEFAULT_L
     // Mockup C (§175): el recorrido fijo manda; lo demas solo desempata.
     placements = preferirCamino(board, placements, side, layout);
   } else {
-    placements = preferirCompactas(board, placements);
+    placements = preferirCompactas(board, placements, ventanaDe(layout));
     // 1b. No pegarse a la propia cadena en el dibujo (§174).
     placements = preferirDespegadas(board, placements, side, layout);
     if (layout.camino === 'intermedio') {
@@ -865,6 +882,32 @@ export function straightestPlacement(board, placements, side, layout = DEFAULT_L
   const distancias = finalistas.map((p) => distanciaAlCentro(board, p, layout));
 
   return finalistas[distancias.indexOf(Math.min(...distancias))];
+}
+
+/**
+ * Donde caeria la PROXIMA ficha en cada punta (seccion 207), dibujada en
+ * celdas y con el corrimiento de los dobles. Es lo unico que la camara tiene
+ * que reservar ademas de la cadena: antes se reservaban dos celdas por los
+ * cuatro lados de cada punta, y en el telefono ese paño vacio achicaba las
+ * fichas. Se prueba con una ficha suelta y con un doble, porque el doble se
+ * planta cruzado y ocupa otro sitio. Devuelve un rectangulo por casilla.
+ */
+export function casillasQueVienen(board, layout = DEFAULT_LAYOUT) {
+  if (!board || board.length === 0) return [];
+  const cell = layout.cell;
+  const ends = boardEnds(board);
+  const cajas = [];
+  for (const side of ['left', 'right']) {
+    const e = side === 'left' ? ends.left : ends.right;
+    for (const tile of [[e, e === 6 ? 5 : 6], [e, e]]) {
+      const opciones = placementsFor(board, tile, side, layout, null, { sinParedes: true });
+      const p = straightestPlacement(board, opciones, side, layout);
+      if (!p) continue;
+      const r = rectOf(p, anchorOffsetFor(board, p, layout), cell);
+      cajas.push({ side, x1: r.left / cell, y1: r.top / cell, x2: (r.left + r.width) / cell, y2: (r.top + r.height) / cell });
+    }
+  }
+  return cajas;
 }
 
 /**

@@ -8738,3 +8738,41 @@ destranque arreglado cubrió todo), pero queda como garantía.
 La prueba del motor que comprobaba «tiene ficha que pega y NO puede jugar nada» (así se
 fijó en su día que el caso existía) ahora comprueba lo contrario: la ficha no cabe dentro
 de la mesa, pero se puede jugar. Motor 85, servidor 176, destranque 3.
+
+## 207. La cadena crece hacia donde hay mesa (2026-09-25)
+
+Raúl, con dos fotos de su iPhone después de la 205: «sigue teniendo el problema que se pone
+muy pequeño». La cámara de la 205 estaba bien; lo que fallaba era la forma de la cadena.
+
+Medido en el navegador a 390×844 (`frontend/scripts/bateria/medir-mesa.mjs`, que lee el
+nuevo `data-camara` del paño): en el 1 vs 1 el paño libre —lo que dejan la placa del rival
+arriba y la mano abajo— mide **330×304**, casi cuadrado y un pelo más ancho que alto. Pero el
+motor trazaba la cadena para una ventana **alta y angosta de 9×14** (§170) y la primera
+ficha salía parada: la cadena usaba el 81 % del alto y el 55 % del ancho, y con 14 fichas la
+ficha ya medía 38 px.
+
+Dos arreglos:
+1. **La ventana es de la mesa, no fija.** `layout.ventana` (nueva, opcional; sin ella sigue
+   la 9×14) la pone el servidor al armar la partida: en el 1 vs 1, **10×9**. Con ventana
+   ancha la primera ficha sale acostada y la cadena crece a lo ancho y dobla antes. El 2 vs 2
+   se queda con la de siempre: las placas de los costados dejan el paño angosto (242×304) y
+   cambiarla ganaba menos de un píxel y duplicaba los reacomodos.
+2. **La cámara reserva solo la casilla que viene.** Antes reservaba dos celdas por los cuatro
+   lados de cada punta; ahora `casillasQueVienen` (motor) calcula dónde caería la próxima
+   ficha en cada punta —suelta y doble, que se planta cruzado— y el encuadre es la cadena más
+   esas casillas. Se puede porque dónde cae una ficha solo depende de la forma de la cadena,
+   no de sus puntos.
+
+De paso: el auto-play del motor y el bot del servidor llamaban a `straightestPlacement` sin
+el layout de la mesa; ahora se lo pasan.
+
+Medido con `backend/src/medir-encuadre.js` (300 partidas por modo, la misma cámara de la
+mesa, paño del iPhone):
+
+| 1 vs 1 | ficha promedio | ficha < 40 px | 7–12 fichas | 13–18 fichas | reacomodos |
+|---|---|---|---|---|---|
+| antes | 41,6 px | 56,9 % | 36,3 | 36,6 | 15 |
+| ahora | 49,9 px | 13,6 % | 48,4 | 43,9 | 20 |
+
+2 vs 2: de 37,7 a 41,6 px (solo la cámara), reacomodos iguales. Jugadas legales sin casilla:
+0 en 1.000 partidas. Motor 85, servidor 174, batería 20 etapas en verde.

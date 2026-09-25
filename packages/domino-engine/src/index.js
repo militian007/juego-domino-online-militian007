@@ -32,6 +32,7 @@ export {
   rectOf,
   boardEnds,
   straightestPlacement,
+  casillasQueVienen,
   reconstruirCadena,
   jugadasSinSitio,
   destrancarCadena,

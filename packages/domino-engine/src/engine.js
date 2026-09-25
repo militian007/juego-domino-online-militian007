@@ -312,7 +312,7 @@ function doPlay(state, action) {
     );
     if (candidates.length === 0) return { ok: false, error: 'Jugada inválida' };
     const side = candidates[0].side;
-    const chosen = straightestPlacement(state.board, candidates.map((c) => c.placement), side);
+    const chosen = straightestPlacement(state.board, candidates.map((c) => c.placement), side, state.config.layout);
     move = candidates.find((c) => placementKey(c.placement) === placementKey(chosen)) || candidates[0];
   }
 

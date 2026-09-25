@@ -8,7 +8,8 @@ import {
   placementsFor,
   straightestPlacement,
   computeBoardOffsets,
-  anchorOffsetFor
+  anchorOffsetFor,
+  casillasQueVienen
 } from '@privoytruco/domino-engine';
 
 const GRID_SIZE = DEFAULT_LAYOUT.grid;
@@ -301,15 +302,29 @@ export default function Board({
    * Lo que la camara tiene que llegar a mostrar: la cadena, y el sitio donde va
    * a caer la ficha que viene, que esta pegado a las PUNTAS.
    */
+  // (seccion 207) Se reserva la casilla EXACTA donde caeria la proxima ficha
+  // en cada punta, no dos celdas por los cuatro lados: en el telefono ese paño
+  // vacio achicaba las fichas. Si alguna punta no da casilla, se vuelve a la
+  // reserva de antes para esa cadena.
   const encuadre = useMemo(() => {
     if (!cajaCadena) return null;
-    return {
-      x1: Math.min(cajaCadena.x1, cajaCadena.px1 - ALCANCE_PUNTA) - AIRE_CELDAS,
-      x2: Math.max(cajaCadena.x2, cajaCadena.px2 + ALCANCE_PUNTA) + AIRE_CELDAS,
-      y1: Math.min(cajaCadena.y1, cajaCadena.py1 - ALCANCE_PUNTA) - AIRE_CELDAS,
-      y2: Math.max(cajaCadena.y2, cajaCadena.py2 + ALCANCE_PUNTA) + AIRE_CELDAS
-    };
-  }, [cajaCadena]);
+    const vienen = casillasQueVienen(board, layout);
+    const lados = new Set(vienen.map((c) => c.side));
+    if (lados.size < 2) {
+      return {
+        x1: Math.min(cajaCadena.x1, cajaCadena.px1 - ALCANCE_PUNTA) - AIRE_CELDAS,
+        x2: Math.max(cajaCadena.x2, cajaCadena.px2 + ALCANCE_PUNTA) + AIRE_CELDAS,
+        y1: Math.min(cajaCadena.y1, cajaCadena.py1 - ALCANCE_PUNTA) - AIRE_CELDAS,
+        y2: Math.max(cajaCadena.y2, cajaCadena.py2 + ALCANCE_PUNTA) + AIRE_CELDAS
+      };
+    }
+    let { x1, x2, y1, y2 } = cajaCadena;
+    for (const c of vienen) {
+      x1 = Math.min(x1, c.x1); x2 = Math.max(x2, c.x2);
+      y1 = Math.min(y1, c.y1); y2 = Math.max(y2, c.y2);
+    }
+    return { x1: x1 - AIRE_CELDAS, x2: x2 + AIRE_CELDAS, y1: y1 - AIRE_CELDAS, y2: y2 + AIRE_CELDAS };
+  }, [cajaCadena, board, layout]);
 
   const centroCadenaX = encuadre ? (encuadre.x1 + encuadre.x2) / 2 : GRID_SIZE / 2;
   const centroCadenaY = encuadre ? (encuadre.y1 + encuadre.y2) / 2 : GRID_SIZE / 2;
@@ -728,6 +743,7 @@ export default function Board({
       ref={containerRef}
       className={`felt-base ${clasePano} w-full h-full relative overflow-hidden rounded-xl select-none`}
       style={{ touchAction: 'none' }}
+      data-camara={`${Math.round(anchoUtil)}x${Math.round(altoUtil)}@${escala.toFixed(3)}`}
     >
       <div
         className="pointer-events-none absolute inset-0 z-30"

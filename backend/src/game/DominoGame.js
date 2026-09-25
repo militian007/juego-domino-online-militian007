@@ -82,6 +82,15 @@ export class DominoGame {
     // enciende el camino fijo; DOMINO_CAMINO=libre deja la regla libre pura.
     const camino = process.env.DOMINO_CAMINO || 'intermedio';
     if (camino !== 'libre') deLaModalidad.layout = { ...DEFAULT_LAYOUT, camino };
+    // La ventana de la mesa (seccion 207). En el 1 vs 1 del telefono el paño
+    // libre es casi cuadrado (330x304 en un iPhone): la cadena crece a lo ancho
+    // y dobla antes, y la ficha sale un 20 % mas grande (medir-encuadre.js). En
+    // el 2 vs 2 las placas de los costados dejan el paño angosto y se queda la
+    // ventana de siempre: cambiarla ganaba menos de un pixel y duplicaba los
+    // reacomodos.
+    if (config.totalPlayers === 2) {
+      deLaModalidad.layout = { ...DEFAULT_LAYOUT, ...(deLaModalidad.layout || {}), ventana: { ancho: 10, alto: 9 } };
+    }
 
     this.state = createGame({
       gameFormat: config.gameFormat,
@@ -366,7 +375,7 @@ export class DominoGame {
   }
 
   chooseBotPlacement(placements, side) {
-    return straightestPlacement(this.state.board, placements, side);
+    return straightestPlacement(this.state.board, placements, side, this.state.config.layout);
   }
 
   _dispatch(playerId, action) {
