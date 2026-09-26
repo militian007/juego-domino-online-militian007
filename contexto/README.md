@@ -8807,3 +8807,21 @@ En el navegador a 390×844 (`medir-mesa.mjs`, tres partidas): 94 px al empezar, 
 `?mano=hoy` enseña la mano de antes para comparar (se guarda; `?mano=0` la quita). Para
 fotografiar la mano llena hay una ruta de desarrollo, `/api/diag/mano`, que pasa fichas del
 pozo a la mano del humano (`fotos-mano.mjs`).
+
+## 209. Instalar la app, en los sitios del truco (2026-09-26)
+
+Raúl: «instalar la app hay que ubicarlo exactamente como en el truco; mientras más nos
+copiemos de allá, mejor». Copia de `InstalarLaApp.tsx` y `usePWAInstall.ts` del truco:
+- `index.html` atrapa `beforeinstallprompt` ANTES de que monte React
+  (`window.__pwaInstallEvent` + `pwa-install-ready`); `hooks/usePWAInstall.js` lo comparte.
+- **Tarjeta oscura** «Instala la app» encima de la cápsula del salón en la portada, para el
+  que ya entró (identidad o cuenta; en el truco, el que tiene sesión). La ✕ la calla 7 días
+  (`instalar.tarjeta.quitada`). Mientras está, las fichas y el lema suben su alto
+  (`--tarjeta-instalar`, como la nube del torneo en el truco) y el lema se corre de las losas.
+- **Enlace** «Instálala en tu teléfono · ver cómo» bajo JUEGA YA para el que todavía no ha
+  entrado, desde su segunda visita (`puerta:visitas`; en el truco va bajo ENTRAR AL CLUB).
+- **Fila «Instalar la app»** en la hoja de «¿cómo te llaman?» (que es el PERFIL del dock) y
+  en `/perfil`: se abre y muestra los pasos en el papel del club (`/utileria/hoja-lisa.webp`).
+- **Página suelta** `/instalar`; `/?instalar` lleva ahí (para pegar en el chat).
+Los iconos son de lucide en vez de los emojis del truco (regla del repo). La pastilla vieja
+«⬇ APP» sigue solo en `/viejo`.

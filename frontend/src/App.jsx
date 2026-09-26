@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import Landing from './pages/Landing.jsx';
 import Umbral from './umbral/Umbral.jsx';
@@ -17,6 +17,7 @@ import ChangePassword from './pages/ChangePassword.jsx';
 import Game from './pages/Game.jsx';
 import Sonidos from './pages/Sonidos.jsx';
 import Version from './components/Version.jsx';
+import { PaginaInstalar } from './components/InstalarLaApp.jsx';
 import AvisoDeTorneo from './components/notificaciones/AvisoDeTorneo.jsx';
 import AvisoDeNivel from './components/notificaciones/AvisoDeNivel.jsx';
 
@@ -26,6 +27,11 @@ const PrivateRoute = ({ children }) => {
   return user ? children : <Navigate to="/login" replace />;
 };
 
+function RutaInstalar() {
+  const navigate = useNavigate();
+  return <PaginaInstalar onVolver={() => navigate('/')} />;
+}
+
 function App() {
   return (
     <>
@@ -33,6 +39,8 @@ function App() {
       <Route path="/" element={<Umbral />} />
       <Route path="/mesa" element={<Antesala />} />
       <Route path="/viejo" element={<Landing />} />
+      {/* Instalar la app (seccion 209): la pagina suelta para pegar en el chat; /?instalar lleva aqui. */}
+      <Route path="/instalar" element={<RutaInstalar />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />

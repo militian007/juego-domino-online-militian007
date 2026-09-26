@@ -12,6 +12,23 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { haySesion } from '../services/api.js';
 import { connectSocket } from '../services/socket.js';
 import { comoSeEntra } from '../services/pam.js';
+import { TarjetaInstalar, TARJETA_INSTALAR_ALTO, useTarjetaInstalar } from '../components/InstalarLaApp.jsx';
+import { usePWAInstall } from '../hooks/usePWAInstall.js';
+
+/** Cuantas veces se ha abierto la portada en este telefono (una por sesion del navegador). */
+function contarVisita() {
+  try {
+    let n = Number(localStorage.getItem('puerta:visitas') || 0);
+    if (!sessionStorage.getItem('puerta:contada')) {
+      n += 1;
+      localStorage.setItem('puerta:visitas', String(n));
+      sessionStorage.setItem('puerta:contada', '1');
+    }
+    return n;
+  } catch {
+    return 1;
+  }
+}
 
 /**
  * EL UMBRAL (seccion 197): la puerta del domino con la receta de la casa, la
@@ -52,6 +69,14 @@ export default function Umbral() {
   /** Con que cuentas corre el domino: las del club (pam) o las de siempre. */
   const [club, setClub] = useState(null);
   const yo = identidad();
+  const tarjeta = useTarjetaInstalar();
+  const pwa = usePWAInstall();
+  const [visitas] = useState(contarVisita);
+
+  // /?instalar lleva a la pagina de los pasos (seccion 209, como el truco).
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has('instalar')) navigate('/instalar', { replace: true });
+  }, [navigate]);
 
   useEffect(() => { comoSeEntra().then(setClub); }, []);
 
@@ -82,10 +107,15 @@ export default function Umbral() {
   };
 
   const hayGente = enLinea > 1;
+  // Instalar la app (seccion 209), en los sitios del truco: la tarjeta para el
+  // que ya entro (en el truco, el que tiene sesion); el enlace para el que
+  // todavia no, desde su segunda visita (en el truco, bajo ENTRAR AL CLUB).
+  const conTarjeta = Boolean(conCuenta || yo) && tarjeta.visible;
+  const conEnlace = !conCuenta && !yo && !pwa.isInstalled && visitas >= 2;
 
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden bg-[#143024] text-domino-cream">
-      <div className="relative min-h-0 flex-1 overflow-hidden">
+      <div className={`relative min-h-0 flex-1 overflow-hidden ${conTarjeta ? 'umbral-con-tarjeta' : ''}`} style={{ '--tarjeta-instalar': conTarjeta ? `${TARJETA_INSTALAR_ALTO}px` : '0px' }}>
         <img src="/umbral/portada-d.webp" alt="" className="absolute inset-0 h-full w-full object-cover object-top" />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(6,14,10,0.45) 0%, rgba(6,14,10,0) 22%, rgba(6,14,10,0) 56%, rgba(6,14,10,0.85) 100%)' }} />
 
@@ -132,6 +162,21 @@ export default function Umbral() {
               </span>
             </span>
           )}
+          {conEnlace && (
+            <span className={`absolute inset-x-0 flex justify-center ${conCuentasDelClub ? '-bottom-[92px]' : '-bottom-16'}`}>
+              <span
+                role="link"
+                tabIndex={0}
+                data-enlace-instalar
+                onClick={(e) => { e.stopPropagation(); navigate('/instalar'); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); navigate('/instalar'); } }}
+                className="rounded-full bg-black/55 px-3 py-1 text-[12px] font-bold text-domino-cream/90"
+                style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}
+              >
+                Instálala en tu teléfono · <span className="text-[#E5C26A]">ver cómo</span>
+              </span>
+            </span>
+          )}
           {/* LA MANITO (Raul, 21-sep): la amarilla «emoji», pintada; mas abajo, tocando el YA. */}
           <img src="/umbral/manito.webp" alt="" aria-hidden draggable={false} className="umbral-dedo absolute -bottom-5 right-8 h-[46px] w-auto" style={{ filter: 'drop-shadow(0 3px 4px rgba(0,0,0,0.7))' }} />
         </button>
@@ -167,6 +212,13 @@ export default function Umbral() {
         <div className="umbral-sube absolute inset-x-0 z-[5] flex justify-center" style={{ bottom: 8, animationDelay: '550ms' }}>
           <PuertaDelSalon onAbrir={() => setSalon('chat')} />
         </div>
+
+        {/* LA TARJETA DE INSTALAR (seccion 209): encima de la capsula, como en el truco. */}
+        {conTarjeta && (
+          <div className="umbral-sube absolute inset-x-0 z-[5]" style={{ bottom: 52, padding: '0 15px', animationDelay: '600ms' }}>
+            <TarjetaInstalar onComoSeHace={() => navigate('/instalar')} onQuitar={tarjeta.quitar} />
+          </div>
+        )}
       </div>
 
       <DockDeLaCasa activa="jugar" onIr={irA} />

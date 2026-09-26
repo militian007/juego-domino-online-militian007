@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SeccionInstalarPerfil } from '../components/InstalarLaApp.jsx';
 import { RETRATOS, guardarIdentidad, identidad, limpiarNombre, retratoUrl } from './identidad.js';
 
 /**
@@ -60,6 +61,10 @@ export default function IdentidadLigera({ abierta, onListo, onCerrar }) {
         <p className="mt-2 text-center text-xs font-medium text-domino-cream/60">
           Se guarda en este teléfono. Lo cambias cuando quieras.
         </p>
+        {/* Instalar la app (seccion 209): la fila del perfil del truco. Esta hoja es el perfil del dominó. */}
+        <div className="mt-4">
+          <SeccionInstalarPerfil />
+        </div>
       </div>
     </div>
   );

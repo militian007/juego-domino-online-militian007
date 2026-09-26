@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { perfilApi, paseApi } from '../services/api.js';
 import MiFoto from '../components/MiFoto.jsx';
+import { SeccionInstalarPerfil } from '../components/InstalarLaApp.jsx';
 
 /**
  * El perfil: quien sos y como te fue.
@@ -213,6 +214,10 @@ export default function Perfil() {
                 </div>
               </>
             )}
+
+            <div className="mt-8">
+              <SeccionInstalarPerfil />
+            </div>
 
             <h2 className="mt-8 text-xs font-semibold tracking-widest text-domino-cream/50">
               ÚLTIMAS PARTIDAS

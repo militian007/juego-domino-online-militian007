@@ -21,6 +21,15 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Instalar la app (seccion 209, como el truco): se atrapa beforeinstallprompt ANTES de que monte React. -->
+    <script>
+      window.__pwaInstallEvent = null;
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.__pwaInstallEvent = e;
+        window.dispatchEvent(new CustomEvent('pwa-install-ready'));
+      });
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
