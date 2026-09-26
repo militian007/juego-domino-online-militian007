@@ -15,6 +15,7 @@
 #   -Reusar        no borra la base de la bateria
 #   -Solo <etapa>  corre una sola: motor servidor chat retos calentar antesala casa fantasma
 #                  reglas sinconexion revancha fotos partida buzon chatmesa socio reportar pam cuentas camara enjambre
+#                  torneos torneoreal
 #
 # NOTA: mantener este archivo ASCII-only (PowerShell 5.1 lee ps1 sin BOM como ANSI).
 param(
@@ -124,6 +125,9 @@ if (-not $SinNavegador) {
 Etapa "chat" { Correr $backend "node" @("src/test-chat.js") (Join-Path $reportes "chat.log") }
 Etapa "cuentas" { Correr $backend "node" @("src/test-pam.js") (Join-Path $reportes "cuentas.log") }
 Etapa "retos" { Correr $backend "node" @("src/test-retos.js") (Join-Path $reportes "retos.log") }
+# Los torneos y el Relampago (seccion 211, copiados del truco): corre en su propia base
+# temporal, con un Relampago de 16 con bots jugado entero. No necesita el banco.
+Etapa "torneos" { Correr $backend "node" @("src/test-torneos.js") (Join-Path $reportes "torneos.log") }
 # El enjambre (seccion 210, como el del truco): robots que juegan mesas enteras entre
 # personas, con dobles toques, cortes a mitad de partida y revanchas. Rojo si una mesa se
 # paraliza o si hay errores inesperados.
@@ -152,6 +156,13 @@ if (-not $SinNavegador) {
   Etapa "reportar" { Correr $frontend "node" @("scripts/bateria/reportar.mjs") (Join-Path $reportes "reportar.log") }
   Etapa "pam" { Correr $frontend "node" @("scripts/bateria/pam.mjs") (Join-Path $reportes "pam.log") }
   Etapa "camara" { Correr $frontend "node" @("scripts/bateria/camara-reacomodo.mjs") (Join-Path $reportes "camara.log") }
+  # Un torneo de verdad en el navegador (seccion 212): el socio lo crea a 24 con la casa
+  # rellenando un cuadro de 8, un invitado se anota desde la vitrina, la pantalla lo sienta
+  # sola, juega sus partidas, mira una mesa en vivo y ve el podio. Unos 8-12 minutos.
+  Etapa "torneoreal" {
+    $env:BATERIA_LLAVE = "llave-de-prueba"
+    return (Correr $frontend "node" @("scripts/bateria/torneo-real.mjs") (Join-Path $reportes "torneoreal.log"))
+  }
 }
 
 # ---------------------------------------------------------------- cierre

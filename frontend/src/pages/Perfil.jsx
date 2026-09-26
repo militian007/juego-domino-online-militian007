@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { perfilApi, paseApi } from '../services/api.js';
 import MiFoto from '../components/MiFoto.jsx';
 import { SeccionInstalarPerfil } from '../components/InstalarLaApp.jsx';
+import TusTitulos from '../torneos/TusTitulos.jsx';
 
 /**
  * El perfil: quien sos y como te fue.
@@ -214,6 +215,9 @@ export default function Perfil() {
                 </div>
               </>
             )}
+
+            {/* Las estampas de campeon de los torneos (copia del truco). */}
+            <TusTitulos nombre={datos.usuario.username} />
 
             <div className="mt-8">
               <SeccionInstalarPerfil />

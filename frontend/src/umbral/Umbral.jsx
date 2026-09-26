@@ -14,6 +14,8 @@ import { connectSocket } from '../services/socket.js';
 import { comoSeEntra } from '../services/pam.js';
 import { TarjetaInstalar, TARJETA_INSTALAR_ALTO, useTarjetaInstalar } from '../components/InstalarLaApp.jsx';
 import { usePWAInstall } from '../hooks/usePWAInstall.js';
+import RelojDelTorneo from '../torneos/RelojDelTorneo.jsx';
+import { modoDemo } from '../torneos/api.js';
 
 /** Cuantas veces se ha abierto la portada en este telefono (una por sesion del navegador). */
 function contarVisita() {
@@ -72,6 +74,7 @@ export default function Umbral() {
   const tarjeta = useTarjetaInstalar();
   const pwa = usePWAInstall();
   const [visitas] = useState(contarVisita);
+  const [conReloj, setConReloj] = useState(false);
 
   // /?instalar lleva a la pagina de los pasos (seccion 209, como el truco).
   useEffect(() => {
@@ -188,7 +191,7 @@ export default function Umbral() {
         </div>
 
         {/* LAS CUATRO FICHAS, distintas, brincando por turnos. */}
-        <div aria-hidden className="umbral-fichas pointer-events-none absolute left-5 z-[3] flex w-[190px] items-end justify-between">
+        <div aria-hidden className="umbral-fichas pointer-events-none absolute left-5 z-[3] flex w-[190px] items-end justify-between" style={{ visibility: conReloj ? 'hidden' : 'visible' }}>
           {FICHAS.map((f, i) => (
             <span key={f} className="umbral-brinco relative block h-[50px] w-[27px]" style={{ animationDelay: `${i * 0.4}s`, filter: 'drop-shadow(0 4px 4px rgba(0,0,0,0.6))' }}>
               {/* La ficha esta pintada acostada: se para girandola dentro de su cajita. */}
@@ -212,6 +215,14 @@ export default function Umbral() {
         <div className="umbral-sube absolute inset-x-0 z-[5] flex justify-center" style={{ bottom: 8, animationDelay: '550ms' }}>
           <PuertaDelSalon onAbrir={() => setSalon('chat')} />
         </div>
+
+        {/* EL RELOJ DEL TORNEO (copia del truco): la etiqueta colgante del
+            proximo torneo, flotando sobre el dock en el sitio de las fichas
+            (que se esconden mientras esta). Sale con alguien en la puerta y si
+            no esta anotado; la tarjeta de instalar la empuja hacia arriba. */}
+        {(conCuenta || yo || modoDemo()) && (
+          <RelojDelTorneo onIrATorneos={() => navigate('/torneos')} abajo="calc(118px + var(--tarjeta-instalar, 0px))" alMostrarse={setConReloj} />
+        )}
 
         {/* LA TARJETA DE INSTALAR (seccion 209): encima de la capsula, como en el truco. */}
         {conTarjeta && (

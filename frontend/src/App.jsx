@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import Landing from './pages/Landing.jsx';
 import Umbral from './umbral/Umbral.jsx';
@@ -10,7 +10,11 @@ import Perfil from './pages/Perfil.jsx';
 import Ranking from './pages/Ranking.jsx';
 import BuzonDelSocio from './buzon/BuzonDelSocio.jsx';
 import Config, { Guardianes, Disputas } from './socio/CuartoDelSocio.jsx';
-import Torneos from './pages/Torneos.jsx';
+import Vitrina from './torneos/Vitrina.jsx';
+import DetalleTorneo from './torneos/DetalleTorneo.jsx';
+import MirarMesa from './torneos/MirarMesa.jsx';
+import TorneosDelSocio from './torneos/TorneosDelSocio.jsx';
+import AvisosDelTorneo from './torneos/Avisos.jsx';
 import Pase from './pages/Pase.jsx';
 import Tienda from './pages/Tienda.jsx';
 import ChangePassword from './pages/ChangePassword.jsx';
@@ -18,7 +22,6 @@ import Game from './pages/Game.jsx';
 import Sonidos from './pages/Sonidos.jsx';
 import Version from './components/Version.jsx';
 import { PaginaInstalar } from './components/InstalarLaApp.jsx';
-import AvisoDeTorneo from './components/notificaciones/AvisoDeTorneo.jsx';
 import AvisoDeNivel from './components/notificaciones/AvisoDeNivel.jsx';
 
 const PrivateRoute = ({ children }) => {
@@ -30,6 +33,17 @@ const PrivateRoute = ({ children }) => {
 function RutaInstalar() {
   const navigate = useNavigate();
   return <PaginaInstalar onVolver={() => navigate('/')} />;
+}
+
+/**
+ * La mesa a la que se entra con `?join=CODE` se monta de nuevo si cambia el
+ * codigo: el torneo lleva de una mesa a la siguiente sin salir de /game, y la
+ * pantalla de la mesa solo pide sentarse una vez por montaje (seccion 212).
+ */
+function MesaPorCodigo() {
+  const { search } = useLocation();
+  const join = new URLSearchParams(search).get('join');
+  return <Game key={join ? `join-${join.toUpperCase()}` : 'mesa'} />;
 }
 
 function App() {
@@ -52,21 +66,26 @@ function App() {
       <Route path="/config" element={<Config />} />
       <Route path="/guardianes" element={<Guardianes />} />
       <Route path="/disputas" element={<Disputas />} />
-      <Route path="/torneos" element={<Torneos />} />
+      <Route path="/socio-torneos" element={<TorneosDelSocio />} />
+      {/* Los torneos, copiados del truco: la vitrina, el torneo con su pizarra y mirar una mesa. */}
+      <Route path="/torneos" element={<Vitrina />} />
+      <Route path="/torneos/:id" element={<DetalleTorneo />} />
+      <Route path="/torneos/:id/mirar/:matchId" element={<MirarMesa />} />
       {/* El pase pide cuenta: sin cuenta no hay donde guardarle el progreso. */}
       <Route path="/pase" element={<PrivateRoute><Pase /></PrivateRoute>} />
       <Route path="/tienda" element={<PrivateRoute><Tienda /></PrivateRoute>} />
       <Route path="/perfil" element={<PrivateRoute><Perfil /></PrivateRoute>} />
       <Route path="/cambiar-clave" element={<PrivateRoute><ChangePassword /></PrivateRoute>} />
-      <Route path="/game" element={<Game />} />
+      <Route path="/game" element={<MesaPorCodigo />} />
       <Route path="/game/:roomCode" element={<Game />} />
       {/* Solo en desarrollo: la pagina para escuchar y elegir los sonidos. */}
       {import.meta.env.DEV && <Route path="/sonidos" element={<Sonidos />} />}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
 
-      {/* La mesa del torneo puede tocarte en cualquier pantalla. */}
-      <AvisoDeTorneo />
+      {/* La mesa del torneo puede tocarte en cualquier pantalla: tu mesa esta
+          lista (te lleva), arranca el Relampago, llegaste tarde, tu mesa te espera. */}
+      <AvisosDelTorneo />
       {/* Subir de nivel tambien pasa en cualquier pantalla: casi siempre al
           terminar una partida, que es cuando se esta en la mesa. */}
       <AvisoDeNivel />

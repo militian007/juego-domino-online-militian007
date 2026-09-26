@@ -97,6 +97,146 @@ export const PERILLAS = [
     tipo: 'si-no',
     porDefecto: true
   },
+  // LOS TORNEOS (seccion 211): las mismas perillas del truco
+  // (`tournaments.*` de su app_config), con los mismos valores de fabrica.
+  {
+    clave: 'torneos.presentacionMin',
+    grupo: 'Los torneos',
+    nombre: 'Plazo para sentarse',
+    ayuda: 'Minutos que tiene cada uno para entrar a su mesa del torneo. Vencido, pasa el que se presentó.',
+    tipo: 'minutos',
+    min: 1,
+    max: 30,
+    porDefecto: 3
+  },
+  {
+    clave: 'torneos.inactividadMs',
+    grupo: 'Los torneos',
+    nombre: 'Quieto en la mesa del torneo',
+    ayuda: 'Si al que le toca no juega nada propio en este tiempo, pierde la partida del torneo. En cero, apagado. Las mesas normales no cambian: ahí la mesa juega por ti.',
+    tipo: 'segundos',
+    min: 0,
+    max: 600000,
+    porDefecto: 120000
+  },
+  {
+    clave: 'torneos.siguienteManoMs',
+    grupo: 'Los torneos',
+    nombre: 'La mano siguiente sale sola',
+    ayuda: 'En la mesa del torneo nadie toca «Siguiente»: la mano nueva se reparte sola a este tiempo.',
+    tipo: 'segundos',
+    min: 1000,
+    max: 30000,
+    porDefecto: 6000
+  },
+  {
+    clave: 'torneos.armarConLosQueEstan',
+    grupo: 'Los torneos',
+    nombre: 'El Relámpago se arma con los que están',
+    ayuda: 'A la hora se abre una ventana «siéntate ya» y el cuadro entra solo con los conectados. Apagado, entran todos los anotados.',
+    tipo: 'si-no',
+    porDefecto: true
+  },
+  {
+    clave: 'torneos.ventanaMs',
+    grupo: 'Los torneos',
+    nombre: 'Ventana «siéntate ya»',
+    ayuda: 'Cuánto dura la ventana de la hora. Si llegan menos del mínimo, se da una segunda igual antes de cancelar.',
+    tipo: 'segundos',
+    min: 0,
+    max: 600000,
+    porDefecto: 60000
+  },
+  {
+    clave: 'torneos.inscripcionTope',
+    grupo: 'Los torneos',
+    nombre: 'Tope de anotados del Relámpago',
+    ayuda: 'Se pueden anotar más que el cupo: a la hora entran los presentes por orden de llegada.',
+    tipo: 'numero',
+    min: 2,
+    max: 2000,
+    porDefecto: 400
+  },
+  {
+    clave: 'torneos.puertaAbiertaMs',
+    grupo: 'Los torneos',
+    nombre: 'La puerta abierta',
+    ayuda: 'Después de la ventana, cuánto tiempo el que llegó tarde puede tocar «Entrar ahora». En cero, cerrada.',
+    tipo: 'segundos',
+    min: 0,
+    max: 900000,
+    porDefecto: 180000
+  },
+  {
+    clave: 'torneos.segundaLlamadaMs',
+    grupo: 'Los torneos',
+    nombre: 'Segunda llamada',
+    ayuda: 'Si los dos se presentaron y la partida no arrancó, este tiempo más (una sola vez) antes de decidir.',
+    tipo: 'segundos',
+    min: 10000,
+    max: 300000,
+    porDefecto: 60000
+  },
+  {
+    clave: 'torneos.prorrogaMin',
+    grupo: 'Los torneos',
+    nombre: 'Prórroga del «Voy»',
+    ayuda: 'Minutos que se corre el plazo cuando alguien toca «Voy». Una sola vez por cruce.',
+    tipo: 'minutos',
+    min: 1,
+    max: 15,
+    porDefecto: 3
+  },
+  {
+    clave: 'torneos.recordatorio1Min',
+    grupo: 'Los torneos',
+    nombre: 'Primer recordatorio',
+    ayuda: 'Minutos antes del arranque en que se avisa a los anotados. En cero, no se avisa.',
+    tipo: 'minutos',
+    min: 0,
+    max: 120,
+    porDefecto: 10
+  },
+  {
+    clave: 'torneos.recordatorio2Min',
+    grupo: 'Los torneos',
+    nombre: 'Último recordatorio',
+    ayuda: 'El que apura. En cero, no se avisa.',
+    tipo: 'minutos',
+    min: 0,
+    max: 120,
+    porDefecto: 5
+  },
+  {
+    clave: 'relampago.premioCampeon',
+    grupo: 'Los torneos',
+    nombre: 'Relámpago: puntos del campeón',
+    ayuda: 'Puntos de clasificación que se lleva el campeón (además de la copa). Sin plata.',
+    tipo: 'numero',
+    min: 0,
+    max: 10000,
+    porDefecto: 100
+  },
+  {
+    clave: 'relampago.premioSegundo',
+    grupo: 'Los torneos',
+    nombre: 'Relámpago: puntos del segundo',
+    ayuda: 'Puntos de clasificación del que pierde la final.',
+    tipo: 'numero',
+    min: 0,
+    max: 10000,
+    porDefecto: 50
+  },
+  {
+    clave: 'relampago.premioTercero',
+    grupo: 'Los torneos',
+    nombre: 'Relámpago: puntos del tercero',
+    ayuda: 'Puntos del que gana el partido por el tercer puesto (se juega a la vez que la final). En cero, no hay partido por el tercero.',
+    tipo: 'numero',
+    min: 0,
+    max: 10000,
+    porDefecto: 25
+  },
   {
     clave: 'casa.torpeza',
     grupo: 'La casa',

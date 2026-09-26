@@ -49,6 +49,13 @@ page.on('request', (req) => {
   if (u.endsWith('/api/auth/me')) {
     return req.respond({ status: 200, headers: CORS, contentType: 'application/json', body: JSON.stringify({ user: { id: 4242, username: 'RaulDelClub', email: 'r@pam.local' } }) });
   }
+  // Los torneos de la cuenta (seccion 211) se piden con la llave de mentira, que
+  // el servidor de la bateria no reconoce: contestaria 401 y la pantalla cerraria
+  // la sesion. Se contesta «no tienes torneos», como a una cuenta nueva.
+  if (req.method() === 'OPTIONS' && /\/api\/torneos\/mios/.test(u)) return req.respond({ status: 204, headers: CORS, body: '' });
+  if (/\/api\/torneos\/mios/.test(u)) {
+    return req.respond({ status: 200, headers: CORS, contentType: 'application/json', body: JSON.stringify({ torneos: [] }) });
+  }
   return req.continue();
 });
 

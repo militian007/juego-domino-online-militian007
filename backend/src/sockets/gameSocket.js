@@ -128,8 +128,8 @@ export function setupGameSocket(io, roomManager) {
 
       // Las mesas de torneo arrancan solas cuando estan los dos: en un torneo
       // nadie tiene por que apretar "empezar", y si alguien se distrae se traba
-      // el cuadro entero.
-      torneos.intentarArrancar(room);
+      // el cuadro entero. Entrar ES presentarse y queda escrito (seccion 211).
+      torneos.alEntrarALaMesa(room, socket.userId).catch((err) => console.error('Torneos: al entrar a la mesa:', err.message));
 
       // Una mesa armada arranca sola cuando se sienta el ultimo pana que
       // faltaba (seccion 188), pero antes pregunta "estas?" (seccion 191): no
@@ -203,6 +203,13 @@ export function setupGameSocket(io, roomManager) {
       socket.leave(code);
       // Levantarse de una mesa armada antes del reparto no cuesta nada (regla 3).
       const sala = roomManager.rooms.get(code);
+      // La mesa del torneo que no arranco no se desarma: la silla es suya
+      // hasta el plazo (seccion 211). Solo se suelta la conexion.
+      if (sala?.torneo && !sala.started) {
+        const yo = sala.players.find((p) => p.id === socket.userId);
+        if (yo?.socketId === socket.id) yo.socketId = null;
+        return;
+      }
       if (sala?.armada && !sala.started) roomManager.soltarDeLaMesa(sala, socket.userId, 'se-levanto');
       else roomManager.leaveRoom(code, socket.userId);
     });
@@ -256,6 +263,7 @@ export function setupGameSocket(io, roomManager) {
       
       const result = activeRoom.game.playTile(socket.userId, tileIndex, side, x, y, x2, y2, orientation);
       if (!result.ok) return callback?.(result);
+      roomManager.marcarJugadaPropia(activeRoom, socket.userId);
       roomManager.broadcastState(activeRoom);
       callback?.(result);
       if (activeRoom.game.status === 'playing') {
@@ -268,6 +276,7 @@ export function setupGameSocket(io, roomManager) {
       if (!room?.game) return callback?.({ ok: false, error: 'No hay juego' });
       const result = room.game.drawFromPool(socket.userId, poolIndex);
       if (!result.ok) return callback?.(result);
+      roomManager.marcarJugadaPropia(room, socket.userId);
       roomManager.broadcastState(room);
       callback?.(result);
     });
@@ -277,6 +286,7 @@ export function setupGameSocket(io, roomManager) {
       if (!room?.game) return callback?.({ ok: false, error: 'No hay juego' });
       const result = room.game.pass(socket.userId);
       if (!result.ok) return callback?.(result);
+      roomManager.marcarJugadaPropia(room, socket.userId);
       roomManager.broadcastState(room);
       callback?.(result);
       if (room.game.status === 'playing') {

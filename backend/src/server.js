@@ -14,6 +14,7 @@ import * as Config from './models/Config.js';
 import perfilRoutes from './routes/perfil.js';
 import rankingRoutes from './routes/ranking.js';
 import torneosRoutes from './routes/torneos.js';
+import socioTorneosRoutes from './routes/socioTorneos.js';
 import desbloqueosRoutes from './routes/desbloqueos.js';
 import monedasRoutes from './routes/monedas.js';
 import tiendaRoutes from './routes/tienda.js';
@@ -24,6 +25,7 @@ import { setupGameSocket } from './sockets/gameSocket.js';
 import { registrarChat } from './sockets/chatSocket.js';
 import { registrarChatDeMesa } from './sockets/mesaChat.js';
 import { registrarRetos } from './sockets/retosSocket.js';
+import { registrarTorneos } from './sockets/torneosSocket.js';
 import * as torneos from './services/torneos.js';
 import * as pase from './services/pase.js';
 
@@ -63,6 +65,7 @@ app.use('/api/pam', pamRoutes);
 app.use('/api/perfil', perfilRoutes);
 app.use('/api/ranking', rankingRoutes);
 app.use('/api/torneos', torneosRoutes);
+app.use('/api/socio/torneos', socioTorneosRoutes);
 app.use('/api/desbloqueos', desbloqueosRoutes);
 app.use('/api/monedas', monedasRoutes);
 app.use('/api/tienda', tiendaRoutes);
@@ -101,9 +104,9 @@ const io = new Server(server, {
 
 roomManager.setIO(io);
 
-// El reloj de los torneos: deja anunciados los proximos y arranca los que les
-// llego la hora.
-torneos.encender(io, roomManager);
+// Los torneos y el Relampago (seccion 211): el tick de 15 s (arranques,
+// plazos, reconciliador), la grilla (apagada hasta que el socio la prende) y
+// el barrido de los quietos. Se encienden DESPUES de la base (mas abajo).
 
 // El pase de batalla necesita el io para avisar en el momento de que alguien
 // subio de nivel o cumplio una mision.
@@ -132,6 +135,9 @@ io.on('connection', (socket) => {
   // Retos entre jugadores y el buzon de avisos.
   registrarRetos(io, socket, roomManager);
 
+  // Los torneos: mirar mesas, la presencia para «se arma con los que estan».
+  registrarTorneos(io, socket, roomManager);
+
   // El chat de la mesa, para hablar con los que estan jugando la partida.
   registrarChatDeMesa(io, socket, roomManager);
 
@@ -152,6 +158,7 @@ import { initDatabase } from './config/database.js';
 await initDatabase();
 // Las perillas: se siembran las que falten y se deja la cache lista (seccion 201).
 await Config.sembrar().catch((err) => console.warn('Config: no se pudo sembrar:', err.message));
+torneos.encender(io, roomManager);
 
 server.listen(PORT, HOST, () => {
   const address = server.address();

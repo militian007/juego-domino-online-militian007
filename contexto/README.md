@@ -8859,3 +8859,132 @@ el script del scratchpad `pam-local-domino.cjs`; `backend/.env` apunta a
 40.000,00 VES), la segunda vez da `FICHA_MALA`, y en el navegador el jugador llega del club
 con su nombre, entra a la antesala y se sienta. La batería fuerza `DOMINO_CUENTAS=propio`
 para no depender de la PAM local.
+
+## 211. Los torneos y el Relámpago, copiados del truco (2026-09-26)
+
+Raúl: «mientras más nos copiemos del truco, mejor». El motor de torneos del dominó se rehízo
+copiando el del truco (`lib/tournaments/*`, `lib/relampago/*`, `routes/tournaments.ts` y lo de
+torneos de `socketServer.ts`), **sin nada de plata**: ni pozo, ni ventanilla, ni por cabeza,
+ni rake, ni VIP. El premio es la copa y puntos de clasificación. Contrato para la pantalla:
+`contexto/API-TORNEOS.md`.
+
+**Por qué**: el motor viejo (`services/torneos.js` de antes) publicaba un torneo cada media hora
+las 24 horas sin interruptor, llevaba el reloj de presentarse en memoria (un reinicio lo
+borraba), re-emparejaba cada ronda y, por el candado `!conBots` de `_registrarSiTermino`, una mesa
+con la casa nunca movía la llave. Se reemplazó entero; no quedan dos programadores.
+
+**Qué quedó**:
+- El cuadro entero en la base (`copa_torneos`, `copa_inscritos`, `copa_cruces`, `copa_mesas`,
+  `copa_ajustes`), horas en milisegundos (BIGINT: comparan igual en SQLite y Postgres). Las
+  tablas viejas `torneos`/`torneo_inscritos` no se tocan y sus copas siguen contando en
+  `tablaDeCopas`.
+- `services/torneos/cuadro.js` (puro): la llave con **ronda previa** (nadie pasa gratis),
+  el partido por el **3.º** (ronda de la final, slot 1, se juega a la vez que la final), los
+  **puestos leídos de la final** (el caso Cabito), el caso 16rafa, el walkover (el que vino
+  pasa; un bot nunca es no-show; si no, la siembra), la **puerta abierta**, el **llamado**
+  («Se abrió el salón… Quedan cuatro… Queda una mesa prendida») y los recordatorios.
+- `services/torneos.js`: el scheduler (tick de 15 s con candado de solapamiento), «**se arma
+  con los que están**» (ventana 60 s + UNA segunda ventana si no llega el mínimo; ausentes y
+  sin cupo reciben «Llegaste tarde»), el relleno con la casa hasta el cuadro (nunca menos de
+  `cuadroMinimo`, nunca más que el cupo), el sorteo con azar criptográfico, **VOY** (escrito,
+  prórroga de 3 min una vez), **NO VOY**, la **segunda llamada** (60 s, una vez), el
+  **reconciliador** (retoma lo que un reinicio dejó a medias: relanza las mesas perdidas con
+  plazo fresco, avanza las partidas que terminaron sin registrarse, paga los premios que
+  faltaron) y el empuje de plazos los primeros 4 min tras un arranque («nadie pierde por un
+  reinicio nuestro»). Todo lo que toca el cuadro pasa por un candado en fila (el truco usa
+  FOR UPDATE; aquí es una sola máquina).
+- La grilla del Relámpago: **nace apagada**, la prende el socio (horas, minutos, cada cuánto,
+  anticipación, temporada), idempotente por el nombre del día. Relámpago = a **24**, una
+  partida, 1v1, relleno hasta **16**, uno a la vez, overbooking hasta el tope, puerta abierta
+  180 s, podio de 3.
+- Torneos «como tal» del socio (`POST /api/socio/torneos`): nombre, hora, puntos
+  (24/50/100/150/200, 100 por defecto), cupo, relleno sí/no + cuadro mínimo, puntos por puesto.
+- La mesa del torneo (`RoomManager.crearMesaDeTorneo`): pre-sentada, arranca sola cuando están
+  las personas (entrar = presentarse, queda escrito); bot contra bot arranca y se juega sola;
+  la **mano siguiente sale sola** a los 6 s; **quieto 120 s** sin jugada propia = pierde (solo
+  en torneos: en las mesas normales la mesa sigue jugando por ti); espectadores con la vista de
+  espectador del motor (el anotado mira todo; los demás, semifinal y final).
+- `_registrarSiTermino`: la mesa del torneo mueve el cuadro SIEMPRE; con un bot sentado no
+  toca historial ni clasificación (la regla de siempre).
+- Perillas nuevas (grupo «Los torneos», con su botón): `torneos.presentacionMin` 3,
+  `torneos.inactividadMs` 120000, `torneos.siguienteManoMs` 6000,
+  `torneos.armarConLosQueEstan` sí, `torneos.ventanaMs` 60000, `torneos.inscripcionTope` 400,
+  `torneos.puertaAbiertaMs` 180000, `torneos.segundaLlamadaMs` 60000, `torneos.prorrogaMin` 3,
+  `torneos.recordatorio1Min` 10, `torneos.recordatorio2Min` 5, `relampago.premioCampeon` 100,
+  `relampago.premioSegundo` 50, `relampago.premioTercero` 25.
+
+**Decisiones que tuve que suponer** (a confirmar con Raúl): los bots de relleno son las 12 caras
+de la casa y otra vuelta con «II» (24, como el pool del truco: con 12 no se llega a un cuadro de
+16); juegan cada uno con su nivel (`botNivel: persona`; el truco usa HARD); si a la hora no hay
+ninguna persona, el torneo se cancela (el truco armaba uno de pura casa); el invitado se puede
+anotar y ganar la copa, pero los puntos de clasificación solo le llegan a las cuentas (la tabla
+`ranking` es de cuentas); el partido por el 3.º existe cuando el tercero tiene puntos.
+
+**Medido**: `node src/test-torneos.js` → **162 verdes** (base temporal propia; también pasó
+contra un Postgres local de prueba): la llave, puestos, walkover, puerta abierta, recordatorios,
+la config y la grilla por horas, uno a la vez, overbooking, la ventana y la segunda ventana, VOY
+/ NO VOY / segunda llamada, reinicio a mitad de torneo, inactividad, un torneo de 4 decidido a
+mano (3.º a la vez que la final, 100/50/25) y **un Relámpago de 16 con la casa jugado entero en
+~4-5 s** (16 cruces jugados, ninguno por walkover, cada mesa a 24). `game/test.js` 181 verdes,
+motor 85, enjambre `2 1 1v1` verde. Nueva etapa `torneos` en la batería.
+
+## 212. Las pantallas de los torneos, copiadas del truco (2026-09-26)
+
+**Pedido de Raúl**: «mientras más nos copiemos del truco, mejor». Las pantallas de torneo del
+truco (`TournamentsScreen`, `TournamentDetailScreen`, `TournamentBracketMap`, `CaminoDelTorneo`,
+`RelojDelTorneo`, `PodioDelTorneo`, `TusTitulos`, `EstampaCampeon`, `BandaMesaViva`,
+`SpectatorView` y los avisos de `App.tsx`) pasadas al dominó en `frontend/src/torneos/`, con la
+utilería del club (hoja de papel, renglones, pancarta chica, etiqueta de cordel, banda de tela)
+y el contrato de la §211 (`contexto/API-TORNEOS.md`).
+
+**Rutas**: `/torneos` (la vitrina: la serie del Relámpago en una tarjeta con medallas y tira de
+horas, los torneos del socio, el palmarés con podio), `/torneos/:id` (el torneo como evento:
+cuenta regresiva, «siéntate ya», puerta abierta, la llave en **pizarra** arrastrable y con zoom o
+en lista, «tu camino» con las mechas, el podio de tres escalones y la estampa del campeón),
+`/torneos/:id/mirar/:matchId?mesa=CODE` (mirar una mesa: el `Board`, las placas de asiento y el
+marcador de la partida de verdad, en solo lectura, manos tapadas), `/socio-torneos?llave=`
+(la tarjeta del Relámpago y crear torneo, con cancelar / rellenar con bots / dar el cruce / relanzar
+la mesa). Tus títulos va en `/perfil`; el reloj del torneo (la etiqueta colgante con GRATIS y
+¡LLÉGATE!) flota en el umbral en el sitio de las fichas saltarinas.
+
+**Los avisos, en toda la app** (`torneos/Avisos.jsx`): `tournament:table_ready` suena, vibra y
+**lleva a la mesa** (`/game?join=CODE`: entrar es presentarse); si está jugando otra partida sale
+la tarjeta con «Voy, guárdenme el puesto» y «No voy a poder», y al terminar esa partida lo lleva
+solo. `armando`, `llegaste_tarde` (con «Entrar ahora» si la puerta sigue abierta),
+`recordatorio`, `mesa_cerrada` y `podium` salen como avisos abajo; la banda «tu mesa te espera»
+sale arriba mientras tenga una mesa de torneo viva y no esté en ella.
+
+**Diferencias con el truco**: no hay plata en ninguna parte (GRATIS, la copa y los puntos de cada
+puesto donde el truco dice pozo o entrada); iconos de lucide en vez de los emojis y de los SVG a
+mano del truco; animaciones en CSS (sin framer-motion); «tu camino» va en el detalle (el dominó no
+tiene antesala de torneo); los mandos del socio viven en su cuarto y no en el detalle; la
+estampa usa la noche del club del dominó; el palmarés dice el nombre de la casa en vez de «la
+casa» tres veces. `?demo=torneos` enseña todas las pantallas con datos de muestra sin servidor.
+
+**Medido**: `npx vite build` verde; capturas a 390 y 360 de todas las pantallas; y
+`frontend/scripts/bateria/torneo-real.mjs` (nueva etapa `torneoreal` de la batería) juega un
+torneo de verdad a 24 con la casa: el socio lo crea, un invitado se anota desde la vitrina, a la
+hora la pantalla lo sienta sola, juega su partida hasta el final, mira una mesa en vivo y ve el
+podio y el palmarés. Contra el servidor de desarrollo: cuadro de 16, VERDE en 7 min 43 s; cuadro
+de 8 con la casa en novato, VERDE en 9 min: ganó la ronda 1, la pantalla lo llevó sola a la
+semifinal y después al partido por el 3.º. Salió un error de verdad: de una mesa a la siguiente
+la pantalla no volvía a sentarse (`/game?join=` reusaba el mismo montaje de `Game`); ahora la
+ruta `/game` se monta de nuevo cuando cambia el código (`MesaPorCodigo` en `App.jsx`).
+
+### 211 bis. Dos reglas de Raúl sobre los torneos (2026-09-26)
+
+- **Solo con cuenta.** «Invitados no pueden jugar el torneo, tienen que crearse la cuenta.»
+  El invitado ve la vitrina y la pizarra; al tocar ENTRAR sale «Los torneos son con tu
+  cuenta» (`torneos/NecesitaCuenta.jsx`), que lo manda a privoytruco.com (con la PAM) o a
+  la entrada de cuentas. El servidor lo exige: `POST /api/torneos/:id/register` contesta
+  403 `necesita_cuenta` y el `torneo:anotarse` del socket también. El servicio no cambia
+  (las pruebas lo usan con invitados). `torneo-real.mjs` ahora juega con la cuenta de la
+  batería (`DOMINO_TOKEN` / `DOMINO_USER`).
+- **Los bots no pueden ganarle siempre a la gente.** El relleno juega al nivel de la casa
+  (§199) en el Relámpago y por defecto en los torneos del socio. Medido a 24 puntos
+  (`PUNTOS=24 node src/medir-casa.js 1000`): la persona le gana **68 %** en 1v1 (a
+  `dificil` sería 51 %). En un cuadro de 16 lleno de bots, una persona normal llega a la
+  semifinal ~la mitad de las veces y gana el torneo ~1 de cada 5.
+- Nadie presente a la hora: el torneo se cancela (decidido).
+- La prueba `pam.mjs` de la batería contesta «no tienes torneos» a `/api/torneos/mios`
+  (su llave es de mentira; sin eso el 401 cerraba la sesión).

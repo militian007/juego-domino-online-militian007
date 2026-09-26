@@ -17,7 +17,7 @@ const NIVELES = ['novato', 'facil', 'normal', 'dificil', 'maestro', 'casa'];
 
 function jugar(mode, modalidad, niveles) {
   const players = niveles.map((d, i) => ({ id: `p${i}`, username: `P${i}`, isBot: true, difficulty: d }));
-  const game = new DominoGame({ roomCode: 'SIM', mode, modalidad, players, seed: Math.floor(Math.random() * 1e9) });
+  const game = new DominoGame({ roomCode: 'SIM', mode, modalidad, players, seed: Math.floor(Math.random() * 1e9), puntos: Number(process.env.PUNTOS) || undefined });
   let vueltas = 0;
   while (game.status === 'playing' && vueltas < 5000) {
     vueltas += 1;

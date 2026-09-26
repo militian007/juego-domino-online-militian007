@@ -251,6 +251,112 @@ export async function initDatabase() {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_torneo_inscrito_uno ON torneo_inscritos(torneo_id, user_id);
     CREATE INDEX IF NOT EXISTS idx_torneo_inscritos_torneo ON torneo_inscritos(torneo_id);
 
+    -- LOS TORNEOS COPIADOS DEL TRUCO (seccion 211). Las dos tablas de arriba
+    -- quedan como estaban (su palmares viejo sigue contando copas), pero el
+    -- motor nuevo vive aqui: el cuadro entero en la base, para que un
+    -- reinicio a mitad de torneo lo retome. Sin plata: el premio es gloria,
+    -- puntos de clasificacion y la copa. Las horas van en milisegundos
+    -- (BIGINT): comparan igual en SQLite y en Postgres, sin zonas horarias.
+    --
+    -- tipo: relampago (lo publica la grilla) o normal (lo crea el socio).
+    -- estado: registration, live, completed, cancelled (los nombres del truco).
+    CREATE TABLE IF NOT EXISTS copa_torneos (
+      id SERIAL PRIMARY KEY,
+      nombre VARCHAR(80) NOT NULL,
+      tipo VARCHAR(20) NOT NULL,
+      estado VARCHAR(20) NOT NULL,
+      empieza_en BIGINT NOT NULL,
+      puntos INTEGER NOT NULL,
+      cupo INTEGER NOT NULL,
+      minimo INTEGER NOT NULL DEFAULT 2,
+      relleno INTEGER NOT NULL DEFAULT 1,
+      cuadro_minimo INTEGER NOT NULL DEFAULT 16,
+      bot_nivel VARCHAR(20),
+      premio1 INTEGER NOT NULL DEFAULT 0,
+      premio2 INTEGER NOT NULL DEFAULT 0,
+      premio3 INTEGER NOT NULL DEFAULT 0,
+      creado_por VARCHAR(80),
+      creado_en BIGINT,
+      actualizado_en BIGINT,
+      terminado_en BIGINT,
+      segunda_hasta BIGINT,
+      ventana_avisada INTEGER NOT NULL DEFAULT 0,
+      recordatorio_min INTEGER,
+      premiado INTEGER NOT NULL DEFAULT 0,
+      campeon_id VARCHAR(80),
+      campeon_nombre VARCHAR(255),
+      campeon_bot INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS idx_copa_torneos_estado ON copa_torneos(estado, empieza_en);
+
+    -- Quien se anoto. El nombre y el retrato van aqui mismo: el invitado no
+    -- tiene fila en users y el bot tampoco, y el cuadro tiene que poder
+    -- pintarlos a todos. estado: registered, ausente, sin_cupo (del truco).
+    CREATE TABLE IF NOT EXISTS copa_inscritos (
+      id SERIAL PRIMARY KEY,
+      torneo_id INTEGER NOT NULL,
+      user_id VARCHAR(80) NOT NULL,
+      username VARCHAR(255) NOT NULL,
+      avatar VARCHAR(40),
+      es_bot INTEGER NOT NULL DEFAULT 0,
+      estado VARCHAR(20) NOT NULL,
+      siembra INTEGER,
+      puesto INTEGER,
+      inscrito_en BIGINT
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_copa_inscrito_uno ON copa_inscritos(torneo_id, user_id);
+    CREATE INDEX IF NOT EXISTS idx_copa_inscritos_user ON copa_inscritos(user_id);
+
+    -- Cada cruce del cuadro (el tournament_match del truco): quien contra
+    -- quien, a donde pasa el ganador, el plazo para presentarse y las marcas
+    -- de VOY escritas (sobreviven al reinicio).
+    CREATE TABLE IF NOT EXISTS copa_cruces (
+      id SERIAL PRIMARY KEY,
+      torneo_id INTEGER NOT NULL,
+      ronda INTEGER NOT NULL,
+      slot INTEGER NOT NULL,
+      jugador_a VARCHAR(80),
+      jugador_b VARCHAR(80),
+      ganador VARCHAR(80),
+      estado VARCHAR(20) NOT NULL,
+      siguiente_id INTEGER,
+      siguiente_lado VARCHAR(1),
+      plazo_en BIGINT,
+      presente_a BIGINT,
+      presente_b BIGINT,
+      prorroga_en BIGINT,
+      segunda_llamada INTEGER NOT NULL DEFAULT 0,
+      motivo VARCHAR(40),
+      marcador_a INTEGER,
+      marcador_b INTEGER,
+      terminado_en BIGINT
+    );
+    CREATE INDEX IF NOT EXISTS idx_copa_cruces_torneo ON copa_cruces(torneo_id, ronda, slot);
+
+    -- La mesa de cada cruce (el tournament_series_game del truco): el codigo
+    -- de la sala en memoria. Una sola viva por cruce: el indice lo asegura.
+    CREATE TABLE IF NOT EXISTS copa_mesas (
+      id SERIAL PRIMARY KEY,
+      cruce_id INTEGER NOT NULL,
+      numero INTEGER NOT NULL,
+      code VARCHAR(10) NOT NULL,
+      estado VARCHAR(20) NOT NULL,
+      ganador VARCHAR(80),
+      marcador_a INTEGER,
+      marcador_b INTEGER,
+      creada_en BIGINT,
+      terminada_en BIGINT
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_copa_mesas_una ON copa_mesas(cruce_id, numero);
+    CREATE INDEX IF NOT EXISTS idx_copa_mesas_code ON copa_mesas(code);
+
+    -- Los ajustes que no caben en una perilla: la grilla del Relampago va
+    -- entera, como JSON, igual que el app_config del truco.
+    CREATE TABLE IF NOT EXISTS copa_ajustes (
+      clave VARCHAR(60) PRIMARY KEY,
+      valor TEXT
+    );
+
     -- Lo que cada uno tiene desbloqueado: pintas de fichas, paños, avatares,
     -- titulos, lo que venga. Una fila por cosa.
     --

@@ -1,4 +1,4 @@
-import { randomSeed, MODALIDADES, overridesDeModalidad } from '@privoytruco/domino-engine';
+import { randomSeed, MODALIDADES, overridesDeModalidad, spectatorView } from '@privoytruco/domino-engine';
 import { elegirBots } from './game/bots.js';
 import * as Config from './models/Config.js';
 import * as libreta from './services/libreta.js';
@@ -138,6 +138,7 @@ export class RoomManager {
       room._terminoEn ??= ahora;
       if (ahora - room._terminoEn < MESA_TERMINADA_MS) continue;
       clearTimeout(room._reloj);
+      clearTimeout(room._siguienteMano);
       this.cancelarLlamada(room);
       room.players.forEach((p) => clearTimeout(p._vuelta));
       this.rooms.delete(code);
@@ -210,6 +211,118 @@ export class RoomManager {
   }
 
   /**
+   * LA MESA DEL TORNEO (seccion 211): pre-sentada con los dos del cruce, en
+   * sus sillas (A en la 0, B en la 1), y con los puntos del torneo (el
+   * Relampago va a 24, que no esta entre los de la mesa armada). Nadie la
+   * «arranca»: la arranca el servicio de torneos cuando llegan las personas,
+   * o en el acto si es bot contra bot.
+   */
+  crearMesaDeTorneo({ jugadores, puntos }) {
+    const code = this.generateCode();
+    const room = {
+      code,
+      mode: '1v1',
+      modalidad: MODALIDAD_POR_DEFECTO['1v1'],
+      puntos: Number(puntos) || 100,
+      config: MODES['1v1'],
+      players: jugadores.map((j, i) => ({
+        id: j.id,
+        username: j.username,
+        isBot: Boolean(j.isBot),
+        socketId: null,
+        avatar: j.avatar,
+        asiento: i,
+        ...(j.isBot ? { difficulty: j.difficulty, frase: j.frase, estrellas: j.estrellas } : {})
+      })),
+      game: null,
+      started: false,
+      creadaEn: Date.now()
+    };
+    this.rooms.set(code, room);
+    return room;
+  }
+
+  /**
+   * Cierra una mesa de torneo que ya no cuenta (walkover, relanzada,
+   * torneo cancelado). Se le quita la marca del torneo ANTES de cerrarla:
+   * si su partida terminara igual, ese final ya no mueve el cuadro.
+   */
+  cerrarMesaDeTorneo(code, motivo = 'cerrada') {
+    const room = this.rooms.get(code);
+    if (!room) return false;
+    const torneoId = room.torneo?.torneoId ?? null;
+    room.torneo = null;
+    clearTimeout(room._reloj);
+    clearTimeout(room._siguienteMano);
+    this.cancelarLlamada(room);
+    room.players.forEach((p) => {
+      clearTimeout(p._vuelta);
+      if (!p.isBot && p.socketId) this.io?.to(p.socketId).emit('tournament:mesa_cerrada', { tournamentId: torneoId, code, motivo });
+    });
+    this.rooms.delete(code);
+    olvidarMesa(code);
+    return true;
+  }
+
+  /** Una jugada PROPIA en una mesa de torneo: reinicia su reloj de inactividad. */
+  marcarJugadaPropia(room, userId) {
+    if (!room?.torneo) return;
+    const p = room.players.find((x) => x.id === userId);
+    if (p) p._ultimaPropia = Date.now();
+  }
+
+  /**
+   * Lo que ve el que mira (seccion 211, table:spectator_state del truco): la
+   * vista de espectador del motor (ninguna mano, nunca) y la mesa con la
+   * forma de siempre pero sin mano propia ni jugadas.
+   */
+  vistaDeEspectador(room) {
+    if (!room?.game) return null;
+    const mesa = room.game.getStateForPlayer('__espectador__');
+    mesa.boardShape = room.boardShape;
+    mesa.canDraw = false;
+    mesa.canPass = false;
+    mesa.canPlay = false;
+    return {
+      code: room.code,
+      tournamentId: room.torneo?.torneoId ?? null,
+      round: room.torneo?.ronda ?? null,
+      vista: spectatorView(room.game.state),
+      mesa
+    };
+  }
+
+  _emitirEspectadores(room) {
+    if (!room.espectadores?.size || !this.io) return;
+    const vivo = (sid) => !this.io.sockets?.sockets?.get || this.io.sockets.sockets.get(sid);
+    const payload = this.vistaDeEspectador(room);
+    if (!payload) return;
+    for (const sid of [...room.espectadores]) {
+      if (!vivo(sid)) {
+        room.espectadores.delete(sid);
+        continue;
+      }
+      this.io.to(sid).emit('table:spectator_state', payload);
+    }
+  }
+
+  /**
+   * En la mesa del torneo la mano siguiente sale SOLA (el bot y el ausente no
+   * tocan «Siguiente»): a los ~6 s del fin de mano, como el 2v2 del truco.
+   */
+  _programarSiguienteMano(room) {
+    if (room._siguienteMano) return;
+    room._siguienteMano = setTimeout(() => {
+      room._siguienteMano = null;
+      if (this.rooms.get(room.code) !== room || room.game?.status !== 'round-end') return;
+      if (!room.game.startNextRound()) return;
+      this.broadcastState(room);
+      this.playBotTurns(room);
+    }, torneos.siguienteManoMs());
+    room._siguienteMano.unref?.();
+  }
+
+  /**
    * EL CANDADO (seccion 191, ficha 2.1, regla 1): un jugador, un asiento, y el
    * candado vive en UNA sola funcion. Antes de sentar a alguien en una mesa
    * armada se mira donde mas esta:
@@ -227,7 +340,9 @@ export class RoomManager {
       if (room.started && room.game && room.game.status !== 'game-over') {
         return { error: 'YA_TIENES_MESA', code };
       }
-      if (room.started) continue;
+      // La silla del torneo que espera es suya hasta el plazo (seccion 211):
+      // sentarse en otra mesa no la suelta.
+      if (room.started || room.torneo) continue;
       if (room.armada) this.soltarDeLaMesa(room, userId, 'otra-mesa');
       else this.leaveRoom(code, userId);
     }
@@ -976,12 +1091,25 @@ export class RoomManager {
 
     this._ajustarReloj(room);
 
+    // LA MESA DEL TORNEO (seccion 211): cada reparto nuevo le da a todos un
+    // reloj de inactividad fresco, y la mano siguiente sale sola.
+    if (room.torneo) {
+      if (room._rondaQuieta !== room.game.round) {
+        room._rondaQuieta = room.game.round;
+        const ahora = Date.now();
+        room.players.forEach((p) => { if (!p.isBot) p._ultimaPropia = ahora; });
+      }
+      if (room.game.status === 'round-end') this._programarSiguienteMano(room);
+    }
+
     room.players.forEach((p) => {
       if (p.isBot || !p.socketId) return;
       const state = room.game.getStateForPlayer(p.id);
       state.boardShape = room.boardShape;
+      if (room.torneo) state.torneo = { tournamentId: room.torneo.torneoId, round: room.torneo.ronda, nombre: room.torneo.nombre };
       this.io.to(p.socketId).emit('game:state', state);
     });
+    this._emitirEspectadores(room);
 
     this._registrarSiTermino(room);
   }
@@ -1002,7 +1130,11 @@ export class RoomManager {
 
     room._registrada = true;
 
-    const conBots = (room.config?.bots ?? 0) > 0;
+    // En la mesa de torneo la casa se sienta en un modo «entre personas»
+    // (1v1), asi que el modo no alcanza para saber si hay bots: se mira la
+    // mesa. Una partida de torneo contra la casa no toca historial ni
+    // clasificacion (la misma regla de siempre), pero SI mueve el cuadro.
+    const conBots = (room.config?.bots ?? 0) > 0 || Boolean(room.torneo && room.players.some((p) => p.isBot));
 
     // Se guarda el final de la PARTIDA, no el de la ultima ronda.
     //
@@ -1042,13 +1174,12 @@ export class RoomManager {
     // pase dice quien esta jugando.
     this._avisarAlPase(room, conBots, equipoGanador);
 
-    // Si la mesa es de un torneo, hay que seguir la llave: el que perdio queda
-    // afuera y el que gano espera su proxima mesa.
-    if (!conBots && room.torneoId && equipoGanador != null) {
+    // Si la mesa es de un torneo, el cuadro avanza (seccion 211). Va SIN el
+    // candado de los bots: antes una mesa con la casa nunca movia la llave y
+    // un cuadro rellenado se quedaba trancado en la primera ronda.
+    if (room.torneo && equipoGanador != null) {
       const gano = jugadores.find((j) => j.gano);
-      const perdio = jugadores.find((j) => !j.gano);
-      torneos.alTerminarPartida(room, gano?.userId ?? null, perdio?.userId ?? null)
-        .catch((err) => console.error('Error avisando al torneo:', err.message));
+      torneos.alTerminarPartida(room, gano?.userId ?? null);
     }
 
     // Los puntos del ranking. Solo si hubo ganador: una partida que termino

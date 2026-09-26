@@ -33,7 +33,8 @@ export function BarraDelSocio({ llave }) {
     { a: '/buzon', texto: 'BUZÓN' },
     { a: '/config', texto: 'CONFIG' },
     { a: '/guardianes', texto: 'GUARDIANES' },
-    { a: '/disputas', texto: 'DISPUTAS' }
+    { a: '/disputas', texto: 'DISPUTAS' },
+    { a: '/socio-torneos', texto: 'TORNEOS' }
   ];
   return (
     <nav className="mb-4 flex flex-wrap gap-1.5">
