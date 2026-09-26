@@ -338,6 +338,7 @@ function relampagoParaLaTarjeta(c = {}) {
     hastaFecha: c.hastaFecha ?? null,
     targetPoints: c.puntos ?? 24,
     cuadroMinimo: c.cuadroMinimo ?? 16,
+    botNivel: c.botNivel ?? 'casa',
     premiosPuntos: premiosDe(c.premios)
   };
 }
@@ -378,7 +379,7 @@ export function torneosDelSocio(llave) {
     lista: () => (d ? demo.listaDelSocio() : listaDelSocio()),
     crear: (c) => (d ? demo.crear(c) : pedirSocio(llave, '/', {
       method: 'POST',
-      body: { nombre: c.name, empiezaEn: c.startAt, puntos: c.targetPoints, cupo: c.capacity, relleno: c.botFill, cuadroMinimo: c.botFill ? c.cuadroMinimo ?? undefined : undefined, premios: c.premiosPuntos }
+      body: { nombre: c.name, empiezaEn: c.startAt, puntos: c.targetPoints, cupo: c.capacity, relleno: c.botFill, cuadroMinimo: c.botFill ? c.cuadroMinimo ?? undefined : undefined, botNivel: c.botNivel, premios: c.premiosPuntos }
     })),
     cancelar: (id) => (d ? demo.cancelar(id) : pedirSocio(llave, `/${id}/cancel`, { method: 'POST' })),
     rellenarConBots: (id) => (d ? demo.rellenar(id) : pedirSocio(llave, `/${id}/fill-bots`, { method: 'POST', body: {} })),

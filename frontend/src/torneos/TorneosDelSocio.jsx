@@ -4,6 +4,19 @@ import { Marco, llaveDelSocio } from '../socio/CuartoDelSocio.jsx';
 import { torneosDelSocio } from './api.js';
 
 /**
+ * Que tan bravos son los bots de relleno, como en el panel del truco (Raul,
+ * 11-ago en el truco: «tampoco me da la opcion para elegir la dificultad»).
+ * «La casa» es el nivel medido en la seccion 199: la persona le gana 7 de 10.
+ */
+const NIVELES_BOT = [
+  ['casa', 'La casa (la persona gana 7 de 10)'],
+  ['facil', 'Fácil'],
+  ['normal', 'Normal'],
+  ['dificil', 'Difícil'],
+  ['persona', 'Cada bot con su nivel']
+];
+
+/**
  * LOS TORNEOS, EN EL CUARTO DEL SOCIO: la tarjeta del Relampago (copia del
  * `PanelRelampago` del truco, sin nada de plata), el formulario de crear un
  * torneo y la lista con sus mandos en caliente (cancelar, rellenar con bots,
@@ -156,6 +169,12 @@ function PanelRelampago({ api, onAviso }) {
               {[4, 8, 16, 32].map((n) => <option key={n} value={n}>Rellena hasta {n}</option>)}
             </select>
           </label>
+          <label className="col-span-2">
+            <span className={etiqueta}>Qué tan bravos son los bots</span>
+            <select className={campo} value={String(v('botNivel') ?? 'casa')} onChange={(e) => pon('botNivel', e.target.value)} data-testid="relampago-nivel-bots">
+              {NIVELES_BOT.map(([k, t]) => <option key={k} value={k}>{t}</option>)}
+            </select>
+          </label>
           <div className="col-span-2">
             <span className={etiqueta}>Puntos de la clasificación por puesto</span>
             <Premios valor={v('premiosPuntos') ?? []} onCambiar={(n) => pon('premiosPuntos', n)} />
@@ -196,7 +215,7 @@ const enUnaHora = () => {
 
 function CrearTorneo({ api, onCreado, onAviso }) {
   const [abierto, setAbierto] = useState(false);
-  const [f, setF] = useState({ name: '', start: enUnaHora(), targetPoints: 24, capacity: 16, botFill: true, cuadroMinimo: 8, premios: ['100', '50', '25'] });
+  const [f, setF] = useState({ name: '', start: enUnaHora(), targetPoints: 24, capacity: 16, botFill: true, cuadroMinimo: 8, botNivel: 'casa', premios: ['100', '50', '25'] });
   const [busy, setBusy] = useState(false);
   const pon = (k, valor) => setF((x) => ({ ...x, [k]: valor }));
 
@@ -214,6 +233,7 @@ function CrearTorneo({ api, onCreado, onAviso }) {
         seriesFormat: 'single',
         botFill: f.botFill,
         cuadroMinimo: f.botFill ? f.cuadroMinimo : null,
+        botNivel: f.botNivel,
         premiosPuntos: f.premios.map((x) => Number(x) || 0)
       });
       onAviso(`«${f.name.trim()}» creado. Ya sale en la vitrina.`);
@@ -265,6 +285,14 @@ function CrearTorneo({ api, onCreado, onAviso }) {
             <span className={etiqueta}>Cuadro mínimo</span>
             <select className={campo} value={String(f.cuadroMinimo)} onChange={(e) => pon('cuadroMinimo', Number(e.target.value))}>
               {[4, 8, 16, 32].filter((n) => n <= f.capacity).map((n) => <option key={n} value={n}>{n} jugadores</option>)}
+            </select>
+          </label>
+        )}
+        {f.botFill && (
+          <label className="col-span-2">
+            <span className={etiqueta}>Qué tan bravos son los bots</span>
+            <select className={campo} value={f.botNivel} onChange={(e) => pon('botNivel', e.target.value)} data-testid="crear-nivel-bots">
+              {NIVELES_BOT.map(([k, t]) => <option key={k} value={k}>{t}</option>)}
             </select>
           </label>
         )}
