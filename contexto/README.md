@@ -8988,3 +8988,75 @@ ruta `/game` se monta de nuevo cuando cambia el código (`MesaPorCodigo` en `App
 - Nadie presente a la hora: el torneo se cancela (decidido).
 - La prueba `pam.mjs` de la batería contesta «no tienes torneos» a `/api/torneos/mios`
   (su llave es de mentira; sin eso el 401 cerraba la sesión).
+
+## 214. Los anuncios de la casa, copiados del truco (2026-09-26)
+
+**Qué es.** El socio escribe un anuncio y a cada jugador le sale en la puerta (el umbral) las
+veces que se eligió. Es la copia de los «anuncios de la casa» del truco (Raúl, 15-ago: «que les
+salga una vez a los jugadores»), con sus mismas reglas y su mismo arte.
+
+**Todo se elige al escribir** (`/socio-anuncios?llave=...`, nueva pestaña ANUNCIOS del cuarto
+del socio): por dónde llega (**sobre** que tapa la pantalla hasta ENTENDIDO · **pizarra**, la
+nota clavada en el piso de la puerta, que no tranca · **casa**, se lo dice Zoraida) · a quién
+(todos / sólo con cuenta / sólo invitados) · hasta cuándo (30 min · 2 h · 4 h · 1 día · hasta
+que lo baje, o fecha y hora a mano) · cuántas veces (una vez / cada vez que entre / una vez +
+recordatorio a los 10-30-60 min del evento) · y la hora del evento, opcional: con ella la
+pantalla calcula sola «faltan 25 minutos» y el anuncio no miente aunque viva cuatro horas.
+Arriba, «Así lo van a ver» con los MISMOS componentes que ve el jugador; abajo, «Los que se han
+puesto» con su chapa (saliendo ahora · programado · vencido · bajado) y BAJARLO AHORA.
+
+**Las reglas del truco, sin cambiar una.** Un anuncio vivo a la vez; publicar reemplaza al
+anterior, estrena id y le sale de nuevo a todo el mundo. «Bajado» incluye «lo reemplazó otro».
+El estado no se guarda: se calcula al leer. La lista son los últimos 30. Las tres trampas:
+la marca va en dos campos propios que se pisan con el id de turno (nunca crece); nada la pisa
+de rebote; y **se manda al cerrarlo, no al mostrarlo** (un reload no lo da por leído).
+
+**Lo que se adaptó, y por qué.**
+- *Dónde se guarda:* el truco usa `app_config` y el jsonb del usuario; aquí la tabla
+  `anuncios` (una fila por anuncio, fechas como texto ISO para que SQLite y Postgres comparen
+  igual) y las marcas de la cuenta en `preferencias` (`anuncio.visto`, `anuncio.recordado`).
+- *El invitado:* en el truco el invitado es un usuario del servidor; aquí no. Sus marcas
+  viven en el teléfono (`domino-anuncio-marcas`, los mismos dos campos) y viajan en el GET;
+  la regla la sigue aplicando el servidor. Si cambia de teléfono, le sale otra vez.
+- *Quién publica:* en el truco el socio mira y el admin publica; aquí la llave del socio es
+  la única puerta, así que quien la tiene publica y baja. No hay bitácora de auditoría: el
+  servidor lo anota en su log.
+- *Dónde se ve:* la pizarra y Zoraida van en la columna izquierda del piso de la puerta
+  (la derecha es de las losas), encima del salón; mientras están, las fichas, el lema y el
+  reloj del torneo se apartan. Sólo a quien ya entró (con cuenta o identidad ligera).
+- *Zoraida:* el dominó no tiene anfitriona; se reusa el óleo del truco
+  (`public/anuncios/zoraida.webp`) con su nombre. Si Raúl prefiere otra cara o «La casa»,
+  es cambiar la imagen y el rótulo en `anuncios/AnuncioDeLaCasa.jsx`.
+
+**Dónde vive.** `backend/src/services/anuncios.js` (reglas y base) ·
+`backend/src/routes/anuncios.js` (`/api/anuncios/vigente`, `/api/anuncios/visto`,
+`/api/socio/anuncios[/historial]`) · `frontend/src/anuncios/` (la pieza del jugador, la
+pantalla del socio y su api) · `frontend/public/anuncios/` (sobre, nota y Zoraida del truco).
+
+**Medido.** `node src/test-anuncios.js`: 21 verdes (público, ventana, una vez / cada vez /
+recordatorio, reemplazo = bajado, estado al leer, tope de 30, marcas al cerrar con cuenta y
+sin ella, llave). `frontend/scripts/bateria/anuncios.mjs`: publica cada forma (la casa desde
+el formulario), sale una vez en la puerta con su reloj, sobrevive a un reload sin cerrar, se
+cierra y no vuelve; la lista queda activo/bajado/bajado. Etapas nuevas `anuncios` y
+`anunciosui` de la batería, las dos VERDES. `npx vite build` verde. Postgres no se probó
+corriendo (el SQL es el mismo para las dos bases).
+
+## 213. El enjambre de torneo (2026-09-26)
+
+**Qué**: `backend/scripts/enjambre/torneo.mjs`, copia del simulacro de torneo del truco
+(`synthetic-tourney.cjs`). Robots con **cuenta** (registro + login; el invitado rebota con 403
+`necesita_cuenta`, y el script lo comprueba) juegan torneos enteros con la jugada del enjambre de
+mesas: fichas legales al azar, doble toque, jugadas que no valen, siesta, cortes a mitad de
+partida y el impaciente que aprieta «Siguiente». Levanta **su propio banco** (puerto 4230, base
+sqlite desechable, `DOMINO_CUENTAS=propio`, llave `llave-enjambre`) y solo ahí acorta perillas
+(plazo 1 min, prórroga 1 min, ventana 30 s, mano siguiente 2 s, bots 250 ms). Tres escenarios:
+`normal` (32 cuentas, 15 % fantasmas, 2 NO VOY, 3 VOY «ocupados» que llegan después del plazo
+original), `relampago` (la grilla lo publica a ~2 min; 20 se anotan con cupo 12, 3 no vienen, 2
+entran por la puerta abierta, uno-a-la-vez contra la franja siguiente; al final apaga y restaura
+la grilla) y `reinicio` (mata el banco en plena ronda 2 y lo levanta con la misma base).
+`node backend/scripts/enjambre/torneo.mjs [normal|relampago|reinicio|todos]`; reporte en
+`backend/scripts/enjambre/reportes/torneo-<escenario>.json`. **Por qué**: las reglas del torneo
+(walkover, prórroga, «se arma con los que están», puerta, podio, puntos) solo se ven de verdad con
+muchos jugando a la vez. **Medido**: los tres VERDES dos veces (sueltos y con `todos`: campeón, podio y 3.º, 0 paralizadas, 0 errores;
+torneo de 32 en 3,5-5 min a 24 puntos; el reinicio retoma con las mesas nuevas en 2 s y sin
+walkovers). No apareció ningún error del servidor.

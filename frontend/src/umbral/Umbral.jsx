@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import IdentidadLigera from './IdentidadLigera.jsx';
@@ -16,6 +16,7 @@ import { TarjetaInstalar, TARJETA_INSTALAR_ALTO, useTarjetaInstalar } from '../c
 import { usePWAInstall } from '../hooks/usePWAInstall.js';
 import RelojDelTorneo from '../torneos/RelojDelTorneo.jsx';
 import { modoDemo } from '../torneos/api.js';
+import AnuncioDeLaCasa from '../anuncios/AnuncioDeLaCasa.jsx';
 
 /** Cuantas veces se ha abierto la portada en este telefono (una por sesion del navegador). */
 function contarVisita() {
@@ -75,6 +76,8 @@ export default function Umbral() {
   const pwa = usePWAInstall();
   const [visitas] = useState(contarVisita);
   const [conReloj, setConReloj] = useState(false);
+  const [anuncioEnElPiso, setAnuncioEnElPiso] = useState(false);
+  const alMostrarAnuncio = useCallback((forma) => setAnuncioEnElPiso(forma === 'pizarra' || forma === 'casa'), []);
 
   // /?instalar lleva a la pagina de los pasos (seccion 209, como el truco).
   useEffect(() => {
@@ -191,7 +194,7 @@ export default function Umbral() {
         </div>
 
         {/* LAS CUATRO FICHAS, distintas, brincando por turnos. */}
-        <div aria-hidden className="umbral-fichas pointer-events-none absolute left-5 z-[3] flex w-[190px] items-end justify-between" style={{ visibility: conReloj ? 'hidden' : 'visible' }}>
+        <div aria-hidden className="umbral-fichas pointer-events-none absolute left-5 z-[3] flex w-[190px] items-end justify-between" style={{ visibility: conReloj || anuncioEnElPiso ? 'hidden' : 'visible' }}>
           {FICHAS.map((f, i) => (
             <span key={f} className="umbral-brinco relative block h-[50px] w-[27px]" style={{ animationDelay: `${i * 0.4}s`, filter: 'drop-shadow(0 4px 4px rgba(0,0,0,0.6))' }}>
               {/* La ficha esta pintada acostada: se para girandola dentro de su cajita. */}
@@ -206,7 +209,7 @@ export default function Umbral() {
           </p>
         )}
 
-        <p className="umbral-sube umbral-lema absolute inset-x-0 z-[3] m-0 px-4 text-center text-[12px] font-bold" style={{ animationDelay: '500ms', textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}>
+        <p className="umbral-sube umbral-lema absolute inset-x-0 z-[3] m-0 px-4 text-center text-[12px] font-bold" style={{ animationDelay: '500ms', textShadow: '0 1px 6px rgba(0,0,0,0.9)', visibility: anuncioEnElPiso ? 'hidden' : 'visible' }}>
           El dominó venezolano de verdad: <b className="text-[#F0DCA6]">se tranca, se pega y se cuentan los puntos.</b>
         </p>
 
@@ -220,9 +223,20 @@ export default function Umbral() {
             proximo torneo, flotando sobre el dock en el sitio de las fichas
             (que se esconden mientras esta). Sale con alguien en la puerta y si
             no esta anotado; la tarjeta de instalar la empuja hacia arriba. */}
-        {(conCuenta || yo || modoDemo()) && (
+        {(conCuenta || yo || modoDemo()) && !anuncioEnElPiso && (
           <RelojDelTorneo onIrATorneos={() => navigate('/torneos')} abajo="calc(118px + var(--tarjeta-instalar, 0px))" alMostrarse={setConReloj} />
         )}
+
+        {/* EL ANUNCIO DE LA CASA (seccion 214, copia del truco): apoyado en el
+            piso de la puerta, encima de la capsula. Mientras esta, las fichas,
+            el lema y el reloj del torneo se apartan. Va en la columna de la
+            izquierda, como las fichas: la de la derecha es de las losas. El
+            sobre no pasa por aqui: va por portal y tapa la pantalla entera. */}
+        <div className="absolute inset-x-0 z-[6]" style={{ bottom: 'calc(56px + var(--tarjeta-instalar, 0px))', padding: '0 104px 0 15px', pointerEvents: 'none' }}>
+          <div style={{ pointerEvents: 'auto' }}>
+            <AnuncioDeLaCasa activo={Boolean(conCuenta || yo)} alMostrarse={alMostrarAnuncio} />
+          </div>
+        </div>
 
         {/* LA TARJETA DE INSTALAR (seccion 209): encima de la capsula, como en el truco. */}
         {conTarjeta && (

@@ -483,6 +483,19 @@ export async function initDatabase() {
       foto TEXT NOT NULL,
       actualizada_en TIMESTAMP
     );
+
+    -- LOS ANUNCIOS DE LA CASA (seccion 214, copiados del truco). Una fila por
+    -- anuncio puesto: el vivo es el ultimo sin bajado_at, y los ultimos 30 son
+    -- la lista del socio. Las fechas van como texto ISO para que SQLite y
+    -- Postgres las comparen igual. Las marcas de ya lo vio van en preferencias.
+    CREATE TABLE IF NOT EXISTS anuncios (
+      n SERIAL PRIMARY KEY,
+      id VARCHAR(40) NOT NULL,
+      datos TEXT NOT NULL,
+      bajado_at VARCHAR(40),
+      bajado_por VARCHAR(40)
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_anuncios_id ON anuncios(id);
   `;
 
   if (isPostgres) {

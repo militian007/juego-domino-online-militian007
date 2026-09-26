@@ -14,6 +14,7 @@ import Vitrina from './torneos/Vitrina.jsx';
 import DetalleTorneo from './torneos/DetalleTorneo.jsx';
 import MirarMesa from './torneos/MirarMesa.jsx';
 import TorneosDelSocio from './torneos/TorneosDelSocio.jsx';
+import AnunciosDelSocio from './anuncios/AnunciosDelSocio.jsx';
 import AvisosDelTorneo from './torneos/Avisos.jsx';
 import Pase from './pages/Pase.jsx';
 import Tienda from './pages/Tienda.jsx';
@@ -67,6 +68,7 @@ function App() {
       <Route path="/guardianes" element={<Guardianes />} />
       <Route path="/disputas" element={<Disputas />} />
       <Route path="/socio-torneos" element={<TorneosDelSocio />} />
+      <Route path="/socio-anuncios" element={<AnunciosDelSocio />} />
       {/* Los torneos, copiados del truco: la vitrina, el torneo con su pizarra y mirar una mesa. */}
       <Route path="/torneos" element={<Vitrina />} />
       <Route path="/torneos/:id" element={<DetalleTorneo />} />

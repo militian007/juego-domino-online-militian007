@@ -14,8 +14,8 @@
 #   -SinNavegador  se salta Chrome (antesala, mesa, sin conexion, revancha...)
 #   -Reusar        no borra la base de la bateria
 #   -Solo <etapa>  corre una sola: motor servidor chat retos calentar antesala casa fantasma
-#                  reglas sinconexion revancha fotos partida buzon chatmesa socio reportar pam cuentas camara enjambre
-#                  torneos torneoreal
+#                  reglas sinconexion revancha fotos partida buzon chatmesa socio reportar pam cuentas camara enjambre enjambretorneo
+#                  torneos torneoreal anuncios anunciosui
 #
 # NOTA: mantener este archivo ASCII-only (PowerShell 5.1 lee ps1 sin BOM como ANSI).
 param(
@@ -128,6 +128,11 @@ Etapa "retos" { Correr $backend "node" @("src/test-retos.js") (Join-Path $report
 # Los torneos y el Relampago (seccion 211, copiados del truco): corre en su propia base
 # temporal, con un Relampago de 16 con bots jugado entero. No necesita el banco.
 Etapa "torneos" { Correr $backend "node" @("src/test-torneos.js") (Join-Path $reportes "torneos.log") }
+# El enjambre de torneo (seccion 213): robots con cuenta juegan un Relampago de verdad en su propio banco (4230).
+Etapa "enjambretorneo" { Correr $backend "node" @("scripts/enjambre/torneo.mjs", "relampago") (Join-Path $reportes "enjambre-torneo.log") }
+# Los anuncios de la casa (seccion 214, copiados del truco): publico, ventana, una vez /
+# cada vez / recordatorio, reemplazo = bajado, marcas al cerrar. Base temporal propia.
+Etapa "anuncios" { Correr $backend "node" @("src/test-anuncios.js") (Join-Path $reportes "anuncios.log") }
 # El enjambre (seccion 210, como el del truco): robots que juegan mesas enteras entre
 # personas, con dobles toques, cortes a mitad de partida y revanchas. Rojo si una mesa se
 # paraliza o si hay errores inesperados.
@@ -162,6 +167,12 @@ if (-not $SinNavegador) {
   Etapa "torneoreal" {
     $env:BATERIA_LLAVE = "llave-de-prueba"
     return (Correr $frontend "node" @("scripts/bateria/torneo-real.mjs") (Join-Path $reportes "torneoreal.log"))
+  }
+  # Los anuncios en la puerta (seccion 214): sobre, pizarra y casa, cada uno sale una vez,
+  # se cierra, se recarga y no vuelve. Al final se baja para no tapar otras pruebas.
+  Etapa "anunciosui" {
+    $env:BATERIA_LLAVE = "llave-de-prueba"
+    return (Correr $frontend "node" @("scripts/bateria/anuncios.mjs") (Join-Path $reportes "anunciosui.log"))
   }
 }
 
