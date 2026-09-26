@@ -103,6 +103,9 @@ export const RELOJ = {
 export const RELOJ_CORTO_MS = RELOJ.cortoMs;
 export const GRACIA_MS = RELOJ_BASE.graciaMs;
 
+/** Cuanto vive una mesa con la partida terminada antes de que el barredor la cierre (seccion 210). */
+export const MESA_TERMINADA_MS = 10 * 60 * 1000;
+
 /** La llamada de "estas?" antes de repartir (ficha 2.1, regla 2): 3 s con todos conectados, 40 s si a alguno le falta el socket. */
 export const LLAMADA_CORTA_MS = entero('DOMINO_LLAMADA_CORTA_MS', 3000, 500);
 export const LLAMADA_LARGA_MS = entero('DOMINO_LLAMADA_LARGA_MS', 40000, 3000);
@@ -112,6 +115,36 @@ export class RoomManager {
     this.rooms = new Map();
     this.io = null;
     this.matchmakingQueue = [];
+    // EL BARREDOR (seccion 210): el enjambre lo encontro. Una partida que
+    // termina y cuyos jugadores cierran la app en vez de tocar «salir» se
+    // quedaba en memoria para siempre (la desconexion no mira las partidas
+    // terminadas): 19 mesas vivas al empezar, 96 al terminar la corrida.
+    this._barredor = setInterval(() => this.barrerMesasTerminadas(), 60 * 1000);
+    this._barredor.unref?.();
+  }
+
+  /**
+   * Cierra las mesas cuya partida lleva MESA_TERMINADA_MS terminada sin que
+   * nadie arrancara la revancha. Diez minutos: de sobra para el cartel final,
+   * la revancha y el «¿pasó algo raro?». Devuelve cuantas cerro.
+   */
+  barrerMesasTerminadas(ahora = Date.now()) {
+    let cerradas = 0;
+    for (const [code, room] of this.rooms) {
+      if (!room.game || room.game.status !== 'game-over') {
+        delete room._terminoEn;
+        continue;
+      }
+      room._terminoEn ??= ahora;
+      if (ahora - room._terminoEn < MESA_TERMINADA_MS) continue;
+      clearTimeout(room._reloj);
+      this.cancelarLlamada(room);
+      room.players.forEach((p) => clearTimeout(p._vuelta));
+      this.rooms.delete(code);
+      olvidarMesa(code);
+      cerradas += 1;
+    }
+    return cerradas;
   }
 
   setIO(io) {

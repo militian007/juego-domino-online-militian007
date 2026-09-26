@@ -8825,3 +8825,37 @@ copiemos de allá, mejor». Copia de `InstalarLaApp.tsx` y `usePWAInstall.ts` de
 - **Página suelta** `/instalar`; `/?instalar` lleva ahí (para pegar en el chat).
 Los iconos son de lucide en vez de los emojis del truco (regla del repo). La pastilla vieja
 «⬇ APP» sigue solo en `/viejo`.
+
+## 210. El enjambre, el barredor de mesas y la PAM de prueba (2026-09-26)
+
+Raúl: «crea el enjambre, vamos a trabajar hoy, tenemos fecha de entrega pronto» y «vamos
+a conectarnos a la PAM para ir haciendo las pruebas nosotros».
+
+**El enjambre** (`backend/scripts/enjambre/enjambre.mjs`, copia del `synthetic-swarm.cjs`
+del truco): robots con identidad ligera arman mesas por la antesala de verdad y juegan
+partidas enteras contra el servidor por Socket.IO, con jugadas al azar pero legales,
+dobles toques, alguna jugada que no vale, cortes de conexión a mitad de partida, dormirse
+en el turno, «Siguiente ronda» de varios a la vez, revancha o salir. Perro guardián por
+mesa: 20 s sin eventos (sin un reloj de turno que lo explique) = PARALIZADA, con la
+radiografía. Modos `1v1`, `2v2` y `casa`. Uso:
+`node backend/scripts/enjambre/enjambre.mjs [mesas] [minutos] [modo]`.
+Corrida grande: 20 mesas 1v1 + 10 mesas 2v2, 4 minutos cada una → 96 partidas completas,
+~20.900 acciones, 32 reconexiones, **0 paralizadas, 0 errores**. Ahora es la etapa
+`enjambre` de la batería (4 mesas 1v1 + 2 mesas 2v2, un minuto).
+
+**Lo que encontró: las mesas terminadas no se cerraban.** Si al terminar la partida los
+jugadores cierran la app en vez de tocar «salir», la mesa quedaba en memoria para siempre:
+la desconexión no mira las partidas terminadas. En la corrida: 19 mesas vivas al empezar,
+96 al terminar. Arreglo: `RoomManager.barrerMesasTerminadas()` cada minuto cierra las
+mesas con la partida terminada hace más de `MESA_TERMINADA_MS` (10 min) sin revancha.
+Prueba en `game/test.js`.
+
+**La PAM de prueba.** En la PAM de verdad solo existe el operador `casa`: el del dominó lo
+tiene que crear Raúl en el panel (el panel genera el secreto). Mientras tanto se prueba
+contra **la PAM local** (el truco en 5001, Postgres 5433), como se hizo con el ludo: el
+operador `domino` y cuatro cuentas `domino-*@test.local` con saldo y su ficha se crean con
+el script del scratchpad `pam-local-domino.cjs`; `backend/.env` apunta a
+`http://localhost:5001/api`. Probado: la ficha se canjea (espejo «Raúl Domino», saldo
+40.000,00 VES), la segunda vez da `FICHA_MALA`, y en el navegador el jugador llega del club
+con su nombre, entra a la antesala y se sienta. La batería fuerza `DOMINO_CUENTAS=propio`
+para no depender de la PAM local.

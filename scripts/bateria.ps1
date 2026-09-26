@@ -14,7 +14,7 @@
 #   -SinNavegador  se salta Chrome (antesala, mesa, sin conexion, revancha...)
 #   -Reusar        no borra la base de la bateria
 #   -Solo <etapa>  corre una sola: motor servidor chat retos calentar antesala casa fantasma
-#                  reglas sinconexion revancha fotos partida buzon chatmesa socio reportar pam cuentas camara
+#                  reglas sinconexion revancha fotos partida buzon chatmesa socio reportar pam cuentas camara enjambre
 #
 # NOTA: mantener este archivo ASCII-only (PowerShell 5.1 lee ps1 sin BOM como ANSI).
 param(
@@ -93,7 +93,7 @@ Matar $API_PORT
 Matar $FRONT_PORT
 if (-not $Reusar) { Remove-Item -Force -ErrorAction SilentlyContinue $BASE, "$BASE-wal", "$BASE-shm" }
 
-$envApi = @{ PORT = "$API_PORT"; DATABASE_PATH = $BASE; CLIENT_URL = $FRONT; DOMINO_SOCIOS = "SocioDePrueba"; DOMINO_BUZON_LLAVE = "llave-de-prueba"; NODE_ENV = "development" }
+$envApi = @{ PORT = "$API_PORT"; DATABASE_PATH = $BASE; CLIENT_URL = $FRONT; DOMINO_SOCIOS = "SocioDePrueba"; DOMINO_BUZON_LLAVE = "llave-de-prueba"; NODE_ENV = "development"; DOMINO_CUENTAS = "propio" }
 foreach ($k in $envApi.Keys) { Set-Item -Path "Env:$k" -Value $envApi[$k] }
 $procApi = Start-Process -FilePath "node" -ArgumentList @("src/server.js") -WorkingDirectory $backend -NoNewWindow -PassThru -RedirectStandardOutput (Join-Path $reportes "api.log") -RedirectStandardError (Join-Path $reportes "api.err.log")
 if (-not (Esperar "$API/api/health" 30)) { Write-Host "El servidor de la bateria no levanto (ver reportes/api.err.log)" -ForegroundColor Red; Stop-Process -Id $procApi.Id -Force; exit 1 }
@@ -124,6 +124,15 @@ if (-not $SinNavegador) {
 Etapa "chat" { Correr $backend "node" @("src/test-chat.js") (Join-Path $reportes "chat.log") }
 Etapa "cuentas" { Correr $backend "node" @("src/test-pam.js") (Join-Path $reportes "cuentas.log") }
 Etapa "retos" { Correr $backend "node" @("src/test-retos.js") (Join-Path $reportes "retos.log") }
+# El enjambre (seccion 210, como el del truco): robots que juegan mesas enteras entre
+# personas, con dobles toques, cortes a mitad de partida y revanchas. Rojo si una mesa se
+# paraliza o si hay errores inesperados.
+Etapa "enjambre" {
+  $env:ENJAMBRE_API = $API
+  $r1 = Correr $backend "node" @("scripts/enjambre/enjambre.mjs", "4", "1", "1v1") (Join-Path $reportes "enjambre-1v1.log")
+  $r2 = Correr $backend "node" @("scripts/enjambre/enjambre.mjs", "2", "1", "2v2") (Join-Path $reportes "enjambre-2v2.log")
+  return ($r1 -and $r2)
+}
 
 # ---------------------------------------------------------------- navegador
 if (-not $SinNavegador) {

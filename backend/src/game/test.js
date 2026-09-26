@@ -1,7 +1,7 @@
 import { DominoGame, MODE_CONFIG } from './DominoGame.js';
 import { Bot } from './Bot.js';
 import { generateAllTiles, isDouble, tilePips } from './Tile.js';
-import { RoomManager, RELOJ } from '../RoomManager.js';
+import { RoomManager, RELOJ, MESA_TERMINADA_MS } from '../RoomManager.js';
 import { playableMoves, necesitaDestrancar } from '@privoytruco/domino-engine';
 import { jugadasSinSitio } from '@privoytruco/domino-engine/layout';
 import { elegirBots } from './bots.js';
@@ -666,6 +666,25 @@ console.log('TEST: La casa torpe sutil (seccion 199)');
   const u = rm.createRoom({ mode: '1v1', hostId: 'h2', hostUsername: 'H2', armada: { casaEn: [], publica: false } });
   rm.startGame(u.code);
   assert(u.players.find((p) => p.isBot)?.difficulty === 'casa', 'en 1v1 el rival es la casa');
+}
+
+console.log('TEST: El barredor de mesas terminadas (seccion 210)');
+{
+  const rm = new RoomManager();
+  clearInterval(rm._barredor);
+  const t0 = 1_000_000;
+  rm.rooms.set('TERM', { code: 'TERM', players: [{ id: 'a' }, { id: 'b' }], game: { status: 'game-over' } });
+  rm.rooms.set('JUEG', { code: 'JUEG', players: [{ id: 'c' }], game: { status: 'playing' } });
+  rm.rooms.set('ESPE', { code: 'ESPE', players: [{ id: 'd' }], game: null });
+  assert(rm.barrerMesasTerminadas(t0) === 0, 'la primera pasada solo anota cuando termino');
+  assert(rm.barrerMesasTerminadas(t0 + MESA_TERMINADA_MS - 1) === 0, 'antes de los diez minutos no se cierra');
+  assert(rm.barrerMesasTerminadas(t0 + MESA_TERMINADA_MS) === 1, 'a los diez minutos se cierra la terminada');
+  assert(!rm.rooms.has('TERM') && rm.rooms.has('JUEG') && rm.rooms.has('ESPE'), 'solo se va la terminada; la que se juega y la que espera siguen');
+  rm.rooms.set('REVA', { code: 'REVA', players: [{ id: 'e' }], game: { status: 'game-over' } });
+  rm.barrerMesasTerminadas(t0);
+  rm.rooms.get('REVA').game.status = 'playing';
+  rm.barrerMesasTerminadas(t0 + MESA_TERMINADA_MS);
+  assert(rm.rooms.has('REVA'), 'la que arranco revancha no se cierra');
 }
 
 console.log('TEST: La punta que el dibujo tapaba (seccion 205)');
