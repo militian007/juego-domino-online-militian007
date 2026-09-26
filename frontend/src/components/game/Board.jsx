@@ -11,6 +11,7 @@ import {
   anchorOffsetFor,
   casillasQueVienen
 } from '@privoytruco/domino-engine';
+import { varianteDeMano } from './pruebaDeMano.js';
 
 const GRID_SIZE = DEFAULT_LAYOUT.grid;
 const CELL_SIZE = DEFAULT_LAYOUT.cell;
@@ -98,7 +99,9 @@ const ZOOM_FICHAS = 1.30;
 // En un telefono de 375 el lado corto son 315 px:
 //   maximo 0,22 -> ficha de 69 px de alto   (Domino Legends: 78)
 //   minimo 0,035 -> ficha de 11 px de alto  (Domino Legends: 13)
-const ALTO_MAXIMO_FICHA = 0.11;
+// (seccion 208) 0,142: la ficha de la mesa llega a 94 px de largo en un
+// telefono de 390, como en el juego de las capturas de Raul. Era 0,11 (73 px).
+const ALTO_MAXIMO_FICHA = 0.142;
 const ALTO_MINIMO_FICHA = 0.035;
 
 // Cuanto sitio se reserva MAS ALLA DE LAS PUNTAS al encuadrar.
@@ -335,7 +338,7 @@ export default function Board({
     const menorLado = Math.min(anchoUtil, altoUtil);
     // Topes proporcionales a la pantalla: asi la ficha se ve del mismo tamaño
     // relativo en un telefono y en un escritorio.
-    const maxima = (menorLado * ALTO_MAXIMO_FICHA) / CELL_SIZE;
+    const maxima = (menorLado * (varianteDeMano()?.mesaMaxima ?? ALTO_MAXIMO_FICHA)) / CELL_SIZE;
     const minima = (menorLado * ALTO_MINIMO_FICHA) / CELL_SIZE;
 
     if (!cajaCadena) return maxima;

@@ -1,11 +1,16 @@
 import { useRef, useState, useEffect, useLayoutEffect } from 'react';
 import Tile from './Tile.jsx';
+import { varianteDeMano } from './pruebaDeMano.js';
 
 /** El hueco entre fichas, en pixeles. Tiene que coincidir con el gap del CSS. */
 const HUECO = 3;
 
-/** Lo mas grande que se deja una ficha, aunque sobre sitio. Mas se ve payaso. */
-const MAXIMO = 58;
+/**
+ * Lo mas grande que se deja una ficha, aunque sobre sitio (seccion 208): 50 de
+ * ancho por 100 de alto, las medidas del juego de las capturas de Raul. Antes
+ * era 58 y la mano le quitaba a la mesa el sitio que la cadena necesitaba.
+ */
+const MAXIMO = 50;
 
 /** Lo mas chica antes de preferir dos filas: por debajo no se acierta con el dedo. */
 const MINIMO = 34;
@@ -17,7 +22,7 @@ const MINIMO = 34;
  * mas chicas que el minimo, se parten en dos filas y se calcula de nuevo: dos
  * filas de fichas grandes se tocan mejor que una fila de fichas diminutas.
  */
-function useAnchoDeFicha(ref, cuantas) {
+function useAnchoDeFicha(ref, cuantas, maximo = MAXIMO, prueba = null) {
   const [ancho, setAncho] = useState(0);
 
   useLayoutEffect(() => {
@@ -41,10 +46,13 @@ function useAnchoDeFicha(ref, cuantas) {
     return Math.floor((util - HUECO * (porFila - 1)) / porFila);
   };
 
+  // Siempre UNA fila (seccion 208): con el pozo la mano pasaba de 9 fichas, se
+  // partia en dos filas de fichas grandes y a la cadena le quedaban 200 px.
+  // Ahora las fichas se afinan para caber; con 12 quedan de unos 28 de ancho.
   let medida = paraFilas(1);
-  if (medida < MINIMO) medida = paraFilas(2);
+  if (medida < MINIMO && prueba?.dosFilas) medida = paraFilas(2);
 
-  return Math.max(24, Math.min(MAXIMO, medida));
+  return Math.max(24, Math.min(maximo, medida));
 }
 
 export default function Hand({
@@ -122,7 +130,8 @@ export default function Hand({
   // usar: en un telefono de 375 pixeles, siete fichas ocupaban 287 de los 351
   // disponibles. Los amigos de Jonathan pidieron fichas mas grandes y estaban
   // ahi, sin pedirle nada a nadie.
-  const anchoFicha = useAnchoDeFicha(handRef, tiles.length);
+  const prueba = varianteDeMano();
+  const anchoFicha = useAnchoDeFicha(handRef, tiles.length, prueba?.maximo, prueba);
 
   // La mano se reacomoda deslizando, no de un salto (§165). Se mide donde
   // estaba cada ficha y donde quedo, y se la trae desde su sitio viejo. La que
@@ -162,7 +171,7 @@ export default function Hand({
   }
 
   return (
-    <div ref={handRef} className="w-full overflow-visible py-3" style={{ visibility: oculta ? 'hidden' : 'visible' }}>
+    <div ref={handRef} className={`w-full overflow-visible ${prueba && !prueba.compacta ? 'py-3' : 'py-1.5'}`} style={{ visibility: oculta ? 'hidden' : 'visible' }}>
       <div className="flex flex-wrap items-center justify-center gap-x-[3px] gap-y-2 px-1">
         {tiles.map((tile, i) => {
           const isValid = validIndices.includes(i);

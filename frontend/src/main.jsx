@@ -5,6 +5,10 @@ import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import MarcoDeTelefono from './components/MarcoDeTelefono.jsx';
 import './index.css';
+import { varianteDeMano } from './components/game/pruebaDeMano.js';
+
+// `?mano=a|b|c` (seccion 208): se guarda al entrar, aunque se entre por la portada.
+varianteDeMano();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

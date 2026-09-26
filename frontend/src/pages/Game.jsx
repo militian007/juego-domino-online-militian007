@@ -8,6 +8,7 @@ import PozoEnLaMesa from '../components/game/PozoEnLaMesa.jsx';
 import CartelDeRonda from '../components/game/CartelDeRonda.jsx';
 import { Marcador, Jugador, Mesa } from '../components/game/Hud.jsx';
 import Hand from '../components/game/Hand.jsx';
+import { varianteDeMano } from '../components/game/pruebaDeMano.js';
 import OpponentHand from '../components/game/OpponentHand.jsx';
 import ManoBocaAbajo from '../components/game/ManoBocaAbajo.jsx';
 import RepartoDeFichas from '../components/game/RepartoDeFichas.jsx';
@@ -841,6 +842,10 @@ export default function Game() {
 
   // La mano se apoya sobre el paño. Se mide para reservarle sitio a la cadena.
   const manoRef = useRef(null);
+  const pruebaMano = varianteDeMano();
+  // La mano compacta (seccion 208): sin el renglon de ayuda ni la caja de «por
+  // que no puedes jugar»; el aviso de levantar va arriba, junto a «tu turno».
+  const manoCompacta = !pruebaMano || pruebaMano.compacta;
   const [altoMano, setAltoMano] = useState(190);
   useEffect(() => {
     const el = manoRef.current;
@@ -1701,7 +1706,7 @@ export default function Game() {
               </div>
               </div>
 
-              <div ref={manoRef} className="absolute inset-x-0 bottom-0 z-30 px-2 pb-2 pt-3"
+              <div ref={manoRef} className={`absolute inset-x-0 bottom-0 z-30 px-2 ${manoCompacta ? 'pb-1.5 pt-2' : 'pb-2 pt-3'}`}
                 style={{
                   background:
                     'linear-gradient(to top, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.90) 62%, rgba(0,0,0,0.55) 84%, rgba(0,0,0,0) 100%)'
@@ -1709,10 +1714,11 @@ export default function Game() {
                 <div className="mb-1 flex items-center justify-between gap-2 px-1 text-[10px] font-bold uppercase tracking-[0.2em] text-domino-cream">
                   <span>
                     tu mano · {gameState.myHand?.length ?? 0}
+                    {pruebaMano && <span className="ml-2 text-domino-accent">prueba {pruebaMano.letra}</span>}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className={myTurn ? 'text-emerald-300' : ''}>
-                      {myTurn ? 'tu turno' : 'esperando'}
+                    <span className={myTurn && manoCompacta && gameState.status === 'playing' && gameState.canDraw ? 'text-domino-accent' : myTurn ? 'text-emerald-300' : ''}>
+                      {myTurn && manoCompacta && gameState.status === 'playing' && gameState.canDraw ? 'tu turno · levanta del montón' : myTurn ? 'tu turno' : 'esperando'}
                     </span>
                   </div>
                 </div>
@@ -1816,7 +1822,7 @@ export default function Game() {
                 {/* Una sola fila de aviso, de alto FIJO (§168). Antes el aviso se
                     desmontaba al agarrar una ficha y al cambiar el turno, y la
                     mano entera saltaba 24 px cada vez. */}
-                <div className="mt-2 h-5 text-center text-[11px] sm:text-xs font-medium italic leading-5">
+                <div className={`${manoCompacta ? 'hidden' : 'mt-2 h-5'} text-center text-[11px] sm:text-xs font-medium italic leading-5`}>
                   {myTurn && gameState.status === 'playing' && gameState.canPlay && (
                     <p className={`text-domino-cream-dim transition-opacity duration-200 ${draggedTile ? 'opacity-0' : 'opacity-100'}`}>
                       Arrastra una ficha válida a la mesa
@@ -1827,7 +1833,7 @@ export default function Game() {
                   )}
                 </div>
 
-                {myTurn && !gameState.canPlay && gameState.status === 'playing' && (
+                {myTurn && !gameState.canPlay && gameState.status === 'playing' && !manoCompacta && (
                   <div className="mt-2 max-h-24 overflow-y-auto rounded-lg border border-slate-700/60 bg-black/25 p-2 text-left">
                     <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-domino-cream">
                       Por qué no puedes jugar

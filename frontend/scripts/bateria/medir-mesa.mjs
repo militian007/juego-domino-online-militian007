@@ -17,6 +17,7 @@ const page = await browser.newPage();
 await page.setViewport({ width: ANCHO, height: ALTO, deviceScaleFactor: 2, isMobile: true });
 await page.goto(`${FRONT}/`, { waitUntil: 'networkidle2' });
 await page.evaluate(() => { localStorage.removeItem('token'); localStorage.setItem('domino-identidad', JSON.stringify({ nombre: 'Raúl', retrato: 'catire' })); });
+await page.evaluate((m) => { if (m) localStorage.setItem('domino-mano-prueba', m); else localStorage.removeItem('domino-mano-prueba'); }, process.env.MANO || '');
 await page.goto(`${FRONT}/mesa`, { waitUntil: 'networkidle2' });
 await page.waitForSelector('[data-silla="0"]');
 await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.innerText.trim() === '1 VS 1')?.click());
@@ -45,7 +46,7 @@ while (Date.now() < hasta) {
   const t = await page.evaluate(() => document.body.innerText);
   if (/Revancha/i.test(t) && !/Siguiente ronda/.test(t)) break;
   if (/Siguiente ronda/.test(t)) { await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => /Siguiente ronda/.test(b.innerText))?.click()); await sleep(3500); continue; }
-  if (!/TU TURNO/.test(t)) { await sleep(250); continue; }
+  if (!/TU TURNO|LEVANTA DEL MONT/i.test(t)) { await sleep(250); continue; }
   if (await hayPozo()) { await page.evaluate(() => document.querySelector('button.ficha-del-pozo:not([disabled])')?.click()); await sleep(900); continue; }
   const total = await page.evaluate(() => document.querySelectorAll('[data-ficha-mano]').length);
   let jugo = false;
@@ -60,11 +61,12 @@ while (Date.now() < hasta) {
   if (m) {
     registro.push(m);
     const tramo = [18, 12, 8].find((k) => m.n >= k);
-    if (tramo && !fotos.has(tramo)) { fotos.add(tramo); await page.screenshot({ path: path.join(OUT, `mesa-${ANCHO}-${tramo}.png`) }); }
+    if (tramo && !fotos.has(tramo)) { fotos.add(tramo); await page.screenshot({ path: path.join(OUT, `mesa-${process.env.MANO || 'actual'}-${ANCHO}-${tramo}.png`) }); }
   }
 }
 const porN = {};
 for (const r of registro) (porN[r.n] ||= []).push(r.largo);
 const resumen = Object.entries(porN).map(([n, l]) => `${n} fichas: ${Math.round(l.reduce((a, b) => a + b, 0) / l.length)} px`);
-console.log(JSON.stringify({ util: registro[0]?.util, resumen, ultimas: registro.slice(-4) }, null, 1));
+const todos = registro.map((r) => r.largo);
+console.log(JSON.stringify({ mano: process.env.MANO || 'actual', promedio: Math.round(todos.reduce((a, b) => a + b, 0) / (todos.length || 1)), altoUtil7: registro[0]?.util?.[1], util: registro[0]?.util, resumen, ultimas: registro.slice(-4) }, null, 1));
 await browser.close();

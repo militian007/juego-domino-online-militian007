@@ -19,9 +19,9 @@ const leer = (t, porDefecto) => {
   return { ancho, alto };
 };
 const VENTANAS = { '1v1': leer(process.argv[3], 'mesa'), '2v2': leer(process.argv[4], 'mesa') };
-const PANO = { '1v1': [330, 304], '2v2': [242, 304] };
+const PANO = { '1v1': (process.env.PANO1 || '330x304').split('x').map(Number), '2v2': (process.env.PANO2 || '242x304').split('x').map(Number) };
 
-const ALTO_MAXIMO_FICHA = 0.11;
+const ALTO_MAXIMO_FICHA = Number(process.env.MAXIMA || 0.11);
 const ALTO_MINIMO_FICHA = 0.035;
 const ALCANCE_PUNTA = 2.0;
 const AIRE_CELDAS = 0.5;

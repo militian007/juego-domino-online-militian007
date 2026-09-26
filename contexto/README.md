@@ -8776,3 +8776,34 @@ mesa, paño del iPhone):
 
 2 vs 2: de 37,7 a 41,6 px (solo la cámara), reacomodos iguales. Jugadas legales sin casilla:
 0 en 1.000 partidas. Motor 85, servidor 174, batería 20 etapas en verde.
+
+## 208. La mano y la mesa con las medidas de «ese juego» (2026-09-26)
+
+Raúl: «vamos a ajustar un poco las fichas en mano para darle más espacio a las fichas en
+juego», y después, con tres capturas de un dominó de la tienda: «cópiate de los tamaños».
+
+Lo medido primero: lo que más le quitaba mesa no era el tamaño de la ficha de la mano sino
+(1) que al levantar del pozo y pasar de 9 fichas la mano se partía en **dos filas de fichas
+grandes** (unos 240 px) y (2) la caja «Por qué no puedes jugar» (unos 100 px más) mientras se
+levanta. En ese rato a la cadena le quedaban unos 200 px de alto.
+
+Las medidas de ese juego (sus capturas, llevadas a 390 de ancho): ficha de la mano 50×100 en
+UNA fila; ficha de la mesa 94 px de largo al empezar y 57 px con 17 fichas puestas.
+
+Lo que quedó:
+- **Mano:** máximo 50 de ancho (era 58), **siempre una fila** (con 12 fichas quedan de unos
+  28 de ancho), sin el renglón «Arrastra una ficha…» ni la caja «Por qué no puedes jugar».
+  Cuando toca levantar, arriba dice «tu turno · levanta del montón».
+- **Mesa:** `ALTO_MAXIMO_FICHA` de 0,11 a 0,142: la ficha llega a 94 px como en ese juego.
+- **Forma de la cadena:** con la mano nueva el paño libre del 1 vs 1 vuelve a ser ALTO
+  (330×490), así que la ventana 10×9 de la §207 se quita y vuelve la de siempre (9×14).
+  Medido con `medir-encuadre.js` (paño 330×490, tope 0,142): 9×14 da 57 px con 13 a 18
+  fichas y 67 de promedio; 10×9 daba 50 y 54. La reserva de la cámara de la §207 (solo la
+  casilla que viene) se queda.
+
+En el navegador a 390×844 (`medir-mesa.mjs`, tres partidas): 94 px al empezar, 55–63 con
+12 a 17 fichas, 43–66 con más de 20. Antes: 73, 43–47 y 38–39.
+
+`?mano=hoy` enseña la mano de antes para comparar (se guarda; `?mano=0` la quita). Para
+fotografiar la mano llena hay una ruta de desarrollo, `/api/diag/mano`, que pasa fichas del
+pozo a la mano del humano (`fotos-mano.mjs`).

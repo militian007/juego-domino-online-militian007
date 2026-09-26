@@ -58,4 +58,23 @@ router.post('/destrancar', (req, res) => {
   res.json({ ok: true, forma, fichas: board.length });
 });
 
+/**
+ * Pasa fichas del pozo a la mano del humano (solo en desarrollo, seccion 208):
+ * para fotografiar la mano llena sin esperar a que la partida la llene.
+ */
+router.post('/mano', (req, res) => {
+  if (process.env.NODE_ENV === 'production') return res.status(404).end();
+  const { code, cuantas = 4 } = req.body || {};
+  const room = roomManager.rooms.get(String(code || '').toUpperCase());
+  const state = room?.game?.state;
+  if (!state) return res.status(404).json({ error: 'sala no encontrada' });
+  const humano = room.players.find((p) => !p.isBot);
+  const seat = state.players.findIndex((p) => String(p.id) === String(humano?.id));
+  if (seat < 0) return res.status(400).json({ error: 'sin humano' });
+  const n = Math.min(Number(cuantas) || 0, state.pool.length);
+  state.hands[seat].push(...state.pool.splice(0, n));
+  roomManager.broadcastState(room);
+  res.json({ ok: true, mano: state.hands[seat].length });
+});
+
 export default router;
