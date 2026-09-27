@@ -252,8 +252,19 @@ export function useConsejos(gameState, { myTurn, miId, encendidos = true }) {
  */
 const SERIF = "'Cinzel', 'Cormorant Garamond', Georgia, serif";
 
-export default function ConsejoDeMesa({ consejo, style }) {
+export default function ConsejoDeMesa({ consejo, style, forma = '' }) {
   if (!consejo) return null;
+  // B (prueba 26-sep): una sola linea chiquita, sin placa grande.
+  if (forma === 'b') {
+    return (
+      <div style={{ opacity: 1, ...style }} className="consejo-entra pointer-events-none absolute inset-x-0 z-30 flex justify-center px-6">
+        <div className="flex max-w-full items-center gap-2 rounded-full border border-domino-accent/60 bg-domino-dark/90 px-3 py-1.5 shadow-[0_4px_12px_rgba(0,0,0,.6)]">
+          <span aria-hidden="true" className="inline-block h-1.5 w-1.5 flex-none rounded-full bg-domino-accent" />
+          <span className="truncate text-[12px] font-semibold text-domino-cream">{consejo.texto}</span>
+        </div>
+      </div>
+    );
+  }
   return (
     <div
       // `opacity: 1` a mano y no confiado a la animacion: si algun dia no corre,

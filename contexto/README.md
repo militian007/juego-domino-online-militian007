@@ -9073,3 +9073,28 @@ Como es más alta que la etiqueta, en los teléfonos bajitos se achica hasta 0,6
 alto) para no taparle al club su renglón. Raúl: «me encanta la ficha así».
 
 Y Zoraida se queda: el anuncio «por boca de la casa» es el del truco, tal cual.
+
+## 216. El marcador en dos fichas y la mesa sin barra arriba (2026-09-27)
+
+Raúl: «¿por qué no reducimos la parte de arriba que solo da puntaje, las rondas y eso?
+Se puede acomodar más pequeño hasta en el mismo tablero», y enseguida: «la idea de recortar
+ese espacio es que las fichas del tablero puedan verse un poco más grandes».
+
+Se probaron, sobre la misma partida y con fotos: una franja delgada (tres versiones: con la
+meta, en una ficha, con caras), los puntos en las placas, y sin barra con una pastilla
+(tres versiones). Escogió la fichita «pero un cuadro de cada lado es mejor, más estético»:
+**`DosFichas`** en `Tablero.jsx`. No hay barra arriba: cada jugador tiene su fichita de
+hueso (`/torneos/ficha-marcador.webp`, el blanco doble estirado) en su esquina, con el
+nombre en una mitad y los puntos en la otra mirando al centro; debajo de la del rival, en
+chiquito, la ronda, la meta, el pozo y el código de la sala. Caben en la franja de arriba
+que ya estaba reservada para el rival, así que no le tapan nada a la cadena. El salir y el
+chat siguen en las esquinas, flotando.
+
+Con la mesa más alta, la cadena se traza un poco más alta y angosta: `layout.ventana` 8×15
+en todos los modos (`DominoGame.js`). Medido con `medir-encuadre.js` (paño 330×595 contra
+330×490 de antes): en 1 vs 1 la ficha promedio pasa de 67 a **74 px (+10 %)**, a mitad de
+partida de 64 a 72 (+13 %) y con la cadena larga de 57 a 62 (+9 %); en 2 vs 2, con la
+cadena larga, de 40 a 43. En el navegador, la misma partida con 12 fichas: 59 → 73 px.
+
+`?arriba=hoy` enseña la barra de antes para comparar. Las variantes que no se escogieron se
+borraron. Pendiente de Raúl: el cartelito de LA CASA (`?consejo=a|b|c`, recomendada la B).

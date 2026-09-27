@@ -82,11 +82,12 @@ export class DominoGame {
     // enciende el camino fijo; DOMINO_CAMINO=libre deja la regla libre pura.
     const camino = process.env.DOMINO_CAMINO || 'intermedio';
     if (camino !== 'libre') deLaModalidad.layout = { ...DEFAULT_LAYOUT, camino };
-    // La ventana de la mesa (`layout.ventana`, seccion 207) se queda con la de
-    // siempre, 9x14: con la mano nueva (seccion 208) el paño libre del 1 vs 1
-    // vuelve a ser alto (330x490 en un iPhone) y la cadena alta es la que deja
-    // la ficha mas grande (medir-encuadre.js: 57 px con 13 a 18 fichas, contra
-    // 50 con la ventana ancha 10x9).
+    // La ventana de la mesa (`layout.ventana`, secciones 207 y 216). Sin la barra
+    // de arriba (las dos fichas del marcador) el paño libre es todavia mas alto
+    // (330x595 en un iPhone): la cadena un poco mas alta y angosta, 8x15, es la
+    // que mejor lo llena (medir-encuadre.js: 62 px con 13 a 18 fichas en 1 vs 1
+    // contra 60 con la 9x14, y 43 contra 40 en 2 vs 2, con menos reacomodos).
+    deLaModalidad.layout = { ...DEFAULT_LAYOUT, ...(deLaModalidad.layout || {}), ventana: { ancho: 8, alto: 15 } };
 
     this.state = createGame({
       gameFormat: config.gameFormat,

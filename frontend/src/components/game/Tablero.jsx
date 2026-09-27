@@ -199,7 +199,49 @@ function TableroDelClub({ mios, suyos, ronda, objetivo, pozo, sala, modalidad, m
   );
 }
 
-const VARIANTES = { b: TableroDelClub, nogal: PlacaDeNogal };
+const Numerito = ({ v, gana, grande = 22, tinta = '#EFE8D6' }) => (
+  <span className="font-bold leading-none" style={{ fontFamily: SERIF, fontSize: grande, color: gana ? BRONCE : tinta, fontVariantNumeric: 'tabular-nums' }}>{v}</span>
+);
+
+/* LAS DOS FICHAS (27-sep). Raul escogio la fichita (C3) «pero un cuadro de
+   cada lado es mejor, mas estetico». Cada jugador tiene su ficha en su esquina:
+   en una mitad el nombre, en la otra los puntos, y los puntos miran al centro
+   (como en un marcador). Caben en la franja de arriba reservada al rival. */
+function DosFichas({ mios, suyos, ronda, objetivo, pozo, sala, myLabel, theirLabel, conChat }) {
+  const ficha = (nombre, v, gana, puntosALaDerecha, lado) => {
+    const n = (
+      <div className="flex flex-1 items-center justify-center px-1">
+        <span className="line-clamp-2 break-words text-center text-[8px] font-extrabold uppercase leading-[1.15] tracking-[0.1em]" style={{ color: '#5a4630' }}>{nombre}</span>
+      </div>
+    );
+    const p = (
+      <div className="flex flex-1 items-center justify-center">
+        <Numerito v={v} gana={false} grande={19} tinta={gana ? '#9a2a1f' : '#2b1c10'} />
+      </div>
+    );
+    return (
+      <div className={`absolute top-[6px] ${lado}`} style={{ width: 104, filter: 'drop-shadow(0 4px 6px rgba(0,0,0,.6))' }}>
+        <img src="/torneos/ficha-marcador.webp" alt="" draggable={false} className="block h-[36px] w-full" style={{ objectFit: 'fill' }} />
+        <div className="absolute inset-0 flex items-center px-1">
+          {puntosALaDerecha ? n : p}
+          <span className="w-1" />
+          {puntosALaDerecha ? p : n}
+        </div>
+      </div>
+    );
+  };
+  return (
+    <div className="pointer-events-none">
+      {ficha(myLabel, mios, mios > suyos, true, 'left-[48px]')}
+      {ficha(theirLabel, suyos, suyos > mios, false, conChat ? 'right-[48px]' : 'right-2')}
+      <div className={`absolute top-[46px] ${conChat ? 'right-[50px]' : 'right-3'}`}>
+        <span className="text-[8px] font-bold uppercase tracking-[0.16em] text-domino-accent/85">R{ronda} · a {objetivo} · {pozo != null ? `pozo ${pozo}` : 'sin pozo'}{sala ? <> · <span className="font-mono tracking-[0.14em]">{sala}</span></> : null}</span>
+      </div>
+    </div>
+  );
+}
+
+const VARIANTES = { b: TableroDelClub, nogal: PlacaDeNogal, dosFichas: DosFichas };
 
 export default function Tablero({ variante, ...props }) {
   const Elegida = VARIANTES[variante] || TableroDelClub;

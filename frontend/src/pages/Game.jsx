@@ -177,6 +177,21 @@ const AUTO_START_MODES = ['1v1bot', '2v2bots'];
  * Que marcador se ve arriba (secciones 180-181): el tablero del club, salvo que
  * `?marcador=nogal` pida la placa de Jonathan (queda guardado).
  */
+/**
+ * LA PARTE DE ARRIBA (seccion 216). Raul: «porque no reducimos la parte de
+ * arriba que solo da puntaje, las rondas y eso». Escogio las DOS FICHAS: sin
+ * barra arriba, cada jugador con su fichita en su esquina, y la mesa crece.
+ * `?arriba=hoy` enseña la barra de antes para comparar (se guarda; `?arriba=0`
+ * la quita). Se borra cuando Raul la de por buena.
+ */
+function pruebaDeArriba() {
+  try {
+    const q = new URLSearchParams(window.location.search).get('arriba');
+    if (q != null) localStorage.setItem('domino-arriba-prueba', q);
+    return localStorage.getItem('domino-arriba-prueba') === 'hoy' ? 'hoy' : 'fichas';
+  } catch { return 'fichas'; }
+}
+
 function varianteDelMarcador() {
   try {
     const pedida = new URLSearchParams(window.location.search).get('marcador');
@@ -727,11 +742,23 @@ export default function Game() {
   // Los consejos que dice el Panita (§123, §126). Se pueden apagar desde la
   // baranda de la mesa: a quien ya sabe jugar, uno cada ronda le sobra.
   const [conConsejos, setConConsejos] = useState(consejosEncendidos);
-  const consejo = useConsejos(gameState, {
+  const consejoDeVerdad = useConsejos(gameState, {
     myTurn,
     miId: myPlayerId,
     encendidos: conConsejos
   });
+  // PRUEBA DEL CARTEL DE LA CASA (26-sep): Raul vio que la placa tapaba la punta
+  // de la cadena. `?consejo=a|b|c` (se guarda) para verlas en el telefono;
+  // `?consejoFijo=1` la deja puesta para las fotos. Se borra cuando escoja.
+  const pruebaConsejo = (() => {
+    try {
+      const q = new URLSearchParams(window.location.search);
+      if (q.get('consejo')) localStorage.setItem('domino-consejo-prueba', q.get('consejo'));
+      if (q.get('consejoFijo')) localStorage.setItem('domino-consejo-fijo', q.get('consejoFijo'));
+      return { forma: localStorage.getItem('domino-consejo-prueba') || '', fijo: localStorage.getItem('domino-consejo-fijo') === '1' };
+    } catch { return { forma: '', fijo: false }; }
+  })();
+  const consejo = pruebaConsejo.fijo ? { id: 'fijo', texto: 'Cheo no puede jugar y está levantando del montón' } : consejoDeVerdad;
 
   // ---------------------------------------------------------------------
   // EL CIERRE DE LA RONDA, EN DOS TIEMPOS (§123)
@@ -795,6 +822,7 @@ export default function Game() {
   // La mano se apoya sobre el paño. Se mide para reservarle sitio a la cadena.
   const manoRef = useRef(null);
   const pruebaMano = varianteDeMano();
+  const arriba = pruebaDeArriba();
   // La mano compacta (seccion 208): sin el renglon de ayuda ni la caja de «por
   // que no puedes jugar»; el aviso de levantar va arriba, junto a «tu turno».
   const manoCompacta = !pruebaMano || pruebaMano.compacta;
@@ -1266,7 +1294,8 @@ export default function Game() {
   const margenesMesa = {
     arriba: MARGEN_MESA.arriba,
     derecha: seatRight ? MARGEN_MESA.lados : MARGEN_MESA.borde,
-    abajo: altoMano + MARGEN_MESA.abajo,
+    // C: mientras hay cartel, la mesa le deja su sitio (la camara se corre).
+    abajo: altoMano + MARGEN_MESA.abajo + (pruebaConsejo.forma === 'c' && consejo ? 70 : 0),
     izquierda: seatLeft ? MARGEN_MESA.lados : MARGEN_MESA.borde
   };
   // El marcador se rotula segun TU equipo, no segun el numero de equipo: si
@@ -1294,7 +1323,7 @@ export default function Game() {
     // La pinta de las fichas se ofrece aqui arriba: asi la toman la mesa, la
     // mano, el pozo y el desglose sin tener que pasarsela a cada uno.
     <ContextoFichas.Provider value={carpetaFichas}>
-    <div className="flex h-[100dvh] flex-col overflow-hidden bg-black">
+    <div className="relative flex h-[100dvh] flex-col overflow-hidden bg-black">
 
       {error && (
         <div className="bg-red-500/20 border-b border-red-500/50 text-red-300 px-4 py-2 text-center text-sm">
@@ -1314,7 +1343,7 @@ export default function Game() {
           El chat va en la otra esquina, gemelo del salir (seccion 187): es
           donde uno lo busca, y asi las tachuelas de la baranda quedan en
           cuatro. Solo si hay con quien hablar. */}
-      <div className="relative shrink-0 py-1.5">
+      <div className={arriba === 'fichas' ? 'pointer-events-none absolute inset-x-0 top-0 z-40 h-[46px] [&>*]:pointer-events-auto' : 'relative shrink-0 py-1.5'}>
         {mesaEntrePersonas && (
           <div className="absolute right-2 top-1/2 z-30 -translate-y-1/2">
             <button
@@ -1386,8 +1415,10 @@ export default function Game() {
           )}
         </div>
 
+        <div className={arriba === 'fichas' ? 'absolute inset-0' : ''}>
         <Tablero
-          variante={varianteDelMarcador()}
+          variante={arriba === 'fichas' ? 'dosFichas' : varianteDelMarcador()}
+          conChat={mesaEntrePersonas}
           mios={gameState.teamScores?.[miEquipo] ?? 0}
           suyos={gameState.teamScores?.[equipoRival] ?? 0}
           ronda={gameState.round}
@@ -1398,6 +1429,7 @@ export default function Game() {
           myLabel={myLabel}
           theirLabel={theirLabel}
         />
+        </div>
       </div>
 
       {reparto && (
@@ -1482,7 +1514,11 @@ export default function Game() {
                 {/* Los consejos que salen solos. Van pegados al borde de
                     abajo de la mesa, justo encima de la mano: arriba ya viven
                     la placa del de enfrente, el cartel del pozo y los avisos. */}
-                <ConsejoDeMesa consejo={consejo} style={{ bottom: altoMano + 10 }} />
+                <ConsejoDeMesa
+                  consejo={consejo}
+                  forma={pruebaConsejo.forma}
+                  style={pruebaConsejo.forma === 'a' ? { top: 128 } : { bottom: altoMano + 10 }}
+                />
 
                 {/* "Fulano se desconecto, tiene 60 segundos para volver". */}
                 <AvisoDeAusente ausentes={gameState.ausentes} />
@@ -1540,7 +1576,7 @@ export default function Game() {
                   fichas={gameState.handCounts[seatTop?.id]}
                   enTurno={gameState.currentPlayerId === seatTop?.id}
                   esCompanero={esCompanero(seatTop)}
-                  className="left-1/2 top-2 -translate-x-1/2"
+                  className={arriba === 'fichas' ? 'left-1/2 top-3 -translate-x-1/2' : 'left-1/2 top-2 -translate-x-1/2'}
                 />
                 <PlacaAsiento
                     abanicoOculto={Boolean(reparto)}
