@@ -9060,3 +9060,16 @@ la grilla) y `reinicio` (mata el banco en plena ronda 2 y lo levanta con la mism
 muchos jugando a la vez. **Medido**: los tres VERDES dos veces (sueltos y con `todos`: campeón, podio y 3.º, 0 paralizadas, 0 errores;
 torneo de 32 en 3,5-5 min a 24 puntos; el reinicio retoma con las mesas nuevas en 2 s y sin
 walkovers). No apareció ningún error del servidor.
+
+## 215. El Relámpago escrito en una ficha (2026-09-26)
+
+Raúl: «vamos a copiarnos del truco igual para el Relámpago, pero escrito en un dominó en
+vez de la pancartica del truco». El cartel del torneo de la portada (`RelojDelTorneo.jsx`)
+es el del truco —colgado de su cuerda, con el rayo detrás, la cuenta, ¡GRATIS!, los premios
+y ¡LLÉGATE!— pero en vez de la etiqueta con lacre es **un blanco doble parado**
+(`/torneos/ficha-relampago.webp`, sacado de `tiles-hueso/tile_0_0` girado y al doble):
+arriba el Relámpago y su reloj, abajo lo que se gana; la raya del medio es la de la ficha.
+Como es más alta que la etiqueta, en los teléfonos bajitos se achica hasta 0,6 (a 640 de
+alto) para no taparle al club su renglón. Raúl: «me encanta la ficha así».
+
+Y Zoraida se queda: el anuncio «por boca de la casa» es el del truco, tal cual.

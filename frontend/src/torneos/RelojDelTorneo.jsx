@@ -43,7 +43,11 @@ function cuentaCorta(ms) {
 }
 
 /** 0,76 en un telefono normal (844 de alto), 1,0 en una pantalla alta (1240). */
-const escalaPorAlto = (alto) => Math.min(1, Math.max(0.76, 0.76 + ((alto - 844) / (1240 - 844)) * 0.24));
+// La ficha es mas alta que la etiqueta del truco: en los telefonos bajitos (640)
+// baja hasta 0,6 para no taparle al club su renglon.
+const escalaPorAlto = (alto) => (alto >= 844
+  ? Math.min(1, 0.76 + ((alto - 844) / (1240 - 844)) * 0.24)
+  : Math.max(0.58, 0.6 + ((alto - 640) / (844 - 640)) * 0.16));
 
 export default function RelojDelTorneo({ onIrATorneos, abajo = 'calc(150px + var(--tarjeta-instalar, 0px))', alMostrarse }) {
   const [escala, setEscala] = useState(() => escalaPorAlto(typeof window !== 'undefined' ? window.innerHeight : 844));
@@ -127,7 +131,7 @@ export default function RelojDelTorneo({ onIrATorneos, abajo = 'calc(150px + var
 
   return (
     <div className="tor-entra pointer-events-none absolute inset-x-0 z-[5] flex justify-start" style={{ bottom: abajo, paddingLeft: 14 }}>
-      <div className="pointer-events-auto relative" data-testid="reloj-del-torneo" style={{ width: 176, maxWidth: '56vw', transform: `scale(${escala})`, transformOrigin: '0 100%' }}>
+      <div className="pointer-events-auto relative" data-testid="reloj-del-torneo" style={{ width: 150, maxWidth: '48vw', transform: `scale(${escala})`, transformOrigin: '0 100%' }}>
         <span aria-hidden className="absolute" style={{ inset: '-40px -60px -10px -20px', pointerEvents: 'none', zIndex: 0 }}>
           <span className="tor-rayo" style={{ position: 'absolute', inset: 0, background: 'radial-gradient(60% 50% at 40% 45%, rgba(215,232,255,0.55) 0%, transparent 70%)', mixBlendMode: 'screen' }} />
           <span className="tor-rayo" style={{ position: 'absolute', right: 4, top: 0, animationDelay: '0.15s', filter: 'drop-shadow(0 0 10px #dbe9ff)' }}>
@@ -138,8 +142,11 @@ export default function RelojDelTorneo({ onIrATorneos, abajo = 'calc(150px + var
         <span aria-hidden data-testid="reloj-del-torneo-cuerda" style={{ position: 'absolute', left: '50%', top: -56, width: 5, height: 60, marginLeft: -2, borderRadius: 3, background: 'repeating-linear-gradient(180deg, #d9c69c 0 4px, #8f7a52 4px 7px)', boxShadow: '0 2px 4px rgba(0,0,0,0.6)', transform: 'rotate(-5deg)', transformOrigin: 'top', zIndex: 1 }} />
 
         <div className="relative" style={{ color: '#2b1c10', transform: 'rotate(-4deg)', transformOrigin: '50% 0', filter: 'drop-shadow(0 14px 22px rgba(0,0,0,0.7))', zIndex: 1 }}>
-          <img src="/torneos/limpia-lacre.webp" alt="" draggable={false} style={{ width: '100%', height: 'auto', display: 'block' }} />
-          <div className="absolute flex flex-col items-center justify-center" style={{ left: '10%', right: '10%', top: '23%', bottom: '8%', textAlign: 'center' }}>
+          {/* LA FICHA (Raul, 26-sep): «como el truco, pero escrito en un domino en vez
+              de la pancartica». Un blanco doble parado: arriba el Relampago y su reloj,
+              abajo lo que se gana; la raya del medio es la de la ficha. */}
+          <img src="/torneos/ficha-relampago.webp" alt="" draggable={false} style={{ width: '100%', height: 'auto', display: 'block' }} />
+          <div className="absolute flex flex-col items-center justify-center" data-mitad="arriba" style={{ left: '11%', right: '11%', top: '5%', height: '44%', textAlign: 'center' }}>
             <span style={{ display: 'block', fontFamily: "'Cinzel', Georgia, serif", fontWeight: 700, fontSize: 11, letterSpacing: '0.14em', lineHeight: 1.2, textTransform: 'uppercase' }}>
               {torneo.esRelampago ? 'Relámpago' : torneo.name?.trim() || 'Torneo'}
               {(segundeando || porArrancar) && (<><br />{horaDelTorneo(torneo.startAt)}</>)}
@@ -154,6 +161,8 @@ export default function RelojDelTorneo({ onIrATorneos, abajo = 'calc(150px + var
             >
               {textoCuenta}
             </button>
+          </div>
+          <div className="absolute flex flex-col items-center justify-center" data-mitad="abajo" style={{ left: '9%', right: '9%', top: '52%', height: '44%', textAlign: 'center' }}>
 
             <span
               data-testid="reloj-del-torneo-sello"
